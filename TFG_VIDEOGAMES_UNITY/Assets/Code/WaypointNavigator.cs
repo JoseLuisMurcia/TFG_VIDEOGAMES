@@ -19,6 +19,9 @@ public class WaypointNavigator : MonoBehaviour
     {
         if(controller.reachedDestination)
         {
+            if (currentWaypoint.nextWaypoint == null)
+                return;
+
             currentWaypoint = currentWaypoint.nextWaypoint;
             controller.SetDestination(currentWaypoint.GetPosition());
         }

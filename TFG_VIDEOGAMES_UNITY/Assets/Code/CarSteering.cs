@@ -16,6 +16,13 @@ public class CarSteering : MonoBehaviour
     [SerializeField]
     float motorForce = 50;
 
+    private Rigidbody rb;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();    
+    }
+
     public void GetInput()
     {
         horizontalInput = Input.GetAxis("Horizontal");
@@ -69,10 +76,10 @@ public class CarSteering : MonoBehaviour
         Quaternion previousQuat = new Quaternion(_quat.x, _quat.y, _quat.z, _quat.w);
         _collider.GetWorldPose(out _pos, out _quat);
 
-        _transform.position = Vector3.Lerp(previousPos, _pos, 0.5f);
-        _transform.rotation = Quaternion.Lerp(previousQuat, _quat, 0.5f);
-        //_transform.position = _pos;
-        //_transform.rotation = _quat;
+        //_transform.position = Vector3.Lerp(previousPos, _pos, 0.5f);
+        //_transform.rotation = Quaternion.Lerp(previousQuat, _quat, 0.5f);
+        _transform.position = _pos;
+        _transform.rotation = _quat;
     }
 
     private void FixedUpdate()
@@ -85,7 +92,8 @@ public class CarSteering : MonoBehaviour
 
     public float GetSpeed()
     {
-        return Mathf.Abs((frontDriverWheel.motorTorque + frontPassengerWheel.motorTorque) * 0.5f);
+        //return Mathf.Abs((frontDriverWheel.motorTorque + frontPassengerWheel.motorTorque) * 0.5f);
+        return Vector3.Magnitude(rb.velocity);
     }
     
 }
