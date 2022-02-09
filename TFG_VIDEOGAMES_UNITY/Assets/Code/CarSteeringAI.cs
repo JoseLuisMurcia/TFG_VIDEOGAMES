@@ -6,7 +6,6 @@ public class CarSteeringAI : MonoBehaviour
 {
     private CarSteering carSteering;
     private Vector3 targetPosition;
-    float reachedTargetDistance = 1f;
     private bool shouldStopAtWaypoint;
     private bool targetReached = false;
 
@@ -49,7 +48,7 @@ public class CarSteeringAI : MonoBehaviour
     {
         float forwardAmount = 1f;
         float turnAmount = 0f;
-
+        float reachedTargetDistance = 0.1f;
         Vector3 dirToMovePosition = (targetPosition - transform.position).normalized;
 
         float angleToDir = Vector3.SignedAngle(transform.forward, dirToMovePosition, Vector3.up);
@@ -59,7 +58,7 @@ public class CarSteeringAI : MonoBehaviour
             {
                 turnAmount = 1f;
             }
-            else
+            else if(angleToDir < 0)
             {
                 turnAmount = -1f;
             }
@@ -81,7 +80,7 @@ public class CarSteeringAI : MonoBehaviour
     {
         float forwardAmount = 0f;
         float turnAmount = 0f;
-
+        float reachedTargetDistance = 1.5f;
         float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
 
         if (distanceToTarget > reachedTargetDistance)
