@@ -12,9 +12,11 @@ public class Waypoint : MonoBehaviour
 
     public Vector3 GetPosition()
     {
-        Vector3 minBound = transform.position + transform.right * width * 0.5f;
-        Vector3 maxBound = transform.position - transform.right * width * 0.5f;
+        return transform.position;
 
-        return Vector3.Lerp(minBound, maxBound, Random.Range(0f, 0.1f));
+        //Vector3 minBound = transform.position + transform.right * width * 0.5f;
+        //Vector3 maxBound = transform.position - transform.right * width * 0.5f;
+
+        //return Vector3.Lerp(minBound, maxBound, Random.Range(0f, 0.1f));
     }
 }

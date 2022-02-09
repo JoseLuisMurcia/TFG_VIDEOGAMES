@@ -4,26 +4,40 @@ using UnityEngine;
 
 public class WaypointNavigator : MonoBehaviour
 {
-    CarNavigationController controller;
+    CarSteeringAI AIController;
     public Waypoint currentWaypoint;
     private void Awake()
     {
-        controller = GetComponent<CarNavigationController>();
+        AIController = GetComponent<CarSteeringAI>();
     }
     void Start()
     {
-        controller.SetDestination(currentWaypoint.GetPosition());
+        SetTargetToAI();
     }
 
     void Update()
     {
-        if(controller.reachedDestination)
+        if(AIController.GetTargetReached())
         {
             if (currentWaypoint.nextWaypoint == null)
                 return;
 
             currentWaypoint = currentWaypoint.nextWaypoint;
-            controller.SetDestination(currentWaypoint.GetPosition());
+            SetTargetToAI();
+        }
+    }
+
+    private void SetTargetToAI()
+    {
+        Debug.Log("current Waypoint: " + currentWaypoint.gameObject.name);
+        Debug.Log("next Waypoint: " + currentWaypoint.nextWaypoint.gameObject.name);
+        if (currentWaypoint.nextWaypoint != null)
+        {
+            AIController.SetTargetPosition(currentWaypoint.GetPosition(), false);
+        }
+        else
+        {
+            AIController.SetTargetPosition(currentWaypoint.GetPosition(), true);
         }
     }
 }

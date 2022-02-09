@@ -22,12 +22,7 @@ public class CarNavigationController : MonoBehaviour
         if (!reachedDestination)
         {
             //SUSTITUIR POR LAS FISICAS
-            Debug.Log("Position: " + transform.position);
-            /*
-            Vector3 move = transform.right * destination.x + transform.forward * destination.z;
-            controller.Move(move * speed * Time.deltaTime);
-            */
-            transform.position = Vector3.MoveTowards(transform.position, destination, speed*Time.deltaTime);
+            
         }
     }
 

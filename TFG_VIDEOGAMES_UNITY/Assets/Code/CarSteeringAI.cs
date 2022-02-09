@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class CarSteeringAI : MonoBehaviour
 {
-    public Transform targetPositionTransform;
     private CarSteering carSteering;
     private Vector3 targetPosition;
     float reachedTargetDistance = 1f;
-
+    private bool shouldStopAtWaypoint;
+    private bool targetReached = false;
 
     private void Awake()
     {
@@ -17,8 +17,14 @@ public class CarSteeringAI : MonoBehaviour
 
     private void Update()
     {
-        SetTargetPosition(targetPositionTransform.position);
-        SetDirection();
+        if (!shouldStopAtWaypoint)
+        {
+            SetDirection();
+        }
+        else
+        {
+            SetDirectionWithStop();
+        }
         //DebugMethod();
     }
 
@@ -33,17 +39,51 @@ public class CarSteeringAI : MonoBehaviour
         //Debug.Log("Car speed: " + carSteering.GetSpeed());
     }
 
-    public void SetTargetPosition(Vector3 _targetPosition)
+    public void SetTargetPosition(Vector3 _targetPosition, bool _shouldStopAtWaypoint)
     {
         targetPosition = _targetPosition;
+        shouldStopAtWaypoint = _shouldStopAtWaypoint;
     }
 
     private void SetDirection()
+    {
+        float forwardAmount = 1f;
+        float turnAmount = 0f;
+
+        Vector3 dirToMovePosition = (targetPosition - transform.position).normalized;
+
+        float angleToDir = Vector3.SignedAngle(transform.forward, dirToMovePosition, Vector3.up);
+        if (!(angleToDir < 5f && angleToDir > -5f))
+        {
+            if (angleToDir > 0)
+            {
+                turnAmount = 1f;
+            }
+            else
+            {
+                turnAmount = -1f;
+            }
+        }
+        float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
+        if (distanceToTarget < reachedTargetDistance)
+        {
+            targetReached = true;
+        }
+        else
+        {
+            targetReached = false;
+        }
+            
+
+        carSteering.SetInputs(forwardAmount, turnAmount);
+    }
+    private void SetDirectionWithStop()
     {
         float forwardAmount = 0f;
         float turnAmount = 0f;
 
         float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
+
         if (distanceToTarget > reachedTargetDistance)
         {
             // The target is still so far
@@ -52,7 +92,7 @@ public class CarSteeringAI : MonoBehaviour
             if (dot > 0)
             {
                 // Target in front         
-                float stoppingDistance = 5f;
+                float stoppingDistance = 8f;
                 float stoppingSpeed = 2f;
                 if (distanceToTarget < stoppingDistance && carSteering.GetSpeed() > stoppingSpeed)
                 {
@@ -76,7 +116,23 @@ public class CarSteeringAI : MonoBehaviour
                 }
                 else
                 {
-                    forwardAmount = -1f;
+                    // Not too far to reverse
+                    float reverseStoppingDistance = 1.5f;
+                    float stoppingSpeed = 0.5f;
+                    //Debug.Log("Distance to target: " + distanceToTarget);
+                    //Debug.Log("carSteering.GetSpeed(): " + carSteering.GetSpeed());
+
+                    if (distanceToTarget < reverseStoppingDistance && carSteering.GetSpeed() > stoppingSpeed)
+                    {
+                        // Within stopping distance and moving back too fast
+                        forwardAmount = 1f;
+                    }
+                    else
+                    {
+                        // Not withing stopping distance nor moving back too fast
+                        forwardAmount = -1f;
+                    }
+
 
                 }
             }
@@ -116,19 +172,24 @@ public class CarSteeringAI : MonoBehaviour
         else
         {
             // Reached target
-            Debug.Log("REACHED TARGET");
-            if (carSteering.GetSpeed() > 0.5f)
+            targetReached = true;
+            forwardAmount = 0f;
+            // Target in front
+            if (carSteering.GetSpeed() > 0.1f)
             {
                 // Hit the brakes if going too fast
                 forwardAmount = -1f;
             }
-            else
-            {
-                forwardAmount = 0f;
-            }
+
+
             turnAmount = 0f;
         }
 
         carSteering.SetInputs(forwardAmount, turnAmount);
+    }
+
+    public bool GetTargetReached()
+    {
+        return targetReached;
     }
 }
