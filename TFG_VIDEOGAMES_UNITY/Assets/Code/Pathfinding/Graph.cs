@@ -20,37 +20,46 @@ public class Graph : MonoBehaviour
     // Grafo debe contener todos los waypoints
     [SerializeField] List<Waypoint> graph = new List<Waypoint>();
 
-    void Start()
-    {
-        CreateGraph();
-    }
+    public List<Waypoint> path = new List<Waypoint>();
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    // Donde se almacenan las connections? En la clase Waypoint?
-    void CreateGraph()
-    {
-
-    }
     // Crear método que sepa con qué está conectado un nodo. Se deberán crear las Connection cuando se vaya recorriendo el array.
     // El grafo tiene que saber a partir de un nodo, con qué nodos está conectados y el coste de cada conexión.
-    //public Connection[] GetConnections(Waypoint fromNode)
-    //{
-
-    //}
-
-}
-
-public class Connection
-{
-    Waypoint fromWaypoint;
-    Waypoint toWaypoint;
-    public float GetCost()
+    public List<Connection> GetConnections(Waypoint fromNode)
     {
-        return Vector3.Distance(fromWaypoint.GetPosition(), toWaypoint.GetPosition());
+        return fromNode.connections;
     }
+
+    public Waypoint FindClosestWaypointFromWorldPoint(Vector3 worldPoint)
+    {
+        float shortestDistance = Mathf.Infinity;
+        Waypoint closestWaypoint = null;
+        foreach(Waypoint waypoint in graph)
+        {
+            float distanceToWorldPoint = Vector3.Distance(worldPoint, waypoint.GetPosition());
+            if (distanceToWorldPoint < shortestDistance)
+            {
+                closestWaypoint = waypoint;
+                shortestDistance = distanceToWorldPoint;
+            }
+        }
+        return closestWaypoint;
+    }
+
+    private void OnDrawGizmos()
+    {
+        foreach (Waypoint waypoint in graph)
+        {  
+            Gizmos.color = Color.yellow;
+            if (path != null)
+            {
+                if (path.Contains(waypoint))
+                    Gizmos.color = Color.red;
+            }
+            Gizmos.DrawSphere(waypoint.transform.position, .05f);
+        }
+       
+    }
+
 }
+
+
