@@ -21,6 +21,7 @@ public class Graph : MonoBehaviour
     [SerializeField] List<Waypoint> graph = new List<Waypoint>();
 
     public List<Waypoint> path = new List<Waypoint>();
+    [SerializeField] WaypointNavigator carNavigator;
 
     // Crear método que sepa con qué está conectado un nodo. Se deberán crear las Connection cuando se vaya recorriendo el array.
     // El grafo tiene que saber a partir de un nodo, con qué nodos está conectados y el coste de cada conexión.
@@ -35,7 +36,7 @@ public class Graph : MonoBehaviour
         Waypoint closestWaypoint = null;
         foreach(Waypoint waypoint in graph)
         {
-            float distanceToWorldPoint = Vector3.Distance(worldPoint, waypoint.GetPosition());
+            float distanceToWorldPoint = Mathf.Abs(Vector3.Distance(worldPoint, waypoint.GetPosition()));
             if (distanceToWorldPoint < shortestDistance)
             {
                 closestWaypoint = waypoint;
@@ -44,6 +45,7 @@ public class Graph : MonoBehaviour
         }
         return closestWaypoint;
     }
+
 
     private void OnDrawGizmos()
     {
@@ -58,6 +60,11 @@ public class Graph : MonoBehaviour
             Gizmos.DrawSphere(waypoint.transform.position, .05f);
         }
        
+    }
+
+    private void SetPathToCar()
+    {
+        carNavigator.currentWaypoint = path[0];
     }
 
 }

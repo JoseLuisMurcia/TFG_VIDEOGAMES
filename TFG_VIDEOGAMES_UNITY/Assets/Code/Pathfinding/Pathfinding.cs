@@ -11,9 +11,14 @@ public class Pathfinding : MonoBehaviour
         graph = GetComponent<Graph>();
     }
 
-    private void Update()
+    private void Start()
     {
         FindPath(sourceObject.position, targetobject.position);
+
+    }
+    private void Update()
+    {
+        //FindPath(sourceObject.position, targetobject.position);
     }
 
     // I need to find the nearest waypoint from startPost to targetPos
@@ -80,10 +85,11 @@ public class Pathfinding : MonoBehaviour
         while (currentWaypoint != startWaypoint)
         {
             path.Add(currentWaypoint);
+            
             currentWaypoint = currentWaypoint.pathfindingParent;
         }
+        path.Add(currentWaypoint);
         path.Reverse();
-
         graph.path = path;
 
     }
