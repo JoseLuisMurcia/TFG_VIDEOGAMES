@@ -6,7 +6,7 @@ public class WaypointNavigator : MonoBehaviour
 {
     CarMovementAI AIController;
     public Waypoint currentWaypoint;
-    private bool noMoreWaypoints = false;
+    private bool noMoreWaypoints = true;
     private void Awake()
     {
         AIController = GetComponent<CarMovementAI>();
@@ -16,45 +16,61 @@ public class WaypointNavigator : MonoBehaviour
         SetTargetToAI();
     }
 
+    
+
+    //void Update()
+    //{
+    //    if (noMoreWaypoints) return;
+
+    //    if(AIController.GetTargetReached())
+    //    {
+    //        bool shouldBranch = false;
+    //        // Randomization
+    //        if(currentWaypoint.branches.Count > 0)
+    //        {
+    //            //shouldBranch = Random.Range(0f, 1f) <= currentWaypoint.branchRatio ? true : false;
+    //            shouldBranch = true;
+    //        }
+
+    //        if(shouldBranch)
+    //        {
+    //            int branchId = Random.Range(0, currentWaypoint.branches.Count);
+    //            currentWaypoint = currentWaypoint.branches[branchId];
+    //        }
+    //        else
+    //        {
+    //            currentWaypoint = currentWaypoint.nextWaypoint;
+    //            if (currentWaypoint == null)
+    //            {
+    //                noMoreWaypoints = true;
+    //                return;
+    //            }
+    //        }
+
+
+
+    //        SetTargetToAI();
+    //    }
+    //}
+
     void Update()
     {
         if (noMoreWaypoints) return;
 
-        if(AIController.GetTargetReached())
+        if (AIController.GetTargetReached())
         {
-            bool shouldBranch = false;
-            // Randomization
-            if(currentWaypoint.branches.Count > 0)
+            currentWaypoint = currentWaypoint.nextWaypoint;
+            if (currentWaypoint == null)
             {
-                //shouldBranch = Random.Range(0f, 1f) <= currentWaypoint.branchRatio ? true : false;
-                shouldBranch = true;
+                noMoreWaypoints = true;
+                return;
             }
-
-            if(shouldBranch)
-            {
-                int branchId = Random.Range(0, currentWaypoint.branches.Count);
-                currentWaypoint = currentWaypoint.branches[branchId];
-            }
-            else
-            {
-                currentWaypoint = currentWaypoint.nextWaypoint;
-                if (currentWaypoint == null)
-                {
-                    noMoreWaypoints = true;
-                    return;
-                }
-            }
-
-            
-                
             SetTargetToAI();
         }
     }
 
     private void SetTargetToAI()
     {
-        //Debug.Log("current Waypoint: " + currentWaypoint.gameObject.name);
-        //Debug.Log("next Waypoint: " + currentWaypoint.nextWaypoint.gameObject.name);
         if (currentWaypoint.nextWaypoint != null)
         {
             AIController.SetTargetPosition(currentWaypoint.GetPosition(), false);
