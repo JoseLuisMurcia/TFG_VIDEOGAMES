@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Waypoint : MonoBehaviour
+public class Waypoint : MonoBehaviour, IHeapItem<Waypoint>
 {
     public Waypoint prevWaypoint;
     public Waypoint nextWaypoint;
@@ -20,6 +20,7 @@ public class Waypoint : MonoBehaviour
     public float gCost;
     public float hCost;
     public Waypoint pathfindingParent;
+    int heapIndex;
 
     private void Start()
     {
@@ -50,6 +51,18 @@ public class Waypoint : MonoBehaviour
         {
             return gCost + hCost;
         }
+    }
+
+    public int HeapIndex { get { return heapIndex; } set { heapIndex = value; } }
+
+    public int CompareTo(Waypoint nodeToCompare)
+    {
+        int compare = fCost.CompareTo(nodeToCompare.fCost);
+        if (compare == 0)
+        {
+            compare = hCost.CompareTo(nodeToCompare.hCost);
+        }
+        return -compare;
     }
 }
 

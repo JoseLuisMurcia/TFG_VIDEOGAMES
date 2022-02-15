@@ -8,6 +8,8 @@ public class CarMovementAI : MonoBehaviour
     //[SerializeField] Transform debugObject;
     [SerializeField] private bool shouldStopAtWaypoint;
     [SerializeField] private bool targetReached = false;
+    private bool hasTarget = false;
+    [SerializeField] bool debugDontMove;
 
     private CarMovement carSteering;
 
@@ -19,7 +21,10 @@ public class CarMovementAI : MonoBehaviour
     private void Update()
     {
         //DEBUG
-        //SetTarget(debugObject.transform.position);
+        //SetTarget(debugObject.transform.position);+ç
+        if (debugDontMove) return;
+        if (!hasTarget) return;
+
         if (!shouldStopAtWaypoint)
         {
             SetDirection();
@@ -30,11 +35,6 @@ public class CarMovementAI : MonoBehaviour
         }
 
 
-    }
-
-    private void SetTarget(Vector3 position)
-    {
-        targetPosition = position;
     }
     private void SetDirection()
     {
@@ -138,6 +138,7 @@ public class CarMovementAI : MonoBehaviour
     {
         targetPosition = _targetPosition;
         shouldStopAtWaypoint = _shouldStopAtWaypoint;
+        hasTarget = true;
     }
 
     public bool GetTargetReached()

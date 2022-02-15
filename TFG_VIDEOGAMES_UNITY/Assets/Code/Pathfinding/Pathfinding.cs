@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class Pathfinding : MonoBehaviour
 {
-    public Transform sourceObject, targetobject;
+    public Transform sourceObject, targetObject;
+    private Waypoint previousTargetWaypoint;
     Graph graph;
     void Awake()
     {
@@ -13,36 +13,28 @@ public class Pathfinding : MonoBehaviour
 
     private void Start()
     {
-        FindPath(sourceObject.position, targetobject.position);
+        //FindPath(sourceObject.position, targetObject.position);
 
     }
     private void Update()
     {
-        //FindPath(sourceObject.position, targetobject.position);
+        FindPath(sourceObject.position, targetObject.position);
     }
 
     // I need to find the nearest waypoint from startPost to targetPos
     void FindPath(Vector3 startPos, Vector3 targetPos)
     {
-        Waypoint startWaypoint = graph.FindClosestWaypointFromWorldPoint(startPos);
         Waypoint targetWaypoint = graph.FindClosestWaypointFromWorldPoint(targetPos);
+        //if (targetWaypoint == previousTargetWaypoint) return;
+        Waypoint startWaypoint = graph.FindClosestWaypointFromWorldPoint(startPos);
 
-        List<Waypoint> openSet = new List<Waypoint>();
+        Heap<Waypoint> openSet = new Heap<Waypoint>(graph.MaxSize);
         HashSet<Waypoint> closedSet = new HashSet<Waypoint>();
         openSet.Add(startWaypoint);
 
         while(openSet.Count > 0)
         {
-            Waypoint currentWaypoint = openSet[0];
-            for (int i=1; i<openSet.Count; i++)
-            {
-                if(openSet[i].fCost < currentWaypoint.fCost || openSet[i].fCost == currentWaypoint.fCost && openSet[i].hCost < currentWaypoint.hCost)
-                {
-                    currentWaypoint = openSet[i];
-                }
-            }
-
-            openSet.Remove(currentWaypoint);
+            Waypoint currentWaypoint = openSet.RemoveFirst();  
             closedSet.Add(currentWaypoint);
 
             // Target waypoint found
@@ -89,10 +81,12 @@ public class Pathfinding : MonoBehaviour
             currentWaypoint = currentWaypoint.pathfindingParent;
         }
         path.Add(currentWaypoint);
-        path.Reverse();
-        graph.path = path;
-
+        //path.Reverse();
+        //graph.path = path;
+        graph.SetCarPath(path);
+        previousTargetWaypoint = targetWaypoint;
     }
+
     float GetDistanceHeuristic(Waypoint source, Waypoint dest)
     {
         float dstX = Mathf.Abs(source.GetPosition().x - dest.GetPosition().z);
