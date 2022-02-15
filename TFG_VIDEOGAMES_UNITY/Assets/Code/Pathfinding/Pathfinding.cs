@@ -3,30 +3,30 @@ using System.Collections.Generic;
 using UnityEngine;
 public class Pathfinding : MonoBehaviour
 {
+    PathfinderRequestManager requestManager;
     public Transform sourceObject, targetObject;
-    private Waypoint previousTargetWaypoint;
     Graph graph;
     void Awake()
     {
+        requestManager = GetComponent<PathfinderRequestManager>();
         graph = GetComponent<Graph>();
     }
 
-    private void Start()
+    public void StartFindPath(Vector3 startPos, Vector3 targetPos)
     {
-        //FindPath(sourceObject.position, targetObject.position);
-
-    }
-    private void Update()
-    {
-        FindPath(sourceObject.position, targetObject.position);
+        StartCoroutine(FindPath(startPos, targetPos));
     }
 
-    // I need to find the nearest waypoint from startPost to targetPos
-    void FindPath(Vector3 startPos, Vector3 targetPos)
+    // I need to find the closest waypoint from startPost to targetPos
+    IEnumerator FindPath(Vector3 startPos, Vector3 targetPos)
     {
+        Vector3[] waypoints = new Vector3[0];
+        bool pathSuccess = false;
+
         Waypoint targetWaypoint = graph.FindClosestWaypointFromWorldPoint(targetPos);
-        //if (targetWaypoint == previousTargetWaypoint) return;
         Waypoint startWaypoint = graph.FindClosestWaypointFromWorldPoint(startPos);
+
+        //if (!startWaypoint.walkable || !targetWaypoint.walkable) return;
 
         Heap<Waypoint> openSet = new Heap<Waypoint>(graph.MaxSize);
         HashSet<Waypoint> closedSet = new HashSet<Waypoint>();
@@ -40,8 +40,8 @@ public class Pathfinding : MonoBehaviour
             // Target waypoint found
             if (currentWaypoint == targetWaypoint)
             {
-                RetracePath(startWaypoint, targetWaypoint);
-                return;
+                pathSuccess = true;
+                break;
             }
                 
 
@@ -66,10 +66,15 @@ public class Pathfinding : MonoBehaviour
             }
 
         }
-
+        yield return null;
+        if (pathSuccess)
+        {
+            waypoints = RetracePath(startWaypoint, targetWaypoint);
+        }
+        requestManager.FinishedProcessingPath(waypoints, pathSuccess);
     }
 
-    void RetracePath(Waypoint startWaypoint, Waypoint targetWaypoint)
+    Vector3[] RetracePath(Waypoint startWaypoint, Waypoint targetWaypoint)
     {
         List<Waypoint> path = new List<Waypoint>();
         Waypoint currentWaypoint = targetWaypoint;
@@ -81,10 +86,28 @@ public class Pathfinding : MonoBehaviour
             currentWaypoint = currentWaypoint.pathfindingParent;
         }
         path.Add(currentWaypoint);
+        Vector3[] waypoints = SimplifyPath(path);
         //path.Reverse();
+        return waypoints;
         //graph.path = path;
-        graph.SetCarPath(path);
-        previousTargetWaypoint = targetWaypoint;
+        //graph.SetCarPath(path);
+    }
+
+    Vector3[] SimplifyPath(List<Waypoint> path)
+    {
+        List<Vector3> waypoints = new List<Vector3>();
+        Vector2 directionOld = Vector2.zero;
+
+        for(int i = 1; i < path.Count; i++)
+        {
+            Vector2 directionNew = new Vector2(path[i - 1].GetPosition().x - path[i].GetPosition().x, path[i - 1].GetPosition().y - path[i].GetPosition().y);
+            if(directionNew != directionOld)
+            {
+                waypoints.Add(path[i].GetPosition());
+            }
+            directionOld = directionNew;
+        }
+        return waypoints.ToArray();
     }
 
     float GetDistanceHeuristic(Waypoint source, Waypoint dest)

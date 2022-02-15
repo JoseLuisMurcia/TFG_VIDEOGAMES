@@ -14,7 +14,7 @@ public class Graph : MonoBehaviour
     // Grafo debe contener todos los waypoints
     [SerializeField] List<Waypoint> graph = new List<Waypoint>();
 
-    [SerializeField] List<Waypoint> path = new List<Waypoint>();
+    //[SerializeField] List<Waypoint> path = new List<Waypoint>();
     [SerializeField] WaypointPathFollower carNavigator;
 
     // Crear método que sepa con qué está conectado un nodo. Se deberán crear las Connection cuando se vaya recorriendo el array.
@@ -48,26 +48,26 @@ public class Graph : MonoBehaviour
     }
 
 
-    private void OnDrawGizmos()
-    {
-        foreach (Waypoint waypoint in graph)
-        {  
-            Gizmos.color = Color.yellow;
-            if (path != null)
-            {
-                if (path.Contains(waypoint))
-                    Gizmos.color = Color.red;
-            }
-            Gizmos.DrawSphere(waypoint.transform.position, .05f);
-        }
+    //private void OnDrawGizmos()
+    //{
+    //    foreach (Waypoint waypoint in graph)
+    //    {  
+    //        Gizmos.color = Color.yellow;
+    //        if (path != null)
+    //        {
+    //            if (path.Contains(waypoint))
+    //                Gizmos.color = Color.red;
+    //        }
+    //        Gizmos.DrawSphere(waypoint.transform.position, .05f);
+    //    }
        
-    }
+    //}
 
-    public void SetCarPath(List<Waypoint> carPathReverse)
-    {
-        path = carPathReverse;
-        carNavigator.SetPath(carPathReverse);
-    }
+    //public void SetCarPath(List<Waypoint> carPathReverse)
+    //{
+    //    path = carPathReverse;
+    //    carNavigator.SetPath(carPathReverse);
+    //}
 }
 
 

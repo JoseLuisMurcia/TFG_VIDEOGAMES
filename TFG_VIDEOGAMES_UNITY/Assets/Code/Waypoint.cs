@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Waypoint : MonoBehaviour, IHeapItem<Waypoint>
 {
+    //public bool walkable;
     public Waypoint prevWaypoint;
     public Waypoint nextWaypoint;
 
