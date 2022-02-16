@@ -6,11 +6,16 @@ public class WaypointPathFollower : MonoBehaviour
 {
     CarMovementAI AIController;
     [SerializeField] Transform target;
-    float speed = 20;
-    Vector3[] path;
+    float speed = 2;
+    [SerializeField] Vector3[] path;
     int targetIndex;
 
     private void Start()
+    {
+        //PathfinderRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+    }
+
+    private void Update()
     {
         PathfinderRequestManager.RequestPath(transform.position, target.position, OnPathFound);
     }
@@ -20,8 +25,8 @@ public class WaypointPathFollower : MonoBehaviour
         if (pathSuccessful)
         {
             path = newPath;
-            StopCoroutine("FollowPath");
-            StartCoroutine("FollowPath");
+            //StopCoroutine("FollowPath");
+            //StartCoroutine("FollowPath");
         }
     }
 
@@ -37,6 +42,8 @@ public class WaypointPathFollower : MonoBehaviour
                 targetIndex++;
                 if (targetIndex >= path.Length)
                 {
+                    targetIndex = 0;
+                    path = new Vector3[0];
                     yield break;
                 }
                 currentWaypoint = path[targetIndex];
@@ -46,7 +53,6 @@ public class WaypointPathFollower : MonoBehaviour
 
         }
     }
-    private bool noMoreWaypoints = true;
     private void Awake()
     {
         AIController = GetComponent<CarMovementAI>();
@@ -58,8 +64,8 @@ public class WaypointPathFollower : MonoBehaviour
         {
             for(int i = targetIndex; i < path.Length; i++)
             {
-                Gizmos.color = Color.black;
-                Gizmos.DrawCube(path[i], Vector3.one);
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawCube(path[i] + new Vector3(0,0.2f,0), new Vector3(0.5f,0.5f,0.5f));
 
                 if(i == targetIndex)
                 {

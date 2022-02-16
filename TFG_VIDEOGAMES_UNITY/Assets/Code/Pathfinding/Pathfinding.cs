@@ -20,7 +20,6 @@ public class Pathfinding : MonoBehaviour
     // I need to find the closest node from startPost to targetPos
     IEnumerator FindPath(Vector3 startPos, Vector3 targetPos)
     {
-
         Vector3[] waypoints = new Vector3[0];
         bool pathSuccess = false;
 
@@ -52,7 +51,7 @@ public class Pathfinding : MonoBehaviour
                         continue;
                     }
 
-                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + neighbour.movementPenalty;
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                     {
                         neighbour.gCost = newMovementCostToNeighbour;
@@ -60,7 +59,13 @@ public class Pathfinding : MonoBehaviour
                         neighbour.parent = currentNode;
 
                         if (!openSet.Contains(neighbour))
+                        {
                             openSet.Add(neighbour);
+                        }
+                        else
+                        {
+                            openSet.UpdateItem(neighbour);
+                        }
                     }
                 }
             }
@@ -93,7 +98,7 @@ public class Pathfinding : MonoBehaviour
     {
         List<Vector3> waypoints = new List<Vector3>();
         Vector2 directionOld = Vector2.zero;
-
+        waypoints.Add(path[0].worldPosition);
         for (int i = 1; i < path.Count; i++)
         {
             Vector2 directionNew = new Vector2(path[i - 1].gridX - path[i].gridX, path[i - 1].gridY - path[i].gridY);

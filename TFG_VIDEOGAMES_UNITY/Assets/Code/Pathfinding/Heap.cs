@@ -73,7 +73,7 @@ public class Heap<T> where T: IHeapItem<T>
         while (true)
         {
             int childIndexLeft = item.HeapIndex * 2 + 1;
-            int childIndexRight = item.HeapIndex * 2 + 1;
+            int childIndexRight = item.HeapIndex * 2 + 2;
             int swapIndex = 0;
 
             if(childIndexLeft < currentItemCount)
