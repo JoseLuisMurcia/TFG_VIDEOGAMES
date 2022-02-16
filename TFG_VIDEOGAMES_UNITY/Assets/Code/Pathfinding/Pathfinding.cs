@@ -1,15 +1,15 @@
 using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 public class Pathfinding : MonoBehaviour
 {
     PathfinderRequestManager requestManager;
-    public Transform sourceObject, targetObject;
-    Graph graph;
+    Grid grid;
     void Awake()
     {
         requestManager = GetComponent<PathfinderRequestManager>();
-        graph = GetComponent<Graph>();
+        grid = GetComponent<Grid>();
     }
 
     public void StartFindPath(Vector3 startPos, Vector3 targetPos)
@@ -17,106 +17,102 @@ public class Pathfinding : MonoBehaviour
         StartCoroutine(FindPath(startPos, targetPos));
     }
 
-    // I need to find the closest waypoint from startPost to targetPos
+    // I need to find the closest node from startPost to targetPos
     IEnumerator FindPath(Vector3 startPos, Vector3 targetPos)
     {
+
         Vector3[] waypoints = new Vector3[0];
         bool pathSuccess = false;
 
-        Waypoint targetWaypoint = graph.FindClosestWaypointFromWorldPoint(targetPos);
-        Waypoint startWaypoint = graph.FindClosestWaypointFromWorldPoint(startPos);
+        Node startNode = grid.NodeFromWorldPoint(startPos);
+        Node targetNode = grid.NodeFromWorldPoint(targetPos);
 
-        //if (!startWaypoint.walkable || !targetWaypoint.walkable) return;
 
-        Heap<Waypoint> openSet = new Heap<Waypoint>(graph.MaxSize);
-        HashSet<Waypoint> closedSet = new HashSet<Waypoint>();
-        openSet.Add(startWaypoint);
-
-        while(openSet.Count > 0)
+        if (startNode.walkable && targetNode.walkable)
         {
-            Waypoint currentWaypoint = openSet.RemoveFirst();  
-            closedSet.Add(currentWaypoint);
+            Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
+            HashSet<Node> closedSet = new HashSet<Node>();
+            openSet.Add(startNode);
 
-            // Target waypoint found
-            if (currentWaypoint == targetWaypoint)
+            while (openSet.Count > 0)
             {
-                pathSuccess = true;
-                break;
-            }
-                
+                Node currentNode = openSet.RemoveFirst();
+                closedSet.Add(currentNode);
 
-            foreach (Connection connection in currentWaypoint.connections)
-            {
-                Waypoint neighbour = connection.destWaypoint;
-                if (closedSet.Contains(neighbour))
-                    continue;
-
-                float newMovementCostToNeighbour = currentWaypoint.gCost + GetDistanceHeuristic(currentWaypoint, neighbour);
-                if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                if (currentNode == targetNode)
                 {
-                    neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetWaypoint);
-                    neighbour.pathfindingParent = currentWaypoint;
+                    pathSuccess = true;
+                    break;
+                }
 
-                    if (!openSet.Contains(neighbour))
+                foreach (Node neighbour in grid.GetNeighbours(currentNode))
+                {
+                    if (!neighbour.walkable || closedSet.Contains(neighbour))
                     {
-                        openSet.Add(neighbour);
+                        continue;
+                    }
+
+                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                    if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                    {
+                        neighbour.gCost = newMovementCostToNeighbour;
+                        neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
+                        neighbour.parent = currentNode;
+
+                        if (!openSet.Contains(neighbour))
+                            openSet.Add(neighbour);
                     }
                 }
             }
-
         }
         yield return null;
         if (pathSuccess)
         {
-            waypoints = RetracePath(startWaypoint, targetWaypoint);
+            waypoints = RetracePath(startNode, targetNode);
         }
         requestManager.FinishedProcessingPath(waypoints, pathSuccess);
+
     }
 
-    Vector3[] RetracePath(Waypoint startWaypoint, Waypoint targetWaypoint)
+    Vector3[] RetracePath(Node startNode, Node endNode)
     {
-        List<Waypoint> path = new List<Waypoint>();
-        Waypoint currentWaypoint = targetWaypoint;
+        List<Node> path = new List<Node>();
+        Node currentNode = endNode;
 
-        while (currentWaypoint != startWaypoint)
+        while (currentNode != startNode)
         {
-            path.Add(currentWaypoint);
-            
-            currentWaypoint = currentWaypoint.pathfindingParent;
+            path.Add(currentNode);
+            currentNode = currentNode.parent;
         }
-        path.Add(currentWaypoint);
         Vector3[] waypoints = SimplifyPath(path);
-        //path.Reverse();
+        Array.Reverse(waypoints);
         return waypoints;
-        //graph.path = path;
-        //graph.SetCarPath(path);
     }
 
-    Vector3[] SimplifyPath(List<Waypoint> path)
+    Vector3[] SimplifyPath(List<Node> path)
     {
         List<Vector3> waypoints = new List<Vector3>();
         Vector2 directionOld = Vector2.zero;
 
-        for(int i = 1; i < path.Count; i++)
+        for (int i = 1; i < path.Count; i++)
         {
-            Vector2 directionNew = new Vector2(path[i - 1].GetPosition().x - path[i].GetPosition().x, path[i - 1].GetPosition().y - path[i].GetPosition().y);
-            if(directionNew != directionOld)
+            Vector2 directionNew = new Vector2(path[i - 1].gridX - path[i].gridX, path[i - 1].gridY - path[i].gridY);
+            if (directionNew != directionOld)
             {
-                waypoints.Add(path[i].GetPosition());
+                waypoints.Add(path[i].worldPosition);
             }
             directionOld = directionNew;
         }
         return waypoints.ToArray();
     }
 
-    float GetDistanceHeuristic(Waypoint source, Waypoint dest)
+    int GetDistanceHeuristic(Node nodeA, Node nodeB)
     {
-        float dstX = Mathf.Abs(source.GetPosition().x - dest.GetPosition().z);
-        float dstY = Mathf.Abs(source.GetPosition().z - dest.GetPosition().z);
+        int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
+        int dstY = Mathf.Abs(nodeA.gridY - nodeB.gridY);
 
         if (dstX > dstY)
-            return 14f * dstY + 10f * (dstX - dstY);
-        return 14f * dstX + 10f * (dstY - dstX);
+            return 14 * dstY + 10 * (dstX - dstY);
+        return 14 * dstX + 10 * (dstY - dstX);
     }
 }
