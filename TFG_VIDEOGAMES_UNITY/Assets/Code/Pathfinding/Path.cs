@@ -20,7 +20,9 @@ public class Path
 		{
 			Vector2 currentPoint = V3ToV2(lookPoints[i]);
 			Vector2 dirToCurrentPoint = (currentPoint - previousPoint).normalized;
-			Vector2 turnBoundaryPoint = (i == finishLineIndex) ? currentPoint : currentPoint - dirToCurrentPoint * turnDst;
+			// Aquí puede estar el error de que el coche gire como un cabron en el final
+			//Vector2 turnBoundaryPoint = (i == finishLineIndex) ? currentPoint : currentPoint - dirToCurrentPoint * turnDst;
+			Vector2 turnBoundaryPoint = currentPoint - dirToCurrentPoint * turnDst;
 			turnBoundaries[i] = new Line(turnBoundaryPoint, previousPoint - dirToCurrentPoint * turnDst);
 			previousPoint = turnBoundaryPoint;
 		}
