@@ -51,6 +51,13 @@ public class Pathfinding : MonoBehaviour
                         continue;
                     }
 
+                    if (neighbour.isRoad)
+                    {
+
+                        bool compatibility = CanTravelV2(currentNode.typeOfRoad, neighbour.typeOfRoad);
+                        if (compatibility == false) continue;
+                    }
+
                     int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + neighbour.movementPenalty;
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                     {
@@ -90,10 +97,13 @@ public class Pathfinding : MonoBehaviour
         }
         path.Add(startNode);
 
-        path = ProcessTrafficLightsInPath(path);
-        // waypoints = SimplifyPath(path, startNode);
-        Vector3[] waypoints = SimplifyPath(path);
-
+        //path = ProcessTrafficLightsInPath(path);
+        //Vector3[] waypoints = SimplifyPath(path);
+        Vector3[] waypoints = new Vector3[path.Count]; 
+        for(int i= 0; i < path.Count; i++)
+        {
+            waypoints[i] = path[i].worldPosition;
+        }
         Array.Reverse(waypoints);
         return waypoints;
     }
@@ -182,5 +192,279 @@ public class Pathfinding : MonoBehaviour
         if (dstX > dstY)
             return 14 * dstY + 10 * (dstX - dstY);
         return 14 * dstX + 10 * (dstY - dstX);
+    }
+
+    bool CanTravelV2(TypeOfRoad srcType, TypeOfRoad dstType)
+    {
+        switch (srcType)
+        {
+            case TypeOfRoad.Right:
+                if (dstType == TypeOfRoad.Right || dstType == TypeOfRoad.DownToRight || dstType == TypeOfRoad.UpToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.Up:
+                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.UpToRight || dstType == TypeOfRoad.UpToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.Left:
+                if (dstType == TypeOfRoad.Left || dstType == TypeOfRoad.UpToLeft || dstType == TypeOfRoad.DownToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.Down:
+                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.DownToRight || dstType == TypeOfRoad.DownToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.DownToLeft:
+                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.DownToRight:
+                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.UpToLeft:
+                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.UpToRight:
+                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToLeft)
+                {
+                    return true;
+                }
+                else return false;
+        }
+        return false;
+    }
+    bool CanTravelV3(TypeOfRoad srcType, TypeOfRoad dstType)
+    {
+        switch (srcType)
+        {
+            case TypeOfRoad.Right:
+                if (dstType == TypeOfRoad.Right || dstType == TypeOfRoad.DownToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.Up:
+                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.UpToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.Left:
+                if (dstType == TypeOfRoad.Left || dstType == TypeOfRoad.UpToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.Down:
+                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.DownToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.DownToLeft:
+                if (dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.DownToRight:
+                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.UpToRight)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.UpToLeft:
+                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.DownToLeft)
+                {
+                    return true;
+                }
+                else return false;
+
+            case TypeOfRoad.UpToRight:
+                if (dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToLeft)
+                {
+                    return true;
+                }
+                else return false;
+        }
+        return false;
+    }
+    bool CanTravel(Direction src, Vector3 srcPos, Direction dst, Vector3 dstPos)
+    {
+        switch (src)
+        {
+            case Direction.Right:
+                if(dst == Direction.Right)
+                {
+                    return true;
+                }
+                else if(dst == Direction.Left)
+                {
+                    return false;
+                }
+                else if(dst == Direction.Up)
+                {
+                    // We want to go up but it is lower, trap
+                    if(srcPos.z > dstPos.z)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else if(dst == Direction.Down)
+                {
+                    // We want to go down but it is higher, trap
+                    if (srcPos.z < dstPos.z)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                break;
+
+            case Direction.Left:
+                if (dst == Direction.Left)
+                {
+                    return true;
+                }
+                else if (dst == Direction.Right)
+                {
+                    return false;
+                }
+                else if (dst == Direction.Up)
+                {
+                    // We want to go up but it is lower, trap
+                    if (srcPos.z > dstPos.z)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else if (dst == Direction.Down)
+                {
+                    // We want to go down but it is lower, trap
+                    if (srcPos.z < dstPos.z)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                break;
+
+            case Direction.Up:
+                if (dst == Direction.Up)
+                {
+                    return true;
+                }
+                else if (dst == Direction.Down)
+                {
+                    return false;
+                }
+                else if (dst == Direction.Right)
+                {
+                    // We want to go right but it is lefter, trap
+                    if (srcPos.x > dstPos.x)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else if (dst == Direction.Left)
+                {
+                    // We want to go left but it is righter, trap
+                    if (srcPos.x < dstPos.x)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                break;
+
+            case Direction.Down:
+                if (dst == Direction.Down)
+                {
+                    return true;
+                }
+                else if (dst == Direction.Up)
+                {
+                    return false;
+                }
+                else if (dst == Direction.Right)
+                {
+                    // We want to go right but it is lefter, trap
+                    if (srcPos.x > dstPos.x)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else if (dst == Direction.Left)
+                {
+                    // We want to go right but it is lefter, trap
+                    if (srcPos.x > dstPos.x)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                break;
+
+
+        }
+
+        return false;
     }
 }

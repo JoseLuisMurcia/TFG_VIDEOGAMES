@@ -69,21 +69,29 @@ public class Grid : MonoBehaviour
                 // Raycast code to find the layer
                 Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
                 RaycastHit hit;
+
+                Node node = new Node(walkable, worldPoint, x, y);
                 if (Physics.Raycast(ray, out hit, 100, walkableMask))
                 {
-                    walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
-                }
+                    GameObject _gameObject = hit.collider.gameObject;
+                    walkableRegionsDictionary.TryGetValue(_gameObject.layer, out movementPenalty);
 
+                    Road road = _gameObject.GetComponent<Road>();
+                    // We have hit a road, check direction
+                    if (road != null)
+                    {
+                        node.isRoad = true;
+                        node.directions = road.directions;
+                        node.typeOfRoad = road.typeOfRoad;
+                    }
+                }
                 if (!walkable)
                 {
                     movementPenalty += obstacleProximityPenalty;
                 }
-
-                Node node = new Node(walkable, worldPoint, x, y, movementPenalty);
-                CreateTrafficLightStopPoints(node);
-                // Add collision to check if it is inside the box
+                node.movementPenalty = movementPenalty;
+                //CreateTrafficLightStopPoints(node);
                 grid[x, y] = node;
-                //grid[x, y] = new Node(walkable, TrafficLight,  worldPoint, x, y, movementPenalty);
             }
         }
         BlurPenaltyMap(1);
@@ -219,7 +227,7 @@ public class Grid : MonoBehaviour
                 Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
                 Gizmos.color = (n.walkable) ? Gizmos.color : Color.red;
                 Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
-                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
+                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .15f));
             }
         }
     }

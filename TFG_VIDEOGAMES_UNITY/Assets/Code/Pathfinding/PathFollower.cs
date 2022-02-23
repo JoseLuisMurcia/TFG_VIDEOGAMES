@@ -22,7 +22,7 @@ public class PathFollower : MonoBehaviour
     void Start()
     {
         StartCoroutine(UpdatePath());
-        trafficLightCarController = GetComponent<TrafficLightCarController>();
+        //trafficLightCarController = GetComponent<TrafficLightCarController>();
     }
 
     public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
@@ -31,7 +31,7 @@ public class PathFollower : MonoBehaviour
         {
             path = new Path(waypoints, transform.position, turnDst, stoppingDst);
 
-            trafficLightCarController.path = path;
+            //trafficLightCarController.path = path;
             StopCoroutine("FollowPath");
             StartCoroutine("FollowPath");
         }
