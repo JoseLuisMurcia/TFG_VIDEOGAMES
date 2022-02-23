@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class Node : IHeapItem<Node>
 {
 
@@ -15,8 +16,10 @@ public class Node : IHeapItem<Node>
 	public int hCost;
 	public Node parent;
 	int heapIndex;
+	public bool hasTrafficLightClose;
+	public TrafficLight trafficLight;
 
-	public Node(bool _walkable, Vector3 _worldPos, int _gridX, int _gridY, int _penalty)
+	public Node(bool _walkable,Vector3 _worldPos, int _gridX, int _gridY, int _penalty)
 	{
 		walkable = _walkable;
 		worldPosition = _worldPos;

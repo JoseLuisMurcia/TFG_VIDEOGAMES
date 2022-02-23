@@ -20,9 +20,7 @@ public class Path
 		{
 			Vector2 currentPoint = V3ToV2(lookPoints[i]);
 			Vector2 dirToCurrentPoint = (currentPoint - previousPoint).normalized;
-			// Aquí puede estar el error de que el coche gire como un cabron en el final
-			//Vector2 turnBoundaryPoint = (i == finishLineIndex) ? currentPoint : currentPoint - dirToCurrentPoint * turnDst;
-			Vector2 turnBoundaryPoint = currentPoint - dirToCurrentPoint * turnDst;
+			Vector2 turnBoundaryPoint = (i == finishLineIndex) ? currentPoint : currentPoint - dirToCurrentPoint * turnDst;
 			turnBoundaries[i] = new Line(turnBoundaryPoint, previousPoint - dirToCurrentPoint * turnDst);
 			previousPoint = turnBoundaryPoint;
 		}
@@ -50,7 +48,7 @@ public class Path
 		Gizmos.color = Color.cyan;
 		foreach (Vector3 p in lookPoints)
 		{
-			Gizmos.DrawCube(p + Vector3.up*0.5f, Vector3.one*0.5f);
+			Gizmos.DrawSphere(p + Vector3.up*0.2f, 0.2f);
 		}
 
 		Gizmos.color = Color.white;

@@ -5,6 +5,7 @@ using UnityEngine;
 public class Grid : MonoBehaviour
 {
     [SerializeField] LayerMask unwalkableMask;
+    [SerializeField] LayerMask trafficLightMask;
     [SerializeField] bool displayGridGizmos;
     [SerializeField] Vector2 gridWorldSize;
     [SerializeField] float nodeRadius;
@@ -13,6 +14,7 @@ public class Grid : MonoBehaviour
     public int obstacleProximityPenalty = 10;
     Dictionary<int, int> walkableRegionsDictionary = new Dictionary<int, int>();
     Node[,] grid;
+    [SerializeField] TrafficLight[] trafficLights;
 
     float nodeDiameter;
     int gridSizeX, gridSizeY;
@@ -20,7 +22,22 @@ public class Grid : MonoBehaviour
     int penaltyMin = int.MaxValue;
     int penaltyMax = int.MinValue;
 
-    private void Awake()
+    //private void Awake()
+    //{
+    //    nodeDiameter = nodeRadius * 2;
+    //    gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
+    //    gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
+
+    //    foreach (TerrainType region in walkableRegions)
+    //    {
+    //        walkableMask.value |= region.terrainMask.value;
+    //        walkableRegionsDictionary.Add((int)Mathf.Log(region.terrainMask.value, 2), region.terrainPenalty);
+    //    }
+
+    //    CreateGrid();
+    //}
+
+    private void Start()
     {
         nodeDiameter = nodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
@@ -62,11 +79,37 @@ public class Grid : MonoBehaviour
                     movementPenalty += obstacleProximityPenalty;
                 }
 
-                grid[x, y] = new Node(walkable, worldPoint, x, y, movementPenalty);
+                Node node = new Node(walkable, worldPoint, x, y, movementPenalty);
+                CreateTrafficLightStopPoints(node);
+                // Add collision to check if it is inside the box
+                grid[x, y] = node;
+                //grid[x, y] = new Node(walkable, TrafficLight,  worldPoint, x, y, movementPenalty);
             }
         }
         BlurPenaltyMap(1);
     }
+
+    // Esto hay que mejorarlo para que un coche que en su camino se va a encontrar más de un semáforo de cara,
+    // sea capaz de almacenarlo como para tenerlo en cuenta, actualmente solo almacena a uno.
+    void CreateTrafficLightStopPoints(Node node)
+    {
+        foreach(TrafficLight trafficLight in trafficLights)
+        {
+            bool isInBounds = trafficLight.IsInBounds(node.worldPosition);
+            // if the node has already been set as close to traffic light, dont reset it.
+            if (node.hasTrafficLightClose)
+                break;
+
+            if (isInBounds)
+            {
+                node.trafficLight = trafficLight;
+                trafficLight.nodesToStop.Add(node);
+            }
+            node.hasTrafficLightClose = isInBounds;
+        }
+            
+    }
+
 
     public int MaxSize
     {
@@ -175,6 +218,7 @@ public class Grid : MonoBehaviour
             {
                 Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
                 Gizmos.color = (n.walkable) ? Gizmos.color : Color.red;
+                Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
             }
         }
