@@ -6,7 +6,7 @@ public class CarAITargetMouse : MonoBehaviour
 {
     [SerializeField] private Transform targetTransform;
 
-    private bool isFollowing = false;
+    public bool isFollowing = false;
 
     private void Update()
     {
