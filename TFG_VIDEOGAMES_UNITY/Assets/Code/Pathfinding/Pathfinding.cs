@@ -24,8 +24,10 @@ public class Pathfinding : MonoBehaviour
         bool pathSuccess = false;
 
         Node startNode = grid.NodeFromWorldPoint(startPos);
+        startNode.gCost = 0;
         Node targetNode = grid.NodeFromWorldPoint(targetPos);
-
+        //Debug.Log("startNode x: " + startNode.gridX + ", y: " + startNode.gridY);
+        //Debug.Log("targetNode x: " + targetNode.gridX + ", y: " + targetNode.gridY);
 
         if (startNode.walkable && targetNode.walkable)
         {
@@ -36,6 +38,7 @@ public class Pathfinding : MonoBehaviour
             while (openSet.Count > 0)
             {
                 Node currentNode = openSet.RemoveFirst();
+                Debug.Log("Current node extracted from openSet: [" + currentNode.gridX + ", " + currentNode.gridY + "]");
                 closedSet.Add(currentNode);
 
                 if (currentNode == targetNode)
@@ -44,8 +47,21 @@ public class Pathfinding : MonoBehaviour
                     break;
                 }
 
+                // aqui el flujo se rompe, investigar dspues de que el 3,0 se mete en la open list
                 foreach (Node neighbour in grid.GetNeighbours(currentNode))
                 {
+                    //if(currentNode.gridX == 3 && currentNode.gridY == 0)
+                    //{
+                    //    Debug.Log("Node[3,0] neighbour: [" +  + neighbour.gridX + "," + neighbour.gridY + "]");
+                    //    if (!neighbour.walkable)
+                    //    {
+                    //        Debug.Log("Node: [" + neighbour.gridX + ", " + neighbour.gridY + "] not walkable");
+                    //    }
+                    //    if (closedSet.Contains(neighbour))
+                    //    {
+                    //        Debug.Log("Node: [" + neighbour.gridX + ", " + neighbour.gridY + "] contained in closed set");
+                    //    }
+                    //}
                     if (!neighbour.walkable || closedSet.Contains(neighbour))
                     {
                         continue;
@@ -54,11 +70,19 @@ public class Pathfinding : MonoBehaviour
                     if (neighbour.isRoad)
                     {
 
-                        bool compatibility = CanTravelV2(currentNode.typeOfRoad, neighbour.typeOfRoad);
+                        if (currentNode.gridX == 3 && currentNode.gridY == 0)
+                        {
+                            //Debug.Log("Node[3,0] neighbour: [" + +neighbour.gridX + "," + neighbour.gridY + "]. " + "node[3,0] type: " + currentNode.typeOfRoad + ", neighbour type: " + neighbour.typeOfRoad);
+                        }
+                        bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad, currentNode.worldPosition, neighbour.worldPosition, currentNode.gridX, currentNode.gridY, neighbour.gridX, neighbour.gridY);
                         if (compatibility == false) continue;
                     }
 
-                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + neighbour.movementPenalty;
+                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour)/* + neighbour.movementPenalty*/;
+                    //Debug.Log("node: " + currentNode.gridX + "," + currentNode.gridY + " . Exploring neighbour: " + neighbour.gridX + "," + neighbour.gridY +
+                    //    ". currentNode new G Cost: " + newMovementCostToNeighbour + ", Neighbour G Cost: " + neighbour.gCost + ", currentNode G cost: " + currentNode.gCost 
+                    //    + ", distanceHeuristic: " + GetDistanceHeuristic(currentNode, neighbour));
+
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                     {
                         neighbour.gCost = newMovementCostToNeighbour;
@@ -67,10 +91,13 @@ public class Pathfinding : MonoBehaviour
 
                         if (!openSet.Contains(neighbour))
                         {
+                            //Debug.Log("neighbour: [" + neighbour.gridX + "," + neighbour.gridY + "] added to the open list");
                             openSet.Add(neighbour);
                         }
                         else
                         {
+                            //Debug.Log("neighbour: [" + neighbour.gridX + "," + neighbour.gridY + "] updated in the open list");
+
                             openSet.UpdateItem(neighbour);
                         }
                     }
@@ -194,6 +221,13 @@ public class Pathfinding : MonoBehaviour
         return 14 * dstX + 10 * (dstY - dstX);
     }
 
+    int GetAlternativeHeuristic(Node nodeA, Node nodeB)
+    {
+        int Distance_X = (int)Mathf.Abs(nodeA.gridX - nodeB.gridX);
+        int Distance_Y = (int)Mathf.Abs(nodeA.gridY - nodeB.gridY);
+        return (int)Mathf.Sqrt(Distance_X * Distance_X + Distance_Y * Distance_Y);
+    }
+
     bool CanTravelV2(TypeOfRoad srcType, TypeOfRoad dstType)
     {
         switch (srcType)
@@ -256,7 +290,7 @@ public class Pathfinding : MonoBehaviour
         }
         return false;
     }
-    bool CanTravelV3(TypeOfRoad srcType, TypeOfRoad dstType)
+    bool CanTravelV3(TypeOfRoad srcType, TypeOfRoad dstType, Vector3 srcPos, Vector3 dstPos, int srcX, int srcY, int dstX, int dstY)
     {
         switch (srcType)
         {
@@ -289,32 +323,35 @@ public class Pathfinding : MonoBehaviour
                 else return false;
 
             case TypeOfRoad.DownToLeft:
-                if (dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToRight)
+                if (dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToRight || dstType == TypeOfRoad.DownToLeft)
                 {
                     return true;
                 }
                 else return false;
 
             case TypeOfRoad.DownToRight:
-                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.UpToRight)
+                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.UpToRight || dstType == TypeOfRoad.DownToRight)
                 {
                     return true;
                 }
                 else return false;
 
             case TypeOfRoad.UpToLeft:
-                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.DownToLeft)
+                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.DownToLeft || dstType == TypeOfRoad.UpToLeft)
                 {
                     return true;
                 }
                 else return false;
 
             case TypeOfRoad.UpToRight:
-                if (dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToLeft)
+                if (dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToLeft || dstType == TypeOfRoad.UpToRight)
                 {
                     return true;
                 }
                 else return false;
+
+            case TypeOfRoad.None:
+                return false;
         }
         return false;
     }

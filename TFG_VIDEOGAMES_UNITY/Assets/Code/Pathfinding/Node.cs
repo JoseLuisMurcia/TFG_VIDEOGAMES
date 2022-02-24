@@ -20,7 +20,7 @@ public class Node : IHeapItem<Node>
 	public TrafficLight trafficLight;
 	public List<Direction> directions;
 	public bool isRoad = false;
-	public TypeOfRoad typeOfRoad; 
+	public TypeOfRoad typeOfRoad = TypeOfRoad.None;
 
 	public Node(bool _walkable,Vector3 _worldPos, int _gridX, int _gridY)
 	{

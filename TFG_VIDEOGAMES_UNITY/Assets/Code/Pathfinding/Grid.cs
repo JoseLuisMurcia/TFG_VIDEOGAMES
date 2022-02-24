@@ -63,7 +63,6 @@ public class Grid : MonoBehaviour
             {
                 Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
                 bool walkable = !(Physics.CheckSphere(worldPoint, nodeRadius, unwalkableMask));
-
                 int movementPenalty = 0;
 
                 // Raycast code to find the layer
@@ -76,17 +75,20 @@ public class Grid : MonoBehaviour
                     GameObject _gameObject = hit.collider.gameObject;
                     walkableRegionsDictionary.TryGetValue(_gameObject.layer, out movementPenalty);
 
-                    Road road = _gameObject.GetComponent<Road>();
-                    // We have hit a road, check direction
-                    if (road != null)
+                    if (walkable)
                     {
-                        node.isRoad = true;
-                        node.directions = road.directions;
-                        node.typeOfRoad = road.typeOfRoad;
-                    }
+                        Road road = _gameObject.GetComponent<Road>();
+                        // We have hit a road, check direction
+                        if (road != null)
+                        {
+                            node.isRoad = true;
+                            node.typeOfRoad = road.typeOfRoad;
+                        }
+                    } 
                 }
                 if (!walkable)
                 {
+                    node.isRoad = false;
                     movementPenalty += obstacleProximityPenalty;
                 }
                 node.movementPenalty = movementPenalty;
@@ -94,7 +96,7 @@ public class Grid : MonoBehaviour
                 grid[x, y] = node;
             }
         }
-        BlurPenaltyMap(1);
+        //BlurPenaltyMap(1);
     }
 
     // Esto hay que mejorarlo para que un coche que en su camino se va a encontrar más de un semáforo de cara,
@@ -224,9 +226,42 @@ public class Grid : MonoBehaviour
         {
             foreach (Node n in grid)
             {
-                Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
+                //Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
+                Gizmos.color = Color.white;
                 Gizmos.color = (n.walkable) ? Gizmos.color : Color.red;
-                Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
+                //Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
+
+                switch (n.typeOfRoad)
+                {
+                    case TypeOfRoad.Right:
+                        Gizmos.color = Color.blue;
+                        break;
+                    case TypeOfRoad.DownToRight:
+                        Gizmos.color = Color.magenta;
+                        break;
+                    case TypeOfRoad.UpToRight:
+                        Gizmos.color = Color.black;
+                        break;
+                    case TypeOfRoad.UpToLeft:
+                        Gizmos.color = Color.cyan;
+                        break;
+                    case TypeOfRoad.DownToLeft:
+                        Gizmos.color = Color.yellow;
+                        break;
+                    case TypeOfRoad.Left:
+                        Gizmos.color = Color.green;
+                        break;
+                    case TypeOfRoad.Down:
+                        Gizmos.color = Color.gray;
+                        break;
+                    case TypeOfRoad.Up:
+                        Gizmos.color = Color.white;
+                        break;
+                    case TypeOfRoad.None:
+                        Gizmos.color = Color.red;
+                        break;
+                }
+
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .15f));
             }
         }
