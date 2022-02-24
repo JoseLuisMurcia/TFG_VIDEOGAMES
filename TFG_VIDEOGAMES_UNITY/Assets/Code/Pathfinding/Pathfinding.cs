@@ -38,7 +38,7 @@ public class Pathfinding : MonoBehaviour
             while (openSet.Count > 0)
             {
                 Node currentNode = openSet.RemoveFirst();
-                Debug.Log("Current node extracted from openSet: [" + currentNode.gridX + ", " + currentNode.gridY + "]");
+                //Debug.Log("Current node extracted from openSet: [" + currentNode.gridX + ", " + currentNode.gridY + "]");
                 closedSet.Add(currentNode);
 
                 if (currentNode == targetNode)
@@ -78,7 +78,7 @@ public class Pathfinding : MonoBehaviour
                         if (compatibility == false) continue;
                     }
 
-                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour)/* + neighbour.movementPenalty*/;
+                    int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + neighbour.movementPenalty;
                     //Debug.Log("node: " + currentNode.gridX + "," + currentNode.gridY + " . Exploring neighbour: " + neighbour.gridX + "," + neighbour.gridY +
                     //    ". currentNode new G Cost: " + newMovementCostToNeighbour + ", Neighbour G Cost: " + neighbour.gCost + ", currentNode G cost: " + currentNode.gCost 
                     //    + ", distanceHeuristic: " + GetDistanceHeuristic(currentNode, neighbour));
@@ -135,9 +135,6 @@ public class Pathfinding : MonoBehaviour
         return waypoints;
     }
 
-    // Lo he dejado aquí, tratando de encontrar los mejores puntos de stop en caso de que el semaforo se ponga rojo/ambar.
-    // Pero he descubierto un problema al darme cuenta de que semáforos en una orientación incorrecta tambien se estaban incluyendo,
-    // lo cual me hace plantearme como puedo representar el espacio de forma que se distinga el sentido de unión de nodos en lugar de tener un grafo sin sentidos.
     List<Node> ProcessTrafficLightsInPath(List<Node> path)
     {
         List<TrafficLight> trafficLights = new List<TrafficLight>();
@@ -228,68 +225,6 @@ public class Pathfinding : MonoBehaviour
         return (int)Mathf.Sqrt(Distance_X * Distance_X + Distance_Y * Distance_Y);
     }
 
-    bool CanTravelV2(TypeOfRoad srcType, TypeOfRoad dstType)
-    {
-        switch (srcType)
-        {
-            case TypeOfRoad.Right:
-                if (dstType == TypeOfRoad.Right || dstType == TypeOfRoad.DownToRight || dstType == TypeOfRoad.UpToRight)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.Up:
-                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.UpToRight || dstType == TypeOfRoad.UpToLeft)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.Left:
-                if (dstType == TypeOfRoad.Left || dstType == TypeOfRoad.UpToLeft || dstType == TypeOfRoad.DownToLeft)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.Down:
-                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.DownToRight || dstType == TypeOfRoad.DownToLeft)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.DownToLeft:
-                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToRight)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.DownToRight:
-                if (dstType == TypeOfRoad.Down || dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToRight)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.UpToLeft:
-                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.Left || dstType == TypeOfRoad.DownToLeft)
-                {
-                    return true;
-                }
-                else return false;
-
-            case TypeOfRoad.UpToRight:
-                if (dstType == TypeOfRoad.Up || dstType == TypeOfRoad.Right || dstType == TypeOfRoad.UpToLeft)
-                {
-                    return true;
-                }
-                else return false;
-        }
-        return false;
-    }
     bool CanTravelV3(TypeOfRoad srcType, TypeOfRoad dstType, Vector3 srcPos, Vector3 dstPos, int srcX, int srcY, int dstX, int dstY)
     {
         switch (srcType)
@@ -353,155 +288,6 @@ public class Pathfinding : MonoBehaviour
             case TypeOfRoad.None:
                 return false;
         }
-        return false;
-    }
-    bool CanTravel(Direction src, Vector3 srcPos, Direction dst, Vector3 dstPos)
-    {
-        switch (src)
-        {
-            case Direction.Right:
-                if(dst == Direction.Right)
-                {
-                    return true;
-                }
-                else if(dst == Direction.Left)
-                {
-                    return false;
-                }
-                else if(dst == Direction.Up)
-                {
-                    // We want to go up but it is lower, trap
-                    if(srcPos.z > dstPos.z)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                else if(dst == Direction.Down)
-                {
-                    // We want to go down but it is higher, trap
-                    if (srcPos.z < dstPos.z)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                break;
-
-            case Direction.Left:
-                if (dst == Direction.Left)
-                {
-                    return true;
-                }
-                else if (dst == Direction.Right)
-                {
-                    return false;
-                }
-                else if (dst == Direction.Up)
-                {
-                    // We want to go up but it is lower, trap
-                    if (srcPos.z > dstPos.z)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                else if (dst == Direction.Down)
-                {
-                    // We want to go down but it is lower, trap
-                    if (srcPos.z < dstPos.z)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                break;
-
-            case Direction.Up:
-                if (dst == Direction.Up)
-                {
-                    return true;
-                }
-                else if (dst == Direction.Down)
-                {
-                    return false;
-                }
-                else if (dst == Direction.Right)
-                {
-                    // We want to go right but it is lefter, trap
-                    if (srcPos.x > dstPos.x)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                else if (dst == Direction.Left)
-                {
-                    // We want to go left but it is righter, trap
-                    if (srcPos.x < dstPos.x)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                break;
-
-            case Direction.Down:
-                if (dst == Direction.Down)
-                {
-                    return true;
-                }
-                else if (dst == Direction.Up)
-                {
-                    return false;
-                }
-                else if (dst == Direction.Right)
-                {
-                    // We want to go right but it is lefter, trap
-                    if (srcPos.x > dstPos.x)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                else if (dst == Direction.Left)
-                {
-                    // We want to go right but it is lefter, trap
-                    if (srcPos.x > dstPos.x)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                break;
-
-
-        }
-
         return false;
     }
 }

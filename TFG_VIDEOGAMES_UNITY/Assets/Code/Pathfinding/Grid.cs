@@ -96,7 +96,7 @@ public class Grid : MonoBehaviour
                 grid[x, y] = node;
             }
         }
-        //BlurPenaltyMap(1);
+        BlurPenaltyMap(1);
     }
 
     // Esto hay que mejorarlo para que un coche que en su camino se va a encontrar más de un semáforo de cara,
@@ -132,12 +132,11 @@ public class Grid : MonoBehaviour
     void BlurPenaltyMap(int blurSize)
     {
         int kernelSize = blurSize * 2 + 1;
-        int kernelExtents = (int)((kernelSize - 1) * 0.5f);
+        int kernelExtents = (kernelSize - 1) / 2;
 
         int[,] penaltiesHorizontalPass = new int[gridSizeX, gridSizeY];
         int[,] penaltiesVerticalPass = new int[gridSizeX, gridSizeY];
 
-        // Horizontal pass
         for (int y = 0; y < gridSizeY; y++)
         {
             for (int x = -kernelExtents; x <= kernelExtents; x++)
@@ -150,11 +149,11 @@ public class Grid : MonoBehaviour
             {
                 int removeIndex = Mathf.Clamp(x - kernelExtents - 1, 0, gridSizeX);
                 int addIndex = Mathf.Clamp(x + kernelExtents, 0, gridSizeX - 1);
+
                 penaltiesHorizontalPass[x, y] = penaltiesHorizontalPass[x - 1, y] - grid[removeIndex, y].movementPenalty + grid[addIndex, y].movementPenalty;
             }
         }
 
-        // Vertical pass
         for (int x = 0; x < gridSizeX; x++)
         {
             for (int y = -kernelExtents; y <= kernelExtents; y++)
@@ -163,12 +162,16 @@ public class Grid : MonoBehaviour
                 penaltiesVerticalPass[x, 0] += penaltiesHorizontalPass[x, sampleY];
             }
 
+            int blurredPenalty = Mathf.RoundToInt((float)penaltiesVerticalPass[x, 0] / (kernelSize * kernelSize));
+            grid[x, 0].movementPenalty = blurredPenalty;
+
             for (int y = 1; y < gridSizeY; y++)
             {
                 int removeIndex = Mathf.Clamp(y - kernelExtents - 1, 0, gridSizeY);
                 int addIndex = Mathf.Clamp(y + kernelExtents, 0, gridSizeY - 1);
+
                 penaltiesVerticalPass[x, y] = penaltiesVerticalPass[x, y - 1] - penaltiesHorizontalPass[x, removeIndex] + penaltiesHorizontalPass[x, addIndex];
-                int blurredPenalty = Mathf.RoundToInt(penaltiesVerticalPass[x, y] / (kernelSize * kernelSize));
+                blurredPenalty = Mathf.RoundToInt((float)penaltiesVerticalPass[x, y] / (kernelSize * kernelSize));
                 grid[x, y].movementPenalty = blurredPenalty;
 
                 if (blurredPenalty > penaltyMax)
@@ -181,6 +184,7 @@ public class Grid : MonoBehaviour
                 }
             }
         }
+
     }
     public List<Node> GetNeighbours(Node node)
     {
@@ -226,41 +230,41 @@ public class Grid : MonoBehaviour
         {
             foreach (Node n in grid)
             {
-                //Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
-                Gizmos.color = Color.white;
+                Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
                 Gizmos.color = (n.walkable) ? Gizmos.color : Color.red;
-                //Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
+                Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
 
-                switch (n.typeOfRoad)
-                {
-                    case TypeOfRoad.Right:
-                        Gizmos.color = Color.blue;
-                        break;
-                    case TypeOfRoad.DownToRight:
-                        Gizmos.color = Color.magenta;
-                        break;
-                    case TypeOfRoad.UpToRight:
-                        Gizmos.color = Color.black;
-                        break;
-                    case TypeOfRoad.UpToLeft:
-                        Gizmos.color = Color.cyan;
-                        break;
-                    case TypeOfRoad.DownToLeft:
-                        Gizmos.color = Color.yellow;
-                        break;
-                    case TypeOfRoad.Left:
-                        Gizmos.color = Color.green;
-                        break;
-                    case TypeOfRoad.Down:
-                        Gizmos.color = Color.gray;
-                        break;
-                    case TypeOfRoad.Up:
-                        Gizmos.color = Color.white;
-                        break;
-                    case TypeOfRoad.None:
-                        Gizmos.color = Color.red;
-                        break;
-                }
+
+                //switch (n.typeOfRoad)
+                //{
+                //    case TypeOfRoad.Right:
+                //        Gizmos.color = Color.blue;
+                //        break;
+                //    case TypeOfRoad.DownToRight:
+                //        Gizmos.color = Color.magenta;
+                //        break;
+                //    case TypeOfRoad.UpToRight:
+                //        Gizmos.color = Color.black;
+                //        break;
+                //    case TypeOfRoad.UpToLeft:
+                //        Gizmos.color = Color.cyan;
+                //        break;
+                //    case TypeOfRoad.DownToLeft:
+                //        Gizmos.color = Color.yellow;
+                //        break;
+                //    case TypeOfRoad.Left:
+                //        Gizmos.color = Color.green;
+                //        break;
+                //    case TypeOfRoad.Down:
+                //        Gizmos.color = Color.gray;
+                //        break;
+                //    case TypeOfRoad.Up:
+                //        Gizmos.color = Color.white;
+                //        break;
+                //    case TypeOfRoad.None:
+                //        Gizmos.color = Color.red;
+                //        break;
+                //}
 
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .15f));
             }
