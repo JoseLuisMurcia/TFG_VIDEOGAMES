@@ -5,7 +5,6 @@ using UnityEngine;
 public class Grid : MonoBehaviour
 {
     [SerializeField] LayerMask unwalkableMask;
-    [SerializeField] LayerMask trafficLightMask;
     [SerializeField] bool displayGridGizmos;
     [SerializeField] Vector2 gridWorldSize;
     [SerializeField] float nodeRadius;
@@ -75,16 +74,14 @@ public class Grid : MonoBehaviour
                     GameObject _gameObject = hit.collider.gameObject;
                     walkableRegionsDictionary.TryGetValue(_gameObject.layer, out movementPenalty);
 
-                    if (walkable)
+                    Road road = _gameObject.GetComponent<Road>();
+                    // We have hit a road, set its type to the node
+                    if (road != null)
                     {
-                        Road road = _gameObject.GetComponent<Road>();
-                        // We have hit a road, check direction
-                        if (road != null)
-                        {
-                            node.isRoad = true;
-                            node.typeOfRoad = road.typeOfRoad;
-                        }
-                    } 
+                        node.isRoad = true;
+                        node.typeOfRoad = road.typeOfRoad;
+                        node.road = road;
+                    }
                 }
                 if (!walkable)
                 {
@@ -92,32 +89,10 @@ public class Grid : MonoBehaviour
                     movementPenalty += obstacleProximityPenalty;
                 }
                 node.movementPenalty = movementPenalty;
-                //CreateTrafficLightStopPoints(node);
                 grid[x, y] = node;
             }
         }
         BlurPenaltyMap(1);
-    }
-
-    // Esto hay que mejorarlo para que un coche que en su camino se va a encontrar más de un semáforo de cara,
-    // sea capaz de almacenarlo como para tenerlo en cuenta, actualmente solo almacena a uno.
-    void CreateTrafficLightStopPoints(Node node)
-    {
-        foreach(TrafficLight trafficLight in trafficLights)
-        {
-            bool isInBounds = trafficLight.IsInBounds(node.worldPosition);
-            // if the node has already been set as close to traffic light, dont reset it.
-            if (node.hasTrafficLightClose)
-                break;
-
-            if (isInBounds)
-            {
-                node.trafficLight = trafficLight;
-                trafficLight.nodesToStop.Add(node);
-            }
-            node.hasTrafficLightClose = isInBounds;
-        }
-            
     }
 
 

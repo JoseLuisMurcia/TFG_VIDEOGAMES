@@ -6,26 +6,8 @@ public class Road : MonoBehaviour
 {
     [SerializeField] public List<Direction> directions = new List<Direction>();
     public TypeOfRoad typeOfRoad = TypeOfRoad.None;
+    public TrafficLight trafficLight;
     
-
-    public static Direction GetOppositeDirection(Direction direction)
-    {
-        switch (direction)
-        {
-            case Direction.Right:
-                return Direction.Left;
-            case Direction.Left:
-                return Direction.Right;
-            case Direction.Up:
-                return Direction.Down;
-            case Direction.Down:
-                return Direction.Up;
-        }
-
-        return Direction.None;
-    }
-
-
     private void Start()
     {
         if(directions.Count == 1)

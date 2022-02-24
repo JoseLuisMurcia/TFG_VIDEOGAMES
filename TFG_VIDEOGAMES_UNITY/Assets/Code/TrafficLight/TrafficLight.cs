@@ -2,28 +2,43 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// RECUERDA QUE POR ALGUN MOTIVO, SOLO ESTÁ FUNCIONANDO CON EL ULTIMO SEMÁFORO AÑADIDO EN LA LISTA
-// PUTA MADRE QUE SE ESTÁ SOBREESCRIBIENDO AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 public class TrafficLight : MonoBehaviour
 {
-    [SerializeField] Vector2 wireCubeSize;
-    BoxCollider stopPointsCollider;
+    [SerializeField] LayerMask roadMask;
     public TrafficLightColor currentColor;
-    public List<Node> nodesToStop = new List<Node>();
-    void Awake()
+    private Vector3 rayPos;
+    void Start()
     {
-        stopPointsCollider = GetComponent<BoxCollider>();
-        float forwardDistance = 9f;
-        float rightDistance = 7.3f;
-        stopPointsCollider.center = (Vector3.back * forwardDistance) + (Vector3.left * rightDistance) + transform.position;
-        stopPointsCollider.size = new Vector3(wireCubeSize.x, 1, wireCubeSize.y)*10f;
         currentColor = TrafficLightColor.Red;
+        FindRoad();
     }
 
 
-    public bool IsInBounds(Vector3 nodePos)
+    public void FindRoad()
     {
-        return stopPointsCollider.bounds.Contains(nodePos);
+        float forwardDistance = 0.9f;
+        float rightDistance = 0.9f;
+        //rayPos = (-Vector3.back * forwardDistance) + (-Vector3.left * rightDistance) + transform.position;
+        rayPos = -transform.forward* forwardDistance + -transform.right*rightDistance + transform.position;
+        Ray ray = new Ray(rayPos + Vector3.up * 50, Vector3.down);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, 100, roadMask))
+        {
+            Debug.DrawLine(ray.origin, hit.point);
+            GameObject roadGameObject = hit.collider.gameObject;
+            Road road = roadGameObject.GetComponent<Road>();
+            if(road != null)
+            {
+                road.trafficLight = this;
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawSphere(rayPos, .2f);
+        Gizmos.color = Color.magenta;
     }
 }
 
