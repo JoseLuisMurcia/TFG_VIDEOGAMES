@@ -436,8 +436,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 89858876}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -13.35, y: 0, z: 0.099999905}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -17.1, y: 0, z: 0.099999905}
+  m_LocalScale: {x: 1.7375, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 439323261}
   m_RootOrder: 1
@@ -938,7 +938,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   displayGridGizmos: 1
-  gridWorldSize: {x: 20, y: 20}
+  gridWorldSize: {x: 30, y: 20}
   nodeRadius: 0.25
   walkableRegions:
   - terrainMask:
@@ -950,7 +950,11 @@ MonoBehaviour:
       m_Bits: 256
     terrainPenalty: 100
   obstacleProximityPenalty: 200
-  trafficLights: []
+  trafficLights:
+  - {fileID: 1625043236}
+  - {fileID: 692650901}
+  - {fileID: 1325971737}
+  - {fileID: 1740228191}
   path: []
 --- !u!1 &251036817
 GameObject:
@@ -1101,6 +1105,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nodes: []
+  distanceToStopInRedLight: 0
+  distanceToStopInAmberLight: 5
 --- !u!114 &265962580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1119,6 +1125,7 @@ MonoBehaviour:
   turnDst: 0.7
   stoppingDst: 1.5
   pathIndex: 0
+  shouldStopAtTrafficLight: 0
 --- !u!65 &265962581
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2110,7 +2117,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &655679368
 Transform:
   m_ObjectHideFlags: 0
@@ -5364,11 +5371,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a29375d37cf979d4bbaea5bb2a8a8711, type: 3}
       propertyPath: m_LocalScale.z
-      value: 17.86
+      value: 27.258825
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a29375d37cf979d4bbaea5bb2a8a8711, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -4.94
+      value: -6.8
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a29375d37cf979d4bbaea5bb2a8a8711, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5843,9 +5850,9 @@ MonoBehaviour:
     m_Bits: 128
   currentColor: 0
   road: {fileID: 0}
-  greenTime: 4
+  greenTime: 2
   amberTime: 1
-  redTime: 4
+  redTime: 8
 --- !u!65 &1625043240
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5905,6 +5912,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nodes: []
+  distanceToStopInRedLight: 0
+  distanceToStopInAmberLight: 5
 --- !u!54 &1693397487
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5934,11 +5943,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 630597581}
-  speed: 3
-  turnSpeed: 3.5
+  speed: 2.5
+  turnSpeed: 3
   turnDst: 0.7
   stoppingDst: 1.5
   pathIndex: 0
+  shouldStopAtTrafficLight: 0
 --- !u!4 &1693397489
 Transform:
   m_ObjectHideFlags: 0
@@ -5947,7 +5957,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1693397483}
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -9.03, y: 0.059, z: -0.75}
+  m_LocalPosition: {x: -13.31, y: 0.059, z: -0.75}
   m_LocalScale: {x: 0.30682, y: 0.30682, z: 0.30682}
   m_Children:
   - {fileID: 1831521944}
@@ -7154,8 +7164,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2041517575}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -13.34, y: 0.25, z: 13.33}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -16.46, y: 0.25, z: 13.33}
+  m_LocalScale: {x: 1.5875, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 439323261}
   m_RootOrder: 0

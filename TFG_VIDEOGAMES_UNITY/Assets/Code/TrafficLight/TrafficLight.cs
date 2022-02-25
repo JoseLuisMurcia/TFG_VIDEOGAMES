@@ -14,7 +14,7 @@ public class TrafficLight : MonoBehaviour
     [SerializeField] float redTime;
     void Start()
     {
-        currentColor = TrafficLightColor.Red;
+        currentColor = TrafficLightColor.Green;
         FindRoad();
         StartCoroutine(ChangeColor());
     }

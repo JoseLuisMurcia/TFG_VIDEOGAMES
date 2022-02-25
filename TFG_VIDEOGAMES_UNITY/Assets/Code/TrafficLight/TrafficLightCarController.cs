@@ -13,6 +13,8 @@ public class TrafficLightCarController : MonoBehaviour
     PathFollower pathFollower;
 
     private Road currentRoad;
+    [SerializeField] float distanceToStopInRedLight = 5;
+    [SerializeField] float distanceToStopInAmberLight = 3;
     private void Start()
     {
         pathFollower = GetComponent<PathFollower>();
@@ -28,20 +30,49 @@ public class TrafficLightCarController : MonoBehaviour
     // WORK FROM HERE
     private void OnTrafficLightChange(TrafficLightColor newColor)
     {
+        float distance;
         switch (newColor)
         {
             case TrafficLightColor.Green:
                 // If the car was stopped or braking, put it to movement again, if not, dont do anything
-                
+                pathFollower.shouldStopAtTrafficLight = false;
                 break;
             case TrafficLightColor.Amber:
                 // If the car was moving and it is close enough, brake.
+                distance = CheckDistanceWithTrafficLight(currentRoad.typeOfRoad, currentRoad.trafficLight.transform.position);
+                if (distance < distanceToStopInAmberLight)
+
+                {
+                }
+                // if distance lesser than X and velocity greater than -> dont break; otherwise -> break
                 break;
             case TrafficLightColor.Red:
                 // If the car is coming to a red traffic light it should break in the closest position to it (Given there is no car in front)
+                pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
                 break;
         }
         Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
+    }
+
+    public float GiveDistanceToPathFollower()
+    {
+        return CheckDistanceWithTrafficLight(currentRoad.typeOfRoad, currentRoad.trafficLight.transform.position);
+    }
+    private float CheckDistanceWithTrafficLight(TypeOfRoad typeOfRoad, Vector3 trafficLightPos)
+    {
+        Vector3 carPosition = transform.position;
+        switch (typeOfRoad)
+        {
+            case TypeOfRoad.Down:
+                return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
+            case TypeOfRoad.Right:
+                return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(trafficLightPos.x, 0));
+            case TypeOfRoad.Left:
+                return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(carPosition.x, 0));
+            case TypeOfRoad.Up:
+                return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
+        }
+        return -1f;
     }
 
     public void SubscribeToTrafficLight(Road _newRoad)
