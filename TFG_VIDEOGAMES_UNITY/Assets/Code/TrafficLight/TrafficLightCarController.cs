@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+// This class should know where the car is right now. It should be notified when there is a change in a traffic light, or a car is too close.
 public class TrafficLightCarController : MonoBehaviour
 {
     public Path path;
@@ -18,25 +19,25 @@ public class TrafficLightCarController : MonoBehaviour
         pathFollower = GetComponent<PathFollower>();
     }
 
-    private void OnRoadTriggerEnter()
+
+    // WORK FROM HERE
+    private void OnTrafficLightChange(TrafficLightColor newColor)
     {
-        // set the actual road
+        Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
     }
 
-    private void OnRoadTriggerExit()
+    public void SubscribeToTrafficLight(Road _newRoad)
     {
-        // set the actual road
-    }
-
-    public void SubscribeToTrafficLight()
-    {
-        TrafficLightEvents.instance.onRoadTriggerEnter += OnRoadTriggerEnter;
+        Debug.Log("SubscribeToTrafficLight");
+        currentRoad = _newRoad;
+        currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
 
     }
 
     public void UnsubscribeToTrafficLight()
     {
-        TrafficLightEvents.instance.onRoadTriggerExit -= OnRoadTriggerEnter;
-
+        Debug.Log("UnsubscribeToTrafficLight");
+        currentRoad.trafficLightEvents.onLightChange -= OnTrafficLightChange;
+        currentRoad = null;
     }
 }

@@ -7,10 +7,17 @@ public class Road : MonoBehaviour
     [SerializeField] public List<Direction> directions = new List<Direction>();
     public TypeOfRoad typeOfRoad = TypeOfRoad.None;
     public TrafficLight trafficLight;
-    
+    public TrafficLightEvents trafficLightEvents;
+
     private void Start()
     {
-        if(directions.Count == 1)
+        trafficLightEvents = GetComponent<TrafficLightEvents>();
+        SetTypeOfRoad();
+    }
+
+    private void SetTypeOfRoad()
+    {
+        if (directions.Count == 1)
         {
             // Important, the order of enums must be the same in order for the cast to work properly
             typeOfRoad = (TypeOfRoad)directions[0];
@@ -19,7 +26,7 @@ public class Road : MonoBehaviour
         {
             if (directions.Contains(Direction.Up))
             {
-                if(directions.Contains(Direction.Left))
+                if (directions.Contains(Direction.Left))
                 {
                     typeOfRoad = TypeOfRoad.UpToLeft;
                 }

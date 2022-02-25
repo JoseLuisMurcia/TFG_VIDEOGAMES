@@ -7,12 +7,42 @@ public class TrafficLight : MonoBehaviour
     [SerializeField] LayerMask roadMask;
     public TrafficLightColor currentColor;
     private Vector3 rayPos;
+    public Road road;
+
+    [SerializeField] float greenTime;
+    [SerializeField] float amberTime;
+    [SerializeField] float redTime;
     void Start()
     {
         currentColor = TrafficLightColor.Red;
         FindRoad();
+        StartCoroutine(ChangeColor());
     }
 
+    IEnumerator ChangeColor()
+    {
+        while (true)
+        {
+            switch (currentColor)
+            {
+                case TrafficLightColor.Green:
+                    yield return new WaitForSeconds(greenTime);
+                    currentColor = TrafficLightColor.Amber;
+                    road.trafficLightEvents.LightChange(currentColor);
+                    break;
+                case TrafficLightColor.Amber:
+                    yield return new WaitForSeconds(amberTime);
+                    currentColor = TrafficLightColor.Red;
+                    road.trafficLightEvents.LightChange(currentColor);
+                    break;
+                case TrafficLightColor.Red:
+                    yield return new WaitForSeconds(redTime);
+                    currentColor = TrafficLightColor.Green;
+                    road.trafficLightEvents.LightChange(currentColor);
+                    break;
+            }
+        }
+    }
 
     public void FindRoad()
     {
@@ -27,7 +57,7 @@ public class TrafficLight : MonoBehaviour
         {
             Debug.DrawLine(ray.origin, hit.point);
             GameObject roadGameObject = hit.collider.gameObject;
-            Road road = roadGameObject.GetComponent<Road>();
+            road = roadGameObject.GetComponent<Road>();
             if(road != null)
             {
                 road.trafficLight = this;
@@ -35,11 +65,12 @@ public class TrafficLight : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawSphere(rayPos, .2f);
-        Gizmos.color = Color.magenta;
-    }
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.DrawSphere(rayPos, .2f);
+    //    Gizmos.color = Color.magenta;
+    //}
+
 }
 
 public enum TrafficLightColor
