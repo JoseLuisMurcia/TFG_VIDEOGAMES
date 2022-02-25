@@ -21,22 +21,7 @@ public class Grid : MonoBehaviour
     int penaltyMin = int.MaxValue;
     int penaltyMax = int.MinValue;
 
-    //private void Awake()
-    //{
-    //    nodeDiameter = nodeRadius * 2;
-    //    gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
-    //    gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
-
-    //    foreach (TerrainType region in walkableRegions)
-    //    {
-    //        walkableMask.value |= region.terrainMask.value;
-    //        walkableRegionsDictionary.Add((int)Mathf.Log(region.terrainMask.value, 2), region.terrainPenalty);
-    //    }
-
-    //    CreateGrid();
-    //}
-
-    private void Start()
+    private void Awake()
     {
         nodeDiameter = nodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);

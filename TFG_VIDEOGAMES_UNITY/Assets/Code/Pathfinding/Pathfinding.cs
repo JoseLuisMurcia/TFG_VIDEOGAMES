@@ -27,6 +27,7 @@ public class Pathfinding : MonoBehaviour
         startNode.gCost = 0;
         Node targetNode = grid.NodeFromWorldPoint(targetPos);
 
+
         if (startNode.walkable && targetNode.walkable)
         {
             Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
@@ -37,7 +38,6 @@ public class Pathfinding : MonoBehaviour
             {
                 Node currentNode = openSet.RemoveFirst();
                 closedSet.Add(currentNode);
-
                 if (currentNode == targetNode)
                 {
                     pathSuccess = true;
@@ -46,6 +46,7 @@ public class Pathfinding : MonoBehaviour
 
                 foreach (Node neighbour in grid.GetNeighbours(currentNode))
                 {
+
                     if (!neighbour.walkable || closedSet.Contains(neighbour))
                     {
                         continue;
@@ -53,8 +54,7 @@ public class Pathfinding : MonoBehaviour
 
                     if (neighbour.isRoad)
                     {
-
-                        bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad, currentNode.worldPosition, neighbour.worldPosition, currentNode.gridX, currentNode.gridY, neighbour.gridX, neighbour.gridY);
+                        bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad);
                         if (compatibility == false) continue;
                     }
 
@@ -161,7 +161,7 @@ public class Pathfinding : MonoBehaviour
         return (int)Mathf.Sqrt(Distance_X * Distance_X + Distance_Y * Distance_Y);
     }
 
-    bool CanTravelV3(TypeOfRoad srcType, TypeOfRoad dstType, Vector3 srcPos, Vector3 dstPos, int srcX, int srcY, int dstX, int dstY)
+    bool CanTravelV3(TypeOfRoad srcType, TypeOfRoad dstType)
     {
         switch (srcType)
         {

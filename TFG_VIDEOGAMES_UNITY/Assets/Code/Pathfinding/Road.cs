@@ -9,7 +9,7 @@ public class Road : MonoBehaviour
     public TrafficLight trafficLight;
     public TrafficLightEvents trafficLightEvents;
 
-    private void Start()
+    private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();
         SetTypeOfRoad();
