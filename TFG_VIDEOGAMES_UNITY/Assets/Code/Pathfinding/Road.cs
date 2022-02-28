@@ -6,29 +6,18 @@ public class Road : MonoBehaviour
 {
     [SerializeField] public List<Direction> directions = new List<Direction>();
     public TypeOfRoad typeOfRoad = TypeOfRoad.None;
-    
+    public TrafficLight trafficLight;
+    public TrafficLightEvents trafficLightEvents;
 
-    public static Direction GetOppositeDirection(Direction direction)
+    private void Awake()
     {
-        switch (direction)
-        {
-            case Direction.Right:
-                return Direction.Left;
-            case Direction.Left:
-                return Direction.Right;
-            case Direction.Up:
-                return Direction.Down;
-            case Direction.Down:
-                return Direction.Up;
-        }
-
-        return Direction.None;
+        trafficLightEvents = GetComponent<TrafficLightEvents>();
+        SetTypeOfRoad();
     }
 
-
-    private void Start()
+    private void SetTypeOfRoad()
     {
-        if(directions.Count == 1)
+        if (directions.Count == 1)
         {
             // Important, the order of enums must be the same in order for the cast to work properly
             typeOfRoad = (TypeOfRoad)directions[0];
@@ -37,7 +26,7 @@ public class Road : MonoBehaviour
         {
             if (directions.Contains(Direction.Up))
             {
-                if(directions.Contains(Direction.Left))
+                if (directions.Contains(Direction.Left))
                 {
                     typeOfRoad = TypeOfRoad.UpToLeft;
                 }

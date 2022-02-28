@@ -8,21 +8,31 @@ public class PathFollower : MonoBehaviour
     const float pathUpdateMoveThreshold = .5f;
 
     public Transform target;
-    public float speed = 20;
-    public float turnSpeed = 3;
+    public float speed = 4;
+    public float turnSpeed = 4;
     public float turnDst = 5;
     public float stoppingDst = 10;
     public int pathIndex = 0;
     Path path;
     bool followingPath;
-    bool shouldStopAtTrafficLight = false;
+
+    private float speedMax = 3.5f;
+    private float speedMin = -4f;
+    private float acceleration = 1.1f;
+
+
+    public bool shouldStopAtTrafficLight = false;
+    private Vector3 trafficLightPos;
+    private float trafficLightStopDist = 3;
+    private bool vehicleWasStopped = false;
 
     TrafficLightCarController trafficLightCarController;
+    [SerializeField] bool visualDebug;
 
     void Start()
     {
         StartCoroutine(UpdatePath());
-        //trafficLightCarController = GetComponent<TrafficLightCarController>();
+        trafficLightCarController = GetComponent<TrafficLightCarController>();
     }
 
     public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
@@ -68,7 +78,7 @@ public class PathFollower : MonoBehaviour
         // Rotate to look at the first point
         transform.LookAt(path.lookPoints[0]);
 
-        float speedPercent = 1;
+        float speedPercent = 0;
 
         // Check all the time if the unity has passed the boundari
         while (followingPath)
@@ -92,34 +102,73 @@ public class PathFollower : MonoBehaviour
             if (followingPath)
             {
 
-                // Aquí hay que implementar una lógica alternativa, debo tener un control que me permita ordenar al coche a pararse
                 if (shouldStopAtTrafficLight)
                 {
-                    speedPercent = StopAtPoint(pos2D);
-                    Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
-                    if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
-                    transform.Translate(Vector3.forward * Time.deltaTime * speed * speedPercent, Space.Self);
+                    speedPercent = StopAtTrafficLight();
                 }
                 else
                 {
-                    speedPercent = CheckToStop(pos2D);
-                    Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
-                    if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
-                    transform.Translate(Vector3.forward * Time.deltaTime * speed * speedPercent, Space.Self);
-                }
+                    // When the car is stopped, set the speedPercent to 0 so that it accelerates from 0 and not instantly.
+                    if (vehicleWasStopped)
+                    {
+                        speedPercent = 0f;
+                        vehicleWasStopped = false;
+                    }
 
-                
+                    // When the car is close enough to the path objective.
+                    if (pathIndex > path.slowDownIndex && stoppingDst > 0)
+                    {
+                        speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
+                        if (speedPercent < 0.01f)
+                        {
+                            Debug.Log("END ARRIVED V2");
+                            followingPath = false;
+                        }
+                    }
+                    else
+                    {
+                        speedPercent += 0.002f;
+                        speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
+                    }
+                }
+                Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
+                if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
+                transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
+
+
             }
 
             yield return null;
 
         }
     }
+    public void SetTrafficLightPos(Vector3 _trafficLightPos)
+    {
+        trafficLightPos = _trafficLightPos;
+        shouldStopAtTrafficLight = true;
+    }
+
+
+    float StopAtTrafficLight()
+    {
+        float speedPercent = 1;
+        // Hay que cambiar la comprobación
+        if (trafficLightStopDist > 0)
+        {
+            float distance = trafficLightCarController.GiveDistanceToPathFollower();
+            speedPercent = Mathf.Clamp01((distance-1.5f) / trafficLightStopDist);
+            if (speedPercent < 0.03f)
+            {
+                speedPercent = 0f;
+                vehicleWasStopped = true;
+            }
+        }
+        return speedPercent;
+    }
 
     float CheckToStop(Vector2 pos2D)
     {
         float speedPercent = 1;
-        // Aquí hay que implementar una lógica alternativa, debo tener un control que me permita ordenar al coche a pararse
         if (pathIndex > path.slowDownIndex && stoppingDst > 0)
         {
             speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
@@ -132,26 +181,15 @@ public class PathFollower : MonoBehaviour
         return speedPercent;
     }
 
-    float StopAtPoint(Vector2 pos2D)
-    {
-        float speedPercent = 1;
-        // Hay que cambiar la comprobación
-        if (pathIndex > path.slowDownIndex && stoppingDst > 0)
-        {
-            speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
-            if (speedPercent < 0.01f)
-            {
-                Debug.Log("STOPPED AT TRAFFIC LIGHT");
-            }
-        }
-        return speedPercent;
-    }
+
 
     public void OnDrawGizmos()
     {
-        if (path != null)
+        if (visualDebug && path != null)
         {
             path.DrawWithGizmos();
+           
         }
+        
     }
 }

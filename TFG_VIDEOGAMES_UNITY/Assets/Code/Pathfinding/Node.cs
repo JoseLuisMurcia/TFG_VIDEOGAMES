@@ -5,7 +5,6 @@ using UnityEngine;
 [System.Serializable]
 public class Node : IHeapItem<Node>
 {
-
 	public bool walkable;
 	public Vector3 worldPosition;
 	public int gridX;
@@ -17,10 +16,10 @@ public class Node : IHeapItem<Node>
 	public Node parent;
 	int heapIndex;
 	public bool hasTrafficLightClose;
-	public TrafficLight trafficLight;
-	public List<Direction> directions;
 	public bool isRoad = false;
 	public TypeOfRoad typeOfRoad = TypeOfRoad.None;
+	public Road road;
+
 
 	public Node(bool _walkable,Vector3 _worldPos, int _gridX, int _gridY)
 	{
