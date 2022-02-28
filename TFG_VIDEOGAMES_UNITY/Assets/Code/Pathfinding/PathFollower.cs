@@ -27,6 +27,7 @@ public class PathFollower : MonoBehaviour
     private bool vehicleWasStopped = false;
 
     TrafficLightCarController trafficLightCarController;
+    [SerializeField] bool visualDebug;
 
     void Start()
     {
@@ -101,19 +102,20 @@ public class PathFollower : MonoBehaviour
             if (followingPath)
             {
 
-                // Aquí hay que implementar una lógica alternativa, debo tener un control que me permita ordenar al coche a pararse
                 if (shouldStopAtTrafficLight)
                 {
                     speedPercent = StopAtTrafficLight();
                 }
                 else
                 {
+                    // When the car is stopped, set the speedPercent to 0 so that it accelerates from 0 and not instantly.
                     if (vehicleWasStopped)
                     {
                         speedPercent = 0f;
                         vehicleWasStopped = false;
                     }
 
+                    // When the car is close enough to the path objective.
                     if (pathIndex > path.slowDownIndex && stoppingDst > 0)
                     {
                         speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
@@ -129,9 +131,6 @@ public class PathFollower : MonoBehaviour
                         speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
                     }
                 }
-                // Cambiar la forma en la que la velocidad se aplica al coche, aceleración y tal
-                //speed += acceleration * Time.deltaTime;
-                //speed = Mathf.Clamp(speed, speedMin, speedMax);
                 Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
                 if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
                 transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
@@ -182,13 +181,15 @@ public class PathFollower : MonoBehaviour
         return speedPercent;
     }
 
-    
+
 
     public void OnDrawGizmos()
     {
-        if (path != null)
+        if (visualDebug && path != null)
         {
             path.DrawWithGizmos();
+           
         }
+        
     }
 }

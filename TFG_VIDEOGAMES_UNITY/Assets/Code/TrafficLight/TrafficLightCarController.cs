@@ -13,8 +13,7 @@ public class TrafficLightCarController : MonoBehaviour
     PathFollower pathFollower;
 
     private Road currentRoad;
-    [SerializeField] float distanceToStopInRedLight = 5;
-    [SerializeField] float distanceToStopInAmberLight = 3;
+    [SerializeField] float distanceToStopInAmberLight = 5f;
     private void Start()
     {
         pathFollower = GetComponent<PathFollower>();
@@ -40,9 +39,9 @@ public class TrafficLightCarController : MonoBehaviour
             case TrafficLightColor.Amber:
                 // If the car was moving and it is close enough, brake.
                 distance = CheckDistanceWithTrafficLight(currentRoad.typeOfRoad, currentRoad.trafficLight.transform.position);
-                if (distance < distanceToStopInAmberLight)
-
+                if (distance > distanceToStopInAmberLight)
                 {
+                    pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
                 }
                 // if distance lesser than X and velocity greater than -> dont break; otherwise -> break
                 break;
@@ -50,8 +49,8 @@ public class TrafficLightCarController : MonoBehaviour
                 // If the car is coming to a red traffic light it should break in the closest position to it (Given there is no car in front)
                 pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
                 break;
+            Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
         }
-        Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
     }
 
     public float GiveDistanceToPathFollower()

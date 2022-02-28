@@ -12,10 +12,19 @@ public class TrafficLight : MonoBehaviour
     [SerializeField] float greenTime;
     [SerializeField] float amberTime;
     [SerializeField] float redTime;
-    void Start()
+
+    private ColorChanger colorChanger;
+
+    private void Awake()
     {
         currentColor = TrafficLightColor.Green;
+        colorChanger = GetComponentInChildren<ColorChanger>();
         FindRoad();
+    }
+
+    void Start()
+    {
+        colorChanger.SetColor(currentColor);
         StartCoroutine(ChangeColor());
     }
 
@@ -29,16 +38,21 @@ public class TrafficLight : MonoBehaviour
                     yield return new WaitForSeconds(greenTime);
                     currentColor = TrafficLightColor.Amber;
                     road.trafficLightEvents.LightChange(currentColor);
+                    colorChanger.SetColor(currentColor);
                     break;
+
                 case TrafficLightColor.Amber:
                     yield return new WaitForSeconds(amberTime);
                     currentColor = TrafficLightColor.Red;
                     road.trafficLightEvents.LightChange(currentColor);
+                    colorChanger.SetColor(currentColor);
                     break;
+
                 case TrafficLightColor.Red:
                     yield return new WaitForSeconds(redTime);
                     currentColor = TrafficLightColor.Green;
                     road.trafficLightEvents.LightChange(currentColor);
+                    colorChanger.SetColor(currentColor);
                     break;
             }
         }
@@ -46,10 +60,11 @@ public class TrafficLight : MonoBehaviour
 
     public void FindRoad()
     {
-        float forwardDistance = 0.9f;
-        float rightDistance = 0.9f;
+        float forwardDistance = 1f;
+        float rightDistance = 1f;
         //rayPos = (-Vector3.back * forwardDistance) + (-Vector3.left * rightDistance) + transform.position;
-        rayPos = -transform.forward* forwardDistance + -transform.right*rightDistance + transform.position;
+        //rayPos = -transform.forward* forwardDistance + -transform.right*rightDistance + transform.position;
+        rayPos = transform.forward* forwardDistance + -transform.right*rightDistance + transform.position;
         Ray ray = new Ray(rayPos + Vector3.up * 50, Vector3.down);
         RaycastHit hit;
 
