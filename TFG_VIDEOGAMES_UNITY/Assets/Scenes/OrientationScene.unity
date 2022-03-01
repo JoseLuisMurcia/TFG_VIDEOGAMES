@@ -1829,6 +1829,18 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3772698478319317217, guid: d379f475803bbd34d91987f2a12a4ff5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.37833378
+      objectReference: {fileID: 0}
+    - target: {fileID: 3772698478319317217, guid: d379f475803bbd34d91987f2a12a4ff5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.37833378
+      objectReference: {fileID: 0}
+    - target: {fileID: 3772698478319317217, guid: d379f475803bbd34d91987f2a12a4ff5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.37833378
+      objectReference: {fileID: 0}
+    - target: {fileID: 3772698478319317217, guid: d379f475803bbd34d91987f2a12a4ff5, type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.68
       objectReference: {fileID: 0}
@@ -5525,9 +5537,10 @@ GameObject:
   - component: {fileID: 1693397487}
   - component: {fileID: 1693397484}
   - component: {fileID: 1693397488}
+  - component: {fileID: 1693397486}
   - component: {fileID: 1693397485}
   m_Layer: 0
-  m_Name: sedanSportsNoPhysics
+  m_Name: Car
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5560,6 +5573,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodes: []
   distanceToStopInAmberLight: 5
+--- !u!114 &1693397486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1693397483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fb614d9108bbc448b4f0fe88881665c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rayRange: 2
+  numberOfRays: 10
+  angle: 90
 --- !u!54 &1693397487
 Rigidbody:
   m_ObjectHideFlags: 0
