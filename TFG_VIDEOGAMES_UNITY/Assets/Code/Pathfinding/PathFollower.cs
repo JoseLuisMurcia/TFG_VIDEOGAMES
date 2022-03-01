@@ -16,11 +16,6 @@ public class PathFollower : MonoBehaviour
     Path path;
     bool followingPath;
 
-    private float speedMax = 3.5f;
-    private float speedMin = -4f;
-    private float acceleration = 1.1f;
-
-
     public bool shouldStopAtTrafficLight = false;
     private Vector3 trafficLightPos;
     private float trafficLightStopDist = 3;
@@ -28,6 +23,7 @@ public class PathFollower : MonoBehaviour
 
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
+    List<Vector3> waypointsList = new List<Vector3>();
 
     void Start()
     {
@@ -39,7 +35,11 @@ public class PathFollower : MonoBehaviour
     {
         if (pathSuccessful)
         {
-            path = new Path(waypoints, transform.position, turnDst, stoppingDst);
+            foreach(Vector3 waypoint in waypoints)
+            {
+                waypointsList.Add(waypoint);
+            }
+            path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
 
             //trafficLightCarController.path = path;
             StopCoroutine("FollowPath");
@@ -146,6 +146,13 @@ public class PathFollower : MonoBehaviour
     {
         trafficLightPos = _trafficLightPos;
         shouldStopAtTrafficLight = true;
+    }
+
+    public void SetNewPathByAvoidance(Vector3 newPos)
+    {
+        //Create a new Path and add this position in the correct index.
+        waypointsList.Insert(pathIndex, newPos);
+        path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
     }
 
 

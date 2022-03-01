@@ -4,29 +4,29 @@ using UnityEngine;
 
 public class Path
 {
-	public readonly Vector3[] lookPoints;
-	public readonly Line[] turnBoundaries;
+	public readonly List<Vector3> lookPoints;
+	public readonly List<Line> turnBoundaries;
 	public readonly int finishLineIndex;
 	public readonly int slowDownIndex;
 
-	public Path(Vector3[] waypoints, Vector3 startPos, float turnDst, float stoppingDst)
+	public Path(List<Vector3> waypoints, Vector3 startPos, float turnDst, float stoppingDst)
 	{
 		lookPoints = waypoints;
-		turnBoundaries = new Line[lookPoints.Length];
-		finishLineIndex = turnBoundaries.Length - 1;
+		turnBoundaries = new List<Line>(lookPoints.Count);
+		finishLineIndex = lookPoints.Count - 1;
 
 		Vector2 previousPoint = V3ToV2(startPos);
-		for (int i = 0; i < lookPoints.Length; i++)
+		for (int i = 0; i < lookPoints.Count; i++)
 		{
 			Vector2 currentPoint = V3ToV2(lookPoints[i]);
 			Vector2 dirToCurrentPoint = (currentPoint - previousPoint).normalized;
 			Vector2 turnBoundaryPoint = (i == finishLineIndex) ? currentPoint : currentPoint - dirToCurrentPoint * turnDst;
-			turnBoundaries[i] = new Line(turnBoundaryPoint, previousPoint - dirToCurrentPoint * turnDst);
+			turnBoundaries.Add(new Line(turnBoundaryPoint, previousPoint - dirToCurrentPoint * turnDst));
 			previousPoint = turnBoundaryPoint;
 		}
 
 		float dstFromEndPoint = 0;
-		for (int i = lookPoints.Length - 1; i > 0; i--)
+		for (int i = lookPoints.Count - 1; i > 0; i--)
 		{
 			dstFromEndPoint += Vector3.Distance(lookPoints[i], lookPoints[i - 1]);
 			if (dstFromEndPoint > stoppingDst)
