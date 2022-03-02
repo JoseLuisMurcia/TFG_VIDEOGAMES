@@ -25,10 +25,15 @@ public class PathFollower : MonoBehaviour
     [SerializeField] bool visualDebug;
     List<Vector3> waypointsList = new List<Vector3>();
 
+
+    CarObstacleAvoidance carObstacleAvoidance;
+    int recentAddedAvoidancePosIndex = -1;
+
     void Start()
     {
         StartCoroutine(UpdatePath());
         trafficLightCarController = GetComponent<TrafficLightCarController>();
+        carObstacleAvoidance = GetComponent<CarObstacleAvoidance>();
     }
 
     public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
@@ -95,6 +100,11 @@ public class PathFollower : MonoBehaviour
                 else
                 {
                     // Go to next point
+                    // Reset the obstacle avoider
+                    if(pathIndex == recentAddedAvoidancePosIndex)
+                    {
+                        carObstacleAvoidance.objectHit = false;
+                    }
                     pathIndex++;
                 }
             }
@@ -152,6 +162,7 @@ public class PathFollower : MonoBehaviour
     {
         //Create a new Path and add this position in the correct index.
         waypointsList.Insert(pathIndex, newPos);
+        recentAddedAvoidancePosIndex = pathIndex;
         path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
     }
 
