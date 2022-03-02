@@ -19,14 +19,6 @@ public class TrafficLightCarController : MonoBehaviour
         pathFollower = GetComponent<PathFollower>();
     }
 
-    private void CarDetection()
-    {
-        // This method should hold the logic to detect a possible collision with another car in front and
-        // therefore it should be able to tell the pathFollower to brake. Always keep a safety distance
-    }
-
-
-    // WORK FROM HERE
     private void OnTrafficLightChange(TrafficLightColor newColor)
     {
         float distance;
@@ -79,7 +71,8 @@ public class TrafficLightCarController : MonoBehaviour
         Debug.Log("SubscribeToTrafficLight");
         currentRoad = _newRoad;
         currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
-
+        // Auto send an event in order to know the state
+        OnTrafficLightChange(currentRoad.trafficLight.currentColor);
     }
 
     public void UnsubscribeToTrafficLight()

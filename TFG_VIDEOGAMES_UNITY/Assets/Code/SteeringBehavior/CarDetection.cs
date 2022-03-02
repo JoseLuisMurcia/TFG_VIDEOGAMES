@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class CarDetection : MonoBehaviour
 {
-    // Start is called before the first frame update
+    [SerializeField] LayerMask carLayer;
+
     void Start()
     {
         
