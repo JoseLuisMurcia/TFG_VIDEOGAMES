@@ -142,7 +142,7 @@ public class PathFollower : MonoBehaviour
                         speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
                         if (speedPercent < 0.01f)
                         {
-                            Debug.Log("END ARRIVED V2");
+                            // Arrived to Target
                             followingPath = false;
                         }
                     }
@@ -179,15 +179,10 @@ public class PathFollower : MonoBehaviour
 
     float StopBeforeCar()
     {
-        float speedPercent = 1;
+        float speedPercent;
 
         float distance = Vector3.Distance(transform.position, frontCarPos);
-        speedPercent = Mathf.Clamp01((distance - 1.5f) / carStopDistance);
-        if (speedPercent < 0.03f)
-        {
-            speedPercent = 0f;
-            vehicleWasStopped = true;
-        }
+        speedPercent = Mathf.Clamp01((distance - 1f) / carStopDistance);
 
         return speedPercent;
     }

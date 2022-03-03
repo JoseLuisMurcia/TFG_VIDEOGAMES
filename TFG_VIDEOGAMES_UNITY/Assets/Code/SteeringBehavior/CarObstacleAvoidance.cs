@@ -38,19 +38,7 @@ public class CarObstacleAvoidance : MonoBehaviour
 
     private bool CheckCars()
     {
-        //Ray ray = new Ray(rayOrigin, leftCarsSensor.forward);
         RaycastHit hit;
-
-        //if (Physics.Raycast(ray, out hit, sideReach * carRayDistance, carLayer))
-        //{
-        //    Debug.DrawLine(rayOrigin, hit.point, Color.black);
-        //    return true;
-        //}
-        //else
-        //{
-        //    Debug.DrawLine(rayOrigin, rayOrigin + leftCarsSensor.forward, Color.white);
-        //}
-
         Ray ray = new Ray(rayOrigin, centerSensor.forward);
         if (Physics.Raycast(ray, out hit, centerReach * carRayDistance, carLayer))
         {
@@ -63,17 +51,6 @@ public class CarObstacleAvoidance : MonoBehaviour
         {
             Debug.DrawLine(rayOrigin, rayOrigin + centerSensor.forward, Color.white);
         }
-
-        //ray = new Ray(rayOrigin, rightCarsSensor.forward);
-        //if (Physics.Raycast(ray, out hit, sideReach * carRayDistance, carLayer))
-        //{
-        //    Debug.DrawLine(rayOrigin, hit.point, Color.black);
-        //    return true;
-        //}
-        //else
-        //{
-        //    Debug.DrawLine(rayOrigin, rayOrigin + rightCarsSensor.forward, Color.white);
-        //}
         pathFollower.shouldBrakeBeforeCar = false;
         return false;
     }
