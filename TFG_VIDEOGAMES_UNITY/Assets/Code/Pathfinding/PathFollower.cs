@@ -16,30 +16,43 @@ public class PathFollower : MonoBehaviour
     Path path;
     bool followingPath;
 
-    private float speedMax = 3.5f;
-    private float speedMin = -4f;
-    private float acceleration = 1.1f;
-
-
+    // Stop at traffic light variables
     public bool shouldStopAtTrafficLight = false;
     private Vector3 trafficLightPos;
     private float trafficLightStopDist = 3;
     private bool vehicleWasStopped = false;
 
+    // Car collision avoidance variables
+    public bool shouldBrakeBeforeCar = false;
+    private float carStopDistance = 2;
+    public Vector3 frontCarPos;
+    CarObstacleAvoidance carObstacleAvoidance;
+    int recentAddedAvoidancePosIndex = -1;
+
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
+    List<Vector3> waypointsList = new List<Vector3>();
+
+
+    
+    
 
     void Start()
     {
         StartCoroutine(UpdatePath());
         trafficLightCarController = GetComponent<TrafficLightCarController>();
+        carObstacleAvoidance = GetComponent<CarObstacleAvoidance>();
     }
 
     public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
     {
         if (pathSuccessful)
         {
-            path = new Path(waypoints, transform.position, turnDst, stoppingDst);
+            foreach (Vector3 waypoint in waypoints)
+            {
+                waypointsList.Add(waypoint);
+            }
+            path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
 
             //trafficLightCarController.path = path;
             StopCoroutine("FollowPath");
@@ -95,14 +108,22 @@ public class PathFollower : MonoBehaviour
                 else
                 {
                     // Go to next point
+                    // Reset the obstacle avoider
+                    if (pathIndex == recentAddedAvoidancePosIndex)
+                    {
+                        carObstacleAvoidance.objectHit = false;
+                    }
                     pathIndex++;
                 }
             }
 
             if (followingPath)
             {
-
-                if (shouldStopAtTrafficLight)
+                if (shouldBrakeBeforeCar)
+                {
+                    speedPercent = StopBeforeCar();
+                }
+                else if (shouldStopAtTrafficLight)
                 {
                     speedPercent = StopAtTrafficLight();
                 }
@@ -121,7 +142,7 @@ public class PathFollower : MonoBehaviour
                         speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
                         if (speedPercent < 0.01f)
                         {
-                            Debug.Log("END ARRIVED V2");
+                            // Arrived to Target
                             followingPath = false;
                         }
                     }
@@ -148,7 +169,23 @@ public class PathFollower : MonoBehaviour
         shouldStopAtTrafficLight = true;
     }
 
+    public void SetNewPathByAvoidance(Vector3 newPos)
+    {
+        //Create a new Path and add this position in the correct index.
+        waypointsList.Insert(pathIndex, newPos);
+        recentAddedAvoidancePosIndex = pathIndex;
+        path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
+    }
 
+    float StopBeforeCar()
+    {
+        float speedPercent;
+
+        float distance = Vector3.Distance(transform.position, frontCarPos);
+        speedPercent = Mathf.Clamp01((distance - 1f) / carStopDistance);
+
+        return speedPercent;
+    }
     float StopAtTrafficLight()
     {
         float speedPercent = 1;
@@ -156,26 +193,11 @@ public class PathFollower : MonoBehaviour
         if (trafficLightStopDist > 0)
         {
             float distance = trafficLightCarController.GiveDistanceToPathFollower();
-            speedPercent = Mathf.Clamp01((distance-1.5f) / trafficLightStopDist);
+            speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
             if (speedPercent < 0.03f)
             {
                 speedPercent = 0f;
                 vehicleWasStopped = true;
-            }
-        }
-        return speedPercent;
-    }
-
-    float CheckToStop(Vector2 pos2D)
-    {
-        float speedPercent = 1;
-        if (pathIndex > path.slowDownIndex && stoppingDst > 0)
-        {
-            speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
-            if (speedPercent < 0.01f)
-            {
-                Debug.Log("END ARRIVED V2");
-                followingPath = false;
             }
         }
         return speedPercent;
@@ -188,8 +210,8 @@ public class PathFollower : MonoBehaviour
         if (visualDebug && path != null)
         {
             path.DrawWithGizmos();
-           
+
         }
-        
+
     }
 }
