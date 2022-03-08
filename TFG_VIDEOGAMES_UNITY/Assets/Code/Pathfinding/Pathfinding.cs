@@ -52,11 +52,11 @@ public class Pathfinding : MonoBehaviour
                         continue;
                     }
 
-                    if (neighbour.isRoad)
-                    {
-                        bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad);
-                        if (compatibility == false) continue;
-                    }
+                    //if (neighbour.isRoad)
+                    //{
+                    //    bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad);
+                    //    if (compatibility == false) continue;
+                    //}
 
                     int newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + neighbour.movementPenalty;
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))

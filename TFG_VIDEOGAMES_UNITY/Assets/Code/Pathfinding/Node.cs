@@ -19,6 +19,7 @@ public class Node : IHeapItem<Node>
 	public bool isRoad = false;
 	public TypeOfRoad typeOfRoad = TypeOfRoad.None;
 	public Road road;
+	public List<Node> neighbours = new List<Node>();
 
 
 	public Node(bool _walkable,Vector3 _worldPos, int _gridX, int _gridY)

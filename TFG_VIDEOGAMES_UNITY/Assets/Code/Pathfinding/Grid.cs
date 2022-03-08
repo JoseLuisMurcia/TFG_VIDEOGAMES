@@ -68,6 +68,10 @@ public class Grid : MonoBehaviour
                         node.road = road;
                     }
                 }
+                else
+                {
+                    node.walkable = false;
+                }
                 if (!walkable)
                 {
                     node.isRoad = false;
@@ -80,6 +84,7 @@ public class Grid : MonoBehaviour
         BlurPenaltyMap(1);
     }
 
+    
 
     public int MaxSize
     {
