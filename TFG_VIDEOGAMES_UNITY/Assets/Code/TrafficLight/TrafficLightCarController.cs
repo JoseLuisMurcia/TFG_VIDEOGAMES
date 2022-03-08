@@ -41,8 +41,8 @@ public class TrafficLightCarController : MonoBehaviour
                 // If the car is coming to a red traffic light it should break in the closest position to it (Given there is no car in front)
                 pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
                 break;
-            Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
         }
+        Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
     }
 
     public float GiveDistanceToPathFollower()

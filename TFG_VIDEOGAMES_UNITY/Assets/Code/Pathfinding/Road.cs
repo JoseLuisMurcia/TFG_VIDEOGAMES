@@ -7,25 +7,24 @@ public class Road : MonoBehaviour
     [SerializeField] public List<Direction> directions = new List<Direction>();
     [SerializeField] LayerMask roadMask;
     public TypeOfRoad typeOfRoad = TypeOfRoad.None;
-    [SerializeField] public NumDirection numDirection = NumDirection.None;
+    public KindOfRoad kindOfRoad;
+    [SerializeField] public NumDirection numDirection;
     public TrafficLight trafficLight;
     public TrafficLightEvents trafficLightEvents;
-    [Range(1, 2)]
-    public int numberOfLanes;
     [SerializeField] public List<Road> connections = new List<Road>();
+    public List<Lane> lanes = new List<Lane>();
+    public GameObject[] laneGameObjects;
 
     List<Vector3> rayPositions = new List<Vector3>();
-    Renderer renderer;
     BoxCollider boxCollider;
 
     private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();
-        renderer = GetComponent<MeshRenderer>();
         boxCollider = GetComponent<BoxCollider>();
         SetTypeOfRoad();
         SetConnections();
-
+        SetLanes();
     }
 
     private void SetTypeOfRoad()
@@ -122,6 +121,19 @@ public class Road : MonoBehaviour
         }
     }
 
+    private void SetLanes()
+    {
+        for(int i=0; i< laneGameObjects.Length; i++)
+        {
+            lanes.Add(new Lane());
+            GameObject entry = laneGameObjects[i].transform.Find("EntryNode").gameObject;
+            GameObject exit = laneGameObjects[i].transform.Find("ExitNode").gameObject;
+            Node entryNode = new Node(true, entry.transform.position,0,0);
+            Node exitNode = new Node(true, exit.transform.position, 0, 0);
+            lanes[i].nodes.Add(entryNode);
+            lanes[i].nodes.Add(exitNode);
+        }
+    }
     private bool IsCompatible(Road road)
     {
         if (connections.Contains(road))
@@ -153,6 +165,14 @@ public enum TypeOfRoad
     UpToLeft
 }
 
+public enum KindOfRoad
+{
+    Straight,
+    End,
+    Intersection,
+    BendSquare
+}
+
 public enum Direction
 {
     None = -1,
@@ -164,7 +184,11 @@ public enum Direction
 
 public enum NumDirection
 {
-    None = -1,
     One,
     Two
+}
+
+public class Lane
+{
+    public List<Node> nodes = new List<Node>();
 }
