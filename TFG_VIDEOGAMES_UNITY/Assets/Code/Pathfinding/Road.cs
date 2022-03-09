@@ -1,19 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using PathCreation;
 
 public class Road : MonoBehaviour
 {
-    [SerializeField] public List<Direction> directions = new List<Direction>();
+    [SerializeField] List<Direction> directions = new List<Direction>();
     [SerializeField] LayerMask roadMask;
     public TypeOfRoad typeOfRoad = TypeOfRoad.None;
     public KindOfRoad kindOfRoad;
     [SerializeField] public NumDirection numDirection;
     public TrafficLight trafficLight;
     public TrafficLightEvents trafficLightEvents;
-    [SerializeField] public List<Road> connections = new List<Road>();
+    [HideInInspector]
+    public List<Road> connections = new List<Road>();
+    [HideInInspector]
     public List<Lane> lanes = new List<Lane>();
-    public GameObject[] laneGameObjects;
+    [HideInInspector]
+    public List<Vector3> laneReferencePoints = new List<Vector3>();
+
+    [HideInInspector]
+    public Transform leftBottom;
+    [SerializeField] public int numberOfLanes = 1;
+    public PathCreator pathCreator;
 
     List<Vector3> rayPositions = new List<Vector3>();
     BoxCollider boxCollider;
@@ -22,6 +31,11 @@ public class Road : MonoBehaviour
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();
         boxCollider = GetComponent<BoxCollider>();
+        pathCreator = GetComponent<PathCreator>();
+        leftBottom = gameObject.transform.Find("LeftBottom");
+        List<Vector3> localPoints = pathCreator.bezierPath.GetAnchorPoints();
+        foreach (Vector3 localPoint in localPoints)
+            laneReferencePoints.Add(transform.TransformPoint(localPoint));
         SetTypeOfRoad();
         SetConnections();
         SetLanes();
@@ -123,15 +137,9 @@ public class Road : MonoBehaviour
 
     private void SetLanes()
     {
-        for(int i=0; i< laneGameObjects.Length; i++)
+        for(int i=0; i<numberOfLanes; i++)
         {
             lanes.Add(new Lane());
-            GameObject entry = laneGameObjects[i].transform.Find("EntryNode").gameObject;
-            GameObject exit = laneGameObjects[i].transform.Find("ExitNode").gameObject;
-            Node entryNode = new Node(true, entry.transform.position,0,0);
-            Node exitNode = new Node(true, exit.transform.position, 0, 0);
-            lanes[i].nodes.Add(entryNode);
-            lanes[i].nodes.Add(exitNode);
         }
     }
     private bool IsCompatible(Road road)
@@ -184,8 +192,8 @@ public enum Direction
 
 public enum NumDirection
 {
-    One,
-    Two
+    OneDirectional,
+    TwoDirectional
 }
 
 public class Lane

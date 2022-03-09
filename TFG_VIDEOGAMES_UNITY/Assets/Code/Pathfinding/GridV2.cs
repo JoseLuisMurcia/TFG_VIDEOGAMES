@@ -5,17 +5,14 @@ using UnityEngine;
 public class GridV2 : MonoBehaviour
 {
     [SerializeField] bool displayGridGizmos;
-    [SerializeField] float nodeRadius;
     public List<Node> grid;
     [SerializeField] TrafficLight[] trafficLights;
     [SerializeField] List<Road> roads = new List<Road>();
     private int numberOfNodes;
-    float distancePerNode = 2;
-    float nodeDiameter;
+    float distancePerNode = 1;
 
     private void Start()
     {
-        nodeDiameter = nodeRadius * 2;
         CreateGridBasedOnRoads();
     }
 
@@ -28,21 +25,68 @@ public class GridV2 : MonoBehaviour
         {
             // If varios carriles, iterar sobre las pos de los carriles e ir creando nodos de principio a final e ir conectándolos.
             // Debo tener en cuenta el tamaño de la carretera para eso, crear más o menos nodos.
-            Vector3 worldPoint = road.transform.position;
 
             switch (road.kindOfRoad)
             {
                 case (KindOfRoad.Straight):
-                    for (int i=0; i < road.lanes.Count; i++)
+                    Vector3 leftBottomPos = road.leftBottom.position;
+                    int numberOfLanes = road.numberOfLanes;
+                    Vector3 startRefPoint = road.laneReferencePoints[0];
+                    Vector3 endRefPoint = road.laneReferencePoints[1];
+                    // Swap if incorrect
+                    if(Vector3.Distance(startRefPoint, leftBottomPos) > Vector3.Distance(endRefPoint, leftBottomPos))
                     {
-                        GameObject entry = road.laneGameObjects[i].transform.Find("EntryNode").gameObject;
-                        GameObject exit = road.laneGameObjects[i].transform.Find("ExitNode").gameObject;
-                        Node entryNode = new Node(true, entry.transform.position, 0, 0);
-                        Node exitNode = new Node(true, exit.transform.position, 0, 0);
+                        Vector3 copy = new Vector3(startRefPoint.x, startRefPoint.y, startRefPoint.z);
+                        startRefPoint = endRefPoint;
+                        endRefPoint = copy;
+                    }
+                    Vector3[] startPoints = new Vector3[numberOfLanes];
+                    Vector3[] endPoints = new Vector3[numberOfLanes];
+
+                    if (numberOfLanes == 1) // caso de que hay un carril, fijas la posicion y a generar nodos desde ahí hasta el final.
+                    {
+                        startPoints[0] = startRefPoint;
+                        endPoints[0] = endRefPoint;
+                    }
+                    else if (numberOfLanes == 2) // caso 2 carriles, a partir del punto central bajo sacas el punto de partida que es el punto medio entre el central bajo y el izquierdo bajo y a generar
+                    {
+                        // Distancia entre left y center pero invertida
+                        startPoints[0] = (startRefPoint + leftBottomPos) * 0.5f;
+                        float distanceX = Mathf.Abs(startPoints[0].x - startRefPoint.x);
+                        float distanceZ = Mathf.Abs(startPoints[0].z - startRefPoint.z);
+                        endPoints[0] = endRefPoint + new Vector3(distanceX, 0, distanceZ);
+
+                        Vector3 difference = leftBottomPos - startRefPoint;
+                        Vector3 rightBottomPos = startRefPoint - difference;
+                        startPoints[1] = (startRefPoint + rightBottomPos) * 0.5f;
+                        distanceX = Mathf.Abs(startPoints[1].x - startRefPoint.x);
+                        distanceZ = Mathf.Abs(startPoints[1].z - startRefPoint.z);
+                        endPoints[1] = endRefPoint - new Vector3(distanceX, 0, distanceZ);
+                    }
+                    else // caso 4 carriles
+                    {
+                        startPoints[0] = startRefPoint - leftBottomPos;
+                        endPoints[0] = endRefPoint;
+
+                        startPoints[1] = startRefPoint - leftBottomPos;
+                        endPoints[1] = endRefPoint;
+
+                        startPoints[2] = startRefPoint - leftBottomPos;
+                        endPoints[2] = endRefPoint;
+
+                        startPoints[3] = startRefPoint - leftBottomPos;
+                        endPoints[3] = endRefPoint;
+                    }
+
+                    for (int i = 0; i < road.numberOfLanes; i++)
+                    {
+                        Node entryNode = new Node(true, startPoints[i], 0, 0);
+                        Node exitNode = new Node(true, endPoints[i], 0, 0);
 
                         // Calculate all the possible nodes that could fit in a reasonable distance
                         float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
-                        float xDistance = entryNode.worldPosition.x - exitNode.worldPosition.x;
+                        float xDistance = Mathf.Abs(entryNode.worldPosition.x - exitNode.worldPosition.x);
+                        float zDistance = Mathf.Abs(entryNode.worldPosition.z - exitNode.worldPosition.z);
                         int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
                         int nodesToAdd = totalNodesInRoad - 2;
                         grid.Add(entryNode);
@@ -53,14 +97,7 @@ public class GridV2 : MonoBehaviour
                             {
                                 float multiplier = j / ((float)nodesToAdd + 1f);
                                 Vector3 newNodePos;
-                                if (xDistance == 0)
-                                {
-                                    newNodePos = new Vector3(entryNode.worldPosition.x, entryNode.worldPosition.y, entryNode.worldPosition.z + distance * multiplier);
-                                }
-                                else
-                                {
-                                    newNodePos = new Vector3(entryNode.worldPosition.x + distance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z);
-                                }
+                                newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
                                 Node newNode = new Node(true, newNodePos, 0, 0);
                                 previousNode.neighbours.Add(newNode);
                                 grid.Add(newNode);
@@ -82,14 +119,6 @@ public class GridV2 : MonoBehaviour
                 case (KindOfRoad.BendSquare):
                     break;
                 case KindOfRoad.End:
-                    for (int i = 0; i < road.lanes.Count; i++)
-                    {
-                        GameObject entry = road.laneGameObjects[i].transform.Find("EntryNode").gameObject;
-                        GameObject exit = road.laneGameObjects[i].transform.Find("ExitNode").gameObject;
-                        Node entryNode = new Node(true, entry.transform.position, 0, 0);
-                        Node exitNode = new Node(true, exit.transform.position, 0, 0);
-
-                    }
                     break;
                 case KindOfRoad.Intersection:
                     break;
@@ -153,7 +182,6 @@ public class GridV2 : MonoBehaviour
             {
                 //Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
                 Gizmos.color = Color.white;
-                Gizmos.color = (n.walkable) ? Gizmos.color : Color.red;
                 Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
 
 
@@ -187,8 +215,7 @@ public class GridV2 : MonoBehaviour
                 //        Gizmos.color = Color.red;
                 //        break;
                 //}
-
-                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .15f));
+                Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.25f));
             }
         }
     }
