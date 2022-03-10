@@ -9,7 +9,7 @@ public class GridV2 : MonoBehaviour
     [SerializeField] TrafficLight[] trafficLights;
     [SerializeField] List<Road> roads = new List<Road>();
     private int numberOfNodes;
-    float distancePerNode = 1;
+    float distancePerNode = 2;
 
     private void Start()
     {
@@ -29,92 +29,7 @@ public class GridV2 : MonoBehaviour
             switch (road.kindOfRoad)
             {
                 case (KindOfRoad.Straight):
-                    Vector3 leftBottomPos = road.leftBottom.position;
-                    int numberOfLanes = road.numberOfLanes;
-                    Vector3 startRefPoint = road.laneReferencePoints[0];
-                    Vector3 endRefPoint = road.laneReferencePoints[1];
-                    // Swap if incorrect
-                    if(Vector3.Distance(startRefPoint, leftBottomPos) > Vector3.Distance(endRefPoint, leftBottomPos))
-                    {
-                        Vector3 copy = new Vector3(startRefPoint.x, startRefPoint.y, startRefPoint.z);
-                        startRefPoint = endRefPoint;
-                        endRefPoint = copy;
-                    }
-                    Vector3[] startPoints = new Vector3[numberOfLanes];
-                    Vector3[] endPoints = new Vector3[numberOfLanes];
-
-                    if (numberOfLanes == 1) // caso de que hay un carril, fijas la posicion y a generar nodos desde ahí hasta el final.
-                    {
-                        startPoints[0] = startRefPoint;
-                        endPoints[0] = endRefPoint;
-                    }
-                    else if (numberOfLanes == 2) // caso 2 carriles, a partir del punto central bajo sacas el punto de partida que es el punto medio entre el central bajo y el izquierdo bajo y a generar
-                    {
-                        // Distancia entre left y center pero invertida
-                        startPoints[0] = (startRefPoint + leftBottomPos) * 0.5f;
-                        float distanceX = Mathf.Abs(startPoints[0].x - startRefPoint.x);
-                        float distanceZ = Mathf.Abs(startPoints[0].z - startRefPoint.z);
-                        endPoints[0] = endRefPoint + new Vector3(distanceX, 0, distanceZ);
-
-                        Vector3 difference = leftBottomPos - startRefPoint;
-                        Vector3 rightBottomPos = startRefPoint - difference;
-                        startPoints[1] = (startRefPoint + rightBottomPos) * 0.5f;
-                        distanceX = Mathf.Abs(startPoints[1].x - startRefPoint.x);
-                        distanceZ = Mathf.Abs(startPoints[1].z - startRefPoint.z);
-                        endPoints[1] = endRefPoint - new Vector3(distanceX, 0, distanceZ);
-                    }
-                    else // caso 4 carriles
-                    {
-                        startPoints[0] = startRefPoint - leftBottomPos;
-                        endPoints[0] = endRefPoint;
-
-                        startPoints[1] = startRefPoint - leftBottomPos;
-                        endPoints[1] = endRefPoint;
-
-                        startPoints[2] = startRefPoint - leftBottomPos;
-                        endPoints[2] = endRefPoint;
-
-                        startPoints[3] = startRefPoint - leftBottomPos;
-                        endPoints[3] = endRefPoint;
-                    }
-
-                    for (int i = 0; i < road.numberOfLanes; i++)
-                    {
-                        Node entryNode = new Node(true, startPoints[i], 0, 0);
-                        Node exitNode = new Node(true, endPoints[i], 0, 0);
-
-                        // Calculate all the possible nodes that could fit in a reasonable distance
-                        float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
-                        float xDistance = Mathf.Abs(entryNode.worldPosition.x - exitNode.worldPosition.x);
-                        float zDistance = Mathf.Abs(entryNode.worldPosition.z - exitNode.worldPosition.z);
-                        int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
-                        int nodesToAdd = totalNodesInRoad - 2;
-                        grid.Add(entryNode);
-                        if (nodesToAdd > 0)
-                        {
-                            Node previousNode = entryNode;
-                            for (int j = 1; j <= nodesToAdd; j++)
-                            {
-                                float multiplier = j / ((float)nodesToAdd + 1f);
-                                Vector3 newNodePos;
-                                newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
-                                Node newNode = new Node(true, newNodePos, 0, 0);
-                                previousNode.neighbours.Add(newNode);
-                                grid.Add(newNode);
-                                previousNode = newNode;
-                            }
-                        }
-                        else
-                        {
-                            entryNode.neighbours.Add(exitNode);
-                            exitNode.neighbours.Add(entryNode);
-                        }
-                        grid.Add(exitNode);
-
-
-                        // Si la carretera tiene varios carriles y son del mismo sentido tengo que establecer conexiones entre nodos vecinos.
-                        // Iterar sobre los nodos de un carril y añadir como vecino al nodo i del carril 1 al nodo i+1 del carril 2.
-                    }
+                    CreateNodesForStraightRoad(road);
                     break;
                 case (KindOfRoad.BendSquare):
                     break;
@@ -220,5 +135,142 @@ public class GridV2 : MonoBehaviour
         }
     }
 
+    private Vector3 GetOppositeVector(Vector3 origin, Vector3 anchor)
+    {
+        float distanceX = Mathf.Abs(origin.x - anchor.x);
+        float distanceY = Mathf.Abs(origin.y - anchor.y);
+        float distanceZ = Mathf.Abs(origin.z - anchor.z);
+        Vector3 oppositeVector = anchor - new Vector3(distanceX, distanceY, distanceZ);
+        return oppositeVector;
+    }
 
+    private Vector3 GetVectorWithSameDistanceAsSources(Vector3 src1, Vector3 src2, Vector3 dst)
+    {
+        float distanceX = src1.x - src2.x;
+        float distanceY = src1.y - src2.y;
+        float distanceZ = src1.z - src2.z;
+        //if(ShouldSubstract(src1.x, src2.x))
+        //{
+        //    distanceX = -distanceX;
+        //}
+        //if (ShouldSubstract(src1.y, src2.y))
+        //{
+        //    distanceY = -distanceY;
+        //}
+        //if (ShouldSubstract(src1.z, src2.z))
+        //{
+        //    distanceZ = -distanceZ;
+        //}
+        Vector3 sameDistanceVector = dst + new Vector3(distanceX, distanceY, distanceZ);
+        return sameDistanceVector;
+    }
+
+    private void CreateNodesForStraightRoad(Road road)
+    {
+        Vector3 leftBottom = road.leftBottom.position;
+        int numberOfLanes = road.numberOfLanes;
+        Vector3 startRefPoint = road.laneReferencePoints[0];
+        Vector3 endRefPoint = road.laneReferencePoints[1];
+        // Swap if incorrect
+        if (Vector3.Distance(startRefPoint, leftBottom) > Vector3.Distance(endRefPoint, leftBottom))
+        {
+            Vector3 copy = new Vector3(startRefPoint.x, startRefPoint.y, startRefPoint.z);
+            startRefPoint = endRefPoint;
+            endRefPoint = copy;
+        }
+        Vector3[] startPoints = new Vector3[numberOfLanes];
+        Vector3[] endPoints = new Vector3[numberOfLanes];
+
+        if (numberOfLanes == 1) // caso de que hay un carril, fijas la posicion y a generar nodos desde ahí hasta el final.
+        {
+            startPoints[0] = startRefPoint;
+            endPoints[0] = endRefPoint;
+        }
+        else if (numberOfLanes == 2) // caso 2 carriles, a partir del punto central bajo sacas el punto de partida que es el punto medio entre el central bajo y el izquierdo bajo y a generar
+        {
+            // Distancia entre left y center pero invertida
+            startPoints[0] = (startRefPoint + leftBottom) * 0.5f;
+            endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], startRefPoint, endRefPoint);
+
+            Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
+            startPoints[1] = (startRefPoint + rightBottom) * 0.5f;
+            endPoints[1] = GetOppositeVector(endPoints[0], endRefPoint);
+        }
+        else // caso 4 carriles
+        {
+            Vector3 leftHalf = (startRefPoint + leftBottom) * 0.5f;
+            Vector3 leftHalfEnd = GetVectorWithSameDistanceAsSources(leftHalf, startRefPoint, endRefPoint);
+            startPoints[0] = (leftHalf + leftBottom) * 0.5f;
+            endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], leftHalf, leftHalfEnd);
+
+            startPoints[1] = (startRefPoint + leftHalf) * 0.5f;
+            endPoints[1] = GetVectorWithSameDistanceAsSources(leftHalf, startPoints[1], leftHalfEnd);
+            endPoints[1] = GetOppositeVector(endPoints[0], leftHalfEnd);
+
+            Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
+            Vector3 rightHalf = (startRefPoint + rightBottom) * 0.5f;
+            Vector3 rightHalfEnd = GetVectorWithSameDistanceAsSources(rightHalf, startRefPoint, endRefPoint);
+
+            startPoints[2] = (startRefPoint + rightHalf) * 0.5f;
+            endPoints[2] = (endRefPoint + rightHalfEnd) * 0.5f;
+
+            startPoints[3] = (rightHalf + rightBottom) * 0.5f;
+            endPoints[3] = GetOppositeVector(endPoints[2], rightHalfEnd);
+        }
+
+        for (int i = 0; i < road.numberOfLanes; i++)
+        {
+            Node entryNode = new Node(true, startPoints[i], 0, 0);
+            Node exitNode = new Node(true, endPoints[i], 0, 0);
+
+            // Calculate all the possible nodes that could fit in a reasonable distance
+            float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
+            float xDistance = Mathf.Abs(entryNode.worldPosition.x - exitNode.worldPosition.x);
+            float zDistance = Mathf.Abs(entryNode.worldPosition.z - exitNode.worldPosition.z);
+            int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
+            int nodesToAdd = totalNodesInRoad - 2;
+            grid.Add(entryNode);
+            if (nodesToAdd > 0)
+            {
+                Node previousNode = entryNode;
+                for (int j = 1; j <= nodesToAdd; j++)
+                {
+                    float multiplier = j / ((float)nodesToAdd + 1f);
+                    Vector3 newNodePos;
+                    newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
+                    Node newNode = new Node(true, newNodePos, 0, 0);
+                    previousNode.neighbours.Add(newNode);
+                    grid.Add(newNode);
+                    previousNode = newNode;
+                }
+            }
+            else
+            {
+                entryNode.neighbours.Add(exitNode);
+                exitNode.neighbours.Add(entryNode);
+            }
+            grid.Add(exitNode);
+
+
+            // Si la carretera tiene varios carriles y son del mismo sentido tengo que establecer conexiones entre nodos vecinos.
+            // Iterar sobre los nodos de un carril y añadir como vecino al nodo i del carril 1 al nodo i+1 del carril 2.
+        }
+    }
+    private bool ShouldSubstract(float val1, float val2)
+    {
+        bool shouldSubstract = false;
+        if (Mathf.Abs(val1) > Mathf.Abs(val2))
+        {
+            return false;
+        }
+        else if (Mathf.Abs(val1) < Mathf.Abs(val2))
+        {
+            shouldSubstract = true;
+        }
+        else
+        {
+            return false;
+        }
+        return shouldSubstract;
+    }
 }
