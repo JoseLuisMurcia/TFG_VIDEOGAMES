@@ -8,16 +8,85 @@ public class GridV2 : MonoBehaviour
     public List<Node> grid;
     public List<Vector3> debugNodes = new List<Vector3>();
     [SerializeField] TrafficLight[] trafficLights;
+    [SerializeField] LayerMask roadMask;
     [SerializeField] List<Road> roads = new List<Road>();
-    private int numberOfNodes;
-    float distancePerNode = 2;
+    float distancePerNode = 2f;
 
+    public int MaxSize
+    {
+        get
+        {
+            return grid.Count;
+        }
+    }
     private void Start()
     {
         CreateGridBasedOnRoads();
     }
 
+    public Node FindStartNode(Vector3 worldPoint, Vector3 carForward)
+    {
+        Node closestNode = new Node(true, Vector3.zero);
+        float bestDistance = float.PositiveInfinity;
+        RaycastHit hit;
+        Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
+        if (Physics.Raycast(ray, out hit, 100, roadMask))
+        {
+            GameObject _gameObject = hit.collider.gameObject;
 
+            Road road = _gameObject.GetComponent<Road>();
+            if (road)
+            {
+                foreach (Lane lane in road.lanes)
+                {
+                    foreach (Node node in lane.nodes)
+                    {
+                        float currentDistance = Vector3.Distance(node.worldPosition, worldPoint);
+                        if (currentDistance <= bestDistance)
+                        {
+                            Vector3 dirToMovePosition = (node.worldPosition - worldPoint).normalized;
+                            float dot = Vector3.Dot(carForward, dirToMovePosition);
+                            if (dot > 0)
+                            {
+                                closestNode = node;
+                                bestDistance = currentDistance;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return closestNode;
+    }
+
+    public Node FindEndNode(Vector3 worldPoint)
+    {
+        Node closestNode = new Node(true, Vector3.zero);
+        float bestDistance = float.PositiveInfinity;
+        RaycastHit hit;
+        Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
+        if (Physics.Raycast(ray, out hit, 100, roadMask))
+        {
+            GameObject _gameObject = hit.collider.gameObject;
+            Road road = _gameObject.GetComponent<Road>();
+            if (road)
+            {
+                foreach (Lane lane in road.lanes)
+                {
+                    foreach (Node node in lane.nodes)
+                    {
+                        float currentDistance = Vector3.Distance(node.worldPosition, worldPoint);
+                        if (currentDistance <= bestDistance)
+                        {
+                            closestNode = node;
+                            bestDistance = currentDistance;
+                        }
+                    }
+                }
+            }
+        }
+        return closestNode;
+    }
     void CreateGridBasedOnRoads()
     {
         grid = new List<Node>();
@@ -42,7 +111,7 @@ public class GridV2 : MonoBehaviour
         }
 
         // Connect the exit and entry nodes in the roads
-        foreach(Road road in roads)
+        foreach (Road road in roads)
         {
             switch (road.kindOfRoad)
             {
@@ -59,36 +128,7 @@ public class GridV2 : MonoBehaviour
     }
 
 
-    public int MaxSize
-    {
-        get
-        {
-            return numberOfNodes;
-        }
-    }
-    public List<Node> GetNeighbours(Node node)
-    {
-        List<Node> neighbours = new List<Node>();
 
-        //for (int x = -1; x <= 1; x++)
-        //{
-        //    for (int y = -1; y <= 1; y++)
-        //    {
-        //        if (x == 0 && y == 0)
-        //            continue;
-
-        //        int checkX = node.gridX + x;
-        //        int checkY = node.gridY + y;
-
-        //        if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
-        //        {
-        //            neighbours.Add(grid[checkX, checkY]);
-        //        }
-        //    }
-        //}
-
-        return neighbours;
-    }
 
     void OnDrawGizmos()
     {
@@ -96,48 +136,25 @@ public class GridV2 : MonoBehaviour
         {
             foreach (Node n in grid)
             {
-                //Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(penaltyMin, penaltyMax, n.movementPenalty));
                 Gizmos.color = Color.white;
                 Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
-
-
-                //switch (n.typeOfRoad)
-                //{
-                //    case TypeOfRoad.Right:
-                //        Gizmos.color = Color.blue;
-                //        break;
-                //    case TypeOfRoad.DownToRight:
-                //        Gizmos.color = Color.magenta;
-                //        break;
-                //    case TypeOfRoad.UpToRight:
-                //        Gizmos.color = Color.black;
-                //        break;
-                //    case TypeOfRoad.UpToLeft:
-                //        Gizmos.color = Color.cyan;
-                //        break;
-                //    case TypeOfRoad.DownToLeft:
-                //        Gizmos.color = Color.yellow;
-                //        break;
-                //    case TypeOfRoad.Left:
-                //        Gizmos.color = Color.green;
-                //        break;
-                //    case TypeOfRoad.Down:
-                //        Gizmos.color = Color.gray;
-                //        break;
-                //    case TypeOfRoad.Up:
-                //        Gizmos.color = Color.white;
-                //        break;
-                //    case TypeOfRoad.None:
-                //        Gizmos.color = Color.red;
-                //        break;
-                //}
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.25f));
+
+                foreach (Node neighbour in n.neighbours)
+                {
+                    Gizmos.color = Color.blue;
+                    Vector3 yOffset = new Vector3(0, .1f, 0);
+                    Gizmos.DrawLine(n.worldPosition + yOffset, neighbour.worldPosition + yOffset);
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawSphere(n.worldPosition * .2f + neighbour.worldPosition * .8f + yOffset, .1f);
+                }
             }
-            foreach(Vector3 debugPos in debugNodes)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawCube(debugPos, Vector3.one * (0.25f));
-            }
+
+            //foreach(Vector3 debugPos in debugNodes)
+            //{
+            //    Gizmos.color = Color.red;
+            //    Gizmos.DrawCube(debugPos, Vector3.one * (0.25f));
+            //}
         }
     }
 
@@ -167,7 +184,6 @@ public class GridV2 : MonoBehaviour
         {
             // Distancia entre left y center pero invertida
             startPoints[0] = (startRefPoint + leftBottom) * 0.5f;
-            Vector3 startPoint0 = (startRefPoint + leftBottom) * 0.5f;
             endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], startRefPoint, endRefPoint);
 
             Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
@@ -201,10 +217,21 @@ public class GridV2 : MonoBehaviour
             endPoints[3] = GetOppositeVector(endPoints[2], rightHalfEnd);
         }
 
-        for (int i = 0; i < road.numberOfLanes; i++)
+        for (int i = 0; i < numberOfLanes; i++)
         {
-            Node entryNode = new Node(true, startPoints[i], 0, 0);
-            Node exitNode = new Node(true, endPoints[i], 0, 0);
+            Node entryNode;
+            Node exitNode;
+            if (road.numDirection == NumDirection.TwoDirectional && i < numberOfLanes / 2 && numberOfLanes > 1)
+            {
+                entryNode = new Node(true, endPoints[i]);
+                exitNode = new Node(true, startPoints[i]);
+            }
+            else
+            {
+                entryNode = new Node(true, startPoints[i]);
+                exitNode = new Node(true, endPoints[i]);
+            }
+
 
             // Calculate all the possible nodes that could fit in a reasonable distance
             float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
@@ -213,6 +240,7 @@ public class GridV2 : MonoBehaviour
             int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
             int nodesToAdd = totalNodesInRoad - 2;
             grid.Add(entryNode);
+            road.lanes[i].nodes.Add(entryNode);
             if (nodesToAdd > 0)
             {
                 Node previousNode = entryNode;
@@ -221,23 +249,69 @@ public class GridV2 : MonoBehaviour
                     float multiplier = j / ((float)nodesToAdd + 1f);
                     Vector3 newNodePos;
                     newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
-                    Node newNode = new Node(true, newNodePos, 0, 0);
+                    Node newNode = new Node(true, newNodePos);
                     previousNode.neighbours.Add(newNode);
                     grid.Add(newNode);
+                    road.lanes[i].nodes.Add(newNode);
                     previousNode = newNode;
                 }
+                previousNode.neighbours.Add(exitNode);
             }
             else
             {
                 entryNode.neighbours.Add(exitNode);
-                exitNode.neighbours.Add(entryNode);
             }
+            road.lanes[i].nodes.Add(exitNode);
             grid.Add(exitNode);
-
-
-            // Si la carretera tiene varios carriles y son del mismo sentido tengo que establecer conexiones entre nodos vecinos.
-            // Iterar sobre los nodos de un carril y añadir como vecino al nodo i del carril 1 al nodo i+1 del carril 2.
         }
+
+        int nodesPerLane = road.lanes[0].nodes.Count;
+        // Iterar sobre los carriles para conectar los nodos entre carriles. Check la bidireccionalidad
+        if (numberOfLanes == 2 && NumDirection.OneDirectional == road.numDirection)
+        {
+            List<Node> lane1Nodes = road.lanes[0].nodes;
+            List<Node> lane2Nodes = road.lanes[1].nodes;
+            for (int i = 0; i < nodesPerLane - 1; i++)
+            {
+                lane1Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
+                lane2Nodes[i].neighbours.Add(lane1Nodes[i + 1]);
+            }
+        }
+        else if (numberOfLanes == 4) // 4 lanes
+        {
+            List<Node> lane1Nodes = road.lanes[0].nodes;
+            List<Node> lane2Nodes = road.lanes[1].nodes;
+            List<Node> lane3Nodes = road.lanes[2].nodes;
+            List<Node> lane4Nodes = road.lanes[3].nodes;
+
+            if (road.numDirection == NumDirection.OneDirectional)
+            {
+                for (int i = 0; i < nodesPerLane - 1; i++)
+                {
+                    lane1Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
+                    lane2Nodes[i].neighbours.Add(lane1Nodes[i + 1]);
+                    lane2Nodes[i].neighbours.Add(lane3Nodes[i + 1]);
+                    lane3Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
+                    lane3Nodes[i].neighbours.Add(lane4Nodes[i + 1]);
+                    lane4Nodes[i].neighbours.Add(lane3Nodes[i + 1]);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < nodesPerLane - 1; i++)
+                {
+                    lane1Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
+                    lane2Nodes[i].neighbours.Add(lane1Nodes[i + 1]);
+                }
+                for (int i = 0; i < nodesPerLane - 1; i++)
+                {
+                    lane3Nodes[i].neighbours.Add(lane4Nodes[i + 1]);
+                    lane4Nodes[i].neighbours.Add(lane3Nodes[i + 1]);
+                }
+            }
+        }
+
+
     }
     private Vector3 GetOppositeVector(Vector3 origin, Vector3 anchor)
     {
@@ -261,15 +335,15 @@ public class GridV2 : MonoBehaviour
     {
         float distanceToApply = 0;
         float substractionResult = src - dst;
-        if(substractionResult == 0)
+        if (substractionResult == 0)
         {
             distanceToApply = 0;
         }
-        else if(src < dst)
+        else if (src < dst)
         {
             distanceToApply = -substractionResult;
         }
-        else if(src > dst)
+        else if (src > dst)
         {
             distanceToApply = -substractionResult;
         }

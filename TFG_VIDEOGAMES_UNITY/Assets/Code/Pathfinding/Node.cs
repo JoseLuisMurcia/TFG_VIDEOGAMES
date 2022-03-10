@@ -6,12 +6,10 @@ public class Node : IHeapItem<Node>
 {
 	public bool walkable;
 	public Vector3 worldPosition;
-	public int gridX;
-	public int gridY;
 	public int movementPenalty;
 
-	public int gCost;
-	public int hCost;
+	public float gCost;
+	public float hCost;
 	public Node parent;
 	int heapIndex;
 	public bool hasTrafficLightClose;
@@ -21,15 +19,13 @@ public class Node : IHeapItem<Node>
 	public List<Node> neighbours = new List<Node>();
 
 
-	public Node(bool _walkable,Vector3 _worldPos, int _gridX, int _gridY)
+	public Node(bool _walkable,Vector3 _worldPos)
 	{
 		walkable = _walkable;
 		worldPosition = _worldPos;
-		gridX = _gridX;
-		gridY = _gridY;
 	}
 
-	public int fCost
+	public float fCost
 	{
 		get
 		{

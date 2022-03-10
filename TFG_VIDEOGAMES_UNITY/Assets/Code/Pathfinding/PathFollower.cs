@@ -32,11 +32,6 @@ public class PathFollower : MonoBehaviour
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
     List<Vector3> waypointsList = new List<Vector3>();
-
-
-    
-    
-
     void Start()
     {
         StartCoroutine(UpdatePath());
@@ -48,6 +43,7 @@ public class PathFollower : MonoBehaviour
     {
         if (pathSuccessful)
         {
+            waypointsList = new List<Vector3>();
             foreach (Vector3 waypoint in waypoints)
             {
                 waypointsList.Add(waypoint);
@@ -67,7 +63,7 @@ public class PathFollower : MonoBehaviour
         {
             yield return new WaitForSeconds(.3f);
         }
-        PathfinderRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+        PathfinderRequestManager.RequestPath(transform.position, target.position, transform.forward, OnPathFound);
 
         float sqrMoveThreshold = pathUpdateMoveThreshold * pathUpdateMoveThreshold;
         Vector3 targetPosOld = target.position;
@@ -77,7 +73,7 @@ public class PathFollower : MonoBehaviour
             yield return new WaitForSeconds(minPathUpdateTime);
             if ((target.position - targetPosOld).sqrMagnitude > sqrMoveThreshold)
             {
-                PathfinderRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+                PathfinderRequestManager.RequestPath(transform.position, target.position, transform.forward, OnPathFound);
                 targetPosOld = target.position;
             }
         }

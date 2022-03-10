@@ -19,9 +19,9 @@ public class PathfinderRequestManager : MonoBehaviour
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Vector3[], bool> callback)
+    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool> callback)
     {
-        PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback);
+        PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
         instance.TryProcessNext();
     }
@@ -32,7 +32,7 @@ public class PathfinderRequestManager : MonoBehaviour
         {
             currentPathRequest = pathRequestQueue.Dequeue();
             isProcessingPath = true;
-            pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd);
+            pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.carForward);
         }
     }
 
@@ -47,13 +47,15 @@ public class PathfinderRequestManager : MonoBehaviour
     {
         public Vector3 pathStart;
         public Vector3 pathEnd;
+        public Vector3 carForward;
         public Action<Vector3[], bool> callback;
 
-        public PathRequest(Vector3 _start, Vector3 _end, Action<Vector3[], bool> _callback)
+        public PathRequest(Vector3 _start, Vector3 _end, Vector3 _carForward, Action<Vector3[], bool> _callback)
         {
             pathStart = _start;
             pathEnd = _end;
             callback = _callback;
+            carForward = _carForward;
         }
     }
 }
