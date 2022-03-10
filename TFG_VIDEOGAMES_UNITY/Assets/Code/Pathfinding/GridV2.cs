@@ -6,6 +6,7 @@ public class GridV2 : MonoBehaviour
 {
     [SerializeField] bool displayGridGizmos;
     public List<Node> grid;
+    public List<Vector3> debugNodes = new List<Vector3>();
     [SerializeField] TrafficLight[] trafficLights;
     [SerializeField] List<Road> roads = new List<Road>();
     private int numberOfNodes;
@@ -132,38 +133,14 @@ public class GridV2 : MonoBehaviour
                 //}
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.25f));
             }
+            foreach(Vector3 debugPos in debugNodes)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawCube(debugPos, Vector3.one * (0.25f));
+            }
         }
     }
 
-    private Vector3 GetOppositeVector(Vector3 origin, Vector3 anchor)
-    {
-        float distanceX = Mathf.Abs(origin.x - anchor.x);
-        float distanceY = Mathf.Abs(origin.y - anchor.y);
-        float distanceZ = Mathf.Abs(origin.z - anchor.z);
-        Vector3 oppositeVector = anchor - new Vector3(distanceX, distanceY, distanceZ);
-        return oppositeVector;
-    }
-
-    private Vector3 GetVectorWithSameDistanceAsSources(Vector3 src1, Vector3 src2, Vector3 dst)
-    {
-        float distanceX = src1.x - src2.x;
-        float distanceY = src1.y - src2.y;
-        float distanceZ = src1.z - src2.z;
-        //if(ShouldSubstract(src1.x, src2.x))
-        //{
-        //    distanceX = -distanceX;
-        //}
-        //if (ShouldSubstract(src1.y, src2.y))
-        //{
-        //    distanceY = -distanceY;
-        //}
-        //if (ShouldSubstract(src1.z, src2.z))
-        //{
-        //    distanceZ = -distanceZ;
-        //}
-        Vector3 sameDistanceVector = dst + new Vector3(distanceX, distanceY, distanceZ);
-        return sameDistanceVector;
-    }
 
     private void CreateNodesForStraightRoad(Road road)
     {
@@ -190,9 +167,12 @@ public class GridV2 : MonoBehaviour
         {
             // Distancia entre left y center pero invertida
             startPoints[0] = (startRefPoint + leftBottom) * 0.5f;
+            Vector3 startPoint0 = (startRefPoint + leftBottom) * 0.5f;
             endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], startRefPoint, endRefPoint);
 
             Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
+            debugNodes.Add(rightBottom);
+            debugNodes.Add(leftBottom);
             startPoints[1] = (startRefPoint + rightBottom) * 0.5f;
             endPoints[1] = GetOppositeVector(endPoints[0], endRefPoint);
         }
@@ -202,7 +182,8 @@ public class GridV2 : MonoBehaviour
             Vector3 leftHalfEnd = GetVectorWithSameDistanceAsSources(leftHalf, startRefPoint, endRefPoint);
             startPoints[0] = (leftHalf + leftBottom) * 0.5f;
             endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], leftHalf, leftHalfEnd);
-
+            debugNodes.Add(leftBottom);
+            debugNodes.Add(leftHalf);
             startPoints[1] = (startRefPoint + leftHalf) * 0.5f;
             endPoints[1] = GetVectorWithSameDistanceAsSources(leftHalf, startPoints[1], leftHalfEnd);
             endPoints[1] = GetOppositeVector(endPoints[0], leftHalfEnd);
@@ -210,6 +191,8 @@ public class GridV2 : MonoBehaviour
             Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
             Vector3 rightHalf = (startRefPoint + rightBottom) * 0.5f;
             Vector3 rightHalfEnd = GetVectorWithSameDistanceAsSources(rightHalf, startRefPoint, endRefPoint);
+            debugNodes.Add(rightBottom);
+            debugNodes.Add(rightHalf);
 
             startPoints[2] = (startRefPoint + rightHalf) * 0.5f;
             endPoints[2] = (endRefPoint + rightHalfEnd) * 0.5f;
@@ -225,8 +208,8 @@ public class GridV2 : MonoBehaviour
 
             // Calculate all the possible nodes that could fit in a reasonable distance
             float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
-            float xDistance = Mathf.Abs(entryNode.worldPosition.x - exitNode.worldPosition.x);
-            float zDistance = Mathf.Abs(entryNode.worldPosition.z - exitNode.worldPosition.z);
+            float xDistance = GetDistanceToReach(entryNode.worldPosition.x, exitNode.worldPosition.x);
+            float zDistance = GetDistanceToReach(entryNode.worldPosition.z, exitNode.worldPosition.z);
             int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
             int nodesToAdd = totalNodesInRoad - 2;
             grid.Add(entryNode);
@@ -256,21 +239,40 @@ public class GridV2 : MonoBehaviour
             // Iterar sobre los nodos de un carril y añadir como vecino al nodo i del carril 1 al nodo i+1 del carril 2.
         }
     }
-    private bool ShouldSubstract(float val1, float val2)
+    private Vector3 GetOppositeVector(Vector3 origin, Vector3 anchor)
     {
-        bool shouldSubstract = false;
-        if (Mathf.Abs(val1) > Mathf.Abs(val2))
+        float distanceX = GetDistanceToReach(origin.x, anchor.x);
+        float distanceY = GetDistanceToReach(origin.y, anchor.y);
+        float distanceZ = GetDistanceToReach(origin.z, anchor.z);
+        Vector3 oppositeVector = anchor + new Vector3(distanceX, distanceY, distanceZ);
+        return oppositeVector;
+    }
+
+    private Vector3 GetVectorWithSameDistanceAsSources(Vector3 src1, Vector3 src2, Vector3 dst)
+    {
+        float distanceX = src1.x - src2.x;
+        float distanceY = src1.y - src2.y;
+        float distanceZ = src1.z - src2.z;
+        Vector3 sameDistanceVector = dst + new Vector3(distanceX, distanceY, distanceZ);
+        return sameDistanceVector;
+    }
+
+    private float GetDistanceToReach(float src, float dst)
+    {
+        float distanceToApply = 0;
+        float substractionResult = src - dst;
+        if(substractionResult == 0)
         {
-            return false;
+            distanceToApply = 0;
         }
-        else if (Mathf.Abs(val1) < Mathf.Abs(val2))
+        else if(src < dst)
         {
-            shouldSubstract = true;
+            distanceToApply = -substractionResult;
         }
-        else
+        else if(src > dst)
         {
-            return false;
+            distanceToApply = -substractionResult;
         }
-        return shouldSubstract;
+        return distanceToApply;
     }
 }
