@@ -687,6 +687,11 @@ namespace PathCreation {
             }
             return anchorPoints;
         }
+
+        public List<float> GetAnchorNormals()
+        {
+            return perAnchorNormalsAngle;
+        }
         #endregion
 
     }

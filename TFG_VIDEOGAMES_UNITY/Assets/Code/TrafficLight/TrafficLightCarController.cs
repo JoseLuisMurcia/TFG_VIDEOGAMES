@@ -30,7 +30,7 @@ public class TrafficLightCarController : MonoBehaviour
                 break;
             case TrafficLightColor.Amber:
                 // If the car was moving and it is close enough, brake.
-                distance = CheckDistanceWithTrafficLight(currentRoad.typeOfRoad, currentRoad.trafficLight.transform.position);
+                distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
                 if (distance > distanceToStopInAmberLight)
                 {
                     pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
@@ -47,22 +47,22 @@ public class TrafficLightCarController : MonoBehaviour
 
     public float GiveDistanceToPathFollower()
     {
-        return CheckDistanceWithTrafficLight(currentRoad.typeOfRoad, currentRoad.trafficLight.transform.position);
+        return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
     }
-    private float CheckDistanceWithTrafficLight(TypeOfRoad typeOfRoad, Vector3 trafficLightPos)
+    
+    // TO FIX
+    private float CheckDistanceWithTrafficLight(Vector3 trafficLightPos)
     {
         Vector3 carPosition = transform.position;
-        switch (typeOfRoad)
-        {
-            case TypeOfRoad.Down:
-                return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
-            case TypeOfRoad.Right:
-                return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(trafficLightPos.x, 0));
-            case TypeOfRoad.Left:
-                return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(carPosition.x, 0));
-            case TypeOfRoad.Up:
-                return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
-        }
+            //case TypeOfRoad.Down:
+            //    return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
+            //case TypeOfRoad.Right:
+            //    return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(trafficLightPos.x, 0));
+            //case TypeOfRoad.Left:
+            //    return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(carPosition.x, 0));
+            //case TypeOfRoad.Up:
+            //    return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
+        
         return -1f;
     }
 

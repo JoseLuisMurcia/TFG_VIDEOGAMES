@@ -1,14 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using PathCreation;
 
 public class Road : MonoBehaviour
 {
-    [SerializeField] List<Direction> directions = new List<Direction>();
     [SerializeField] LayerMask roadMask;
-    public TypeOfRoad typeOfRoad = TypeOfRoad.None;
-    public KindOfRoad kindOfRoad;
+    public TypeOfRoad typeOfRoad;
     [SerializeField] public NumDirection numDirection;
     public TrafficLight trafficLight;
     public TrafficLightEvents trafficLightEvents;
@@ -26,6 +25,8 @@ public class Road : MonoBehaviour
 
     List<Vector3> rayPositions = new List<Vector3>();
     BoxCollider boxCollider;
+    [HideInInspector]
+    public List<Line> curveRoadLines;
 
     private void Awake()
     {
@@ -33,70 +34,19 @@ public class Road : MonoBehaviour
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
         leftBottom = gameObject.transform.Find("LeftBottom");
+        SetConnections();
+        SetLanes();
+        SortReferencePoints();
+    }
+
+    private void SortReferencePoints()
+    {
         List<Vector3> localPoints = pathCreator.bezierPath.GetAnchorPoints();
         foreach (Vector3 localPoint in localPoints)
             laneReferencePoints.Add(transform.TransformPoint(localPoint));
-        SetTypeOfRoad();
-        SetConnections();
-        SetLanes();
-    }
 
-    private void SetTypeOfRoad()
-    {
-        if (directions.Count == 1)
-        {
-            // Important, the order of enums must be the same in order for the cast to work properly
-            typeOfRoad = (TypeOfRoad)directions[0];
-        }
-        else
-        {
-            if (directions.Contains(Direction.Up))
-            {
-                if (directions.Contains(Direction.Left))
-                {
-                    typeOfRoad = TypeOfRoad.UpToLeft;
-                }
-                else
-                {
-                    typeOfRoad = TypeOfRoad.UpToRight;
-                }
-            }
-            else if (directions.Contains(Direction.Down))
-            {
-                if (directions.Contains(Direction.Left))
-                {
-                    typeOfRoad = TypeOfRoad.DownToLeft;
-                }
-                else
-                {
-                    typeOfRoad = TypeOfRoad.DownToRight;
-                }
-            }
-            else if (directions.Contains(Direction.Right))
-            {
-                if (directions.Contains(Direction.Up))
-                {
-                    typeOfRoad = TypeOfRoad.UpToRight;
-                }
-                else
-                {
-                    typeOfRoad = TypeOfRoad.DownToRight;
-                }
-            }
-            else if (directions.Contains(Direction.Left))
-            {
-                if (directions.Contains(Direction.Up))
-                {
-                    typeOfRoad = TypeOfRoad.UpToLeft;
-                }
-                else
-                {
-                    typeOfRoad = TypeOfRoad.UpToRight;
-                }
-            }
-        }
+        
     }
-
     private void SetConnections()
     {
         Vector3 center = transform.position + boxCollider.center;
@@ -162,32 +112,11 @@ public class Road : MonoBehaviour
 
 public enum TypeOfRoad
 {
-    None = -1,
-    Right,
-    Up, 
-    Down,
-    Left,
-    DownToLeft,
-    DownToRight,
-    UpToRight,
-    UpToLeft
-}
-
-public enum KindOfRoad
-{
     Straight,
     End,
     Intersection,
-    BendSquare
-}
-
-public enum Direction
-{
-    None = -1,
-    Right,
-    Up,
-    Down,
-    Left
+    BendSquare,
+    Curve
 }
 
 public enum NumDirection
@@ -195,7 +124,6 @@ public enum NumDirection
     OneDirectional,
     TwoDirectional
 }
-
 public class Lane
 {
     public List<Node> nodes = new List<Node>();

@@ -4,25 +4,21 @@ using UnityEngine;
 
 public class Node : IHeapItem<Node>
 {
-	public bool walkable;
 	public Vector3 worldPosition;
-	public int movementPenalty;
 
 	public float gCost;
 	public float hCost;
 	public Node parent;
 	int heapIndex;
 	public bool hasTrafficLightClose;
-	public bool isRoad = false;
-	public TypeOfRoad typeOfRoad = TypeOfRoad.None;
 	public Road road;
 	public List<Node> neighbours = new List<Node>();
 
 
-	public Node(bool _walkable,Vector3 _worldPos)
+	public Node(Vector3 _worldPos, Road _road)
 	{
-		walkable = _walkable;
 		worldPosition = _worldPos;
+		road = _road;
 	}
 
 	public float fCost

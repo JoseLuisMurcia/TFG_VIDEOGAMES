@@ -5,11 +5,11 @@ using UnityEngine;
 public class Pathfinding : MonoBehaviour
 {
     PathfinderRequestManager requestManager;
-    GridV2 grid;
+    Grid grid;
     void Awake()
     {
         requestManager = GetComponent<PathfinderRequestManager>();
-        grid = GetComponent<GridV2>();
+        grid = GetComponent<Grid>();
     }
 
     public void StartFindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
@@ -28,55 +28,53 @@ public class Pathfinding : MonoBehaviour
         Node targetNode = grid.FindEndNode(targetPos);
 
 
-        if (startNode.walkable && targetNode.walkable)
-        {
-            Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
-            HashSet<Node> closedSet = new HashSet<Node>();
-            openSet.Add(startNode);
+        Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
+        HashSet<Node> closedSet = new HashSet<Node>();
+        openSet.Add(startNode);
 
-            while (openSet.Count > 0)
+        while (openSet.Count > 0)
+        {
+            Node currentNode = openSet.RemoveFirst();
+            closedSet.Add(currentNode);
+            if (currentNode == targetNode)
             {
-                Node currentNode = openSet.RemoveFirst();
-                closedSet.Add(currentNode);
-                if (currentNode == targetNode)
+                pathSuccess = true;
+                break;
+            }
+
+            foreach (Node neighbour in currentNode.neighbours)
+            {
+
+                if (closedSet.Contains(neighbour))
                 {
-                    pathSuccess = true;
-                    break;
+                    continue;
                 }
 
-                foreach (Node neighbour in currentNode.neighbours)
+                //if (neighbour.isRoad)
+                //{
+                //    bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad);
+                //    if (compatibility == false) continue;
+                //}
+
+                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                 {
+                    neighbour.gCost = newMovementCostToNeighbour;
+                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
+                    neighbour.parent = currentNode;
 
-                    if (closedSet.Contains(neighbour))
+                    if (!openSet.Contains(neighbour))
                     {
-                        continue;
+                        openSet.Add(neighbour);
                     }
-
-                    //if (neighbour.isRoad)
-                    //{
-                    //    bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad);
-                    //    if (compatibility == false) continue;
-                    //}
-
-                    float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + neighbour.movementPenalty;
-                    if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                    else
                     {
-                        neighbour.gCost = newMovementCostToNeighbour;
-                        neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
-                        neighbour.parent = currentNode;
-
-                        if (!openSet.Contains(neighbour))
-                        {
-                            openSet.Add(neighbour);
-                        }
-                        else
-                        {
-                            openSet.UpdateItem(neighbour);
-                        }
+                        openSet.UpdateItem(neighbour);
                     }
                 }
             }
         }
+
         yield return null;
         if (pathSuccess)
         {

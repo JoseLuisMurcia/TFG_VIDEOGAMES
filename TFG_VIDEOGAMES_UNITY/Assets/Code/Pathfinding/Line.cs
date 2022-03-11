@@ -6,12 +6,12 @@ public struct Line
 {
 	const float verticalLineGradient = 1e5f;
 
-	float gradient;
+	public float gradient;
 	float y_intercept;
-	Vector2 pointOnLine_1;
-	Vector2 pointOnLine_2;
+	public Vector2 pointOnLine_1;
+	public Vector2 pointOnLine_2;
 
-	float gradientPerpendicular;
+	public float gradientPerpendicular;
 
 	bool approachSide;
 
@@ -67,7 +67,7 @@ public struct Line
 	public void DrawWithGizmos(float length)
 	{
 		Vector3 lineDir = new Vector3(1, 0, gradient).normalized;
-		Vector3 lineCentre = new Vector3(pointOnLine_1.x, 0, pointOnLine_1.y) + Vector3.up;
+		Vector3 lineCentre = new Vector3(pointOnLine_1.x, 0.2f, pointOnLine_1.y);
 		Gizmos.DrawLine(lineCentre - lineDir * length / 2f, lineCentre + lineDir * length / 2f);
 	}
 }
