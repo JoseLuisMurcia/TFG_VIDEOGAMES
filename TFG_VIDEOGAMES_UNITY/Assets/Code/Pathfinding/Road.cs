@@ -26,7 +26,7 @@ public class Road : MonoBehaviour
     List<Vector3> rayPositions = new List<Vector3>();
     BoxCollider boxCollider;
     [HideInInspector]
-    public List<Line> curveRoadLines;
+    public List<Line> curveRoadLines = new List<Line>();
 
     private void Awake()
     {
@@ -116,7 +116,8 @@ public enum TypeOfRoad
     End,
     Intersection,
     BendSquare,
-    Curve
+    Curve,
+    Roundabout
 }
 
 public enum NumDirection
@@ -127,4 +128,6 @@ public enum NumDirection
 public class Lane
 {
     public List<Node> nodes = new List<Node>();
+    public Node entryNode;
+    public Node exitNode;
 }
