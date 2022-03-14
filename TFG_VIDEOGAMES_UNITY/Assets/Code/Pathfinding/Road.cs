@@ -28,6 +28,9 @@ public class Road : MonoBehaviour
     [HideInInspector]
     public List<Line> curveRoadLines = new List<Line>();
 
+    [HideInInspector] public List<Node> entryNodes = new List<Node>();
+    [HideInInspector] public List<Node> exitNodes = new List<Node>();
+
     private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();

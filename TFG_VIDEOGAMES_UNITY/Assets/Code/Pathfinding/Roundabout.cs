@@ -1,0 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Roundabout : Road
+{
+
+    [HideInInspector] public List<Transform> exits = new List<Transform>();
+    [HideInInspector] public List<Transform> entries = new List<Transform>();
+    [HideInInspector] public List<Node> entryNodes = new List<Node>();
+    [HideInInspector] public List<Node> exitNodes = new List<Node>();
+    [HideInInspector] public float laneWidth;
+
+    void Start()
+    {
+        Transform exitParent = gameObject.transform.Find("Exits");
+        Transform entryParent = gameObject.transform.Find("Entries");
+        Transform referencesParent = gameObject.transform.Find("References");
+        foreach (Transform child in exitParent.transform)
+        {
+            exits.Add(child);
+        }
+        foreach (Transform child in entryParent.transform)
+        {
+            entries.Add(child);
+        }
+
+        Transform laneWidthTransform = gameObject.transform.Find("LaneWidth");
+        Vector3 pos1 = laneWidthTransform.Find("1").position;
+        Vector3 pos2 = laneWidthTransform.Find("2").position;
+        laneWidth = Mathf.Abs(Vector3.Distance(pos1, pos2));
+        typeOfRoad = TypeOfRoad.Roundabout;
+        numDirection = NumDirection.OneDirectional;
+    }
+
+}
