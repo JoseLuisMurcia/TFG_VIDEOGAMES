@@ -7,15 +7,12 @@ public class Roundabout : Road
 
     [HideInInspector] public List<Transform> exits = new List<Transform>();
     [HideInInspector] public List<Transform> entries = new List<Transform>();
-    [HideInInspector] public List<Node> entryNodes = new List<Node>();
-    [HideInInspector] public List<Node> exitNodes = new List<Node>();
     [HideInInspector] public float laneWidth;
 
     void Start()
     {
         Transform exitParent = gameObject.transform.Find("Exits");
         Transform entryParent = gameObject.transform.Find("Entries");
-        Transform referencesParent = gameObject.transform.Find("References");
         foreach (Transform child in exitParent.transform)
         {
             exits.Add(child);

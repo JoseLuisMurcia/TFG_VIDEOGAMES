@@ -131,6 +131,4 @@ public enum NumDirection
 public class Lane
 {
     public List<Node> nodes = new List<Node>();
-    public Node entryNode;
-    public Node exitNode;
 }

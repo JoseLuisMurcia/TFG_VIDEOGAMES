@@ -68,58 +68,35 @@ public class Grid : MonoBehaviour
         // Connect the exit and entry nodes in the roads
         foreach (Road road in roads)
         {
-            if (road.typeOfRoad != TypeOfRoad.Roundabout)
+            foreach (Node exitNode in road.exitNodes)
             {
-                foreach (Lane lane in road.lanes)
+                float bestDistance = Mathf.Infinity;
+                Node bestEntryNode = null;
+                foreach (Road connection in road.connections)
                 {
-                    float bestDistance = Mathf.Infinity;
-                    Node exitNode = lane.exitNode;
-                    Node bestEntryNode = null;
-                    foreach (Road connection in road.connections)
+                    foreach (Node neighbourEntryNode in connection.entryNodes)
                     {
-                        if (connection.typeOfRoad != TypeOfRoad.Roundabout)
+                        float distance = Vector3.Distance(exitNode.worldPosition, neighbourEntryNode.worldPosition);
+                        if (distance < bestDistance)
                         {
-                            foreach (Lane connectionLane in connection.lanes)
-                            {
-                                Node neighbourEntryNode = connectionLane.entryNode;
-                                float distance = Vector3.Distance(exitNode.worldPosition, neighbourEntryNode.worldPosition);
-                                if (distance < bestDistance)
-                                {
-                                    bestEntryNode = neighbourEntryNode;
-                                    bestDistance = distance;
-                                }
-                            }
-                        }
-                        else // Normal road trying to connect to a roundabout
-                        {
-                            Roundabout roundabout = (Roundabout)connection;
-                            foreach(Node entry in roundabout.entryNodes)
-                            {
-                                float distance = Vector3.Distance(exitNode.worldPosition, entry.worldPosition);
-                                if(distance < bestDistance)
-                                {
-                                    bestEntryNode = entry;
-                                    bestDistance = distance;
-                                }
-                            }
+                            bestEntryNode = neighbourEntryNode;
+                            bestDistance = distance;
                         }
                     }
-                    if (bestEntryNode != null && bestDistance < 5f)
-                    {
-                        // Perform connection
-                        Vector3 unionNodePos = (exitNode.worldPosition + bestEntryNode.worldPosition) * 0.5f;
-                        Node unionNode = new Node(unionNodePos, null);
-                        exitNode.neighbours.Add(unionNode);
-                        unionNode.neighbours.Add(bestEntryNode);
-                        unionNodes.Add(unionNodePos);
-                        grid.Add(unionNode);
-                    }
+
+                }
+                if (bestEntryNode != null && bestDistance < 5f)
+                {
+                    // Perform connection
+                    Vector3 unionNodePos = (exitNode.worldPosition + bestEntryNode.worldPosition) * 0.5f;
+                    Node unionNode = new Node(unionNodePos, null);
+                    exitNode.neighbours.Add(unionNode);
+                    unionNode.neighbours.Add(bestEntryNode);
+                    unionNodes.Add(unionNodePos);
+                    grid.Add(unionNode);
                 }
             }
-            else // Roundabout trying to connect to other roads
-            {
 
-            }
         }
     }
 
@@ -269,14 +246,8 @@ public class Grid : MonoBehaviour
 
         foreach (Transform entry in entries)
         {
-            Node node = new Node(entry.position, roundabout);
             debugNodes.Add(entry.position);
 
-        }
-        foreach (Transform exit in exits)
-        {
-            Node node = new Node(exit.position, roundabout);
-            debugNodes.Add(exit.position);
         }
         foreach (Transform entry in entries)
         {
@@ -297,8 +268,7 @@ public class Grid : MonoBehaviour
                 // Connect the best node to the entry
                 Node entryNode = new Node(entry.position, roundabout);
                 roundabout.entryNodes.Add(entryNode);
-                if (bestNode != null)
-                    entryNode.neighbours.Add(bestNode);
+                entryNode.neighbours.Add(bestNode);
                 grid.Add(entryNode);
             }
         }
@@ -318,11 +288,10 @@ public class Grid : MonoBehaviour
                         bestNode = node;
                     }
                 }
-                // Connect the best node to the entry
+                // Connect the best node to the exit
                 Node exitNode = new Node(exit.position, roundabout);
                 roundabout.exitNodes.Add(exitNode);
-                if (bestNode != null)
-                    exitNode.neighbours.Add(bestNode);
+                bestNode.neighbours.Add(exitNode);
                 grid.Add(exitNode);
             }
         }
@@ -337,7 +306,6 @@ public class Grid : MonoBehaviour
 
         // Lines creation
         List<Line> lines = new List<Line>(numNodes);
-        Vector2 previousPoint = V3ToV2(startRefPoint);
         for (int j = 0; j < numNodes; j++)
         {
             Vector2 currentPoint = V3ToV2(referencePoints[j]);
@@ -455,8 +423,8 @@ public class Grid : MonoBehaviour
             Node exitNode = new Node(laneEndPoint, road);
             grid.Add(entryNode);
             road.lanes[i].nodes.Add(entryNode);
-            road.lanes[i].entryNode = entryNode;
-            road.lanes[i].exitNode = exitNode;
+            road.entryNodes.Add(entryNode);
+            road.exitNodes.Add(exitNode);
             Node previousNode = entryNode;
 
             for (int j = 1; j < numNodes - 1; j++)
@@ -471,10 +439,7 @@ public class Grid : MonoBehaviour
             road.lanes[i].nodes.Add(exitNode);
             grid.Add(exitNode);
         }
-
         ConnectNodesInRoad(road);
-
-
     }
 
     private List<Line> CreateLinesForRoadPoints(Road road)
@@ -621,8 +586,8 @@ public class Grid : MonoBehaviour
                 entryNode = new Node(startPoints[i], road);
                 exitNode = new Node(endPoints[i], road);
             }
-            road.lanes[i].entryNode = entryNode;
-            road.lanes[i].exitNode = exitNode;
+            road.entryNodes.Add(entryNode);
+            road.exitNodes.Add(exitNode);
             debugNodes.Add(entryNode.worldPosition);
 
             // Calculate all the possible nodes that could fit in a reasonable distance
