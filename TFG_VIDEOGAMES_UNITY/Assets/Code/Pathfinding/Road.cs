@@ -30,7 +30,7 @@ public class Road : MonoBehaviour
 
     [HideInInspector] public List<Node> entryNodes = new List<Node>();
     [HideInInspector] public List<Node> exitNodes = new List<Node>();
-
+    [SerializeField] public bool invertPath;
     private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();

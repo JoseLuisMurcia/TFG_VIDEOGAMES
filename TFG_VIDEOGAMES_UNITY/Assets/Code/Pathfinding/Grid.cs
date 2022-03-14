@@ -572,6 +572,21 @@ public class Grid : MonoBehaviour
             endPoints[3] = GetOppositeVector(endPoints[2], rightHalfEnd);
         }
 
+        if (road.invertPath)
+        {
+            Vector3[] invertedStartPoints = new Vector3[numberOfLanes];
+            Vector3[] invertedEndPoints = new Vector3[numberOfLanes];
+
+            for(int i=0; i<numberOfLanes; i++)
+            {
+                int invertedIndex = numberOfLanes - i - 1;
+                invertedStartPoints[invertedIndex] = startPoints[i];
+                invertedEndPoints[invertedIndex] = endPoints[i]; 
+            }
+            startPoints = invertedStartPoints;
+            endPoints = invertedEndPoints;
+        }
+
         for (int i = 0; i < numberOfLanes; i++)
         {
             Node entryNode;
