@@ -24,7 +24,7 @@ public class Road : MonoBehaviour
     public PathCreator pathCreator;
 
     List<Vector3> rayPositions = new List<Vector3>();
-    BoxCollider boxCollider;
+    public BoxCollider boxCollider;
     [HideInInspector]
     public List<Line> curveRoadLines = new List<Line>();
 

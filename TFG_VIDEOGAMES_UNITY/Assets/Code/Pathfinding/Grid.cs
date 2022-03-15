@@ -13,7 +13,7 @@ public class Grid : MonoBehaviour
     [SerializeField] GameObject allRoads;
     private List<Road> roads = new List<Road>();
     private List<Line> debugLines = new List<Line>();
-    float distancePerNode = 2f;
+    float distancePerNode = 2.5f;
 
     public int MaxSize
     {
@@ -58,6 +58,7 @@ public class Grid : MonoBehaviour
                 case TypeOfRoad.End:
                     break;
                 case TypeOfRoad.Intersection:
+                    // No crea nodos, se encarga de conectar los nodos de sus conexiones
                     break;
                 case TypeOfRoad.Roundabout:
                     CreateNodesForRoundabout((Roundabout)road);
@@ -90,16 +91,157 @@ public class Grid : MonoBehaviour
                     // Perform connection
                     Vector3 unionNodePos = (exitNode.worldPosition + bestEntryNode.worldPosition) * 0.5f;
                     Node unionNode = new Node(unionNodePos, null);
-                    exitNode.neighbours.Add(unionNode);
-                    unionNode.neighbours.Add(bestEntryNode);
+                    exitNode.AddNeighbour(unionNode);
+                    unionNode.AddNeighbour(bestEntryNode);
                     unionNodes.Add(unionNodePos);
                     grid.Add(unionNode);
                 }
             }
 
+            if (road.typeOfRoad == TypeOfRoad.Intersection)
+            {
+                ConnectRoadsThroughIntersection(road);
+            }
+
         }
     }
 
+    private void ConnectRoadsThroughIntersection(Road road)
+    {
+        // maxDistance should be generated taking into account the bounds size
+        float intersectionSize = road.boxCollider.bounds.size.x;
+        float maxDistance = intersectionSize * 2f;
+
+        // No solo hay que conectar la interseccion con las carreteras colindantes, sino crear conexiones entre las colindantes a través de la interseccion
+        // Coger todos los exit nodes de cada conexion y tratar de conectarlos con el resto de conexiones a través de sus entries
+        foreach (Road connecter in road.connections)
+        {
+            foreach (Node exit in connecter.exitNodes)
+            {
+                foreach (Road connected in road.connections)
+                {
+                    if (connecter != connected)
+                    {
+                        foreach (Node entry in connected.entryNodes)
+                        {
+                            float distance = Vector3.Distance(exit.worldPosition, entry.worldPosition);
+                            if (distance < maxDistance)
+                            {
+                                Vector3 exitNodeForward = (exit.worldPosition - exit.previousNode.worldPosition).normalized;
+                                Vector3 dirToMovePosition = (entry.worldPosition - exit.worldPosition).normalized;
+                                //float dot = Vector3.Dot(exitNodeForward, dirToMovePosition);
+                                float signedAngle = Vector3.SignedAngle(dirToMovePosition, exitNodeForward, Vector3.up);
+                                float absoluteAngle = Mathf.Abs(signedAngle);
+                                float minAngle = 5f;
+                                // Conectar rectas 
+                                if (absoluteAngle <= minAngle)
+                                {
+                                    // Perform connection
+                                    Vector3 unionNodePos = (exit.worldPosition + entry.worldPosition) * 0.5f;
+                                    Node unionNode = new Node(unionNodePos, null);
+                                    exit.AddNeighbour(unionNode);
+                                    unionNode.AddNeighbour(entry);
+                                    unionNodes.Add(unionNodePos);
+                                    grid.Add(unionNode);
+                                }
+                                minAngle = 20f;
+                                float maxAngle = 60f;
+
+                                // Conectar giros 
+                                // Con el angle, sabemos si el nodo al que queremos ir está a la izquierda o a la derecha, con esto podremos crear un
+                                // offset para un nodo intermedio, de forma que no pisen fuera de la carretera y sea más creible
+                                if (absoluteAngle > minAngle && absoluteAngle < maxAngle)
+                                {
+                                    Vector2 dirToMove = new Vector2(dirToMovePosition.x, dirToMovePosition.z);
+                                    float offsetInfluence = 1.1f;
+                                    Vector3 unionNodePos = (exit.worldPosition + entry.worldPosition) * 0.5f;
+                                    Vector2 perpendicularDir = Vector2.Perpendicular(dirToMove);
+                                    Vector3 perpendicularDirection = new Vector3(perpendicularDir.x, 0, perpendicularDir.y);
+                                    if (signedAngle > 0)
+                                    {
+                                        unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
+                                    }
+                                    else
+                                    {
+                                        unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
+                                    }
+
+                                    Node unionNode = new Node(unionNodePos, null);
+                                    exit.AddNeighbour(unionNode);
+                                    unionNode.AddNeighbour(entry);
+                                    unionNodes.Add(unionNodePos);
+                                    grid.Add(unionNode);
+
+                                    //List<Pair> pairs = new List<Pair>();
+                                    //pairs.Add(new Pair(exit, entry));
+                                    //for (int i = 0; i < 2; i++)
+                                    //{
+                                    //    pairs = IterativeLinkCreation(pairs, signedAngle, dirToMove, road);
+                                    //}
+                                    //// Now create the smoothed path
+                                    //foreach (Pair pair in pairs)
+                                    //{
+                                    //    Node nodeA = pair.pointA;
+                                    //    Node nodeB = pair.pointB;
+                                    //    nodeA.AddNeighbour(nodeB);
+                                    //    if (nodeB != entry)
+                                    //    {
+                                    //        unionNodes.Add(nodeB.worldPosition);
+                                    //        grid.Add(nodeB);
+                                    //    }
+                                    //}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    private List<Pair> IterativeLinkCreation(List<Pair> pairs, float signedAngle, Vector2 dirToMove, Road road)
+    {
+        List<Pair> newPairs = new List<Pair>();
+        int numSections = pairs.Count+1;
+        float absoluteSignedAngle = Mathf.Abs(signedAngle);
+        Node previousUnionNode = null;
+
+        float offsetInfluence = 1f;
+
+        foreach (Pair pair in pairs)
+        {
+            Node nodeA = pair.pointA;
+            Node nodeB = pair.pointB;
+            
+            //offsetInfluence = Mathf.Clamp(offsetInfluence, 15f, 60f);
+            Vector3 unionNodePos = (nodeA.worldPosition + nodeB.worldPosition) / numSections;
+            Vector2 perpendicularDir = Vector2.Perpendicular(dirToMove);
+            Vector3 perpendicularDirection = new Vector3(perpendicularDir.x, 0, perpendicularDir.y);
+            if (signedAngle > 0)
+            {
+                unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
+            }
+            else
+            {
+                unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
+            }
+            Node unionNode = new Node(unionNodePos, road);
+            Pair newPair1 = new Pair(nodeA, unionNode);
+            newPairs.Add(newPair1);
+
+            if (previousUnionNode != null)
+            {
+                Pair newPair = new Pair(previousUnionNode, unionNode);
+                newPairs.Add(newPair);
+            }
+            previousUnionNode = unionNode;
+        }
+        int numOriginalPairs = pairs.Count;
+        int numNewPairs = pairs.Count;
+        Node lastNode = pairs[numOriginalPairs-1].pointB;
+        Pair lastPair = new Pair(previousUnionNode, lastNode);
+        newPairs.Add(lastPair);
+        return newPairs;
+    }
 
     void OnDrawGizmos()
     {
@@ -109,7 +251,7 @@ public class Grid : MonoBehaviour
             {
                 Gizmos.color = Color.white;
                 Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
-                Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.25f));
+                Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.15f));
 
                 foreach (Node neighbour in n.neighbours)
                 {
@@ -117,7 +259,7 @@ public class Grid : MonoBehaviour
                     Vector3 yOffset = new Vector3(0, .1f, 0);
                     Gizmos.DrawLine(n.worldPosition + yOffset, neighbour.worldPosition + yOffset);
                     Gizmos.color = Color.cyan;
-                    Gizmos.DrawSphere(n.worldPosition * .2f + neighbour.worldPosition * .8f + yOffset, .1f);
+                    Gizmos.DrawSphere(n.worldPosition * .15f + neighbour.worldPosition * .85f + yOffset, .05f);
                 }
             }
 
@@ -130,7 +272,7 @@ public class Grid : MonoBehaviour
             foreach (Vector3 unionPos in unionNodes)
             {
                 Gizmos.color = Color.green;
-                Gizmos.DrawCube(unionPos, Vector3.one * (0.25f));
+                Gizmos.DrawCube(unionPos, Vector3.one * (.1f));
             }
 
             foreach (Road road in roads)
@@ -144,17 +286,6 @@ public class Grid : MonoBehaviour
                     }
                 }
             }
-
-            //foreach (Line line in debugLines)
-            //{
-            //    Gizmos.color = Color.magenta;
-            //    Vector3 lineCentre = new Vector3(line.pointOnLine_1.x, 0.2f, line.pointOnLine_1.y);
-            //    Gizmos.DrawCube(lineCentre, Vector3.one * 0.2f);
-
-            //    Vector3 lineDir = new Vector3(1, 0, line.gradient).normalized;
-            //    Gizmos.DrawLine(lineCentre + lineDir, lineCentre);
-            //    //Gizmos.DrawLine(lineCentre + lineDir, lineCentre);
-            //}
         }
     }
 
@@ -218,7 +349,7 @@ public class Grid : MonoBehaviour
             Vector3 laneEndPoint = lanePositions[i][numNodes - 1];
             Node entryNode = new Node(laneStartPoint, roundabout);
             Node exitNode = new Node(laneEndPoint, roundabout);
-            exitNode.neighbours.Add(entryNode);
+            exitNode.AddNeighbour(entryNode);
             grid.Add(entryNode);
             roundabout.lanes[i].nodes.Add(entryNode);
             Node previousNode = entryNode;
@@ -226,12 +357,12 @@ public class Grid : MonoBehaviour
             for (int j = 1; j < numNodes - 1; j++)
             {
                 Node newNode = new Node(lanePositions[i][j], roundabout);
-                previousNode.neighbours.Add(newNode);
+                previousNode.AddNeighbour(newNode);
                 previousNode = newNode;
                 grid.Add(newNode);
                 roundabout.lanes[i].nodes.Add(newNode);
             }
-            previousNode.neighbours.Add(exitNode);
+            previousNode.AddNeighbour(exitNode);
             roundabout.lanes[i].nodes.Add(exitNode);
             grid.Add(exitNode);
         }
@@ -268,7 +399,7 @@ public class Grid : MonoBehaviour
                 // Connect the best node to the entry
                 Node entryNode = new Node(entry.position, roundabout);
                 roundabout.entryNodes.Add(entryNode);
-                entryNode.neighbours.Add(bestNode);
+                entryNode.AddNeighbour(bestNode);
                 grid.Add(entryNode);
             }
         }
@@ -291,7 +422,7 @@ public class Grid : MonoBehaviour
                 // Connect the best node to the exit
                 Node exitNode = new Node(exit.position, roundabout);
                 roundabout.exitNodes.Add(exitNode);
-                bestNode.neighbours.Add(exitNode);
+                bestNode.AddNeighbour(exitNode);
                 grid.Add(exitNode);
             }
         }
@@ -430,12 +561,12 @@ public class Grid : MonoBehaviour
             for (int j = 1; j < numNodes - 1; j++)
             {
                 Node newNode = new Node(lanePositions[i][j], road);
-                previousNode.neighbours.Add(newNode);
+                previousNode.AddNeighbour(newNode);
                 previousNode = newNode;
                 grid.Add(newNode);
                 road.lanes[i].nodes.Add(newNode);
             }
-            previousNode.neighbours.Add(exitNode);
+            previousNode.AddNeighbour(exitNode);
             road.lanes[i].nodes.Add(exitNode);
             grid.Add(exitNode);
         }
@@ -478,8 +609,8 @@ public class Grid : MonoBehaviour
             List<Node> lane2Nodes = road.lanes[1].nodes;
             for (int i = 0; i < numNodes - 1; i++)
             {
-                lane1Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
-                lane2Nodes[i].neighbours.Add(lane1Nodes[i + 1]);
+                lane1Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
+                lane2Nodes[i].AddNeighbour(lane1Nodes[i + 1]);
             }
         }
         else if (numberOfLanes == 4) // 4 lanes
@@ -493,25 +624,25 @@ public class Grid : MonoBehaviour
             {
                 for (int i = 0; i < numNodes - 1; i++)
                 {
-                    lane1Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
-                    lane2Nodes[i].neighbours.Add(lane1Nodes[i + 1]);
-                    lane2Nodes[i].neighbours.Add(lane3Nodes[i + 1]);
-                    lane3Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
-                    lane3Nodes[i].neighbours.Add(lane4Nodes[i + 1]);
-                    lane4Nodes[i].neighbours.Add(lane3Nodes[i + 1]);
+                    lane1Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
+                    lane2Nodes[i].AddNeighbour(lane1Nodes[i + 1]);
+                    lane2Nodes[i].AddNeighbour(lane3Nodes[i + 1]);
+                    lane3Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
+                    lane3Nodes[i].AddNeighbour(lane4Nodes[i + 1]);
+                    lane4Nodes[i].AddNeighbour(lane3Nodes[i + 1]);
                 }
             }
             else
             {
                 for (int i = 0; i < numNodes - 1; i++)
                 {
-                    lane1Nodes[i].neighbours.Add(lane2Nodes[i + 1]);
-                    lane2Nodes[i].neighbours.Add(lane1Nodes[i + 1]);
+                    lane1Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
+                    lane2Nodes[i].AddNeighbour(lane1Nodes[i + 1]);
                 }
                 for (int i = 0; i < numNodes - 1; i++)
                 {
-                    lane3Nodes[i].neighbours.Add(lane4Nodes[i + 1]);
-                    lane4Nodes[i].neighbours.Add(lane3Nodes[i + 1]);
+                    lane3Nodes[i].AddNeighbour(lane4Nodes[i + 1]);
+                    lane4Nodes[i].AddNeighbour(lane3Nodes[i + 1]);
                 }
             }
         }
@@ -577,11 +708,11 @@ public class Grid : MonoBehaviour
             Vector3[] invertedStartPoints = new Vector3[numberOfLanes];
             Vector3[] invertedEndPoints = new Vector3[numberOfLanes];
 
-            for(int i=0; i<numberOfLanes; i++)
+            for (int i = 0; i < numberOfLanes; i++)
             {
                 int invertedIndex = numberOfLanes - i - 1;
                 invertedStartPoints[invertedIndex] = startPoints[i];
-                invertedEndPoints[invertedIndex] = endPoints[i]; 
+                invertedEndPoints[invertedIndex] = endPoints[i];
             }
             startPoints = invertedStartPoints;
             endPoints = invertedEndPoints;
@@ -622,16 +753,16 @@ public class Grid : MonoBehaviour
                     Vector3 newNodePos;
                     newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
                     Node newNode = new Node(newNodePos, road);
-                    previousNode.neighbours.Add(newNode);
+                    previousNode.AddNeighbour(newNode);
                     grid.Add(newNode);
                     road.lanes[i].nodes.Add(newNode);
                     previousNode = newNode;
                 }
-                previousNode.neighbours.Add(exitNode);
+                previousNode.AddNeighbour(exitNode);
             }
             else
             {
-                entryNode.neighbours.Add(exitNode);
+                entryNode.AddNeighbour(exitNode);
             }
             road.lanes[i].nodes.Add(exitNode);
             grid.Add(exitNode);
@@ -754,4 +885,16 @@ public class Grid : MonoBehaviour
     }
 
     #endregion
+}
+
+public class Pair
+{
+    public Node pointA;
+    public Node pointB;
+
+    public Pair(Node _pointA, Node _pointB)
+    {
+        pointA = _pointA;
+        pointB = _pointB;
+    }
 }

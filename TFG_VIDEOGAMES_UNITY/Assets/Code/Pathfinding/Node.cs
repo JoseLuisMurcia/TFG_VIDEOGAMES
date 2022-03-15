@@ -8,12 +8,12 @@ public class Node : IHeapItem<Node>
 
 	public float gCost;
 	public float hCost;
-	public Node parent;
+	public Node parent; // Used by pathfinding
 	int heapIndex;
 	public bool hasTrafficLightClose;
 	public Road road;
 	public List<Node> neighbours = new List<Node>();
-
+	public Node previousNode; // Used by grid creation
 
 	public Node(Vector3 _worldPos, Road _road)
 	{
@@ -50,4 +50,12 @@ public class Node : IHeapItem<Node>
 		}
 		return -compare;
 	}
+
+	public void AddNeighbour(Node neighbour)
+    {
+		neighbours.Add(neighbour);
+
+		if(neighbour.previousNode == null)
+			neighbour.previousNode = this;
+    }
 }
