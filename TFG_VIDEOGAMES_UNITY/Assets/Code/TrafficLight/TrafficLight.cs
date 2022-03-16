@@ -5,19 +5,14 @@ using UnityEngine;
 public class TrafficLight : MonoBehaviour
 {
     [SerializeField] LayerMask roadMask;
-    public TrafficLightColor currentColor;
+    [HideInInspector] public TrafficLightColor currentColor = TrafficLightColor.Red;
     private Vector3 rayPos;
-    public Road road;
+    [HideInInspector] public Road road;
 
-    [SerializeField] float greenTime;
-    [SerializeField] float amberTime;
-    [SerializeField] float redTime;
-
-    private ColorChanger colorChanger;
+    [HideInInspector] public ColorChanger colorChanger;
 
     private void Awake()
     {
-        currentColor = TrafficLightColor.Green;
         colorChanger = GetComponentInChildren<ColorChanger>();
         FindRoad();
     }
@@ -25,38 +20,8 @@ public class TrafficLight : MonoBehaviour
     void Start()
     {
         colorChanger.SetColor(currentColor);
-        StartCoroutine(ChangeColor());
     }
 
-    IEnumerator ChangeColor()
-    {
-        while (true)
-        {
-            switch (currentColor)
-            {
-                case TrafficLightColor.Green:
-                    yield return new WaitForSeconds(greenTime);
-                    currentColor = TrafficLightColor.Amber;
-                    road.trafficLightEvents.LightChange(currentColor);
-                    colorChanger.SetColor(currentColor);
-                    break;
-
-                case TrafficLightColor.Amber:
-                    yield return new WaitForSeconds(amberTime);
-                    currentColor = TrafficLightColor.Red;
-                    road.trafficLightEvents.LightChange(currentColor);
-                    colorChanger.SetColor(currentColor);
-                    break;
-
-                case TrafficLightColor.Red:
-                    yield return new WaitForSeconds(redTime);
-                    currentColor = TrafficLightColor.Green;
-                    road.trafficLightEvents.LightChange(currentColor);
-                    colorChanger.SetColor(currentColor);
-                    break;
-            }
-        }
-    }
 
     public void FindRoad()
     {

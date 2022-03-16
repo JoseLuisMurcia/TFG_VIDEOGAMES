@@ -12,7 +12,7 @@ public class TrafficLightCarController : MonoBehaviour
 
     PathFollower pathFollower;
 
-    private Road currentRoad;
+    [HideInInspector] public Road currentRoad;
     [SerializeField] float distanceToStopInAmberLight = 5f;
     private void Start()
     {
@@ -54,15 +54,15 @@ public class TrafficLightCarController : MonoBehaviour
     private float CheckDistanceWithTrafficLight(Vector3 trafficLightPos)
     {
         Vector3 carPosition = transform.position;
-            //case TypeOfRoad.Down:
-            //    return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
-            //case TypeOfRoad.Right:
-            //    return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(trafficLightPos.x, 0));
-            //case TypeOfRoad.Left:
-            //    return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(carPosition.x, 0));
-            //case TypeOfRoad.Up:
-            //    return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
-        
+        //case TypeOfRoad.Down:
+        //    return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
+        //case TypeOfRoad.Right:
+        //    return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(trafficLightPos.x, 0));
+        //case TypeOfRoad.Left:
+        //    return Vector2.Distance(new Vector2(carPosition.x, 0), new Vector2(carPosition.x, 0));
+        //case TypeOfRoad.Up:
+        //    return Vector2.Distance(new Vector2(0, carPosition.z), new Vector2(0, trafficLightPos.z));
+        return Vector3.Distance(carPosition, trafficLightPos);
         return -1f;
     }
 

@@ -6,9 +6,8 @@ public class Grid : MonoBehaviour
 {
     [SerializeField] bool displayGridGizmos;
     public List<Node> grid;
-    public List<Vector3> debugNodes = new List<Vector3>();
-    public List<Vector3> unionNodes = new List<Vector3>();
-    [SerializeField] TrafficLight[] trafficLights;
+    [HideInInspector] public List<Vector3> debugNodes = new List<Vector3>();
+    [HideInInspector] public List<Vector3> unionNodes = new List<Vector3>();
     [SerializeField] LayerMask roadMask;
     [SerializeField] GameObject allRoads;
     private List<Road> roads = new List<Road>();
@@ -109,7 +108,7 @@ public class Grid : MonoBehaviour
     private void ConnectRoadsThroughIntersection(Road road)
     {
         // maxDistance should be generated taking into account the bounds size
-        float intersectionSize = road.boxCollider.bounds.size.x;
+        float intersectionSize = road.boxColliderSize;
         float maxDistance = intersectionSize * 2f;
 
         // No solo hay que conectar la interseccion con las carreteras colindantes, sino crear conexiones entre las colindantes a través de la interseccion

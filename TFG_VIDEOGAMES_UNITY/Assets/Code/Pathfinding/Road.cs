@@ -31,6 +31,8 @@ public class Road : MonoBehaviour
     [HideInInspector] public List<Node> entryNodes = new List<Node>();
     [HideInInspector] public List<Node> exitNodes = new List<Node>();
     [SerializeField] public bool invertPath;
+
+    [HideInInspector] public float boxColliderSize;
     private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();
@@ -40,6 +42,9 @@ public class Road : MonoBehaviour
         SetConnections();
         SetLanes();
         SortReferencePoints();
+        boxColliderSize = boxCollider.bounds.size.x;
+
+        Destroy(boxCollider);
     }
 
     private void SortReferencePoints()
@@ -48,7 +53,7 @@ public class Road : MonoBehaviour
         foreach (Vector3 localPoint in localPoints)
             laneReferencePoints.Add(transform.TransformPoint(localPoint));
 
-        
+
     }
     private void SetConnections()
     {
@@ -68,8 +73,8 @@ public class Road : MonoBehaviour
         rayPositions.Add(ray2newPos);
         rayPositions.Add(ray3newPos);
         rayPositions.Add(ray4newPos);
-        
-        foreach(Vector3 rayPos in rayPositions)
+
+        foreach (Vector3 rayPos in rayPositions)
         {
             Ray ray = new Ray(rayPos + Vector3.up * 50, Vector3.down);
             RaycastHit hit;
@@ -90,7 +95,7 @@ public class Road : MonoBehaviour
 
     private void SetLanes()
     {
-        for(int i=0; i<numberOfLanes; i++)
+        for (int i = 0; i < numberOfLanes; i++)
         {
             lanes.Add(new Lane());
         }
