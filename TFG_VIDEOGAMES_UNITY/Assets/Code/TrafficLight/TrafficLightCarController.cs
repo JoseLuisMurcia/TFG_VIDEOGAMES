@@ -42,7 +42,7 @@ public class TrafficLightCarController : MonoBehaviour
                 pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
                 break;
         }
-        Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
+        //Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
     }
 
     public float GiveDistanceToPathFollower()
@@ -68,7 +68,7 @@ public class TrafficLightCarController : MonoBehaviour
 
     public void SubscribeToTrafficLight(Road _newRoad)
     {
-        Debug.Log("SubscribeToTrafficLight");
+        //Debug.Log("SubscribeToTrafficLight");
         currentRoad = _newRoad;
         currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
         // Auto send an event in order to know the state
@@ -77,7 +77,7 @@ public class TrafficLightCarController : MonoBehaviour
 
     public void UnsubscribeToTrafficLight()
     {
-        Debug.Log("UnsubscribeToTrafficLight");
+        //Debug.Log("UnsubscribeToTrafficLight");
         currentRoad.trafficLightEvents.onLightChange -= OnTrafficLightChange;
         currentRoad = null;
     }

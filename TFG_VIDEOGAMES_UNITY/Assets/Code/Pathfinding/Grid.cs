@@ -13,7 +13,7 @@ public class Grid : MonoBehaviour
     private List<Road> roads = new List<Road>();
     private List<Line> debugLines = new List<Line>();
     float distancePerNode = 2.5f;
-
+    public static Grid instance;
     public int MaxSize
     {
         get
@@ -23,6 +23,7 @@ public class Grid : MonoBehaviour
     }
     private void Start()
     {
+        instance = this;
         SetRoadsOnStart();
         CreateGrid();
     }
@@ -52,9 +53,11 @@ public class Grid : MonoBehaviour
                 case TypeOfRoad.Curve:
                     CreateNodesForCurve(road);
                     break;
-                case TypeOfRoad.BendSquare:
+                case TypeOfRoad.Split:
+                    CreateNodesForSplit((Split)road);
                     break;
-                case TypeOfRoad.End:
+                case TypeOfRoad.Deviation:
+                    CreateNodesForDeviation(road);
                     break;
                 case TypeOfRoad.Intersection:
                     // No crea nodos, se encarga de conectar los nodos de sus conexiones
@@ -103,6 +106,16 @@ public class Grid : MonoBehaviour
             }
 
         }
+    }
+
+    public Vector3 GetRandomPosInRoads()
+    {
+        Vector3 randomPos;
+        int numRoads = roads.Count;
+        int roadIndex = Random.Range(0, numRoads);
+        Road selectedRoad = roads[roadIndex];
+        randomPos = selectedRoad.transform.position;
+        return randomPos;
     }
 
     private void ConnectRoadsThroughIntersection(Road road)
@@ -200,7 +213,7 @@ public class Grid : MonoBehaviour
     private List<Pair> IterativeLinkCreation(List<Pair> pairs, float signedAngle, Vector2 dirToMove, Road road)
     {
         List<Pair> newPairs = new List<Pair>();
-        int numSections = pairs.Count+1;
+        int numSections = pairs.Count + 1;
         float absoluteSignedAngle = Mathf.Abs(signedAngle);
         Node previousUnionNode = null;
 
@@ -210,7 +223,7 @@ public class Grid : MonoBehaviour
         {
             Node nodeA = pair.pointA;
             Node nodeB = pair.pointB;
-            
+
             //offsetInfluence = Mathf.Clamp(offsetInfluence, 15f, 60f);
             Vector3 unionNodePos = (nodeA.worldPosition + nodeB.worldPosition) / numSections;
             Vector2 perpendicularDir = Vector2.Perpendicular(dirToMove);
@@ -236,7 +249,7 @@ public class Grid : MonoBehaviour
         }
         int numOriginalPairs = pairs.Count;
         int numNewPairs = pairs.Count;
-        Node lastNode = pairs[numOriginalPairs-1].pointB;
+        Node lastNode = pairs[numOriginalPairs - 1].pointB;
         Pair lastPair = new Pair(previousUnionNode, lastNode);
         newPairs.Add(lastPair);
         return newPairs;
@@ -290,6 +303,100 @@ public class Grid : MonoBehaviour
 
     #region Node creation
 
+    private void CreateNodesForSplit(Split road)
+    {
+        List<Vector3> referencePoints = road.laneReferencePoints;
+        int numNodes = referencePoints.Count;
+        Vector3 startRefPoint1 = road.laneReferencePoints[0];
+        Vector3 endPoint1 = road.laneReferencePoints[numNodes - 1];
+        // Encontrar punto a una distancia X a partir de una direccion.
+        Vector3 laneStraightDirection = road.laneDir;
+        Vector2 perpDir = Vector2.Perpendicular(new Vector2(laneStraightDirection.x, laneStraightDirection.z));
+        Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
+
+        Ray ray = new Ray(startRefPoint1, laneStraightDirection);
+        float distance = Vector3.Cross(ray.direction, endPoint1 - ray.origin).magnitude;
+        Vector3 endPoint2 = endPoint1 + perpendicularDirection * (distance * 2f);
+        Vector3 startRefPoint2 = startRefPoint1;
+
+        if (road.numDirection == NumDirection.TwoDirectional)
+        {
+            Vector3 copy = new Vector3(endPoint2.x, endPoint2.y, endPoint2.z);
+            endPoint2 = new Vector3(startRefPoint2.x, startRefPoint2.y, startRefPoint2.z);
+            startRefPoint2 = copy;
+        }
+        else if (road.invertPath && road.numDirection == NumDirection.OneDirectional)
+        {
+            Vector3 copy = new Vector3(endPoint2.x, endPoint2.y, endPoint2.z);
+            endPoint2 = new Vector3(startRefPoint2.x, startRefPoint2.y, startRefPoint2.z);
+            startRefPoint2 = copy;
+
+            copy = new Vector3(endPoint1.x, endPoint1.y, endPoint1.z);
+            endPoint1 = new Vector3(startRefPoint1.x, startRefPoint1.y, startRefPoint1.z);
+            startRefPoint1 = copy;
+
+            List<Vector3> newReferencePoints = new List<Vector3>(numNodes);
+            for(int i=0; i < numNodes; i++)
+            {
+                newReferencePoints.Add(referencePoints[numNodes - i - 1]);
+            }
+            referencePoints = newReferencePoints;
+        }
+
+        Node entryNode1 = new Node(startRefPoint1, road);
+        Node entryNode2 = new Node(startRefPoint2, road);
+        Node exitNode1 = new Node(endPoint1, road);
+        Node exitNode2 = new Node(endPoint2, road);
+        Node previousNode1 = entryNode1;
+        Node previousNode2 = entryNode2;
+
+        road.entryNodes.Add(entryNode1);
+        road.entryNodes.Add(entryNode2);
+        road.exitNodes.Add(exitNode1);
+        road.exitNodes.Add(exitNode2);
+        grid.Add(entryNode1);
+        grid.Add(entryNode2);
+        road.lanes.Add(new Lane());
+        road.lanes.Add(new Lane());
+        debugNodes.Add(startRefPoint1);  
+        debugNodes.Add(startRefPoint2);
+
+        Vector3 newPoint2pos = Vector3.zero;
+        for (int j = 1; j < numNodes - 1; j++)
+        {
+            Node newNode1 = new Node(referencePoints[j], road);
+            if(road.numDirection == NumDirection.TwoDirectional)
+            {
+                distance = Vector3.Cross(ray.direction, referencePoints[numNodes - j - 1] - ray.origin).magnitude;
+                newPoint2pos = referencePoints[numNodes - j - 1] + perpendicularDirection * (distance * 2f);
+
+            }
+            else
+            {
+                distance = Vector3.Cross(ray.direction, referencePoints[j] - ray.origin).magnitude;
+                newPoint2pos = referencePoints[j] + perpendicularDirection * (distance * 2f);
+            }
+            Node newNode2 = new Node(newPoint2pos, road);
+            previousNode1.AddNeighbour(newNode1);
+            previousNode2.AddNeighbour(newNode2);
+            previousNode1 = newNode1;
+            previousNode2 = newNode2;
+            grid.Add(newNode1);
+            grid.Add(newNode2);
+            road.lanes[0].nodes.Add(newNode1);
+            road.lanes[1].nodes.Add(newNode2);
+        }
+        previousNode1.AddNeighbour(exitNode1);
+        previousNode2.AddNeighbour(exitNode2);
+        grid.Add(exitNode1);
+        grid.Add(exitNode2);
+
+    }
+
+    private void CreateNodesForDeviation(Road road)
+    {
+
+    }
     private void CreateNodesForRoundabout(Roundabout roundabout)
     {
         int numberOfLanes = roundabout.numberOfLanes;
@@ -426,7 +533,6 @@ public class Grid : MonoBehaviour
             }
         }
     }
-
     private List<Line> CreateLinesForRoundabout(Roundabout roundabout)
     {
         List<Vector3> referencePoints = roundabout.laneReferencePoints;

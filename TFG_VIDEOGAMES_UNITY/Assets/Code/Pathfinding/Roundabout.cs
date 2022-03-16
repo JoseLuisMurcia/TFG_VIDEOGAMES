@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Roundabout : Road
 {
-
     [HideInInspector] public List<Transform> exits = new List<Transform>();
     [HideInInspector] public List<Transform> entries = new List<Transform>();
     [HideInInspector] public float laneWidth;

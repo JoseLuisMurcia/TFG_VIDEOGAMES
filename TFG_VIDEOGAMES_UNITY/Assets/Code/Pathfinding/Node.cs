@@ -12,7 +12,7 @@ public class Node : IHeapItem<Node>
 	int heapIndex;
 	public bool hasTrafficLightClose;
 	public Road road;
-	public List<Node> neighbours = new List<Node>();
+	public readonly List<Node> neighbours = new List<Node>();
 	public Node previousNode; // Used by grid creation
 
 	public Node(Vector3 _worldPos, Road _road)

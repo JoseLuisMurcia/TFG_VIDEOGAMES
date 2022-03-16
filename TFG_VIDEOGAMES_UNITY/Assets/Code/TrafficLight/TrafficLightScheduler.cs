@@ -29,8 +29,7 @@ public class TrafficLightScheduler : MonoBehaviour
         {
             currentTrafficLight = waitingQueue.Dequeue();
             currentColor = TrafficLightColor.Green;
-            currentTrafficLight.road.trafficLightEvents.LightChange(currentColor);
-            currentTrafficLight.colorChanger.SetColor(currentColor);
+            SetNewColor(currentColor);
         }
         StartCoroutine(HandleTrafficLights());
     }
@@ -44,25 +43,21 @@ public class TrafficLightScheduler : MonoBehaviour
                 case TrafficLightColor.Green:
                     yield return new WaitForSeconds(greenTime);
                     currentColor = TrafficLightColor.Amber;
-                    currentTrafficLight.road.trafficLightEvents.LightChange(currentColor);
-                    currentTrafficLight.colorChanger.SetColor(currentColor);
+                    SetNewColor(currentColor);
                     break;
 
                 case TrafficLightColor.Amber:
                     yield return new WaitForSeconds(amberTime);
                     // Se pone en rojo el que se tiene que poner
-                    currentColor = TrafficLightColor.Red;
-                    currentTrafficLight.road.trafficLightEvents.LightChange(currentColor);
-                    currentTrafficLight.colorChanger.SetColor(currentColor);
+                    SetNewColor(TrafficLightColor.Red);
                     // Ponemos en verde el nuevo semaforo
                     SetNewActiveTrafficLight();
-                    break;
+                    break; 
 
                 case TrafficLightColor.Red:
                     yield return new WaitForSeconds(redTime);
                     currentColor = TrafficLightColor.Green;
-                    currentTrafficLight.road.trafficLightEvents.LightChange(currentColor);
-                    currentTrafficLight.colorChanger.SetColor(currentColor);
+                    SetNewColor(currentColor);
                     break;
             }
         }
@@ -73,7 +68,12 @@ public class TrafficLightScheduler : MonoBehaviour
         waitingQueue.Enqueue(currentTrafficLight);
         currentTrafficLight = waitingQueue.Dequeue();
         currentColor = TrafficLightColor.Green;
-        currentTrafficLight.road.trafficLightEvents.LightChange(currentColor);
-        currentTrafficLight.colorChanger.SetColor(currentColor);
+        SetNewColor(currentColor);
+    }
+
+    private void SetNewColor(TrafficLightColor color)
+    {
+        currentTrafficLight.road.trafficLightEvents.LightChange(color);
+        currentTrafficLight.colorChanger.SetColor(color);
     }
 }

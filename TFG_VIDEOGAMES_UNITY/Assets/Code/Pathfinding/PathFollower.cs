@@ -21,6 +21,8 @@ public class PathFollower : MonoBehaviour
     private Vector3 trafficLightPos;
     private float trafficLightStopDist = 3;
     private bool vehicleWasStopped = false;
+    private bool vehicleWasStoppedByTraffic = false;
+    private bool driverHasReacted = false;
 
     // Car collision avoidance variables
     public bool shouldBrakeBeforeCar = false;
@@ -32,6 +34,8 @@ public class PathFollower : MonoBehaviour
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
     List<Vector3> waypointsList = new List<Vector3>();
+    [SerializeField] Grid grid;
+
     void Start()
     {
         StartCoroutine(UpdatePath());
@@ -49,8 +53,7 @@ public class PathFollower : MonoBehaviour
                 waypointsList.Add(waypoint);
             }
             path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
-
-            //trafficLightCarController.path = path;
+            //target.position = newTargetPos;
             StopCoroutine("FollowPath");
             StartCoroutine("FollowPath");
         }
@@ -65,16 +68,23 @@ public class PathFollower : MonoBehaviour
         }
         PathfinderRequestManager.RequestPath(transform.position, target.position, transform.forward, OnPathFound);
 
-        float sqrMoveThreshold = pathUpdateMoveThreshold * pathUpdateMoveThreshold;
-        Vector3 targetPosOld = target.position;
-
         while (true)
         {
             yield return new WaitForSeconds(minPathUpdateTime);
-            if ((target.position - targetPosOld).sqrMagnitude > sqrMoveThreshold)
+
+            float distance = Vector3.Distance(transform.position, target.position);
+            if (distance < 8f)
             {
-                PathfinderRequestManager.RequestPath(transform.position, target.position, transform.forward, OnPathFound);
-                targetPosOld = target.position;
+                float newDistance = 0f;
+                Vector3 newTargetPos = Vector3.zero;
+                Vector3 oldPos = target.position;
+                while (newDistance < 20f)
+                {
+                    newTargetPos = grid.GetRandomPosInRoads();
+                    newDistance = Vector3.Distance(oldPos, newTargetPos);
+                }
+                PathfinderRequestManager.RequestPath(transform.position, newTargetPos, transform.forward, OnPathFound);
+                target.position = newTargetPos;
             }
         }
     }
@@ -95,66 +105,53 @@ public class PathFollower : MonoBehaviour
             Vector2 pos2D = new Vector2(transform.position.x, transform.position.z);
             while (path.turnBoundaries[pathIndex].HasCrossedLine(pos2D))
             {
-                if (pathIndex == path.finishLineIndex)
+                // Go to next point
+                // Reset the obstacle avoider
+                if (pathIndex == recentAddedAvoidancePosIndex)
                 {
-                    Debug.Log("END ARRIVED");
-                    followingPath = false;
-                    break;
+                    carObstacleAvoidance.objectHit = false;
                 }
-                else
-                {
-                    // Go to next point
-                    // Reset the obstacle avoider
-                    if (pathIndex == recentAddedAvoidancePosIndex)
-                    {
-                        carObstacleAvoidance.objectHit = false;
-                    }
-                    pathIndex++;
-                }
+                pathIndex++;
             }
 
             if (followingPath)
             {
-                if (shouldBrakeBeforeCar)
+                if (shouldBrakeBeforeCar && !vehicleWasStoppedByTraffic)
                 {
                     speedPercent = StopBeforeCar();
+                    driverHasReacted = true;
                 }
                 else if (shouldStopAtTrafficLight)
                 {
                     speedPercent = StopAtTrafficLight();
+                    driverHasReacted = true;
                 }
                 else
                 {
+                    if (driverHasReacted)
+                    {
+                        float reactionTime = Random.Range(0.2f, 0.7f);
+                        yield return new WaitForSeconds(reactionTime);
+                        driverHasReacted = false;
+                    }
+
                     // When the car is stopped, set the speedPercent to 0 so that it accelerates from 0 and not instantly.
                     if (vehicleWasStopped)
                     {
                         speedPercent = 0f;
                         vehicleWasStopped = false;
+                        if (vehicleWasStoppedByTraffic)
+                            vehicleWasStoppedByTraffic = true;
                     }
 
-                    // When the car is close enough to the path objective.
-                    if (pathIndex > path.slowDownIndex && stoppingDst > 0)
-                    {
-                        speedPercent = Mathf.Clamp01(path.turnBoundaries[path.finishLineIndex].DistanceFromPoint(pos2D) / stoppingDst);
-                        if (speedPercent < 0.01f)
-                        {
-                            // Arrived to Target
-                            followingPath = false;
-                        }
-                    }
-                    else
-                    {
-                        speedPercent += 0.002f;
-                        speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
-                    }
+                    speedPercent += 0.002f;
+                    speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
+
                 }
                 Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
                 if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
                 transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
-
-
             }
-
             yield return null;
 
         }
@@ -179,6 +176,11 @@ public class PathFollower : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, frontCarPos);
         speedPercent = Mathf.Clamp01((distance - 1f) / carStopDistance);
+        if (speedPercent < 0.03f)
+        {
+            speedPercent = 0f;
+            vehicleWasStopped = true;
+        }
 
         return speedPercent;
     }
@@ -193,6 +195,7 @@ public class PathFollower : MonoBehaviour
             if (speedPercent < 0.03f)
             {
                 speedPercent = 0f;
+                vehicleWasStoppedByTraffic = true;
                 vehicleWasStopped = true;
             }
         }
