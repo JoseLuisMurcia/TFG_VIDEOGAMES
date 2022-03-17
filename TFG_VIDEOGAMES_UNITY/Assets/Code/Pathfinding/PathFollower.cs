@@ -5,7 +5,6 @@ using UnityEngine;
 public class PathFollower : MonoBehaviour
 {
     const float minPathUpdateTime = .2f;
-    const float pathUpdateMoveThreshold = .5f;
 
     public Transform target;
     public float speed = 4;
@@ -14,11 +13,10 @@ public class PathFollower : MonoBehaviour
     public float stoppingDst = 10;
     public int pathIndex = 0;
     Path path;
-    bool followingPath;
+    [SerializeField] float speedPercent = 0f;
 
     // Stop at traffic light variables
     public bool shouldStopAtTrafficLight = false;
-    private Vector3 trafficLightPos;
     private float trafficLightStopDist = 3;
     private bool vehicleWasStopped = false;
     private bool vehicleWasStoppedByTraffic = false;
@@ -34,7 +32,9 @@ public class PathFollower : MonoBehaviour
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
     List<Vector3> waypointsList = new List<Vector3>();
-    [SerializeField] Grid grid;
+    [SerializeField] WorldGrid grid;
+
+    private IEnumerator followPathCoroutine;
 
     void Start()
     {
@@ -52,10 +52,15 @@ public class PathFollower : MonoBehaviour
             {
                 waypointsList.Add(waypoint);
             }
+            if(followPathCoroutine != null)
+                StopCoroutine(followPathCoroutine);
             path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
-            //target.position = newTargetPos;
-            StopCoroutine("FollowPath");
-            StartCoroutine("FollowPath");
+            followPathCoroutine = FollowPath();
+            StartCoroutine(followPathCoroutine);
+        }
+        else
+        {
+            Debug.Log("Va a haber problemas");
         }
     }
 
@@ -89,20 +94,17 @@ public class PathFollower : MonoBehaviour
         }
     }
 
+    // EL problema es que no está encontrando un camino valido a veces, probablemente porque no se encuentre un nodo valido? Pintar nodo start y nodo end en el mundo.
     IEnumerator FollowPath()
     {
-
-        followingPath = true;
         pathIndex = 0;
-        // Rotate to look at the first point
         transform.LookAt(path.lookPoints[0]);
 
-        float speedPercent = 0;
-
         // Check all the time if the unity has passed the boundari
-        while (followingPath)
+        while (true)
         {
             Vector2 pos2D = new Vector2(transform.position.x, transform.position.z);
+
             while (path.turnBoundaries[pathIndex].HasCrossedLine(pos2D))
             {
                 // Go to next point
@@ -112,53 +114,54 @@ public class PathFollower : MonoBehaviour
                     carObstacleAvoidance.objectHit = false;
                 }
                 pathIndex++;
+                if(pathIndex >= path.turnBoundaries.Count)
+                {
+                    Debug.Log("QUE SE ROMPE EL CODIGO JAJA");
+                }
             }
 
-            if (followingPath)
+            if (shouldBrakeBeforeCar && !vehicleWasStoppedByTraffic)
             {
-                if (shouldBrakeBeforeCar && !vehicleWasStoppedByTraffic)
-                {
-                    speedPercent = StopBeforeCar();
-                    driverHasReacted = true;
-                }
-                else if (shouldStopAtTrafficLight)
-                {
-                    speedPercent = StopAtTrafficLight();
-                    driverHasReacted = true;
-                }
-                else
-                {
-                    if (driverHasReacted)
-                    {
-                        float reactionTime = Random.Range(0.2f, 0.7f);
-                        yield return new WaitForSeconds(reactionTime);
-                        driverHasReacted = false;
-                    }
-
-                    // When the car is stopped, set the speedPercent to 0 so that it accelerates from 0 and not instantly.
-                    if (vehicleWasStopped)
-                    {
-                        speedPercent = 0f;
-                        vehicleWasStopped = false;
-                        if (vehicleWasStoppedByTraffic)
-                            vehicleWasStoppedByTraffic = true;
-                    }
-
-                    speedPercent += 0.002f;
-                    speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
-
-                }
-                Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
-                if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
-                transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
+                speedPercent = StopBeforeCar();
+                driverHasReacted = true;
             }
+            else if (shouldStopAtTrafficLight)
+            {
+                speedPercent = StopAtTrafficLight();
+                driverHasReacted = true;
+            }
+            else
+            {
+                if (driverHasReacted)
+                {
+                    float reactionTime = Random.Range(0.2f, 0.7f);
+                    yield return new WaitForSeconds(reactionTime);
+                    driverHasReacted = false;
+                }
+
+                // When the car is stopped, set the speedPercent to 0 so that it accelerates from 0 and not instantly.
+                if (vehicleWasStopped)
+                {
+                    speedPercent = 0f;
+                    vehicleWasStopped = false;
+                    if (vehicleWasStoppedByTraffic)
+                        vehicleWasStoppedByTraffic = true;
+                }
+
+                speedPercent += 0.002f;
+                speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
+
+            }
+            Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
+            if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
+            transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
+
             yield return null;
 
         }
     }
     public void SetTrafficLightPos(Vector3 _trafficLightPos)
     {
-        trafficLightPos = _trafficLightPos;
         shouldStopAtTrafficLight = true;
     }
 

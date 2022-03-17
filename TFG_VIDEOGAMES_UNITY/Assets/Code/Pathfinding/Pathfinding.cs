@@ -5,11 +5,11 @@ using UnityEngine;
 public class Pathfinding : MonoBehaviour
 {
     PathfinderRequestManager requestManager;
-    Grid grid;
+    WorldGrid grid;
     void Awake()
     {
         requestManager = GetComponent<PathfinderRequestManager>();
-        grid = GetComponent<Grid>();
+        grid = GetComponent<WorldGrid>();
     }
 
     public void StartFindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
@@ -124,6 +124,10 @@ public class Pathfinding : MonoBehaviour
 
     float GetDistanceHeuristic(Node nodeA, Node nodeB)
     {
+        if(nodeA == null || nodeB == null)
+        {
+            Debug.LogError("QUE SE ROMPE");
+        }
         float dstX = Mathf.Abs(nodeA.worldPosition.x - nodeB.worldPosition.x);
         float dstY = Mathf.Abs(nodeA.worldPosition.z - nodeB.worldPosition.z);
 

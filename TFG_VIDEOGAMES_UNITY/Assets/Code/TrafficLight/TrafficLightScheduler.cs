@@ -17,12 +17,15 @@ public class TrafficLightScheduler : MonoBehaviour
     {
         foreach(Transform child in transform)
         {
-            TrafficLight tf = child.gameObject.GetComponent<TrafficLight>();
-            if (tf != null)
+            if (child.gameObject.activeSelf)
             {
-                trafficLights.Add(tf);
-                waitingQueue.Enqueue(tf);
-            }
+                TrafficLight tf = child.gameObject.GetComponent<TrafficLight>();
+                if (tf != null)
+                {
+                    trafficLights.Add(tf);
+                    waitingQueue.Enqueue(tf);
+                }
+            }    
         }
 
         if(trafficLights.Count > 0)

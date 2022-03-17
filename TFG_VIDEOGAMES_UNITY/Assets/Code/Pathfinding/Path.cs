@@ -48,14 +48,14 @@ public class Path
 		Gizmos.color = Color.cyan;
 		foreach (Vector3 p in lookPoints)
 		{
-			Gizmos.DrawSphere(p + Vector3.up*0.2f, 0.2f);
+			Gizmos.DrawSphere(p + Vector3.up*0.2f, 0.12f);
 		}
 
-		Gizmos.color = Color.white;
-		foreach (Line l in turnBoundaries)
-		{
-			l.DrawWithGizmos(4);
-		}
+		//Gizmos.color = Color.white;
+		//foreach (Line l in turnBoundaries)
+		//{
+		//	l.DrawWithGizmos(4);
+		//}
 
 	}
 }
