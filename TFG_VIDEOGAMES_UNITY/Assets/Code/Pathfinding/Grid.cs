@@ -57,7 +57,7 @@ public class Grid : MonoBehaviour
                     CreateNodesForSplit((Split)road);
                     break;
                 case TypeOfRoad.Deviation:
-                    CreateNodesForDeviation(road);
+                    CreateNodesForDeviation((Deviation)road);
                     break;
                 case TypeOfRoad.Intersection:
                     // No crea nodos, se encarga de conectar los nodos de sus conexiones
@@ -336,7 +336,7 @@ public class Grid : MonoBehaviour
             startRefPoint1 = copy;
 
             List<Vector3> newReferencePoints = new List<Vector3>(numNodes);
-            for(int i=0; i < numNodes; i++)
+            for (int i = 0; i < numNodes; i++)
             {
                 newReferencePoints.Add(referencePoints[numNodes - i - 1]);
             }
@@ -356,16 +356,15 @@ public class Grid : MonoBehaviour
         road.exitNodes.Add(exitNode2);
         grid.Add(entryNode1);
         grid.Add(entryNode2);
-        road.lanes.Add(new Lane());
-        road.lanes.Add(new Lane());
-        debugNodes.Add(startRefPoint1);  
+        debugNodes.Add(startRefPoint1);
         debugNodes.Add(startRefPoint2);
-
+        road.lanes[0].nodes.Add(entryNode1);
+        road.lanes[1].nodes.Add(entryNode2);
         Vector3 newPoint2pos = Vector3.zero;
         for (int j = 1; j < numNodes - 1; j++)
         {
             Node newNode1 = new Node(referencePoints[j], road);
-            if(road.numDirection == NumDirection.TwoDirectional)
+            if (road.numDirection == NumDirection.TwoDirectional)
             {
                 distance = Vector3.Cross(ray.direction, referencePoints[numNodes - j - 1] - ray.origin).magnitude;
                 newPoint2pos = referencePoints[numNodes - j - 1] + perpendicularDirection * (distance * 2f);
@@ -386,16 +385,141 @@ public class Grid : MonoBehaviour
             road.lanes[0].nodes.Add(newNode1);
             road.lanes[1].nodes.Add(newNode2);
         }
+        road.lanes[0].nodes.Add(exitNode1);
+        road.lanes[1].nodes.Add(exitNode2);
         previousNode1.AddNeighbour(exitNode1);
         previousNode2.AddNeighbour(exitNode2);
         grid.Add(exitNode1);
         grid.Add(exitNode2);
 
     }
-
-    private void CreateNodesForDeviation(Road road)
+    private void CreateNodesForDeviation(Deviation road)
     {
+        int numLanes = road.numberOfLanes;
+        Vector3 straightStartPos = road.startPos;
+        Vector3 straightEndPos = road.endPos;
+        Vector3[] startPositions = new Vector3[numLanes];
+        Vector3[] endPositions = new Vector3[numLanes];
+        List<Vector3> linePoints = new List<Vector3>();
+        bool invertPath = road.invertPath;
+        if (numLanes == 2)
+        {
+            if (invertPath)
+            {
+                startPositions[0] = straightEndPos;
+                endPositions[0] = straightStartPos;
+                linePoints = road.laneReferencePoints;
+                linePoints.Reverse();
+            }
+            else
+            {
+                startPositions[0] = straightStartPos;
+                endPositions[0] = straightEndPos;
+                linePoints = road.laneReferencePoints;
+            }
 
+        }
+        else
+        {
+            startPositions[0] = (straightStartPos + road.laneWidthObjectPos) * 0.5f;
+            startPositions[1] = GetOppositeVector(startPositions[0], straightStartPos);
+
+            endPositions[0] = GetVectorWithSameDistanceAsSources(startPositions[0], straightStartPos, straightEndPos);
+            endPositions[1] = GetVectorWithSameDistanceAsSources(startPositions[1], straightStartPos, straightEndPos);
+            linePoints = road.laneTwoDirReferencePoints;
+            if (invertPath)
+            {
+                Vector3 end0 = new Vector3(endPositions[0].x, endPositions[0].y, endPositions[0].z);
+                Vector3 end1 = new Vector3(endPositions[1].x, endPositions[1].y, endPositions[1].z);
+                endPositions[0] = startPositions[0];
+                startPositions[0] = end0;
+                if (road.numDirection == NumDirection.OneDirectional)
+                {
+                    endPositions[1] = startPositions[1];
+                    startPositions[1] = end1;
+                    linePoints.Reverse();
+                }
+
+            }
+        }
+
+        // Straight line creation
+        Node entryNode;
+        Node exitNode;
+        Node previousNode;
+        for (int i = 0; i < numLanes - 1; i++)
+        {
+            entryNode = new Node(startPositions[i], road);
+            exitNode = new Node(endPositions[i], road);
+            road.entryNodes.Add(entryNode);
+            road.exitNodes.Add(exitNode);
+            debugNodes.Add(entryNode.worldPosition);
+
+            // Calculate all the possible nodes that could fit in a reasonable distance
+            float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
+            float xDistance = GetDistanceToReach(entryNode.worldPosition.x, exitNode.worldPosition.x);
+            float zDistance = GetDistanceToReach(entryNode.worldPosition.z, exitNode.worldPosition.z);
+            int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
+            int nodesToAdd = totalNodesInRoad - 2;
+            grid.Add(entryNode);
+            road.lanes[i].nodes.Add(entryNode);
+            if (nodesToAdd > 0)
+            {
+                previousNode = entryNode;
+                for (int j = 1; j <= nodesToAdd; j++)
+                {
+                    float multiplier = j / ((float)nodesToAdd + 1f);
+                    Vector3 newNodePos;
+                    newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
+                    Node newNode = new Node(newNodePos, road);
+                    previousNode.AddNeighbour(newNode);
+                    grid.Add(newNode);
+                    road.lanes[i].nodes.Add(newNode);
+                    previousNode = newNode;
+                }
+                previousNode.AddNeighbour(exitNode);
+            }
+            else
+            {
+                entryNode.AddNeighbour(exitNode);
+            }
+            road.lanes[i].nodes.Add(exitNode);
+            grid.Add(exitNode);
+        }
+
+        // Curve creation
+        int numLinePoints = linePoints.Count;
+        entryNode = new Node(linePoints[0], road);
+        exitNode = new Node(linePoints[numLinePoints - 1], road);
+        road.entryNodes.Add(entryNode);
+        road.exitNodes.Add(exitNode);
+        grid.Add(entryNode);
+        debugNodes.Add(entryNode.worldPosition);
+        previousNode = entryNode;
+        for (int i = 1; i < numLinePoints - 1; i++)
+        {
+            Node newNode = new Node(linePoints[i], road);
+            previousNode.AddNeighbour(newNode);
+            previousNode = newNode;
+            grid.Add(newNode);
+            road.lanes[numLanes - 1].nodes.Add(newNode);
+        }
+        previousNode.AddNeighbour(exitNode);
+        road.lanes[numLanes - 1].nodes.Add(exitNode);
+        grid.Add(exitNode);
+
+        // Straight line connections
+        int numNodes = road.lanes[0].nodes.Count;
+        if (numLanes == 3 && NumDirection.OneDirectional == road.numDirection)
+        {
+            List<Node> lane1Nodes = road.lanes[0].nodes;
+            List<Node> lane2Nodes = road.lanes[1].nodes;
+            for (int i = 0; i < numNodes - 1; i++)
+            {
+                lane1Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
+                lane2Nodes[i].AddNeighbour(lane1Nodes[i + 1]);
+            }
+        }
     }
     private void CreateNodesForRoundabout(Roundabout roundabout)
     {

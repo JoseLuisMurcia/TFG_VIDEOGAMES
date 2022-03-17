@@ -19,9 +19,9 @@ public class Road : MonoBehaviour
     public PathCreator pathCreator;
 
     List<Vector3> rayPositions = new List<Vector3>();
-    public BoxCollider boxCollider;
-    [HideInInspector]
-    public List<Line> curveRoadLines = new List<Line>();
+    [HideInInspector] public BoxCollider boxCollider;
+
+    [HideInInspector] public List<Line> curveRoadLines = new List<Line>();
 
     [HideInInspector] public List<Node> entryNodes = new List<Node>();
     [HideInInspector] public List<Node> exitNodes = new List<Node>();
@@ -49,9 +49,8 @@ public class Road : MonoBehaviour
         List<Vector3> localPoints = pathCreator.bezierPath.GetAnchorPoints();
         foreach (Vector3 localPoint in localPoints)
             laneReferencePoints.Add(transform.TransformPoint(localPoint));
-
-
     }
+
     private void SetConnections()
     {
         Vector3 center = transform.position + boxCollider.center;
@@ -117,6 +116,11 @@ public class Road : MonoBehaviour
 
     private void SetLanes()
     {
+        if (typeOfRoad == TypeOfRoad.Deviation || typeOfRoad == TypeOfRoad.Split)
+        {
+            if(numberOfLanes < 2)
+                numberOfLanes = 2;
+        }
         for (int i = 0; i < numberOfLanes; i++)
         {
             lanes.Add(new Lane());

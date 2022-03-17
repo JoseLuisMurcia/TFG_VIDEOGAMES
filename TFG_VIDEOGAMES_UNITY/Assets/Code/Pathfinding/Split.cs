@@ -15,7 +15,7 @@ public class Split : Road
         laneDir = (laneRefEnd - laneRefStart);
 
         typeOfRoad = TypeOfRoad.Split;
-        numberOfLanes = 1;
+        numberOfLanes = 2;
     }
 
 }
