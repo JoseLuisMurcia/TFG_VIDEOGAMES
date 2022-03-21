@@ -136,7 +136,7 @@ public class WorldGrid : MonoBehaviour
 
     public Vector3 GetRandomPosInRoads()
     {
-        Vector3 randomPos;
+        Vector3 randomPos = Vector3.zero;
         int numRoads = roads.Count;
         int roadIndex = Random.Range(0, numRoads);
         Road selectedRoad = roads[roadIndex];
@@ -145,15 +145,21 @@ public class WorldGrid : MonoBehaviour
             roadIndex = Random.Range(0, numRoads);
             selectedRoad = roads[roadIndex];
         }
-        int numEntryNodes = selectedRoad.entryNodes.Count;
-        if (numEntryNodes > 0)
+        int numLanes = selectedRoad.numberOfLanes;
+        int selectedLane = Random.Range(0, numLanes);
+        int numNodes = selectedRoad.lanes[selectedLane].nodes.Count;
+        if (numNodes > 0)
         {
-            int selectedEntryNodeIndex = Random.Range(0, numEntryNodes);
-            randomPos = selectedRoad.entryNodes[selectedEntryNodeIndex].worldPosition;
+            int selectedNode = Random.Range(1, numNodes-1);
+            randomPos = selectedRoad.lanes[selectedLane].nodes[selectedNode].worldPosition;
         }
         else
         {
             randomPos = selectedRoad.transform.position;
+        }
+        if(randomPos == Vector3.zero)
+        {
+            Debug.LogError("SE VA A LIAR");
         }
         return randomPos;
     }
@@ -240,7 +246,6 @@ public class WorldGrid : MonoBehaviour
             foreach (Node n in grid)
             {
                 Gizmos.color = Color.white;
-                Gizmos.color = (n.hasTrafficLightClose) ? Color.green : Gizmos.color;
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.1f));
 
                 foreach (Node neighbour in n.neighbours)
@@ -1048,7 +1053,7 @@ public class WorldGrid : MonoBehaviour
         Node closestNode = null;
         float bestDistance = float.PositiveInfinity;
         RaycastHit hit;
-        Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
+        Ray ray = new Ray(worldPoint + carForward + Vector3.up * 50, Vector3.down);
         if (Physics.Raycast(ray, out hit, 100, roadMask))
         {
             GameObject _gameObject = hit.collider.gameObject;
@@ -1077,7 +1082,7 @@ public class WorldGrid : MonoBehaviour
         }
         if (closestNode == null)
         {
-            Debug.LogError("SE VA A ROMPER");
+            Debug.LogError("SE VA A ROMPER START");
         }
         return closestNode;
     }
@@ -1110,7 +1115,7 @@ public class WorldGrid : MonoBehaviour
         }
         if(closestNode == null)
         {
-            Debug.LogError("SE VA A ROMPER");
+            Debug.LogError("SE VA A ROMPER END");
         }
         return closestNode;
     }

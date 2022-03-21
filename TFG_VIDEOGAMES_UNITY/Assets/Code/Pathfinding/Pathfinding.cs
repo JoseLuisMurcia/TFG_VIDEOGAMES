@@ -50,12 +50,6 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                //if (neighbour.isRoad)
-                //{
-                //    bool compatibility = CanTravelV3(currentNode.typeOfRoad, neighbour.typeOfRoad);
-                //    if (compatibility == false) continue;
-                //}
-
                 float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
                 if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                 {

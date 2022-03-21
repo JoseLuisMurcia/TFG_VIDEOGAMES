@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class Node : IHeapItem<Node>
 {
 	public Vector3 worldPosition;
@@ -10,7 +11,6 @@ public class Node : IHeapItem<Node>
 	public float hCost;
 	public Node parent; // Used by pathfinding
 	int heapIndex;
-	public bool hasTrafficLightClose;
 	public Road road;
 	public readonly List<Node> neighbours = new List<Node>();
 	public Node previousNode; // Used by grid creation

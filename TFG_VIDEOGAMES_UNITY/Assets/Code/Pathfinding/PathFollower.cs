@@ -6,7 +6,8 @@ public class PathFollower : MonoBehaviour
 {
     const float minPathUpdateTime = .2f;
 
-    public Transform target;
+    //public Transform target;
+    private Vector3 target;
     public float speed = 4;
     public float turnSpeed = 4;
     public float turnDst = 5;
@@ -36,6 +37,7 @@ public class PathFollower : MonoBehaviour
 
     private IEnumerator followPathCoroutine;
 
+    // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
     void Start()
     {
         StartCoroutine(UpdatePath());
@@ -71,25 +73,29 @@ public class PathFollower : MonoBehaviour
         {
             yield return new WaitForSeconds(.3f);
         }
-        PathfinderRequestManager.RequestPath(transform.position, target.position, transform.forward, OnPathFound);
+        if (target == Vector3.zero)
+        {
+            target = grid.GetRandomPosInRoads();
+        }
+        PathfinderRequestManager.RequestPath(transform.position, target, transform.forward, OnPathFound);
 
         while (true)
         {
             yield return new WaitForSeconds(minPathUpdateTime);
 
-            float distance = Vector3.Distance(transform.position, target.position);
+            float distance = Vector3.Distance(transform.position, target);
             if (distance < 8f)
             {
                 float newDistance = 0f;
                 Vector3 newTargetPos = Vector3.zero;
-                Vector3 oldPos = target.position;
+                Vector3 oldPos = target;
                 while (newDistance < 20f)
                 {
                     newTargetPos = grid.GetRandomPosInRoads();
                     newDistance = Vector3.Distance(oldPos, newTargetPos);
                 }
-                PathfinderRequestManager.RequestPath(transform.position, newTargetPos, transform.forward, OnPathFound);
-                target.position = newTargetPos;
+                PathfinderRequestManager.RequestPath(oldPos, newTargetPos, transform.forward, OnPathFound);
+                target = newTargetPos;
             }
         }
     }
