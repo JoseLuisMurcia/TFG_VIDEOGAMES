@@ -5,31 +5,23 @@ using UnityEngine;
 [System.Serializable]
 public class Node : IHeapItem<Node>
 {
-	public bool walkable;
 	public Vector3 worldPosition;
-	public int gridX;
-	public int gridY;
-	public int movementPenalty;
 
-	public int gCost;
-	public int hCost;
-	public Node parent;
+	public float gCost;
+	public float hCost;
+	public Node parent; // Used by pathfinding
 	int heapIndex;
-	public bool hasTrafficLightClose;
-	public bool isRoad = false;
-	public TypeOfRoad typeOfRoad = TypeOfRoad.None;
 	public Road road;
+	public readonly List<Node> neighbours = new List<Node>();
+	public Node previousNode; // Used by grid creation
 
-
-	public Node(bool _walkable,Vector3 _worldPos, int _gridX, int _gridY)
+	public Node(Vector3 _worldPos, Road _road)
 	{
-		walkable = _walkable;
 		worldPosition = _worldPos;
-		gridX = _gridX;
-		gridY = _gridY;
+		road = _road;
 	}
 
-	public int fCost
+	public float fCost
 	{
 		get
 		{
@@ -58,4 +50,12 @@ public class Node : IHeapItem<Node>
 		}
 		return -compare;
 	}
+
+	public void AddNeighbour(Node neighbour)
+    {
+		neighbours.Add(neighbour);
+
+		if(neighbour.previousNode == null)
+			neighbour.previousNode = this;
+    }
 }

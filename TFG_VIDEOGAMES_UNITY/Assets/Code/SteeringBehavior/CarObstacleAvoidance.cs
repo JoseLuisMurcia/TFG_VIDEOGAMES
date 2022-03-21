@@ -14,7 +14,6 @@ public class CarObstacleAvoidance : MonoBehaviour
     [SerializeField] float sideReach = 1.5f;
     [SerializeField] float centerReach = 4f;
     [SerializeField] float carRayDistance = 2f;
-    [SerializeField] Grid grid;
 
     private Vector3 rayOrigin;
 
@@ -32,7 +31,7 @@ public class CarObstacleAvoidance : MonoBehaviour
         rayOrigin = centerSensor.position;
         bool carClose = CheckCars();
         if (carClose) return;
-        CheckRoadObstacles();
+        //CheckRoadObstacles();
 
     }
 
@@ -42,15 +41,20 @@ public class CarObstacleAvoidance : MonoBehaviour
         Ray ray = new Ray(rayOrigin, centerSensor.forward);
         if (Physics.Raycast(ray, out hit, centerReach * carRayDistance, carLayer))
         {
-            Debug.DrawLine(rayOrigin, hit.point, Color.black);
-            pathFollower.shouldBrakeBeforeCar = true;
-            pathFollower.frontCarPos = hit.point;
-            return true;
+            //Check directions
+            Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
+            Vector3 carForward = transform.forward;
+            float angleTolerance = 10f;
+            if (Vector3.Angle(hitCarForward, carForward) < angleTolerance)
+            {
+                Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                pathFollower.shouldBrakeBeforeCar = true;
+                pathFollower.frontCarPos = hit.point;
+                return true;
+            }
         }
-        else
-        {
-            Debug.DrawLine(rayOrigin, rayOrigin + centerSensor.forward, Color.white);
-        }
+
+        Debug.DrawLine(rayOrigin, rayOrigin + centerSensor.forward, Color.white);
         pathFollower.shouldBrakeBeforeCar = false;
         return false;
     }
@@ -83,7 +87,8 @@ public class CarObstacleAvoidance : MonoBehaviour
             Vector3 hitPoint = hit.point;
             Vector3 leftPos = hitPoint - transform.right;
             Vector3 rightPos = hitPoint + transform.right;
-            pathFollower.SetNewPathByAvoidance(GetBestCandidate(leftPos, rightPos));
+
+            //pathFollower.SetNewPathByAvoidance(GetBestCandidate(leftPos, rightPos));
         }
         else
         {
@@ -103,41 +108,6 @@ public class CarObstacleAvoidance : MonoBehaviour
         {
             Debug.DrawLine(rayOrigin, rayOrigin + rightSensor.forward, Color.blue);
         }
-    }
-
-   
-    private Vector3 GetBestCandidate(Vector3 posA, Vector3 posB)
-    {
-        Vector3 bestCandidate = Vector3.zero;
-        Node nodeA = grid.NodeFromWorldPoint(posA);
-        Node nodeB = grid.NodeFromWorldPoint(posB);
-
-        // Check walkable
-
-        // If node A is not walkable
-        if (!nodeA.walkable)
-        {
-            if (nodeB.walkable)
-            {
-                bestCandidate = posB;
-            }
-        }
-        else // If node A is walkable
-        {
-            if (!nodeB.walkable)
-            {
-                bestCandidate = posA;
-            }
-        }
-        // If best candidate is not set then both are walkable or none of them is, the second case is highly unlikely so we'll ignore it
-        if(bestCandidate != Vector3.zero)
-            return bestCandidate;
-
-        // Both are walkable so we should look at the movement penalty
-        if (nodeA.movementPenalty < nodeB.movementPenalty)
-            return posA;
-        else
-            return posB;
     }
 
     
