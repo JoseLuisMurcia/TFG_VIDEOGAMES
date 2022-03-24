@@ -27,9 +27,7 @@ public class TrafficLight : MonoBehaviour
     {
         float forwardDistance = 1f;
         float rightDistance = 1f;
-        //rayPos = (-Vector3.back * forwardDistance) + (-Vector3.left * rightDistance) + transform.position;
-        //rayPos = -transform.forward* forwardDistance + -transform.right*rightDistance + transform.position;
-        rayPos = transform.forward* forwardDistance + -transform.right*rightDistance + transform.position;
+        rayPos = transform.forward* forwardDistance + transform.right*rightDistance + transform.position;
         Ray ray = new Ray(rayPos + Vector3.up * 50, Vector3.down);
         RaycastHit hit;
 
@@ -45,11 +43,22 @@ public class TrafficLight : MonoBehaviour
         }
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.DrawSphere(rayPos, .2f);
-    //    Gizmos.color = Color.magenta;
-    //}
+    private void OnDrawGizmos()
+    {
+        switch (currentColor)
+        {
+            case TrafficLightColor.Green:
+                Gizmos.color = Color.green;
+                break;
+            case TrafficLightColor.Amber:
+                Gizmos.color = Color.yellow;
+                break;
+            case TrafficLightColor.Red:
+                Gizmos.color = Color.red;
+                break;
+        }
+        Gizmos.DrawSphere(transform.position + Vector3.up * 3f, 0.7f);
+    }
 
 }
 

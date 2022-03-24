@@ -65,8 +65,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.1257845, y: 1.1392574, z: 2.5038185}
-  m_Center: {x: -0.015741555, y: 0.53676593, z: -0.014059408}
+  m_Size: {x: 1.8963519, y: 1.1392574, z: 0.6309381}
+  m_Center: {x: -0.004250051, y: 0.53676593, z: -1.1732891}
 --- !u!114 &355647666155603536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,12 +79,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb772070f72ab294a9d73ef7ce96f6c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  speed: 2.5
-  turnSpeed: 3
+  speed: 3
+  turnSpeed: 3.2
   turnDst: 0.7
-  stoppingDst: 1.5
+  stoppingDst: 2
   pathIndex: 0
+  speedPercent: 0
   shouldStopAtTrafficLight: 0
   shouldBrakeBeforeCar: 0
   frontCarPos: {x: 0, y: 0, z: 0}
@@ -101,11 +101,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fb614d9108bbc448b4f0fe88881665c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  centerSensor: {fileID: 355647667188519731}
-  leftSensor: {fileID: 355647666982200993}
-  rightSensor: {fileID: 355647666873026547}
-  leftCarsSensor: {fileID: 355647666681846492}
-  rightCarsSensor: {fileID: 355647666536096751}
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 1024
@@ -114,10 +109,9 @@ MonoBehaviour:
     m_Bits: 2048
   objectHit: 0
   obstacleRayDistance: 0.75
-  sideReach: 2
+  sideReach: 5
   centerReach: 5
-  carRayDistance: 0.65
-  grid: {fileID: 0}
+  carRayDistance: 1
 --- !u!114 &355647666155603533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -131,6 +125,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nodes: []
+  currentRoad: {fileID: 0}
   distanceToStopInAmberLight: 5
 --- !u!1 &355647666310560055
 GameObject:
@@ -242,13 +237,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666536096750}
-  m_LocalRotation: {x: 0, y: 0.08715578, z: 0, w: 0.9961947}
+  m_LocalRotation: {x: 0, y: 0.3420201, z: 0, w: 0.9396927}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 10, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 40, z: 0}
 --- !u!1 &355647666681846491
 GameObject:
   m_ObjectHideFlags: 0
@@ -272,13 +267,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666681846491}
-  m_LocalRotation: {x: 0, y: 0.08715578, z: 0, w: 0.9961947}
+  m_LocalRotation: {x: 0, y: -0.3420201, z: 0, w: 0.9396927}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 10, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -40, z: 0}
 --- !u!1 &355647666766185302
 GameObject:
   m_ObjectHideFlags: 0
@@ -384,13 +379,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666873026546}
-  m_LocalRotation: {x: 0, y: 0.13052616, z: 0, w: 0.9914449}
+  m_LocalRotation: {x: 0, y: 0.17364816, z: 0, w: 0.9848078}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 15, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 20, z: 0}
 --- !u!1 &355647666915564222
 GameObject:
   m_ObjectHideFlags: 0
@@ -496,13 +491,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666982200992}
-  m_LocalRotation: {x: 0, y: -0.13052624, z: 0, w: 0.9914449}
+  m_LocalRotation: {x: 0, y: -0.17364825, z: 0, w: 0.9848078}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: -15, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -20, z: 0}
 --- !u!1 &355647667188519730
 GameObject:
   m_ObjectHideFlags: 0

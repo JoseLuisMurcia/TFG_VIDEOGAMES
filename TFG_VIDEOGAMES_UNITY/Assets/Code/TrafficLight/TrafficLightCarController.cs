@@ -13,33 +13,32 @@ public class TrafficLightCarController : MonoBehaviour
     PathFollower pathFollower;
 
     [HideInInspector] public Road currentRoad;
-    [SerializeField] float distanceToStopInAmberLight = 5f;
+    public float distanceToStopInAmberLight = 3f;
     private void Start()
     {
         pathFollower = GetComponent<PathFollower>();
     }
 
-    private void OnTrafficLightChange(TrafficLightColor newColor)
+    private void OnTrafficLightChange(TrafficLightColor newColor, bool subscription)
     {
+        if (currentRoad == null)
+            return;
+
         float distance;
         switch (newColor)
         {
             case TrafficLightColor.Green:
-                // If the car was stopped or braking, put it to movement again, if not, dont do anything
-                pathFollower.shouldStopAtTrafficLight = false;
+                pathFollower.ContinueAtTrafficLight(subscription);
                 break;
             case TrafficLightColor.Amber:
-                // If the car was moving and it is close enough, brake.
                 distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
                 if (distance > distanceToStopInAmberLight)
                 {
-                    pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
+                    pathFollower.StopAtTrafficLight(subscription);
                 }
-                // if distance lesser than X and velocity greater than -> dont break; otherwise -> break
                 break;
             case TrafficLightColor.Red:
-                // If the car is coming to a red traffic light it should break in the closest position to it (Given there is no car in front)
-                pathFollower.SetTrafficLightPos(currentRoad.trafficLight.transform.position);
+                pathFollower.StopAtTrafficLight(subscription);
                 break;
         }
         //Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
@@ -47,27 +46,35 @@ public class TrafficLightCarController : MonoBehaviour
 
     public float GiveDistanceToPathFollower()
     {
-        return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
+        if (currentRoad)
+        {
+            return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
+
+        }
+        return 100f;
     }
-    
+
     private float CheckDistanceWithTrafficLight(Vector3 trafficLightPos)
     {
-        Vector3 carPosition = transform.position;
-        return Vector3.Distance(carPosition, trafficLightPos);
+        // Encontrar punto a una distancia X a partir de una direccion.
+        Vector3 trafficLightPosForward = currentRoad.trafficLight.transform.forward;
+        Vector2 perpDir = Vector2.Perpendicular(new Vector2(trafficLightPosForward.x, trafficLightPosForward.z));
+        Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
+
+        Ray ray = new Ray(trafficLightPos, perpendicularDirection);
+        return Vector3.Cross(ray.direction, transform.position - ray.origin).magnitude;
     }
 
     public void SubscribeToTrafficLight(Road _newRoad)
     {
-        //Debug.Log("SubscribeToTrafficLight");
         currentRoad = _newRoad;
         currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
         // Auto send an event in order to know the state
-        OnTrafficLightChange(currentRoad.trafficLight.currentColor);
+        OnTrafficLightChange(currentRoad.trafficLight.currentColor, true);
     }
 
     public void UnsubscribeToTrafficLight()
     {
-        //Debug.Log("UnsubscribeToTrafficLight");
         currentRoad.trafficLightEvents.onLightChange -= OnTrafficLightChange;
         currentRoad = null;
     }

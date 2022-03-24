@@ -1,7 +1,7 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using UnityEngine; 
+using UnityEngine;
 
 public class PathfinderRequestManager : MonoBehaviour
 {
@@ -26,13 +26,27 @@ public class PathfinderRequestManager : MonoBehaviour
         instance.TryProcessNext();
     }
 
+    public static void RequestPath(Vector3 pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool> callback)
+    {
+        PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
+        instance.pathRequestQueue.Enqueue(newRequest);
+        instance.TryProcessNext();
+    }
+
     void TryProcessNext()
     {
-        if(!isProcessingPath && pathRequestQueue.Count > 0)
+        if (!isProcessingPath && pathRequestQueue.Count > 0)
         {
             currentPathRequest = pathRequestQueue.Dequeue();
             isProcessingPath = true;
-            pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.carForward);
+            if (currentPathRequest.pathEnd != Vector3.zero)
+            {
+                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.carForward);
+            }
+            else
+            {
+                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.nodeEnd, currentPathRequest.carForward);
+            }
         }
     }
 
@@ -47,6 +61,7 @@ public class PathfinderRequestManager : MonoBehaviour
     {
         public Vector3 pathStart;
         public Vector3 pathEnd;
+        public Node nodeEnd;
         public Vector3 carForward;
         public Action<Vector3[], bool> callback;
 
@@ -56,6 +71,16 @@ public class PathfinderRequestManager : MonoBehaviour
             pathEnd = _end;
             callback = _callback;
             carForward = _carForward;
+            nodeEnd = null;
+        }
+
+        public PathRequest(Vector3 _start, Node _nodeEnd, Vector3 _carForward, Action<Vector3[], bool> _callback)
+        {
+            pathStart = _start;
+            nodeEnd = _nodeEnd;
+            callback = _callback;
+            carForward = _carForward;
+            pathEnd = Vector3.zero;
         }
     }
 }
