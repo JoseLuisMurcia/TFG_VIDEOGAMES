@@ -38,10 +38,11 @@ public class PathFollower : MonoBehaviour
     void Start()
     {
         carStartBreakingDistance = Random.Range(1f, 4f);
+        carStartBreakingDistance = 2.5f;
         trafficLightStopDist = Random.Range(4f, 6f);
         carStopDistance = Random.Range(0.5f, 2f);
         carStopDistance = 1.5f;
-        float speedMultiplier = Random.Range(1f, 1.1f);
+        float speedMultiplier = Random.Range(1f, 1.01f);
         speed *= speedMultiplier;
         turnSpeed *= speedMultiplier;
         speed *= speedMultiplier;

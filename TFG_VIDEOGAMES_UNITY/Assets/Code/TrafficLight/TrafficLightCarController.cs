@@ -6,13 +6,10 @@ using UnityEngine.Events;
 // This class should know where the car is right now. It should be notified when there is a change in a traffic light, or a car is too close and it should brake.
 public class TrafficLightCarController : MonoBehaviour
 {
-
-    // Use the nodes in the path to know the current road
-    public List<Node> nodes;
-
     PathFollower pathFollower;
 
-    [HideInInspector] public Road currentRoad;
+    [SerializeField] public Road currentRoad;
+    [SerializeField] public TrafficLight trafficLight;
     public float distanceToStopInAmberLight = 3f;
     private void Start()
     {
@@ -51,7 +48,12 @@ public class TrafficLightCarController : MonoBehaviour
             return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
 
         }
-        return 100f;
+        else
+        {
+            Debug.LogWarning("Llamada a GiveDistanceToPathFollower sin currentRoad xd");
+            return 10000f;
+        }
+        
     }
 
     private float CheckDistanceWithTrafficLight(Vector3 trafficLightPos)
@@ -68,6 +70,7 @@ public class TrafficLightCarController : MonoBehaviour
     public void SubscribeToTrafficLight(Road _newRoad)
     {
         currentRoad = _newRoad;
+        trafficLight = _newRoad.trafficLight;
         currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
         // Auto send an event in order to know the state
         OnTrafficLightChange(currentRoad.trafficLight.currentColor, true);
@@ -76,6 +79,8 @@ public class TrafficLightCarController : MonoBehaviour
     public void UnsubscribeToTrafficLight()
     {
         currentRoad.trafficLightEvents.onLightChange -= OnTrafficLightChange;
+        pathFollower.shouldStopAtTrafficLight = false;
         currentRoad = null;
+        trafficLight = null;
     }
 }
