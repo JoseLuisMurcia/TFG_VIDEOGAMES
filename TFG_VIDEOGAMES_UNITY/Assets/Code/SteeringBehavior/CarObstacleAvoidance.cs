@@ -6,7 +6,8 @@ using UnityEngine;
 // With the grid, we can find the node in that position and check if it is walkable and the movement penalty
 public class CarObstacleAvoidance : MonoBehaviour
 {
-    List<Transform> sensors = new List<Transform>();
+    List<Transform> whiskerSensors = new List<Transform>();
+    
     [SerializeField] LayerMask obstacleLayer, carLayer;
     public bool objectHit = false;
     //[SerializeField] float obstacleRayDistance = 0.75f;
@@ -28,8 +29,9 @@ public class CarObstacleAvoidance : MonoBehaviour
         Transform sensorsParent = transform.Find("Whiskers");
         foreach (Transform sensor in sensorsParent.transform)
         {
-            sensors.Add(sensor);
+            whiskerSensors.Add(sensor);
         }
+
     }
 
     // Update is called once per frame
@@ -37,7 +39,9 @@ public class CarObstacleAvoidance : MonoBehaviour
     {
         // Think about if avoiding an obstacle you come too close with a car.
         if (objectHit) return;
-        rayOrigin = sensors[0].position;
+        rayOrigin = whiskerSensors[0].position;
+
+        CheckRoadObstacles();
 
         if (carTarget != null)
         {
@@ -74,7 +78,7 @@ public class CarObstacleAvoidance : MonoBehaviour
         {
             CheckCars();
         }
-        //CheckRoadObstacles();
+        
 
     }
 
@@ -94,7 +98,7 @@ public class CarObstacleAvoidance : MonoBehaviour
 
     private void CheckCars()
     {
-        foreach (Transform sensor in sensors)
+        foreach (Transform sensor in whiskerSensors)
         {
             RaycastHit hit;
             Ray ray = new Ray(rayOrigin, sensor.forward);

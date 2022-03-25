@@ -29,6 +29,9 @@ public class PathFollower : MonoBehaviour
     Node startNode;
     Node endNode;
 
+    // Priority variables
+    public bool hasPriority = true;
+
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
     List<Vector3> waypointsList = new List<Vector3>();
