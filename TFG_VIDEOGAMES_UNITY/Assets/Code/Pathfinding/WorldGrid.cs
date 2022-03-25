@@ -149,7 +149,7 @@ public class WorldGrid : MonoBehaviour
         }
     }
 
-    
+
 
     private void ConnectRoadsThroughIntersection(Road road)
     {
@@ -1018,22 +1018,22 @@ public class WorldGrid : MonoBehaviour
         return randomNode;
     }
 
-    // Method called when no close node has been found to set a start position
-    private Node GetRandomNode(Vector3 carPosition, Vector3 carForward)
-    {
-        float threshold = 6f;
-        foreach (Node node in grid)
-        {
-            Vector3 dirToMovePosition = (node.worldPosition - carPosition).normalized;
-            float dot = Vector3.Dot(carForward, dirToMovePosition);
-            float distance = Vector3.Distance(carPosition, node.worldPosition);
-            if (dot > 0 && distance < threshold)
-            {
-                return node;
-            }
-        }
-        return null;
-    }
+    //// Method called when no close node has been found to set a start position
+    //private Node GetRandomNode(Vector3 carPosition, Vector3 carForward)
+    //{
+    //    float threshold = 3f;
+    //    foreach (Node node in grid)
+    //    {
+    //        Vector3 dirToMovePosition = (node.worldPosition - carPosition).normalized;
+    //        float dot = Vector3.Dot(carForward, dirToMovePosition);
+    //        float distance = Vector3.Distance(carPosition, node.worldPosition);
+    //        if (dot > 0 && distance < threshold)
+    //        {
+    //            return node;
+    //        }
+    //    }
+    //    return null;
+    //}
 
     private Vector2 V3ToV2(Vector3 v3)
     {
@@ -1126,12 +1126,7 @@ public class WorldGrid : MonoBehaviour
 
         if (closestNode == null)
         {
-            closestNode = GetRandomNode(worldPoint, carForward);
-            if (closestNode == null)
-            {
-                Debug.LogError("SE ROMPIO EL START NODE LA CONCHA DE LA LORA");
-
-            }
+            Debug.LogError("SE ROMPIO EL START NODE LA CONCHA DE LA LORA");
         }
         return closestNode;
     }
@@ -1164,12 +1159,9 @@ public class WorldGrid : MonoBehaviour
         }
         if (closestNode == null)
         {
-            //closestNode = GetRandomNode(worldPoint, carForward);
-            if (closestNode == null)
-            {
-                Debug.LogError("SE ROMPIO EL END NODE LA CONCHA DE LA LORA");
 
-            }
+            Debug.LogError("SE ROMPIO EL END NODE LA CONCHA DE LA LORA");
+
         }
         return closestNode;
     }

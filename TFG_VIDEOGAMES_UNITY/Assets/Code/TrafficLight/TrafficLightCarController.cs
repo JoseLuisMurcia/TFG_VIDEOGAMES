@@ -10,7 +10,7 @@ public class TrafficLightCarController : MonoBehaviour
 
     [SerializeField] public Road currentRoad;
     [SerializeField] public TrafficLight trafficLight;
-    public float distanceToStopInAmberLight = 3f;
+    float distanceToStopInAmberLight = 3.5f;
     private void Start()
     {
         pathFollower = GetComponent<PathFollower>();
@@ -35,7 +35,11 @@ public class TrafficLightCarController : MonoBehaviour
                 }
                 break;
             case TrafficLightColor.Red:
-                pathFollower.StopAtTrafficLight(subscription);
+                distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
+                if (distance > 1)
+                {
+                    pathFollower.StopAtTrafficLight(subscription);
+                }
                 break;
         }
         //Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
@@ -43,17 +47,7 @@ public class TrafficLightCarController : MonoBehaviour
 
     public float GiveDistanceToPathFollower()
     {
-        if (currentRoad)
-        {
-            return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
-
-        }
-        else
-        {
-            Debug.LogWarning("Llamada a GiveDistanceToPathFollower sin currentRoad xd");
-            return 10000f;
-        }
-        
+        return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
     }
 
     private float CheckDistanceWithTrafficLight(Vector3 trafficLightPos)

@@ -45,30 +45,27 @@ public class CarObstacleAvoidance : MonoBehaviour
             {
                 if (DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
                 {
-                    pathFollower.carTarget = null;
-                    pathFollower.shouldBrakeBeforeCar = false;
+                    UnableTarget();
+                }
+                else if(Vector3.Distance(carTarget.position, transform.position) > 4.5)
+                {
+                    UnableTarget();
                 }
                 else
                 {
-                    Debug.DrawLine(rayOrigin, carTarget.position, Color.magenta);
+                    EnableTarget();
                 }
 
-                if (Vector3.Distance(carTarget.position, transform.position) > 4.5)
-                {
-                    carTarget = null;
-                    pathFollower.shouldBrakeBeforeCar = false;
-                }
             }
             else
             {
                 if (Vector3.Distance(carTarget.position, transform.position) > 4.5)
                 {
-                    carTarget = null;
-                    pathFollower.shouldBrakeBeforeCar = false;
+                    UnableTarget();
                 }
                 else
                 {
-                    Debug.DrawLine(rayOrigin, carTarget.position, Color.magenta);
+                    EnableTarget();
                 }
             }
 
@@ -81,6 +78,20 @@ public class CarObstacleAvoidance : MonoBehaviour
 
     }
 
+    private void UnableTarget()
+    {
+        carTarget = null;
+        pathFollower.carTarget = null;
+        pathFollower.shouldBrakeBeforeCar = false;
+    }
+
+    private void EnableTarget()
+    {
+        pathFollower.carTarget = carTarget;
+        pathFollower.shouldBrakeBeforeCar = true;
+        Debug.DrawLine(rayOrigin, carTarget.position, Color.magenta);
+    }
+
     private void CheckCars()
     {
         foreach (Transform sensor in sensors)
@@ -91,7 +102,7 @@ public class CarObstacleAvoidance : MonoBehaviour
             {
                 Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
                 Vector3 carForward = transform.forward;
-                float angleTolerance = 90f;
+                float angleTolerance = 75f;
                 if (Vector3.Angle(hitCarForward, carForward) < angleTolerance)
                 {
                     hitCarPathFollower = hit.collider.gameObject.GetComponent<PathFollower>();
@@ -130,8 +141,8 @@ public class CarObstacleAvoidance : MonoBehaviour
                 Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * centerReach, Color.white);
             }
         }
-        pathFollower.carTarget = null;
         pathFollower.shouldBrakeBeforeCar = false;
+        pathFollower.carTarget = null;
     }
 
     private void CheckRoadObstacles()

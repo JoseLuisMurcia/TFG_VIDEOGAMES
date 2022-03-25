@@ -19,14 +19,14 @@ public class PathfinderRequestManager : MonoBehaviour
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool> callback)
+    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
         instance.TryProcessNext();
     }
 
-    public static void RequestPath(Vector3 pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool> callback)
+    public static void RequestPath(Node pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
@@ -45,14 +45,14 @@ public class PathfinderRequestManager : MonoBehaviour
             }
             else
             {
-                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.nodeEnd, currentPathRequest.carForward);
+                pathfinding.StartFindPath(currentPathRequest.nodeStart, currentPathRequest.nodeEnd);
             }
         }
     }
 
-    public void FinishedProcessingPath(Vector3[] path, bool success)
+    public void FinishedProcessingPath(Vector3[] path, bool success, Node startNode, Node endNode)
     {
-        currentPathRequest.callback(path, success);
+        currentPathRequest.callback(path, success, startNode, endNode);
         isProcessingPath = false;
         TryProcessNext();
     }
@@ -62,24 +62,27 @@ public class PathfinderRequestManager : MonoBehaviour
         public Vector3 pathStart;
         public Vector3 pathEnd;
         public Node nodeEnd;
+        public Node nodeStart;
         public Vector3 carForward;
-        public Action<Vector3[], bool> callback;
+        public Action<Vector3[], bool, Node, Node> callback;
 
-        public PathRequest(Vector3 _start, Vector3 _end, Vector3 _carForward, Action<Vector3[], bool> _callback)
+        public PathRequest(Vector3 _start, Vector3 _end, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
         {
             pathStart = _start;
             pathEnd = _end;
             callback = _callback;
             carForward = _carForward;
             nodeEnd = null;
+            nodeStart = null;
         }
 
-        public PathRequest(Vector3 _start, Node _nodeEnd, Vector3 _carForward, Action<Vector3[], bool> _callback)
+        public PathRequest(Node _nodeStart, Node _nodeEnd, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
         {
-            pathStart = _start;
+            nodeStart = _nodeStart;
             nodeEnd = _nodeEnd;
             callback = _callback;
             carForward = _carForward;
+            pathStart = Vector3.zero;
             pathEnd = Vector3.zero;
         }
     }

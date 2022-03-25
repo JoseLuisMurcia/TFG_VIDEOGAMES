@@ -10,23 +10,21 @@ public class Pathfinding : MonoBehaviour
         requestManager = GetComponent<PathfinderRequestManager>();
     }
 
-    public void StartFindPath(Vector3 startPos, Node targetNode, Vector3 carForward)
+    public void StartFindPath(Node startNode, Node targetNode)
     {
-        StartCoroutine(FindPath(startPos, targetNode, carForward));
+        StartCoroutine(FindPath(startNode, targetNode));
     }
     public void StartFindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
     {
         StartCoroutine(FindPath(startPos, targetPos, carForward));
     }
 
-    IEnumerator FindPath(Vector3 startPos, Node targetNode, Vector3 carForward)
+    IEnumerator FindPath(Node startNode, Node targetNode)
     {
         Vector3[] waypoints = new Vector3[0];
         bool pathSuccess = false;
 
-        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
         startNode.gCost = 0;
-
         Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
         HashSet<Node> closedSet = new HashSet<Node>();
         openSet.Add(startNode);
@@ -73,7 +71,7 @@ public class Pathfinding : MonoBehaviour
         {
             waypoints = RetracePath(startNode, targetNode);
         }
-        requestManager.FinishedProcessingPath(waypoints, pathSuccess);
+        requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
 
     }
     // I need to find the closest node from startPost to targetPos
@@ -133,7 +131,7 @@ public class Pathfinding : MonoBehaviour
         {
             waypoints = RetracePath(startNode, targetNode);
         }
-        requestManager.FinishedProcessingPath(waypoints, pathSuccess);
+        requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
 
     }
 

@@ -65,8 +65,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.8963519, y: 1.1392574, z: 1.4153385}
-  m_Center: {x: -0.004250051, y: 0.53676593, z: -0.78108865}
+  m_Size: {x: 1.8963519, y: 1.1392574, z: 2.3263354}
+  m_Center: {x: -0.004250051, y: 0.53676593, z: -0.32559025}
 --- !u!114 &355647666155603536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -110,7 +110,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 2048
   objectHit: 0
-  obstacleRayDistance: 0.75
   centerReach: 5
   carRayDistance: 1
 --- !u!114 &355647666155603533
@@ -125,9 +124,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d52d14bf6e209a945b67bb6fdf45b2ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodes: []
   currentRoad: {fileID: 0}
-  distanceToStopInAmberLight: 5
+  trafficLight: {fileID: 0}
 --- !u!1 &355647666310560055
 GameObject:
   m_ObjectHideFlags: 0

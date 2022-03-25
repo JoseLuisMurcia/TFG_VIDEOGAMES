@@ -26,6 +26,8 @@ public class PathFollower : MonoBehaviour
     public Transform carTarget;
     CarObstacleAvoidance carObstacleAvoidance;
     int recentAddedAvoidancePosIndex = -1;
+    Node startNode;
+    Node endNode;
 
     TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
@@ -33,6 +35,7 @@ public class PathFollower : MonoBehaviour
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
+    private static float minDistanceToSpawnNewTarget = 10f;
 
     // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
     void Start()
@@ -51,10 +54,12 @@ public class PathFollower : MonoBehaviour
         carObstacleAvoidance = GetComponent<CarObstacleAvoidance>();
     }
 
-    public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
+    public void OnPathFound(Vector3[] waypoints, bool pathSuccessful, Node _startNode, Node _endNode)
     {
         if (pathSuccessful)
         {
+            endNode = _endNode;
+            startNode = _startNode;
             waypointsList = new List<Vector3>();
             foreach (Vector3 waypoint in waypoints)
             {
@@ -90,20 +95,20 @@ public class PathFollower : MonoBehaviour
             yield return new WaitForSeconds(minPathUpdateTime);
 
             float distance = Vector3.Distance(transform.position, target);
-            if (distance < 7f)
+            if (distance < 3f)
             {
                 float newDistance = 0f;
                 Vector3 newTargetPos = Vector3.zero;
                 Vector3 oldPos = target;
                 Node newNode = null;
-                while (newDistance < 30f)
+                while (newDistance < minDistanceToSpawnNewTarget)
                 {
                     newNode = WorldGrid.Instance.GetRandomNodeInRoads();
                     newTargetPos = newNode.worldPosition;
                     newDistance = Vector3.Distance(oldPos, newTargetPos);
                 }
 
-                PathfinderRequestManager.RequestPath(oldPos, newNode, transform.forward, OnPathFound);
+                PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
                 target = newTargetPos;
             }
         }
@@ -159,6 +164,9 @@ public class PathFollower : MonoBehaviour
     {
         if (shouldStopAtTrafficLight == false)
         {
+            if (trafficLightCarController.currentRoad == null)
+                return;
+
             if(reactionTimeCoroutine != null)
             {
                 StopCoroutine(reactionTimeCoroutine);
@@ -233,8 +241,9 @@ public class PathFollower : MonoBehaviour
         if (visualDebug && path != null)
         {
             path.DrawWithGizmos();
-
         }
+
+
 
     }
 }
