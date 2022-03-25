@@ -40,6 +40,8 @@ public class PathFollower : MonoBehaviour
     private IEnumerator reactionTimeCoroutine;
     private static float minDistanceToSpawnNewTarget = 10f;
 
+    public PriorityLevel priorityLevel = PriorityLevel.Max;
+
     // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
     void Start()
     {
@@ -249,4 +251,12 @@ public class PathFollower : MonoBehaviour
 
 
     }
+}
+
+
+public enum PriorityLevel
+{
+    Stop,
+    Yield,
+    Max
 }

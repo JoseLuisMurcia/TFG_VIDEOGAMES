@@ -5,20 +5,28 @@ using UnityEngine;
 public class PriorityBehavior : MonoBehaviour
 {
     List<Transform> prioritySensors = new List<Transform>();
+    List<Transform> signalSensors = new List<Transform>();
 
     [SerializeField] LayerMask carLayer, trafficSignLayer;
-    float carRayDistance = 4f;
     private PathFollower pathFollower;
     private PathFollower hitCarPathFollower;
     private Vector3 rayOrigin;
     private Transform carTarget;
+    private float carRayDistance = 3f;
+    private float signalSensorReach = 2f;
+    private float prioritySensorReach = 3f;
     [SerializeField] private bool hasSignalInSight = false;
 
     void Start()
     {
         pathFollower = GetComponent<PathFollower>();
+        Transform signalSensorsParent = transform.Find("SignalSensors");
         Transform prioritySensorsParent = transform.Find("PrioritySensors");
 
+        foreach (Transform sensor in signalSensorsParent.transform)
+        {
+            signalSensors.Add(sensor);
+        }
         foreach (Transform sensor in prioritySensorsParent.transform)
         {
             prioritySensors.Add(sensor);
@@ -27,34 +35,39 @@ public class PriorityBehavior : MonoBehaviour
 
     void Update()
     {
-        rayOrigin = prioritySensors[0].position;
-        if (!hasSignalInSight)
-            LookForTrafficSignals();
-        else
-            LookForCarsWithPriority();
+        rayOrigin = signalSensors[0].position;
+        if(!hasSignalInSight) LookForTrafficSignals();
+        LookForCarsWithPriority();
     }
 
     // Check para detectar la señal, solo sirven los rayos a la derecha. (Signed Angle Check)
     // Una vez detectada la señal, se deja de buscar nuevas señales y se pasa a un nuevo modo de comportamiento en el que lo que se mira es por coches que sí tengan prioridad mientras tú no la tienes
-    // Encontrar la señal es activar un modo de búsqueda de coches/comportamiento alternativo.
-    // Hay que mirar tambien el producto escalar, no vale con que esté a la derecha solo, puede que el angulo entre la señal y tu forward
+    // Cuando se deja de mirar por la señal?
     private void LookForTrafficSignals()
     {
-        foreach (Transform sensor in prioritySensors)
+        foreach (Transform sensor in signalSensors)
         {
             RaycastHit hit;
             Ray ray = new Ray(rayOrigin, sensor.forward);
-            if (Physics.Raycast(ray, out hit, carRayDistance, trafficSignLayer))
+            if (Physics.Raycast(ray, out hit, carRayDistance * signalSensorReach, trafficSignLayer))
             {
-
                 Vector3 carForward = transform.forward.normalized;
-                float signedAngle = Vector3.SignedAngle(carForward, ray.direction.normalized, Vector3.up);
-                if(signedAngle > 0)
+                // We know it is on the right side of the car
+                float angleBetweenCarAndSignal = Vector3.SignedAngle(carForward, ray.direction.normalized, Vector3.up);
+                if(angleBetweenCarAndSignal > 0)
                 {
-                    Debug.DrawLine(rayOrigin, hit.point, Color.green);
-                    hasSignalInSight = true;
+                    // Now we need to know if it is in looking in front of us
+                    Vector3 signalForward = hit.transform.forward;
+                    float angleBetweenCarAndSignalForward = Vector3.Angle(carForward, signalForward);
+                    if(angleBetweenCarAndSignalForward > 145)
+                    {
+                        Debug.DrawLine(rayOrigin, hit.point, Color.green);
+                        hasSignalInSight = true;
+                        pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
+                    }
+                    
                 }
-                else
+                else // In front but not in the same road
                 {
                     Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
                 }
@@ -62,9 +75,22 @@ public class PriorityBehavior : MonoBehaviour
             }
             else
             {
-                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance, Color.red);
+                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * signalSensorReach, Color.red);
 
             }
+        }
+    }
+
+    private PriorityLevel GetPriorityOfSignal(string signalTag)
+    {
+        switch (signalTag)
+        {
+            case "Stop":
+                return PriorityLevel.Stop;
+            case "Yield":
+                return PriorityLevel.Yield;
+            default:
+                return PriorityLevel.Max;
         }
     }
 
@@ -75,7 +101,22 @@ public class PriorityBehavior : MonoBehaviour
     // Distinguir entre stop y ceda?
     private void LookForCarsWithPriority() 
     {
-        
+        foreach (Transform sensor in prioritySensors)
+        {
+            RaycastHit hit;
+            Ray ray = new Ray(rayOrigin, sensor.forward);
+            if (Physics.Raycast(ray, out hit, carRayDistance * prioritySensorReach, carLayer))
+            {
+                // Hacer cosas xd
+                PriorityLevel priority = pathFollower.priorityLevel;
+                // Utilizar el pathfollower para conocer las intenciones del coche
+            }
+            else
+            {
+                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * prioritySensorReach, Color.red);
+
+            }
+        }
     }
 
 }
