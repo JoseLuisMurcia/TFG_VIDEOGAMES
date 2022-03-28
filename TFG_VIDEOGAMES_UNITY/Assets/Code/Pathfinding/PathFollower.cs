@@ -24,9 +24,8 @@ public class PathFollower : MonoBehaviour
     [SerializeField] float carStopDistance = 1f;
     public Vector3 frontCarPos;
     public Transform carTarget;
-    CarObstacleAvoidance carObstacleAvoidance;
-    int recentAddedAvoidancePosIndex = -1;
-    Node startNode;
+    [HideInInspector] public AvoidanceBehavior avoidanceBehavior;
+    int recentAddedAvoidancePosIndex = -50;
     Node endNode;
 
     // Priority variables
@@ -56,7 +55,6 @@ public class PathFollower : MonoBehaviour
         speed *= speedMultiplier;
         StartCoroutine(UpdatePath());
         trafficLightCarController = GetComponent<TrafficLightCarController>();
-        carObstacleAvoidance = GetComponent<CarObstacleAvoidance>();
     }
 
     public void OnPathFound(Vector3[] waypoints, bool pathSuccessful, Node _startNode, Node _endNode)
@@ -64,7 +62,6 @@ public class PathFollower : MonoBehaviour
         if (pathSuccessful)
         {
             endNode = _endNode;
-            startNode = _startNode;
             waypointsList = new List<Vector3>();
             foreach (Vector3 waypoint in waypoints)
             {
@@ -135,13 +132,10 @@ public class PathFollower : MonoBehaviour
                 // Reset the obstacle avoider
                 if (pathIndex == recentAddedAvoidancePosIndex)
                 {
-                    carObstacleAvoidance.objectHit = false;
+                    avoidanceBehavior.objectHit = false;
+                    recentAddedAvoidancePosIndex = -50;
                 }
                 pathIndex++;
-                if (pathIndex >= path.turnBoundaries.Count)
-                {
-                    Debug.LogError("QUE SE ROMPE EL CODIGO JAJA");
-                }
             }
 
             if (shouldBrakeBeforeCar)

@@ -2,54 +2,46 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PriorityBehavior : MonoBehaviour
+public class PriorityBehavior
 {
-    List<Transform> prioritySensors = new List<Transform>();
-    List<Transform> signalSensors = new List<Transform>();
+    List<Transform> whiskers = new List<Transform>();
 
-    [SerializeField] LayerMask carLayer, trafficSignLayer;
     private PathFollower pathFollower;
-    private PathFollower hitCarPathFollower;
     private Vector3 rayOrigin;
     private Transform carTarget;
     private float carRayDistance = 3f;
     private float signalSensorReach = 2f;
     private float prioritySensorReach = 3f;
     [SerializeField] private bool hasSignalInSight = false;
+    LayerMask carLayer, signalLayer;
 
-    void Start()
+    List<PathFollower> carsInSight = new List<PathFollower>();
+
+    public PriorityBehavior(LayerMask _carLayer, LayerMask _signalLayer, List<Transform> _whiskers, PathFollower _pathFollower)
     {
-        pathFollower = GetComponent<PathFollower>();
-        Transform signalSensorsParent = transform.Find("SignalSensors");
-        Transform prioritySensorsParent = transform.Find("PrioritySensors");
-
-        foreach (Transform sensor in signalSensorsParent.transform)
-        {
-            signalSensors.Add(sensor);
-        }
-        foreach (Transform sensor in prioritySensorsParent.transform)
-        {
-            prioritySensors.Add(sensor);
-        }
+        carLayer = _carLayer;
+        signalLayer = _signalLayer;
+        whiskers = _whiskers;
+        pathFollower = _pathFollower;
     }
 
-    void Update()
+    public void Update(Transform transform)
     {
-        rayOrigin = signalSensors[0].position;
-        if(!hasSignalInSight) LookForTrafficSignals();
-        LookForCarsWithPriority();
+        rayOrigin = whiskers[0].position;
+        if(!hasSignalInSight) LookForTrafficSignals(transform);
+        LookForCarsWithPriority(transform);
     }
 
     // Check para detectar la señal, solo sirven los rayos a la derecha. (Signed Angle Check)
     // Una vez detectada la señal, se deja de buscar nuevas señales y se pasa a un nuevo modo de comportamiento en el que lo que se mira es por coches que sí tengan prioridad mientras tú no la tienes
     // Cuando se deja de mirar por la señal?
-    private void LookForTrafficSignals()
+    private void LookForTrafficSignals(Transform transform)
     {
-        foreach (Transform sensor in signalSensors)
+        foreach (Transform sensor in whiskers)
         {
             RaycastHit hit;
             Ray ray = new Ray(rayOrigin, sensor.forward);
-            if (Physics.Raycast(ray, out hit, carRayDistance * signalSensorReach, trafficSignLayer))
+            if (Physics.Raycast(ray, out hit, carRayDistance * signalSensorReach, signalLayer))
             {
                 Vector3 carForward = transform.forward.normalized;
                 // We know it is on the right side of the car
@@ -99,17 +91,36 @@ public class PriorityBehavior : MonoBehaviour
     // Habrá que modificar el pathfollower para que se pueda parar en un sitio concreto si detecta a un coche con prioridad que interrumpe tu trayectoria
 
     // Distinguir entre stop y ceda?
-    private void LookForCarsWithPriority() 
+    private void LookForCarsWithPriority(Transform transform) 
     {
-        foreach (Transform sensor in prioritySensors)
+        foreach (Transform sensor in whiskers)
         {
             RaycastHit hit;
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, carRayDistance * prioritySensorReach, carLayer))
             {
                 // Hacer cosas xd
-                PriorityLevel priority = pathFollower.priorityLevel;
-                // Utilizar el pathfollower para conocer las intenciones del coche
+                PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
+                PriorityLevel carPriority = pathFollower.priorityLevel;
+                PriorityLevel hitCarPriority = pathFollower.priorityLevel;
+                if(carPriority <= hitCarPriority)
+                {
+                    Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
+                    Vector3 dirToHitCar = (hit.transform.position - transform.position).normalized;
+                    Vector3 carForward = transform.forward;
+                    float angleTolerance = 20f;
+                    // El plan es, detectar los coches que tengamos delante y con la misma prioridad o mayor y guardarlos en una lista que procesamos a parte
+                    // Descartar aquellos que tengamos delante con las mismas intenciones que nosotros O, guardar las distancias con aquellos tambien?¿
+                    if (Vector3.Angle(hitCarForward, carForward) > angleTolerance)
+                    {
+                        if (!carsInSight.Contains(hitCarPathFollower))
+                            carsInSight.Add(hitCarPathFollower);
+                    }
+                }
+                else
+                {
+                    Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * prioritySensorReach, Color.red);
+                }
             }
             else
             {
@@ -117,6 +128,13 @@ public class PriorityBehavior : MonoBehaviour
 
             }
         }
+    }
+
+    private void ProcessRelevantPriorityCarsInSight()
+    {
+        // loop through carsInSight
+        // Utilizar el pathfollower para conocer las intenciones del coche
+         
     }
 
 }
