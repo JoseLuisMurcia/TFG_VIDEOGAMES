@@ -11,10 +11,16 @@ public class WhiskersManager : MonoBehaviour
     [SerializeField] LayerMask obstacleLayer, carLayer, signalLayer;
 
     private List<Transform> whiskers = new List<Transform>();
+    private List<Transform> trafficSignalWhiskers = new List<Transform>();
+    private List<Transform> incorporationWhiskers = new List<Transform>();
+    private Vector3 rayOrigin;
+    private float centerReach = 6f;
+    private float sideReach = 14f;
+    private bool hasSignalInSight;
     // Start is called before the first frame update
     void Start()
     {
-        
+
         pathFollower = GetComponent<PathFollower>();
         trafficLightCarController = GetComponent<TrafficLightCarController>();
 
@@ -22,17 +28,139 @@ public class WhiskersManager : MonoBehaviour
         foreach (Transform sensor in whiskersParent.transform)
         {
             whiskers.Add(sensor);
+            if (sensor.localRotation.eulerAngles.y > 1 && sensor.localRotation.eulerAngles.y < 100)
+            {
+                trafficSignalWhiskers.Add(sensor);
+            }
         }
-
+        CreateIncorporationWhiskers(whiskersParent);
         avoidanceBehavior = new AvoidanceBehavior(carLayer, obstacleLayer, whiskers, pathFollower, trafficLightCarController);
         priorityBehavior = new PriorityBehavior(carLayer, signalLayer, whiskers, pathFollower);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
 
+    void CreateIncorporationWhiskers(Transform whiskersParent)
+    {
+        int numWhiskers = 12;
+        float minAngle = -87f;
+        float maxAngle = 87f;
+        float increment = 0f;
+        float yRotThreshold = 20f;
+        float currentAngle = minAngle + increment;
+        increment = (Mathf.Abs(minAngle) + maxAngle) / numWhiskers;
+        for (int i = 0; i <= numWhiskers; i++)
+        {
+            if (Mathf.Abs(currentAngle) > yRotThreshold)
+            {
+                Vector3 localRotation = new Vector3(0f, currentAngle, 0f);
+                GameObject _newWhisker = new GameObject();
+                _newWhisker.transform.parent = whiskersParent;
+                _newWhisker.transform.position = whiskers[0].position;
+                _newWhisker.transform.localEulerAngles = localRotation;
+                incorporationWhiskers.Add(_newWhisker.transform);
+            }
+            currentAngle += increment;
+
+        }
+
+    }
+
     // Update is called once per frame
     void Update()
     {
-        avoidanceBehavior.Update(transform);
-        priorityBehavior.Update(transform);
+        rayOrigin = whiskers[0].position;
+        //avoidanceBehavior.Update(transform);
+        //priorityBehavior.Update(transform);
+
+        //CheckCars();
+        //CheckSignals();
+        CheckForIncorporation();
+    }
+
+    void CheckForIncorporation()
+    {
+        RaycastHit hit;
+        foreach (Transform sensor in incorporationWhiskers)
+        {
+            float reach = 15f;
+
+            Ray ray = new Ray(rayOrigin, sensor.forward);
+            if (Physics.Raycast(ray, out hit, reach, carLayer))
+            {
+                Debug.DrawLine(rayOrigin, hit.point, Color.black);
+            }
+            else
+            {
+                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+            }
+        }
+    }
+    void CheckSignals()
+    {
+        RaycastHit hit;
+        foreach (Transform sensor in trafficSignalWhiskers)
+        {
+            float reach = 10f;
+
+            Ray ray = new Ray(rayOrigin, sensor.forward);
+            if (Physics.Raycast(ray, out hit, reach, carLayer))
+            {
+                Debug.DrawLine(rayOrigin, hit.point, Color.green);
+            }
+            else
+            {
+                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
+            }
+        }
+        pathFollower.shouldBrakeBeforeCar = false;
+        pathFollower.carTarget = null;
+    }
+
+    void CheckCars()
+    {
+        RaycastHit hit;
+        foreach (Transform sensor in whiskers)
+        {
+            float reach;
+            float yRotation = Mathf.Abs(sensor.localRotation.eulerAngles.y);
+            reach = SetReachForCarRays(yRotation);
+
+            Ray ray = new Ray(rayOrigin, sensor.forward);
+            if (Physics.Raycast(ray, out hit, reach, carLayer))
+            {
+                avoidanceBehavior.ProcessCarHit();
+                priorityBehavior.ProcessCarHit();
+                Debug.DrawLine(rayOrigin, hit.point, Color.black);
+            }
+            else
+            {
+                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+            }
+        }
+        pathFollower.shouldBrakeBeforeCar = false;
+        pathFollower.carTarget = null;
+    }
+
+    private float SetReachForCarRays(float _yRotation)
+    {
+        float reach;
+        if (_yRotation > 220)
+        {
+            _yRotation = Mathf.Abs(360 - _yRotation);
+        }
+
+        if (_yRotation == 0f)
+        {
+            reach = centerReach;
+        }
+        else if (_yRotation > 1f && _yRotation < 15f)
+        {
+            reach = sideReach;
+        }
+        else
+        {
+            reach = sideReach * .75f;
+        }
+        return reach;
     }
 }

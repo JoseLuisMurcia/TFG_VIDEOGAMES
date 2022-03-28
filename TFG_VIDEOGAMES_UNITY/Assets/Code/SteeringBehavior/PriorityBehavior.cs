@@ -137,4 +137,9 @@ public class PriorityBehavior
          
     }
 
+    public void ProcessCarHit()
+    {
+
+    }
+
 }

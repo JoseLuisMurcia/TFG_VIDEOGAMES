@@ -201,4 +201,9 @@ public class AvoidanceBehavior
 
         return false;
     }
+
+    public void ProcessCarHit()
+    {
+
+    }
 }
