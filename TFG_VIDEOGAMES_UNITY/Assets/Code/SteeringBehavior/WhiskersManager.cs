@@ -123,6 +123,8 @@ public class WhiskersManager : MonoBehaviour
 
     void CheckCars()
     {
+        if (avoidanceBehavior.hasTarget && priorityBehavior.hasSignalInSight)
+            return;
         RaycastHit hit;
         foreach (Transform sensor in whiskers)
         {
@@ -134,8 +136,8 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 if(!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                priorityBehavior.ProcessCarHit(ray, hit, sensor);
-                //Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if(!priorityBehavior.hasSignalInSight) priorityBehavior.ProcessCarHit(ray, hit, sensor);
+                Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {

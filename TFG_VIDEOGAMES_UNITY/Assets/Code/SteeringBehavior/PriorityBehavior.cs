@@ -17,6 +17,7 @@ public class PriorityBehavior
     private Transform signalInSight;
 
     List<PathFollower> carsInSight = new List<PathFollower>();
+    List<PathFollower> relevantCarsInSight = new List<PathFollower>();
 
     public PriorityBehavior(LayerMask _carLayer, LayerMask _signalLayer, List<Transform> _whiskers, PathFollower _pathFollower)
     {
@@ -64,45 +65,9 @@ public class PriorityBehavior
     // No tienes que mirar hacia la izquierda si quieres girar a la izquierda, a no ser que sea una carretera de doble sentido a la que te quieres incorporar.
     // Habrá que modificar el pathfollower para que se pueda parar en un sitio concreto si detecta a un coche con prioridad que interrumpe tu trayectoria
 
-    // Distinguir entre stop y ceda?
-    private void LookForCarsWithPriority() 
-    {
-        foreach (Transform sensor in whiskers)
-        {
-            RaycastHit hit;
-            Ray ray = new Ray(rayOrigin, sensor.forward);
-            if (Physics.Raycast(ray, out hit, carRayDistance * prioritySensorReach, carLayer))
-            {
-                // Hacer cosas xd
-                PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
-                PriorityLevel carPriority = pathFollower.priorityLevel;
-                PriorityLevel hitCarPriority = pathFollower.priorityLevel;
-                if(carPriority <= hitCarPriority)
-                {
-                    Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
-                    Vector3 dirToHitCar = (hit.transform.position - transform.position).normalized;
-                    Vector3 carForward = transform.forward;
-                    float angleTolerance = 20f;
-                    // El plan es, detectar los coches que tengamos delante y con la misma prioridad o mayor y guardarlos en una lista que procesamos a parte
-                    // Descartar aquellos que tengamos delante con las mismas intenciones que nosotros O, guardar las distancias con aquellos tambien?¿
-                    if (Vector3.Angle(hitCarForward, carForward) > angleTolerance)
-                    {
-                        if (!carsInSight.Contains(hitCarPathFollower))
-                            carsInSight.Add(hitCarPathFollower);
-                    }
-                }
-                else
-                {
-                    Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * prioritySensorReach, Color.red);
-                }
-            }
-            else
-            {
-                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * prioritySensorReach, Color.red);
-
-            }
-        }
-    }
+    // En carsInSight están guardados aquellos coches detectados por rayos, tanto con señal como sin señal, que tienen la misma prioridad que nosotros o mayor.
+    // Hay que hacer una purga de esos coches para almacenar los relevantes únicamente
+    // Un coche de carsInSight es relevante cuando nuestra ruta interfiere con la suya, tiene más preferencia que nosotros y la distancia es tal que una colisión o roce es probable.
 
     private void ProcessRelevantPriorityCarsInSight()
     {
@@ -147,7 +112,28 @@ public class PriorityBehavior
 
     public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
-
+        // Hacer cosas xd
+        PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
+        PriorityLevel carPriority = pathFollower.priorityLevel;
+        PriorityLevel hitCarPriority = pathFollower.priorityLevel;
+        if (carPriority <= hitCarPriority)
+        {
+            Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
+            Vector3 dirToHitCar = (hit.transform.position - transform.position).normalized;
+            Vector3 carForward = transform.forward;
+            float angleTolerance = 20f;
+            // El plan es, detectar los coches que tengamos delante y con la misma prioridad o mayor y guardarlos en una lista que procesamos a parte
+            // Descartar aquellos que tengamos delante con las mismas intenciones que nosotros O, guardar las distancias con aquellos tambien?¿
+            if (Vector3.Angle(hitCarForward, carForward) > angleTolerance && Vector3.Dot(transform.forward, dirToHitCar) > 0f)
+            {
+                if (!carsInSight.Contains(hitCarPathFollower))
+                    carsInSight.Add(hitCarPathFollower);
+            }
+        }
+        else
+        {
+            Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * prioritySensorReach, Color.red);
+        }
     }
 
 }

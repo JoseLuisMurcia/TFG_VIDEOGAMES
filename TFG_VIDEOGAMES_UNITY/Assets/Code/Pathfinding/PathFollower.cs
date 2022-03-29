@@ -208,6 +208,18 @@ public class PathFollower : MonoBehaviour
         path = new Path(waypointsList, transform.position, turnDst);
     }
 
+    float SlowSpeedPriority()
+    {
+        float speedPercent;
+        float distance = Vector3.Distance(transform.position, carTarget.position);
+        speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        if (speedPercent < 0.03f)
+        {
+            speedPercent = 0f;
+        }
+        return speedPercent;
+    }
+
     float SlowSpeedBeforeCar()
     {
         float speedPercent;
