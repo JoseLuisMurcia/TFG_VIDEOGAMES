@@ -34,14 +34,14 @@ public class PriorityBehavior
         if (hasSignalInSight)
             CheckIfSignalOutOfRange();
 
-        if(carsInSight.Count > 0) ProcessRelevantPriorityCarsInSight();
+        if (carsInSight.Count > 0) ProcessRelevantPriorityCarsInSight();
     }
 
     void CheckIfSignalOutOfRange()
     {
         float distance = Vector3.Distance(transform.position, signalInSight.position);
         Vector3 carForward = transform.forward.normalized;
-        Vector3 dirToSignal = (signalInSight.position-transform.position).normalized;
+        Vector3 dirToSignal = (signalInSight.position - transform.position).normalized;
         float dot = Vector3.SignedAngle(carForward, dirToSignal, Vector3.up);
         if (distance > 3 && dot < 0)
         {
@@ -86,55 +86,73 @@ public class PriorityBehavior
         // Utilizar el pathfollower para conocer las intenciones del coche
         foreach (PathFollower car in carsInSight)
         {
-            Vector3 carInSightForward = car.transform.forward.normalized;
-            
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
 
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             float dot = Vector3.Dot(carForward, dirToCarInSight);
             // If the car is too far or already behind us we can discard it
-            if(distanceToCar > maxDistance || dot < 0) 
+            if (distanceToCar > maxDistance || dot < 0)
             {
                 carsToBeRemoved.Add(car);
             }
 
-            // Simplify this by checking the preference, si está lo suficientemente lejos, aunque tenga más preferencia directamente entramos a tope, no hay que calcular trayectorias ni pollas
-
-            if(distanceToCar <= relevantDistance && dot > 0 && !pathFollower.pathRequested)
+            if (distanceToCar <= relevantDistance && dot > 0 && !pathFollower.pathRequested)
             {
                 // HERE CHECK THE PATH TRAJECTORY
                 if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
                 {
-                    
+                    bool carInSightHasHigherPrio = (pathFollower.priorityLevel > car.priorityLevel) ? true : false;
                     // Nuestro coche va a tirar a la izquierda
-                    if(angle < -4)
+                    if (angle < -5)
                     {
-
+                        relevantCarsInSight.Add(car);
                     }
-                    else if(angle > 4) // nuestro coche va a tirar a la derecha
+                    else if (angle > 5) // nuestro coche va a tirar a la derecha
                     {
-
+                        if (carInSightHasHigherPrio)
+                            relevantCarsInSight.Add(car);
                     }
                     else // nuestro coche va a tirar recto
                     {
-
+                        if (carInSightHasHigherPrio)
+                            relevantCarsInSight.Add(car);
                     }
-                    relevantCarsInSight.Add(car);
+
                 }
-                    
+
             }
         }
 
-        foreach(PathFollower car in relevantCarsInSight)
+        int numRelevantCars = relevantCarsInSight.Count;
+        if (numRelevantCars > 0)
         {
+            // Tell the pathfollower to stop at a certain point 
+            // Si el target, el coche que tienes delante, no tiene a true shouldStopPriority y tú si, entonces deja de mantener
+            // la distancia con él porque se va a ir y entonces tú paras por la priority
+            pathFollower.shouldStopPriority = true;
 
         }
+        else
+        {
+            // Tell the pathfollower to resume its previous behavior
+            pathFollower.shouldStopPriority = false;
+        }
 
-        foreach(PathFollower car in carsToBeRemoved)
+        foreach (PathFollower car in relevantCarsInSight)
+        {
+            float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
+            Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
+
+            float dot = Vector3.Dot(carForward, dirToCarInSight);
+            if (distanceToCar > relevantDistance || dot < 0)
+                carsToBeRemoved.Add(car);
+        }
+
+        foreach (PathFollower car in carsToBeRemoved)
         {
             carsInSight.Remove(car);
-            if (relevantCarsInSight.Contains(car))
-                relevantCarsInSight.Remove(car);
+            //if (relevantCarsInSight.Contains(car))
+            relevantCarsInSight.Remove(car);
         }
     }
 

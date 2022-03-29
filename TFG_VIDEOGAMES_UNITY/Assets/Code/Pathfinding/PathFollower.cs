@@ -29,8 +29,8 @@ public class PathFollower : MonoBehaviour
     Node endNode;
 
     // Priority variables
-    public bool hasPriority = true;
     public bool pathRequested = false;
+    public bool shouldStopPriority = false;
 
     [HideInInspector] TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
@@ -157,7 +157,11 @@ public class PathFollower : MonoBehaviour
                 pathIndex++;
             }
 
-            if (shouldBrakeBeforeCar)
+            if (shouldStopPriority)
+            {
+                speedPercent = SlowSpeedPriority();
+            }
+            else if (shouldBrakeBeforeCar)
             {
                 speedPercent = SlowSpeedBeforeCar();
             }
