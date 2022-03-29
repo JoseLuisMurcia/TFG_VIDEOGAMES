@@ -16,7 +16,9 @@ public class AvoidanceBehavior
     private TrafficLightCarController hitCarTrafficLightController;
     private Vector3 rayOrigin;
     private Transform carTarget;
+    public bool hasTarget = false;
     LayerMask obstacleLayer, carLayer;
+    private Transform transform;
 
     public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
     {
@@ -29,12 +31,19 @@ public class AvoidanceBehavior
 
 
     // Update is called once per frame
-    public void Update(Transform transform)
+    public void Update(Transform _transform)
     {
         // Think about if avoiding an obstacle you come too close with a car.
+        transform = _transform;
         if (objectHit) return;
         rayOrigin = whiskers[0].position;
+
         CheckRoadObstacles();
+        CheckIfTargetIsValid();
+    }
+
+    private void CheckIfTargetIsValid()
+    {
         if (carTarget != null)
         {
             if (trafficLightController.currentRoad != null)
@@ -43,7 +52,7 @@ public class AvoidanceBehavior
                 {
                     UnableTarget();
                 }
-                else if(Vector3.Distance(carTarget.position, transform.position) > 4.5)
+                else if (Vector3.Distance(carTarget.position, transform.position) > 4.5)
                 {
                     UnableTarget();
                 }
@@ -66,15 +75,11 @@ public class AvoidanceBehavior
             }
 
         }
-        else
-        {
-            CheckCars(transform);
-        }
     }
-
     private void UnableTarget()
     {
         carTarget = null;
+        hasTarget = false;
         pathFollower.carTarget = null;
         pathFollower.shouldBrakeBeforeCar = false;
     }
@@ -82,61 +87,9 @@ public class AvoidanceBehavior
     private void EnableTarget()
     {
         pathFollower.carTarget = carTarget;
+        hasTarget = true;
         pathFollower.shouldBrakeBeforeCar = true;
         Debug.DrawLine(rayOrigin, carTarget.position, Color.magenta);
-    }
-
-    private void CheckCars(Transform transform)
-    {
-        foreach (Transform sensor in whiskers)
-        {
-            RaycastHit hit;
-            Ray ray = new Ray(rayOrigin, sensor.forward);
-            if (Physics.Raycast(ray, out hit, centerReach * carRayDistance, carLayer))
-            {
-                Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
-                Vector3 carForward = transform.forward;
-                float angleTolerance = 75f;
-                if (Vector3.Angle(hitCarForward, carForward) < angleTolerance)
-                {
-                    hitCarPathFollower = hit.collider.gameObject.GetComponent<PathFollower>();
-                    hitCarTrafficLightController = hit.collider.gameObject.GetComponent<TrafficLightCarController>();
-
-                    if (trafficLightController.currentRoad != null)
-                    {
-                        if(DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
-                        {
-                            Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * centerReach, Color.white);
-                            pathFollower.carTarget = null;
-                            pathFollower.shouldBrakeBeforeCar = false;
-                        }
-                        else
-                        {
-                            carTarget = hitCarPathFollower.transform;
-                            Debug.DrawLine(rayOrigin, hit.point, Color.black);
-                            pathFollower.carTarget = carTarget;
-                            pathFollower.shouldBrakeBeforeCar = true;
-                            return;
-                        }
-                        
-                    }
-                    else
-                    {
-                        carTarget = hitCarPathFollower.transform;
-                        Debug.DrawLine(rayOrigin, hit.point, Color.black);
-                        pathFollower.carTarget = carTarget;
-                        pathFollower.shouldBrakeBeforeCar = true;
-                        return;
-                    }
-                }
-            }
-            else
-            {
-                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * centerReach, Color.white);
-            }
-        }
-        pathFollower.shouldBrakeBeforeCar = false;
-        pathFollower.carTarget = null;
     }
 
     private void CheckRoadObstacles()
@@ -202,8 +155,36 @@ public class AvoidanceBehavior
         return false;
     }
 
-    public void ProcessCarHit()
+    public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
+        Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
+        Vector3 carForward = transform.forward;
+        float angleTolerance = 75f;
+        if (Vector3.Angle(hitCarForward, carForward) < angleTolerance)
+        {
+            hitCarPathFollower = hit.collider.gameObject.GetComponent<PathFollower>();
+            hitCarTrafficLightController = hit.collider.gameObject.GetComponent<TrafficLightCarController>();
 
+            if (trafficLightController.currentRoad != null)
+            {
+                if (DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
+                {
+                    UnableTarget();
+                }
+                else
+                {
+                    carTarget = hitCarPathFollower.transform;
+                    EnableTarget();
+                    return;
+                }
+
+            }
+            else
+            {
+                carTarget = hitCarPathFollower.transform;
+                EnableTarget();
+                return;
+            }
+        }
     }
 }

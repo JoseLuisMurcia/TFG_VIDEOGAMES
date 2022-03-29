@@ -12,8 +12,9 @@ public class PriorityBehavior
     private float carRayDistance = 3f;
     private float signalSensorReach = 2f;
     private float prioritySensorReach = 3f;
-    [SerializeField] private bool hasSignalInSight = false;
+    public bool hasSignalInSight = false;
     LayerMask carLayer, signalLayer;
+    private Transform transform;
 
     List<PathFollower> carsInSight = new List<PathFollower>();
 
@@ -25,52 +26,17 @@ public class PriorityBehavior
         pathFollower = _pathFollower;
     }
 
-    public void Update(Transform transform)
+    public void Update(Transform _transform)
     {
         rayOrigin = whiskers[0].position;
-        if(!hasSignalInSight) LookForTrafficSignals(transform);
-        LookForCarsWithPriority(transform);
+        transform = _transform;
+        if (hasSignalInSight)
+            CheckIfSignalOutOfRange();
     }
 
-    // Check para detectar la señal, solo sirven los rayos a la derecha. (Signed Angle Check)
-    // Una vez detectada la señal, se deja de buscar nuevas señales y se pasa a un nuevo modo de comportamiento en el que lo que se mira es por coches que sí tengan prioridad mientras tú no la tienes
-    // Cuando se deja de mirar por la señal?
-    private void LookForTrafficSignals(Transform transform)
+    void CheckIfSignalOutOfRange()
     {
-        foreach (Transform sensor in whiskers)
-        {
-            RaycastHit hit;
-            Ray ray = new Ray(rayOrigin, sensor.forward);
-            if (Physics.Raycast(ray, out hit, carRayDistance * signalSensorReach, signalLayer))
-            {
-                Vector3 carForward = transform.forward.normalized;
-                // We know it is on the right side of the car
-                float angleBetweenCarAndSignal = Vector3.SignedAngle(carForward, ray.direction.normalized, Vector3.up);
-                if(angleBetweenCarAndSignal > 0)
-                {
-                    // Now we need to know if it is in looking in front of us
-                    Vector3 signalForward = hit.transform.forward;
-                    float angleBetweenCarAndSignalForward = Vector3.Angle(carForward, signalForward);
-                    if(angleBetweenCarAndSignalForward > 145)
-                    {
-                        Debug.DrawLine(rayOrigin, hit.point, Color.green);
-                        hasSignalInSight = true;
-                        pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
-                    }
-                    
-                }
-                else // In front but not in the same road
-                {
-                    Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
-                }
 
-            }
-            else
-            {
-                Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * signalSensorReach, Color.red);
-
-            }
-        }
     }
 
     private PriorityLevel GetPriorityOfSignal(string signalTag)
@@ -91,7 +57,7 @@ public class PriorityBehavior
     // Habrá que modificar el pathfollower para que se pueda parar en un sitio concreto si detecta a un coche con prioridad que interrumpe tu trayectoria
 
     // Distinguir entre stop y ceda?
-    private void LookForCarsWithPriority(Transform transform) 
+    private void LookForCarsWithPriority() 
     {
         foreach (Transform sensor in whiskers)
         {
@@ -134,10 +100,43 @@ public class PriorityBehavior
     {
         // loop through carsInSight
         // Utilizar el pathfollower para conocer las intenciones del coche
-         
+        for(int i=0; i<carsInSight.Count; i++)
+        {
+
+        }
+
+        // Eliminar aquellos que se hayan alejado lo suficiente
+        for (int i = 0; i < carsInSight.Count; i++)
+        {
+
+        }
     }
 
-    public void ProcessCarHit()
+    public void ProcessSignalHit(Ray ray, RaycastHit hit)
+    {
+        Vector3 carForward = transform.forward.normalized;
+        // We know it is on the right side of the car
+        float angleBetweenCarAndSignal = Vector3.SignedAngle(carForward, ray.direction.normalized, Vector3.up);
+        if (angleBetweenCarAndSignal > 0)
+        {
+            // Now we need to know if it is in looking in front of us
+            Vector3 signalForward = hit.transform.forward;
+            float angleBetweenCarAndSignalForward = Vector3.Angle(carForward, signalForward);
+            if (angleBetweenCarAndSignalForward > 145)
+            {
+                Debug.DrawLine(rayOrigin, hit.point, Color.green);
+                hasSignalInSight = true;
+                pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
+            }
+
+        }
+        else // In front but not in the same road
+        {
+            Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
+        }
+    }
+
+    public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
 
     }

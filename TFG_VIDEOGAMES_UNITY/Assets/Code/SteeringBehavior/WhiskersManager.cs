@@ -16,7 +16,6 @@ public class WhiskersManager : MonoBehaviour
     private Vector3 rayOrigin;
     private float centerReach = 6f;
     private float sideReach = 14f;
-    private bool hasSignalInSight;
     // Start is called before the first frame update
     void Start()
     {
@@ -69,12 +68,18 @@ public class WhiskersManager : MonoBehaviour
     void Update()
     {
         rayOrigin = whiskers[0].position;
-        //avoidanceBehavior.Update(transform);
-        //priorityBehavior.Update(transform);
+        avoidanceBehavior.Update(transform);
+        priorityBehavior.Update(transform);
 
-        //CheckCars();
-        //CheckSignals();
-        CheckForIncorporation();
+        CheckCars();
+        if (!priorityBehavior.hasSignalInSight)
+        {
+            CheckSignals();
+        }
+        else
+        {
+            CheckForIncorporation();
+        }
     }
 
     void CheckForIncorporation()
@@ -105,15 +110,13 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                Debug.DrawLine(rayOrigin, hit.point, Color.green);
+                priorityBehavior.ProcessSignalHit(ray, hit);
             }
             else
             {
                 Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
             }
         }
-        pathFollower.shouldBrakeBeforeCar = false;
-        pathFollower.carTarget = null;
     }
 
     void CheckCars()
@@ -128,17 +131,15 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                avoidanceBehavior.ProcessCarHit();
-                priorityBehavior.ProcessCarHit();
-                Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if(!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
+                priorityBehavior.ProcessCarHit(ray, hit, sensor);
+                //Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
                 Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
-        pathFollower.shouldBrakeBeforeCar = false;
-        pathFollower.carTarget = null;
     }
 
     private float SetReachForCarRays(float _yRotation)
