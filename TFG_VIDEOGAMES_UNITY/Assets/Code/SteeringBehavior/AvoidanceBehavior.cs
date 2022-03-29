@@ -8,8 +8,6 @@ public class AvoidanceBehavior
 {
     List<Transform> whiskers = new List<Transform>(); 
     public bool objectHit = false;
-    float centerReach = 4f;
-    float carRayDistance = 2f;
     private PathFollower pathFollower;
     private PathFollower hitCarPathFollower;
     private TrafficLightCarController trafficLightController;

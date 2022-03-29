@@ -10,11 +10,11 @@ public class PriorityBehavior
     private Vector3 rayOrigin;
     private Transform carTarget;
     private float carRayDistance = 3f;
-    private float signalSensorReach = 2f;
     private float prioritySensorReach = 3f;
     public bool hasSignalInSight = false;
     LayerMask carLayer, signalLayer;
     private Transform transform;
+    private Transform signalInSight;
 
     List<PathFollower> carsInSight = new List<PathFollower>();
 
@@ -36,7 +36,15 @@ public class PriorityBehavior
 
     void CheckIfSignalOutOfRange()
     {
-
+        float distance = Vector3.Distance(transform.position, signalInSight.position);
+        Vector3 carForward = transform.forward.normalized;
+        Vector3 dirToSignal = (signalInSight.position-transform.position).normalized;
+        float dot = Vector3.SignedAngle(carForward, dirToSignal, Vector3.up);
+        if (distance > 3 && dot < 0)
+        {
+            signalInSight = null;
+            hasSignalInSight = false;
+        }
     }
 
     private PriorityLevel GetPriorityOfSignal(string signalTag)
@@ -127,6 +135,7 @@ public class PriorityBehavior
                 Debug.DrawLine(rayOrigin, hit.point, Color.green);
                 hasSignalInSight = true;
                 pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
+                signalInSight = hit.transform;
             }
 
         }
