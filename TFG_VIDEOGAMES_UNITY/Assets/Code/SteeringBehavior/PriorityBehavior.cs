@@ -33,6 +33,8 @@ public class PriorityBehavior
         transform = _transform;
         if (hasSignalInSight)
             CheckIfSignalOutOfRange();
+
+        ProcessRelevantPriorityCarsInSight();
     }
 
     void CheckIfSignalOutOfRange()
@@ -69,19 +71,48 @@ public class PriorityBehavior
     // Hay que hacer una purga de esos coches para almacenar los relevantes únicamente
     // Un coche de carsInSight es relevante cuando nuestra ruta interfiere con la suya, tiene más preferencia que nosotros y la distancia es tal que una colisión o roce es probable.
 
+    // Sumar 5 al path que tienen, si se pasa hay que mandar a calcular uno nuevo.
+    // La forma en la que va a funcionar es la siguiente:
+    // En carsInSight se guardan todos los coches que el coche detecte que vengan en un sentido el cual pueda colisionar, además de que tengan más prioridad que él.
+    // En relevantCarsInSight se guardan aquellos coches de carsInSight que están lo suficientemente cerca y tienen una trayectoria que interfiere con la nuestra.
+    // Si en relevantCarsInSight hay un coche, nuestro coche debe esperar
     private void ProcessRelevantPriorityCarsInSight()
     {
-        // loop through carsInSight
+        float relevantDistance = 15f;
+        float maxDistance = 20f;
+        List<PathFollower> carsToBeRemoved = new List<PathFollower>();
         // Utilizar el pathfollower para conocer las intenciones del coche
-        for(int i=0; i<carsInSight.Count; i++)
+        foreach (PathFollower car in carsInSight)
+        {
+            Vector3 carInSightForward = car.transform.forward.normalized;
+            Vector3 carForward = transform.forward.normalized;
+            Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
+
+            float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
+            float dot = Vector3.Dot(carForward, dirToCarInSight);
+            // If the car is too far or already behind us we can discard it
+            if(distanceToCar > maxDistance || dot < 0) 
+            {
+                carsToBeRemoved.Add(car);
+            }
+
+            if(distanceToCar <= relevantDistance && dot > 0)
+            {
+                if(!relevantCarsInSight.Contains(car))
+                    relevantCarsInSight.Add(car);
+            }
+        }
+
+        foreach(PathFollower car in relevantCarsInSight)
         {
 
         }
 
-        // Eliminar aquellos que se hayan alejado lo suficiente
-        for (int i = 0; i < carsInSight.Count; i++)
+        foreach(PathFollower car in carsToBeRemoved)
         {
-
+            carsInSight.Remove(car);
+            if (relevantCarsInSight.Contains(car))
+                relevantCarsInSight.Remove(car);
         }
     }
 
