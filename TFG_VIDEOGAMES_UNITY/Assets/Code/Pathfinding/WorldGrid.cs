@@ -1018,23 +1018,6 @@ public class WorldGrid : MonoBehaviour
         return randomNode;
     }
 
-    //// Method called when no close node has been found to set a start position
-    //private Node GetRandomNode(Vector3 carPosition, Vector3 carForward)
-    //{
-    //    float threshold = 3f;
-    //    foreach (Node node in grid)
-    //    {
-    //        Vector3 dirToMovePosition = (node.worldPosition - carPosition).normalized;
-    //        float dot = Vector3.Dot(carForward, dirToMovePosition);
-    //        float distance = Vector3.Distance(carPosition, node.worldPosition);
-    //        if (dot > 0 && distance < threshold)
-    //        {
-    //            return node;
-    //        }
-    //    }
-    //    return null;
-    //}
-
     private Vector2 V3ToV2(Vector3 v3)
     {
         return new Vector2(v3.x, v3.z);

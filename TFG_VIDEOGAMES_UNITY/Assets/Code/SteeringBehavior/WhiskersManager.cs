@@ -17,8 +17,7 @@ public class WhiskersManager : MonoBehaviour
     private float centerReach = 6f;
     private float sideReach = 14f;
 
-    [SerializeField] bool visualDebug = false;
-    // Start is called before the first frame update
+    //[SerializeField] bool visualDebug = false;
     void Start()
     {
 

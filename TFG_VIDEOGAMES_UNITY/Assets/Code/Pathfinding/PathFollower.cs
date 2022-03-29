@@ -30,14 +30,15 @@ public class PathFollower : MonoBehaviour
 
     // Priority variables
     public bool hasPriority = true;
+    public bool pathRequested = false;
 
-    TrafficLightCarController trafficLightCarController;
+    [HideInInspector] TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
-    List<Vector3> waypointsList = new List<Vector3>();
+    [HideInInspector] List<Vector3> waypointsList = new List<Vector3>();
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
-    private static float minDistanceToSpawnNewTarget = 10f;
+    private static float minDistanceToSpawnNewTarget = 20f;
 
     public PriorityLevel priorityLevel = PriorityLevel.Max;
 
@@ -52,7 +53,6 @@ public class PathFollower : MonoBehaviour
         float speedMultiplier = Random.Range(1f, 1.01f);
         speed *= speedMultiplier;
         turnSpeed *= speedMultiplier;
-        speed *= speedMultiplier;
         StartCoroutine(UpdatePath());
         trafficLightCarController = GetComponent<TrafficLightCarController>();
     }
@@ -61,6 +61,7 @@ public class PathFollower : MonoBehaviour
     {
         if (pathSuccessful)
         {
+            pathRequested = false;
             endNode = _endNode;
             waypointsList = new List<Vector3>();
             foreach (Vector3 waypoint in waypoints)
@@ -99,21 +100,39 @@ public class PathFollower : MonoBehaviour
             float distance = Vector3.Distance(transform.position, target);
             if (distance < 3f)
             {
-                float newDistance = 0f;
-                Vector3 newTargetPos = Vector3.zero;
-                Vector3 oldPos = target;
-                Node newNode = null;
-                while (newDistance < minDistanceToSpawnNewTarget)
-                {
-                    newNode = WorldGrid.Instance.GetRandomNodeInRoads();
-                    newTargetPos = newNode.worldPosition;
-                    newDistance = Vector3.Distance(oldPos, newTargetPos);
-                }
-
-                PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
-                target = newTargetPos;
+                RequestNewPath();
             }
         }
+    }
+
+    // This method returns the position in the path in pathIndex+numNodes
+    public Vector3 GetPosInPathInNumNodes(int numNodes)
+    {
+        int numNodesInPath = waypointsList.Count;
+        if(pathIndex + numNodes > numNodesInPath) 
+        {
+            RequestNewPath();
+            return Vector3.zero;
+        }
+        return waypointsList[pathIndex + numNodes];
+    }
+
+    public void RequestNewPath()
+    {
+        float newDistance = 0f;
+        Vector3 newTargetPos = Vector3.zero;
+        Vector3 oldPos = target;
+        Node newNode = null;
+        while (newDistance < minDistanceToSpawnNewTarget)
+        {
+            newNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+            newTargetPos = newNode.worldPosition;
+            newDistance = Vector3.Distance(oldPos, newTargetPos);
+        }
+
+        PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
+        target = newTargetPos;
+        pathRequested = true;
     }
 
     IEnumerator FollowPath()
@@ -245,17 +264,12 @@ public class PathFollower : MonoBehaviour
         return speedPercent;
     }
 
-
-
     public void OnDrawGizmos()
     {
         if (visualDebug && path != null)
         {
             path.DrawWithGizmos();
         }
-
-
-
     }
 }
 

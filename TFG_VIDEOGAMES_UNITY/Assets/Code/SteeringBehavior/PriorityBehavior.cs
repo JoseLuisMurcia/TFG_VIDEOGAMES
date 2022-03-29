@@ -34,7 +34,7 @@ public class PriorityBehavior
         if (hasSignalInSight)
             CheckIfSignalOutOfRange();
 
-        ProcessRelevantPriorityCarsInSight();
+        if(carsInSight.Count > 0) ProcessRelevantPriorityCarsInSight();
     }
 
     void CheckIfSignalOutOfRange()
@@ -63,29 +63,31 @@ public class PriorityBehavior
         }
     }
 
-    // Este metodo va a tener que ser sensible a los casos particulares, de forma que si quieres girar a la izquierda o derecha tendrás que hacer unas comprobaciones u otras
-    // No tienes que mirar hacia la izquierda si quieres girar a la izquierda, a no ser que sea una carretera de doble sentido a la que te quieres incorporar.
-    // Habrá que modificar el pathfollower para que se pueda parar en un sitio concreto si detecta a un coche con prioridad que interrumpe tu trayectoria
-
-    // En carsInSight están guardados aquellos coches detectados por rayos, tanto con señal como sin señal, que tienen la misma prioridad que nosotros o mayor.
-    // Hay que hacer una purga de esos coches para almacenar los relevantes únicamente
-    // Un coche de carsInSight es relevante cuando nuestra ruta interfiere con la suya, tiene más preferencia que nosotros y la distancia es tal que una colisión o roce es probable.
-
     // Sumar 5 al path que tienen, si se pasa hay que mandar a calcular uno nuevo.
     // La forma en la que va a funcionar es la siguiente:
     // En carsInSight se guardan todos los coches que el coche detecte que vengan en un sentido el cual pueda colisionar, además de que tengan más prioridad que él.
     // En relevantCarsInSight se guardan aquellos coches de carsInSight que están lo suficientemente cerca y tienen una trayectoria que interfiere con la nuestra.
     // Si en relevantCarsInSight hay un coche, nuestro coche debe esperar
+
+    // Como se comprueba la trayectoria?¿
+    // Cogemos nuestro pathFollower y le sumamos 4 o 5 puntos para recibir la posicion que tendría nuestro coche en aquel entonces, de esa forma sabemos la intención
+    // Podemos coger el angulo desde el punto actual hasta ese nuevo punto y de esa forma, saber si vamos a ir a la izquierda o a la derecha.
+    // Con esa informacion, la distancia y la prioridad de dichos coches, sabremos si tenemos que parar o no.
     private void ProcessRelevantPriorityCarsInSight()
     {
         float relevantDistance = 15f;
         float maxDistance = 20f;
         List<PathFollower> carsToBeRemoved = new List<PathFollower>();
+        Vector3 futureCarPosition = pathFollower.GetPosInPathInNumNodes(5);
+        Vector3 dirToFuturePos = (futureCarPosition - transform.position).normalized;
+        Vector3 carForward = transform.forward.normalized;
+        float angle = Vector3.SignedAngle(carForward, dirToFuturePos, Vector3.up);
+
         // Utilizar el pathfollower para conocer las intenciones del coche
         foreach (PathFollower car in carsInSight)
         {
             Vector3 carInSightForward = car.transform.forward.normalized;
-            Vector3 carForward = transform.forward.normalized;
+            
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
 
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
@@ -96,10 +98,30 @@ public class PriorityBehavior
                 carsToBeRemoved.Add(car);
             }
 
-            if(distanceToCar <= relevantDistance && dot > 0)
+            // Simplify this by checking the preference, si está lo suficientemente lejos, aunque tenga más preferencia directamente entramos a tope, no hay que calcular trayectorias ni pollas
+
+            if(distanceToCar <= relevantDistance && dot > 0 && !pathFollower.pathRequested)
             {
-                if(!relevantCarsInSight.Contains(car))
+                // HERE CHECK THE PATH TRAJECTORY
+                if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
+                {
+                    
+                    // Nuestro coche va a tirar a la izquierda
+                    if(angle < -4)
+                    {
+
+                    }
+                    else if(angle > 4) // nuestro coche va a tirar a la derecha
+                    {
+
+                    }
+                    else // nuestro coche va a tirar recto
+                    {
+
+                    }
                     relevantCarsInSight.Add(car);
+                }
+                    
             }
         }
 
