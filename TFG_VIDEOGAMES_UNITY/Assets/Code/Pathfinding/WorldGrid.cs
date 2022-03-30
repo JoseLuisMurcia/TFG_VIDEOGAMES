@@ -174,8 +174,7 @@ public class WorldGrid : MonoBehaviour
                             {
                                 Vector3 exitNodeForward = (exit.worldPosition - exit.previousNode.worldPosition).normalized;
                                 Vector3 dirToMovePosition = (entry.worldPosition - exit.worldPosition).normalized;
-                                //float dot = Vector3.Dot(exitNodeForward, dirToMovePosition);
-                                float signedAngle = Vector3.SignedAngle(dirToMovePosition, exitNodeForward, Vector3.up);
+                                float signedAngle = Vector3.SignedAngle(exitNodeForward, dirToMovePosition, Vector3.up);
                                 float absoluteAngle = Mathf.Abs(signedAngle);
                                 float minAngle = 10f;
                                 // Conectar rectas 
@@ -206,11 +205,11 @@ public class WorldGrid : MonoBehaviour
                                     Vector3 perpendicularDirection = new Vector3(perpendicularDir.x, 0, perpendicularDir.y);
                                     if (signedAngle > 0)
                                     {
-                                        unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
+                                        unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
                                     }
                                     else
                                     {
-                                        unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
+                                        unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
                                     }
 
                                     Node unionNode = new Node(unionNodePos, null);
@@ -584,7 +583,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     float distance = Vector3.Distance(entry.position, node.worldPosition);
                     Vector3 targetDir = node.worldPosition - entry.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(targetDir, entry.forward, Vector3.up) > 0)
+                    if (distance < bestDistance && Vector3.SignedAngle(entry.forward, targetDir, Vector3.up) < 0)
                     {
                         bestDistance = distance;
                         bestNode = node;
@@ -607,7 +606,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     float distance = Vector3.Distance(exit.position, node.worldPosition);
                     Vector3 targetDir = node.worldPosition - exit.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(targetDir, exit.forward, Vector3.up) < 0)
+                    if (distance < bestDistance && Vector3.SignedAngle(exit.forward, targetDir, Vector3.up) > 0)
                     {
                         bestDistance = distance;
                         bestNode = node;

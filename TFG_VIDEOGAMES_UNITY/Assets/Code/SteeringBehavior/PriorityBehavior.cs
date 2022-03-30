@@ -63,16 +63,21 @@ public class PriorityBehavior
         }
     }
 
-    // Sumar 5 al path que tienen, si se pasa hay que mandar a calcular uno nuevo.
-    // La forma en la que va a funcionar es la siguiente:
-    // En carsInSight se guardan todos los coches que el coche detecte que vengan en un sentido el cual pueda colisionar, además de que tengan más prioridad que él.
-    // En relevantCarsInSight se guardan aquellos coches de carsInSight que están lo suficientemente cerca y tienen una trayectoria que interfiere con la nuestra.
-    // Si en relevantCarsInSight hay un coche, nuestro coche debe esperar
-
-    // Como se comprueba la trayectoria?¿
-    // Cogemos nuestro pathFollower y le sumamos 4 o 5 puntos para recibir la posicion que tendría nuestro coche en aquel entonces, de esa forma sabemos la intención
-    // Podemos coger el angulo desde el punto actual hasta ese nuevo punto y de esa forma, saber si vamos a ir a la izquierda o a la derecha.
-    // Con esa informacion, la distancia y la prioridad de dichos coches, sabremos si tenemos que parar o no.
+    private bool AngleNotRelevant(float angleToCarInSight, PathFollower carInSight)
+    {
+        bool relevant = false;
+        Vector3 carInSightForward = carInSight.transform.forward.normalized;
+        float threshHold = 0.4f;
+        if (angleToCarInSight < 0 && (carInSightForward.x < -threshHold || carInSightForward.z < -threshHold))
+        {
+            relevant = true;
+        }
+        else if (angleToCarInSight > 0 && (carInSightForward.x > threshHold || carInSightForward.z > threshHold))
+        {
+            relevant = true;
+        }
+        return relevant;
+    }
     private void ProcessRelevantPriorityCarsInSight()
     {
         float relevantDistance = 15f;
@@ -81,19 +86,20 @@ public class PriorityBehavior
         Vector3 futureCarPosition = pathFollower.GetPosInPathInNumNodes(5);
         Vector3 dirToFuturePos = (futureCarPosition - transform.position).normalized;
         Vector3 carForward = transform.forward.normalized;
-        float angle = Vector3.SignedAngle(carForward, dirToFuturePos, Vector3.up);
+        float angleToFuturePos = Vector3.SignedAngle(carForward, dirToFuturePos, Vector3.up);
+        // Si utilizo el forward de ese coche puedo hacer una optimizacion
 
         // Utilizar el pathfollower para conocer las intenciones del coche
         foreach (PathFollower car in carsInSight)
         {
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
-
+            float angleToCarInSight = Vector3.SignedAngle(carForward, dirToCarInSight, Vector3.up);
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             float dot = Vector3.Dot(carForward, dirToCarInSight);
             // If the car is too far or already behind us we can discard it
             // Añadir comprobacion de angulo, es decir, si el coche que he detectado, va a la izquierda y está a mi izquierda, ya no tengo que considerarlo como prioritario
             // AQUI HACER COSAS TO FIX
-            if (distanceToCar > maxDistance || dot < 0)
+            if (distanceToCar > maxDistance || dot < 0 || AngleNotRelevant(angleToCarInSight, car))
             {
                 carsToBeRemoved.Add(car);
             }
@@ -105,12 +111,12 @@ public class PriorityBehavior
                 {
                     bool carInSightHasHigherPrio = (car.priorityLevel > pathFollower.priorityLevel) ? true : false;
                     // Nuestro coche va a tirar a la izquierda
-                    if (angle < -5)
+                    if (angleToFuturePos < -5)
                     {
                         // Siempre vas a tener que añadir el coche porque tiene la misma o más prioridad que tu y ante un giro a la izquierda hay que frenar
                         relevantCarsInSight.Add(car);
                     }
-                    else if (angle > 5) // nuestro coche va a tirar a la derecha
+                    else if (angleToFuturePos > 5) // nuestro coche va a tirar a la derecha
                     {
                         // Solo si el coche que tienes delante tiene más preferencia deberás parar
                         if (carInSightHasHigherPrio)
@@ -128,15 +134,15 @@ public class PriorityBehavior
         }
 
         foreach (PathFollower car in relevantCarsInSight)
-        { 
+        {
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
 
             float dot = Vector3.Dot(carForward, dirToCarInSight);
-            if (distanceToCar > relevantDistance || dot < 0) 
+            if (distanceToCar > relevantDistance || dot < 0)
                 carsToBeRemoved.Add(car);
 
-            if(pathFollower.stopPosition == Vector3.zero)
+            if (pathFollower.stopPosition == Vector3.zero)
             {
                 pathFollower.stopPosition = transform.position + transform.forward * 2f;
             }
@@ -166,6 +172,7 @@ public class PriorityBehavior
             pathFollower.stopPosition = Vector3.zero;
         }
     }
+
 
     public void ProcessSignalHit(Ray ray, RaycastHit hit)
     {
@@ -213,7 +220,7 @@ public class PriorityBehavior
                     carsInSight.Add(hitCarPathFollower);
                     Debug.DrawLine(rayOrigin, hit.point, Color.green);
                 }
-                
+
             }
         }
         else
