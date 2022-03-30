@@ -31,6 +31,7 @@ public class PathFollower : MonoBehaviour
     // Priority variables
     public bool pathRequested = false;
     public bool shouldStopPriority = false;
+    public Vector3 stopPosition = Vector3.zero;
 
     [HideInInspector] TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
@@ -234,8 +235,8 @@ public class PathFollower : MonoBehaviour
     float SlowSpeedPriority()
     {
         float speedPercent;
-        float distance = Vector3.Distance(transform.position, carTarget.position);
-        speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        float distance = Vector3.Distance(transform.position, stopPosition);
+        speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
         if (speedPercent < 0.03f)
         {
             speedPercent = 0f;

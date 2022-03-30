@@ -17,6 +17,7 @@ public class AvoidanceBehavior
     public bool hasTarget = false;
     LayerMask obstacleLayer, carLayer;
     private Transform transform;
+    private bool visualDebug;
 
     public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
     {
@@ -29,9 +30,10 @@ public class AvoidanceBehavior
 
 
     // Update is called once per frame
-    public void Update(Transform _transform)
+    public void Update(Transform _transform, bool _visualDebug)
     {
         // Think about if avoiding an obstacle you come too close with a car.
+        visualDebug = _visualDebug;
         transform = _transform;
         if (objectHit) return;
         rayOrigin = whiskers[0].position;

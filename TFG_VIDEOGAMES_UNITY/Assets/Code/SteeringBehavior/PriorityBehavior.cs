@@ -9,8 +9,6 @@ public class PriorityBehavior
     private PathFollower pathFollower;
     private Vector3 rayOrigin;
     private Transform carTarget;
-    private float carRayDistance = 3f;
-    private float prioritySensorReach = 3f;
     public bool hasSignalInSight = false;
     LayerMask carLayer, signalLayer;
     private Transform transform;
@@ -18,6 +16,7 @@ public class PriorityBehavior
 
     List<PathFollower> carsInSight = new List<PathFollower>();
     List<PathFollower> relevantCarsInSight = new List<PathFollower>();
+    private bool visualDebug = false;
 
     public PriorityBehavior(LayerMask _carLayer, LayerMask _signalLayer, List<Transform> _whiskers, PathFollower _pathFollower)
     {
@@ -27,9 +26,10 @@ public class PriorityBehavior
         pathFollower = _pathFollower;
     }
 
-    public void Update(Transform _transform)
+    public void Update(Transform _transform, bool _visualDebug)
     {
         rayOrigin = whiskers[0].position;
+        visualDebug = _visualDebug;
         transform = _transform;
         if (hasSignalInSight)
             CheckIfSignalOutOfRange();
@@ -91,6 +91,8 @@ public class PriorityBehavior
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             float dot = Vector3.Dot(carForward, dirToCarInSight);
             // If the car is too far or already behind us we can discard it
+            // Añadir comprobacion de angulo, es decir, si el coche que he detectado, va a la izquierda y está a mi izquierda, ya no tengo que considerarlo como prioritario
+            // AQUI HACER COSAS TO FIX
             if (distanceToCar > maxDistance || dot < 0)
             {
                 carsToBeRemoved.Add(car);
@@ -101,14 +103,16 @@ public class PriorityBehavior
                 // HERE CHECK THE PATH TRAJECTORY
                 if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
                 {
-                    bool carInSightHasHigherPrio = (pathFollower.priorityLevel > car.priorityLevel) ? true : false;
+                    bool carInSightHasHigherPrio = (car.priorityLevel > pathFollower.priorityLevel) ? true : false;
                     // Nuestro coche va a tirar a la izquierda
                     if (angle < -5)
                     {
+                        // Siempre vas a tener que añadir el coche porque tiene la misma o más prioridad que tu y ante un giro a la izquierda hay que frenar
                         relevantCarsInSight.Add(car);
                     }
                     else if (angle > 5) // nuestro coche va a tirar a la derecha
                     {
+                        // Solo si el coche que tienes delante tiene más preferencia deberás parar
                         if (carInSightHasHigherPrio)
                             relevantCarsInSight.Add(car);
                     }
@@ -123,9 +127,32 @@ public class PriorityBehavior
             }
         }
 
+        foreach (PathFollower car in relevantCarsInSight)
+        { 
+            float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
+            Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
+
+            float dot = Vector3.Dot(carForward, dirToCarInSight);
+            if (distanceToCar > relevantDistance || dot < 0) 
+                carsToBeRemoved.Add(car);
+
+            if(pathFollower.stopPosition == Vector3.zero)
+            {
+                pathFollower.stopPosition = transform.position + transform.forward * 2f;
+            }
+        }
+
+        foreach (PathFollower car in carsToBeRemoved)
+        {
+            carsInSight.Remove(car);
+            //if (relevantCarsInSight.Contains(car))
+            relevantCarsInSight.Remove(car);
+        }
+
         int numRelevantCars = relevantCarsInSight.Count;
         if (numRelevantCars > 0)
         {
+            // TO FIX
             // Tell the pathfollower to stop at a certain point 
             // Si el target, el coche que tienes delante, no tiene a true shouldStopPriority y tú si, entonces deja de mantener
             // la distancia con él porque se va a ir y entonces tú paras por la priority
@@ -136,23 +163,7 @@ public class PriorityBehavior
         {
             // Tell the pathfollower to resume its previous behavior
             pathFollower.shouldStopPriority = false;
-        }
-
-        foreach (PathFollower car in relevantCarsInSight)
-        {
-            float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
-            Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
-
-            float dot = Vector3.Dot(carForward, dirToCarInSight);
-            if (distanceToCar > relevantDistance || dot < 0)
-                carsToBeRemoved.Add(car);
-        }
-
-        foreach (PathFollower car in carsToBeRemoved)
-        {
-            carsInSight.Remove(car);
-            //if (relevantCarsInSight.Contains(car))
-            relevantCarsInSight.Remove(car);
+            pathFollower.stopPosition = Vector3.zero;
         }
     }
 
@@ -168,7 +179,7 @@ public class PriorityBehavior
             float angleBetweenCarAndSignalForward = Vector3.Angle(carForward, signalForward);
             if (angleBetweenCarAndSignalForward > 145)
             {
-                Debug.DrawLine(rayOrigin, hit.point, Color.green);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.green);
                 hasSignalInSight = true;
                 pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
                 signalInSight = hit.transform;
@@ -177,7 +188,7 @@ public class PriorityBehavior
         }
         else // In front but not in the same road
         {
-            Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
+            if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
         }
     }
 
@@ -203,7 +214,7 @@ public class PriorityBehavior
         }
         else
         {
-            Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * carRayDistance * prioritySensorReach, Color.red);
+            Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * 14f, Color.red);
         }
     }
 
