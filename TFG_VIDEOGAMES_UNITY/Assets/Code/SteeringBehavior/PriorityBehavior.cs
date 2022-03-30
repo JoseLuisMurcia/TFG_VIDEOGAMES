@@ -197,7 +197,7 @@ public class PriorityBehavior
         // Hacer cosas xd
         PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
         PriorityLevel carPriority = pathFollower.priorityLevel;
-        PriorityLevel hitCarPriority = pathFollower.priorityLevel;
+        PriorityLevel hitCarPriority = hitCarPathFollower.priorityLevel;
         if (carPriority <= hitCarPriority)
         {
             Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
@@ -209,7 +209,11 @@ public class PriorityBehavior
             if (Vector3.Angle(hitCarForward, carForward) > angleTolerance && Vector3.Dot(transform.forward, dirToHitCar) > 0f)
             {
                 if (!carsInSight.Contains(hitCarPathFollower))
+                {
                     carsInSight.Add(hitCarPathFollower);
+                    Debug.DrawLine(rayOrigin, hit.point, Color.green);
+                }
+                
             }
         }
         else

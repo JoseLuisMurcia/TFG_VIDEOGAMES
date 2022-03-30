@@ -94,12 +94,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 priorityBehavior.ProcessCarHit(ray, hit, sensor);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -117,7 +117,7 @@ public class WhiskersManager : MonoBehaviour
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
             }
         }
     }
@@ -138,11 +138,11 @@ public class WhiskersManager : MonoBehaviour
             {
                 if(!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if(!priorityBehavior.hasSignalInSight) priorityBehavior.ProcessCarHit(ray, hit, sensor);
-                if(visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                //if(visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
