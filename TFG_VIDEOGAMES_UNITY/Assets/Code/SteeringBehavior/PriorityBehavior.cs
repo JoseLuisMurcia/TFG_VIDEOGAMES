@@ -117,7 +117,7 @@ public class PriorityBehavior
     }
     private void ProcessRelevantPriorityCarsInSight()
     {
-        float relevantDistance = 15f;
+        float relevantDistance = 19f;
         float maxDistance = 20f;
         List<PathFollower> carsToBeRemoved = new List<PathFollower>();
         Vector3 futureCarPosition = pathFollower.GetPosInPathInNumNodes(5);
@@ -177,16 +177,26 @@ public class PriorityBehavior
         foreach (PathFollower car in relevantCarsInSight)
         {
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
-            Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
+            float carSpeed = pathFollower.speedPercent;
+            float carInSightSpeed = car.speedPercent;
+            // Este valor indica el resultado umbral a partir del cual el coche deberá frenar o no
+            float minValue = 0.1f;
+            float divisionVal = carSpeed / carInSightSpeed;
+            float distanceWithSpeed = divisionVal * distanceToCar;
 
-            float dot = Vector3.Dot(carForward, dirToCarInSight);
-            if (distanceToCar > relevantDistance || dot < 0 || (isInRoundabout && !CarIsInRoundabout(car)))
+            if (distanceToCar > relevantDistance || (isInRoundabout && !CarIsInRoundabout(car)))
                 carsToBeRemoved.Add(car);
 
-            if (pathFollower.stopPosition == Vector3.zero)
+            if (!carsToBeRemoved.Contains(car))
             {
-                pathFollower.stopPosition = transform.position + transform.forward * 2f;
-            }
+                if (pathFollower.stopPosition == Vector3.zero)
+                {
+                    if (distanceWithSpeed < 1f)
+                        distanceWithSpeed = 0f;
+
+                    pathFollower.stopPosition = transform.position + transform.forward * distanceWithSpeed * .25f;
+                }
+            }  
         }
 
         foreach (PathFollower car in carsToBeRemoved)
@@ -211,7 +221,6 @@ public class PriorityBehavior
         }
         else
         {
-            // Tell the pathfollower to resume its previous behavior
             pathFollower.shouldStopPriority = false;
             pathFollower.stopPosition = Vector3.zero;
         }
