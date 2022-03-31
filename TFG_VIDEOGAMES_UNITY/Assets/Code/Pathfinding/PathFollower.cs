@@ -109,15 +109,33 @@ public class PathFollower : MonoBehaviour
     // This method returns the position in the path in pathIndex+numNodes
     public Vector3 GetPosInPathInNumNodes(int numNodes)
     {
-        int numNodesInPath = waypointsList.Count;
-        if(pathIndex + numNodes > numNodesInPath) 
-        {
-            RequestNewPath();
+        if (PathEnds(numNodes))
             return Vector3.zero;
-        }
+
         return waypointsList[pathIndex + numNodes];
     }
 
+    public float GetAngleBetweenCurrentNodeAndNumNodes(int numNodes)
+    {
+        if (PathEnds(numNodes))
+            return Mathf.Infinity;
+
+        Vector3 dirFromCurrentNodeToTarget = (waypointsList[pathIndex+numNodes] - waypointsList[pathIndex]).normalized;
+        Vector3 currentNodeForward = (waypointsList[pathIndex+1] - waypointsList[pathIndex]).normalized;
+        float angle = Vector3.Angle(currentNodeForward, dirFromCurrentNodeToTarget);
+        return angle;
+    }
+
+    private bool PathEnds(int numNodes)
+    {
+        int numNodesInPath = waypointsList.Count;
+        if (pathIndex + numNodes >= numNodesInPath)
+        {
+            RequestNewPath();
+            return true;
+        }
+        return false;
+    }
     public void RequestNewPath()
     {
         float newDistance = 0f;
@@ -282,6 +300,7 @@ public class PathFollower : MonoBehaviour
 public enum PriorityLevel
 {
     Stop,
+    Roundabout,
     Yield,
     Max
 }

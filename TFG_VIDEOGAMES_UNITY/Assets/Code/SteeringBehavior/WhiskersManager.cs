@@ -42,9 +42,9 @@ public class WhiskersManager : MonoBehaviour
 
     void CreateIncorporationWhiskers(Transform whiskersParent)
     {
-        int numWhiskers = 12;
-        float minAngle = -87f;
-        float maxAngle = 87f;
+        int numWhiskers = 14;
+        float minAngle = -85f;
+        float maxAngle = 85f;
         float increment = 0f;
         float yRotThreshold = 20f;
         float currentAngle = minAngle + increment;
@@ -94,12 +94,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 priorityBehavior.ProcessCarHit(ray, hit, sensor);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -169,4 +169,5 @@ public class WhiskersManager : MonoBehaviour
         }
         return reach;
     }
+
 }

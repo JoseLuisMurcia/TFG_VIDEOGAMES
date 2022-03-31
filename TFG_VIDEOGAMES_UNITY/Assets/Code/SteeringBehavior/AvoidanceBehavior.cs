@@ -9,7 +9,7 @@ public class AvoidanceBehavior
     List<Transform> whiskers = new List<Transform>(); 
     public bool objectHit = false;
     private PathFollower pathFollower;
-    private PathFollower hitCarPathFollower;
+    public PathFollower hitCarPathFollower;
     private TrafficLightCarController trafficLightController;
     private TrafficLightCarController hitCarTrafficLightController;
     private Vector3 rayOrigin;
