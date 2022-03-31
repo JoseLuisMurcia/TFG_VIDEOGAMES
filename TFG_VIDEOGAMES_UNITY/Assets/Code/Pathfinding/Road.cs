@@ -39,7 +39,15 @@ public class Road : MonoBehaviour
         SortReferencePoints();
         boxColliderSize = boxCollider.bounds.size.x;
 
-        Destroy(boxCollider);
+        if (typeOfRoad != TypeOfRoad.Roundabout)
+        {
+            Destroy(boxCollider);
+        }
+        else
+        {
+            Vector3 boxSize = boxCollider.size;
+            boxCollider.size = new Vector3(boxSize.x * 0.67f, boxSize.y, boxSize.z * 0.67f) ;
+        }
     }
 
     private void SortReferencePoints()

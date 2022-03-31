@@ -29,4 +29,21 @@ public class Roundabout : Road
         numDirection = NumDirection.OneDirectional;
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        WhiskersManager manager = other.gameObject.GetComponent<WhiskersManager>();
+        if(manager != null)
+        {
+            manager.RoundaboutTrigger(true);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        WhiskersManager manager = other.gameObject.GetComponent<WhiskersManager>();
+        if (manager != null)
+        {
+            manager.RoundaboutTrigger(false);
+        }
+    }
 }

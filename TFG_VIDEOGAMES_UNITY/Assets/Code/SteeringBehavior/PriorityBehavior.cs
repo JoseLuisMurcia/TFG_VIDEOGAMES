@@ -17,6 +17,7 @@ public class PriorityBehavior
     List<PathFollower> carsInSight = new List<PathFollower>();
     List<PathFollower> relevantCarsInSight = new List<PathFollower>();
     private bool visualDebug = false;
+    private bool isInRoundabout = false;
 
     public PriorityBehavior(LayerMask _carLayer, LayerMask _signalLayer, List<Transform> _whiskers, PathFollower _pathFollower)
     {
@@ -123,9 +124,7 @@ public class PriorityBehavior
         Vector3 dirToFuturePos = (futureCarPosition - transform.position).normalized;
         Vector3 carForward = transform.forward.normalized;
         float angleToFuturePos = Vector3.SignedAngle(carForward, dirToFuturePos, Vector3.up);
-        // Si utilizo el forward de ese coche puedo hacer una optimizacion
 
-        // Utilizar el pathfollower para conocer las intenciones del coche
         foreach (PathFollower car in carsInSight)
         {
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
@@ -142,9 +141,9 @@ public class PriorityBehavior
                 // HERE CHECK THE PATH TRAJECTORY
                 if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
                 {
-                    if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
+                    if (pathFollower.priorityLevel == PriorityLevel.Roundabout) // Hay que meter una comprobacion extra
                     {
-                        if (angleToCarInSight <= 0)
+                        if (angleToCarInSight < 0)
                             relevantCarsInSight.Add(car);
                     }
                     else
@@ -181,12 +180,12 @@ public class PriorityBehavior
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
 
             float dot = Vector3.Dot(carForward, dirToCarInSight);
-            if (distanceToCar > relevantDistance || dot < 0 || CarIsInRoundabout(pathFollower) && !CarIsInRoundabout(car))
+            if (distanceToCar > relevantDistance || dot < 0 || (isInRoundabout && !CarIsInRoundabout(car)))
                 carsToBeRemoved.Add(car);
 
             if (pathFollower.stopPosition == Vector3.zero)
             {
-                pathFollower.stopPosition = transform.position + transform.forward * 5f;
+                pathFollower.stopPosition = transform.position + transform.forward * 2f;
             }
         }
 
@@ -231,7 +230,7 @@ public class PriorityBehavior
             float angleBetweenCarAndSignalForward = Vector3.Angle(carForward, signalForward);
             if (angleBetweenCarAndSignalForward > 145)
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.green);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.green);
                 hasSignalInSight = true;
                 pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
                 signalInSight = hit.transform;
@@ -240,7 +239,7 @@ public class PriorityBehavior
         }
         else // In front but not in the same road
         {
-            if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
+            //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
         }
     }
 
@@ -255,10 +254,10 @@ public class PriorityBehavior
             Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
             Vector3 dirToHitCar = (hit.transform.position - transform.position).normalized;
             Vector3 carForward = transform.forward;
-            float angleTolerance = 20f;
+            float angleTolerance = 25f;
             // El plan es, detectar los coches que tengamos delante y con la misma prioridad o mayor y guardarlos en una lista que procesamos a parte
             // Descartar aquellos que tengamos delante con las mismas intenciones que nosotros O, guardar las distancias con aquellos tambien?¿
-            if (Vector3.Angle(hitCarForward, carForward) > angleTolerance && Vector3.Dot(transform.forward, dirToHitCar) > 0f)
+            if (Vector3.Angle(carForward, hitCarForward) > angleTolerance && Vector3.Dot(transform.forward, dirToHitCar) > 0f)
             {
                 if (!carsInSight.Contains(hitCarPathFollower))
                 {
@@ -274,4 +273,8 @@ public class PriorityBehavior
         }
     }
 
+    public void RoundaboutEntry(bool entry)
+    {
+        isInRoundabout = entry;
+    }
 }

@@ -38,7 +38,7 @@ public class AvoidanceBehavior
         if (objectHit) return;
         rayOrigin = whiskers[0].position;
 
-        CheckRoadObstacles();
+        //CheckRoadObstacles();
         CheckIfTargetIsValid();
     }
 

@@ -14,8 +14,8 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private float centerReach = 6f;
-    private float sideReach = 20f;
+    private float centerReach = 4.5f;
+    private float sideReach = 18f;
     [SerializeField] bool visualDebug = false;
 
     //[SerializeField] bool visualDebug = false;
@@ -89,7 +89,7 @@ public class WhiskersManager : MonoBehaviour
         RaycastHit hit;
         foreach (Transform sensor in incorporationWhiskers)
         {
-            float reach = 15f;
+            float reach = 12f;
 
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
@@ -168,6 +168,11 @@ public class WhiskersManager : MonoBehaviour
             reach = sideReach;
         }
         return reach;
+    }
+
+    public void RoundaboutTrigger(bool entry)
+    {
+        priorityBehavior.RoundaboutEntry(entry);
     }
 
 }

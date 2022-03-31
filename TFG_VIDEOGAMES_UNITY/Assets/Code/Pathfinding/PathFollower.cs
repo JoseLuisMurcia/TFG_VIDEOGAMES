@@ -12,7 +12,7 @@ public class PathFollower : MonoBehaviour
     [SerializeField] float turnDst = 3;
     public int pathIndex = 0;
     Path path;
-    [SerializeField] float speedPercent = 0f;
+    [SerializeField] public float speedPercent = 0f;
 
     // Stop at traffic light variables
     public bool shouldStopAtTrafficLight = false;
@@ -138,6 +138,9 @@ public class PathFollower : MonoBehaviour
     }
     public void RequestNewPath()
     {
+        if (endNode == null)
+            return;
+
         float newDistance = 0f;
         Vector3 newTargetPos = Vector3.zero;
         Vector3 oldPos = target;
