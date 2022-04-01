@@ -16,13 +16,12 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
     private float centerReach = 5.5f;
-    private float sideReach = 18f;
+    private float sideReach = 20f;
     [SerializeField] bool visualDebug = false;
 
     //[SerializeField] bool visualDebug = false;
     void Start()
     {
-
         pathFollower = GetComponent<PathFollower>();
         trafficLightCarController = GetComponent<TrafficLightCarController>();
 
@@ -87,10 +86,22 @@ public class WhiskersManager : MonoBehaviour
 
     void CheckForIncorporation()
     {
+        if (priorityBehavior.isInRoundabout)
+            return;
+
         RaycastHit hit;
         foreach (Transform sensor in incorporationWhiskers)
         {
             float reach = 12f;
+
+            if(pathFollower.priorityLevel == PriorityLevel.Roundabout)
+            {
+                reach = 7f;
+                if(sensor.localEulerAngles.y < 180f)
+                {
+                    continue;
+                }
+            }
 
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
@@ -133,7 +144,8 @@ public class WhiskersManager : MonoBehaviour
             float reach;
             float yRotation = Mathf.Abs(sensor.localRotation.eulerAngles.y);
             reach = SetReachForCarRays(yRotation);
-
+            if (priorityBehavior.isInRoundabout)
+                reach = 4f;
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
@@ -166,7 +178,7 @@ public class WhiskersManager : MonoBehaviour
         }
         else
         {
-            reach = sideReach;
+            reach = sideReach*0.8f;
         }
         return reach;
     }
@@ -174,6 +186,9 @@ public class WhiskersManager : MonoBehaviour
     public void RoundaboutTrigger(bool entry)
     {
         priorityBehavior.isInRoundabout = entry;
+        pathFollower.priorityLevel = PriorityLevel.Max;
+        if (!entry)
+            priorityBehavior.RemoveSignalFromSight();
     }
 
 }

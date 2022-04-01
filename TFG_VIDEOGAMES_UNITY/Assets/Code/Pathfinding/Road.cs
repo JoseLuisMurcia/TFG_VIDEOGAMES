@@ -46,7 +46,7 @@ public class Road : MonoBehaviour
         else
         {
             Vector3 boxSize = boxCollider.size;
-            boxCollider.size = new Vector3(boxSize.x * 0.67f, boxSize.y, boxSize.z * 0.67f) ;
+            boxCollider.size = new Vector3(boxSize.x * .8f, boxSize.y, boxSize.z * .8f) ;
         }
     }
 

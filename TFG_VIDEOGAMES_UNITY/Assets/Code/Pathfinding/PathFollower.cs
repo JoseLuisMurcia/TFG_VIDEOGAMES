@@ -305,7 +305,7 @@ public class PathFollower : MonoBehaviour
 public enum PriorityLevel
 {
     Stop,
-    Roundabout,
     Yield,
+    Roundabout, 
     Max
 }

@@ -47,20 +47,15 @@ public class PriorityBehavior
         float distance = Vector3.Distance(transform.position, signalInSight.position);
         Vector3 carForward = transform.forward.normalized;
         Vector3 dirToSignal = (signalInSight.position - transform.position).normalized;
+        PriorityLevel priority = pathFollower.priorityLevel;
         float dot = Vector3.Dot(carForward, dirToSignal);
-        if (isInRoundabout)
-        {
-            if (distance > 4.5f && dot < 0 && NextNodesAreStraight())
-                RemoveSignalFromSight();
-        }
-        else
+        if (priority != PriorityLevel.Roundabout)
         {
             if (distance > 2f && dot < 0)
             {
                 RemoveSignalFromSight();
             }
         }
-
     }
 
     private bool NextNodesAreStraight()
@@ -75,15 +70,11 @@ public class PriorityBehavior
         return false;
     }
 
-    private void RemoveSignalFromSight()
+    public void RemoveSignalFromSight()
     {
         signalInSight = null;
         hasSignalInSight = false;
         pathFollower.priorityLevel = PriorityLevel.Max;
-    }
-    private bool HasHitRoundaboutSignal(PathFollower _pathFollower)
-    {
-        return _pathFollower.priorityLevel == PriorityLevel.Roundabout;
     }
 
     private PriorityLevel GetPriorityOfSignal(string signalTag)
@@ -121,7 +112,7 @@ public class PriorityBehavior
     }
     private void ProcessRelevantPriorityCarsInSight()
     {
-        float relevantDistance = 19f;
+        float relevantDistance = 15f;
         float maxDistance = 20f;
         List<PathFollower> carsToBeRemoved = new List<PathFollower>();
         Vector3 futureCarPosition = pathFollower.GetPosInPathInNumNodes(5);
@@ -145,31 +136,39 @@ public class PriorityBehavior
                 // HERE CHECK THE PATH TRAJECTORY
                 if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
                 {
-                    if (pathFollower.priorityLevel == PriorityLevel.Roundabout) // Hay que meter una comprobacion extra
+                    if (!isInRoundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout && distanceToCar <= 6f) // Hay que meter una comprobacion extra
                     {
                         if (angleToCarInSight < 0)
                             relevantCarsInSight.Add(car);
                     }
                     else
                     {
-                        bool carInSightHasHigherPrio = (car.priorityLevel > pathFollower.priorityLevel) ? true : false;
-                        // Nuestro coche va a tirar a la izquierda
-                        if (angleToFuturePos < -5)
+                        if (isInRoundabout)
                         {
-                            // Siempre vas a tener que añadir el coche porque tiene la misma o más prioridad que tu y ante un giro a la izquierda hay que frenar
-                            relevantCarsInSight.Add(car);
+                            carsToBeRemoved.Add(car);
                         }
-                        else if (angleToFuturePos > 5) // nuestro coche va a tirar a la derecha
+                        else
                         {
-                            // Solo si el coche que tienes delante tiene más preferencia deberás parar
-                            if (carInSightHasHigherPrio)
+                            bool carInSightHasHigherPrio = (car.priorityLevel > pathFollower.priorityLevel) ? true : false;
+                            // Nuestro coche va a tirar a la izquierda
+                            if (angleToFuturePos < -5)
+                            {
+                                // Siempre vas a tener que añadir el coche porque tiene la misma o más prioridad que tu y ante un giro a la izquierda hay que frenar
                                 relevantCarsInSight.Add(car);
+                            }
+                            else if (angleToFuturePos > 5) // nuestro coche va a tirar a la derecha
+                            {
+                                // Solo si el coche que tienes delante tiene más preferencia deberás parar
+                                if (carInSightHasHigherPrio)
+                                    relevantCarsInSight.Add(car);
+                            }
+                            else // nuestro coche va a tirar recto
+                            {
+                                if (carInSightHasHigherPrio)
+                                    relevantCarsInSight.Add(car);
+                            }
                         }
-                        else // nuestro coche va a tirar recto
-                        {
-                            if (carInSightHasHigherPrio)
-                                relevantCarsInSight.Add(car);
-                        }
+                        
                     }
 
 
@@ -183,8 +182,7 @@ public class PriorityBehavior
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             float carSpeed = pathFollower.speedPercent;
             float carInSightSpeed = car.speedPercent;
-            // Este valor indica el resultado umbral a partir del cual el coche deberá frenar o no
-            float minValue = 0.1f;
+
             float divisionVal = carSpeed / carInSightSpeed;
             float distanceWithSpeed = divisionVal * distanceToCar;
 
@@ -196,7 +194,7 @@ public class PriorityBehavior
                 if (pathFollower.stopPosition == Vector3.zero)
                 {
                     if (distanceWithSpeed < 1f)
-                        distanceWithSpeed = 0f;
+                        distanceWithSpeed = 0.2f;
 
                     pathFollower.stopPosition = transform.position + transform.forward * distanceWithSpeed * .25f;
                 }
@@ -212,18 +210,6 @@ public class PriorityBehavior
         int numRelevantCars = relevantCarsInSight.Count;
         if (numRelevantCars > 0)
         {
-            // TO FIX
-            // Si el target, el coche que tienes delante, no tiene a true shouldStopPriority y tú si, entonces deja de mantener
-            // la distancia con él porque se va a ir y entonces tú paras por la priorityç
-            //if(pathFollower.carTarget != null && pathFollower.carTarget.GetComponent<PathFollower>().shouldStopPriority)
-            //{
-
-            //}
-            if(pathFollower.gameObject.name == "Coche Stop (2)")
-            {
-                int haha = 5;
-                haha += 3;
-            }
             if (avoidanceBehavior.hasTarget)
             {
                 if (pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0)
