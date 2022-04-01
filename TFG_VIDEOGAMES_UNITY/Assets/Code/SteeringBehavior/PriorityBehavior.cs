@@ -16,9 +16,11 @@ public class PriorityBehavior
 
     List<PathFollower> carsInSight = new List<PathFollower>();
     List<PathFollower> relevantCarsInSight = new List<PathFollower>();
+    List<CarDistanceFrame> carDistances = new List<CarDistanceFrame>();
     private bool visualDebug = false;
     public bool isInRoundabout = false;
     private AvoidanceBehavior avoidanceBehavior;
+
 
     public PriorityBehavior(LayerMask _carLayer, LayerMask _signalLayer, List<Transform> _whiskers, PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
     {
@@ -97,18 +99,18 @@ public class PriorityBehavior
         if (carInSight.priorityLevel == PriorityLevel.Roundabout)
             return false;
 
-        bool relevant = false;
+        bool notRelevant = false;
         Vector3 carInSightForward = carInSight.transform.forward.normalized;
         float threshHold = 0.4f;
         if (angleToCarInSight < 0 && (carInSightForward.x < -threshHold || carInSightForward.z < -threshHold))
         {
-            relevant = true;
+            notRelevant = true;
         }
         else if (angleToCarInSight > 0 && (carInSightForward.x > threshHold || carInSightForward.z > threshHold))
         {
-            relevant = true;
+            notRelevant = true;
         }
-        return relevant;
+        return notRelevant;
     }
     private void ProcessRelevantPriorityCarsInSight()
     {
@@ -290,5 +292,13 @@ public class PriorityBehavior
             //Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * 14f, Color.red);
         }
     }
+}
+
+public class CarDistanceFrame
+{
+    float newDistance;
+    float previousDistance;
+    PathFollower carHit;
+
 
 }

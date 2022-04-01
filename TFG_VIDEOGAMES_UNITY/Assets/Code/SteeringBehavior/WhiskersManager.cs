@@ -18,6 +18,7 @@ public class WhiskersManager : MonoBehaviour
     private float centerReach = 5.5f;
     private float sideReach = 20f;
     [SerializeField] bool visualDebug = false;
+    public bool intersectionInSight = false;
 
     //[SerializeField] bool visualDebug = false;
     void Start()
@@ -94,10 +95,10 @@ public class WhiskersManager : MonoBehaviour
         {
             float reach = 12f;
 
-            if(pathFollower.priorityLevel == PriorityLevel.Roundabout)
+            if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
             {
                 reach = 7f;
-                if(sensor.localEulerAngles.y < 180f)
+                if (sensor.localEulerAngles.y < 180f)
                 {
                     continue;
                 }
@@ -150,8 +151,15 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 if (!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                if (!priorityBehavior.hasSignalInSight) priorityBehavior.ProcessCarHit(ray, hit, sensor);
-                if(visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (!priorityBehavior.hasSignalInSight)
+                {
+                    if (intersectionInSight)
+                    {
+                        priorityBehavior.ProcessCarHit(ray, hit, sensor);
+                    }
+
+                }
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
@@ -178,7 +186,7 @@ public class WhiskersManager : MonoBehaviour
         }
         else
         {
-            reach = sideReach*0.8f;
+            reach = sideReach * 0.8f;
         }
         return reach;
     }

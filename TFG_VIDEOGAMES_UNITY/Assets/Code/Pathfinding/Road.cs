@@ -9,7 +9,7 @@ public class Road : MonoBehaviour
     [SerializeField] LayerMask roadMask;
     public TypeOfRoad typeOfRoad;
     [SerializeField] public NumDirection numDirection;
-    [HideInInspector ]public TrafficLight trafficLight;
+    [HideInInspector] public TrafficLight trafficLight;
     [HideInInspector] public TrafficLightEvents trafficLightEvents;
     [HideInInspector] public List<Road> connections = new List<Road>();
     [HideInInspector] public List<Lane> lanes = new List<Lane>();
@@ -46,10 +46,45 @@ public class Road : MonoBehaviour
         else
         {
             Vector3 boxSize = boxCollider.size;
-            boxCollider.size = new Vector3(boxSize.x * .8f, boxSize.y, boxSize.z * .8f) ;
+            boxCollider.size = new Vector3(boxSize.x * .8f, boxSize.y, boxSize.z * .8f);
+        }
+
+
+    }
+
+    private void Start()
+    {
+        if (typeOfRoad == TypeOfRoad.Intersection)
+        {
+            CreateIntersectionPriorityTriggers();
         }
     }
 
+    private void CreateIntersectionPriorityTriggers()
+    {
+        int num = 0;
+        foreach (Road neighbour in connections)
+        {
+            Vector3 boxPos = neighbour.transform.position;
+            // Create the object
+            GameObject newGameObject = new GameObject("Intersecion Trigger " + num);
+            newGameObject.transform.position = boxPos;
+            newGameObject.transform.parent = gameObject.transform;
+            // Create the boxCollider
+            BoxCollider box = newGameObject.AddComponent<BoxCollider>() as BoxCollider;
+            box.isTrigger = true;
+            box.size = Vector3.one * 3;
+            IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>() as IntersectionTriggers;
+
+
+            num++;
+        }
+
+        BoxCollider exitTrigger = gameObject.AddComponent<BoxCollider>() as BoxCollider;
+        exitTrigger.isTrigger = true;
+        exitTrigger.size = exitTrigger.size * 0.8f;
+
+    }
     private void SortReferencePoints()
     {
         if (pathCreator == null)
@@ -122,11 +157,21 @@ public class Road : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        WhiskersManager carManager = other.GetComponent<WhiskersManager>();
+        if (carManager != null)
+        {
+            if (carManager.intersectionInSight)
+                carManager.intersectionInSight = false;
+        }
+    }
+
     private void SetLanes()
     {
         if (typeOfRoad == TypeOfRoad.Deviation || typeOfRoad == TypeOfRoad.Split)
         {
-            if(numberOfLanes < 2)
+            if (numberOfLanes < 2)
                 numberOfLanes = 2;
         }
         for (int i = 0; i < numberOfLanes; i++)
@@ -139,7 +184,6 @@ public class Road : MonoBehaviour
         if (connections.Contains(road))
             return false;
 
-        //if(numDirection == NumDirection.One && road.numDirection == NumDirection.One && )
         return true;
     }
 
@@ -171,3 +215,4 @@ public class Lane
 {
     public List<Node> nodes = new List<Node>();
 }
+
