@@ -48,7 +48,7 @@ public class AvoidanceBehavior
     {
         if (carTarget != null)
         {
-            float distance = 3.5f;
+            float distance = 4f;
             if (trafficLightController.currentRoad != null)
             {
                 if (DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
@@ -90,6 +90,8 @@ public class AvoidanceBehavior
 
     private void EnableTarget()
     {
+        if (hasTarget)
+            return;
         pathFollower.carTarget = carTarget;
         hasTarget = true;
         pathFollower.targetPriorityBehavior = carTarget.GetComponent<PathFollower>().priorityBehavior;

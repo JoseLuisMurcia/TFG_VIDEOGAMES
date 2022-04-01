@@ -187,6 +187,11 @@ public class PriorityBehavior
 
             float divisionVal = carSpeed / carInSightSpeed;
             float distanceWithSpeed = divisionVal * distanceToCar;
+            //float angleBetweenForwards = Vector3.Angle(transform.forward, car.transform.forward);
+            //if(angleBetweenForwards > 160 && pathFollower.carTarget != null && !TargetHasRelevantCars())
+            //{
+            //    stopDistanceMultiplier = 2f;
+            //}
 
             if (distanceToCar > relevantDistance || (isInRoundabout && !car.priorityBehavior.isInRoundabout))
                 carsToBeRemoved.Add(car);
@@ -214,7 +219,7 @@ public class PriorityBehavior
         {
             if (avoidanceBehavior.hasTarget)
             {
-                if (pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0)
+                if (TargetHasRelevantCars())
                 {
                     pathFollower.shouldStopPriority = false;
                     pathFollower.stopPosition = Vector3.zero;
@@ -291,6 +296,11 @@ public class PriorityBehavior
         {
             //Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * 14f, Color.red);
         }
+    }
+
+    private bool TargetHasRelevantCars()
+    {
+        return pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0;
     }
 }
 
