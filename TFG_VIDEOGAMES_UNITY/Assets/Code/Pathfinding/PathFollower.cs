@@ -6,57 +6,74 @@ public class PathFollower : MonoBehaviour
 {
     const float minPathUpdateTime = .2f;
 
-    //public Transform target;
     private Vector3 target;
-    public float speed = 4;
-    public float turnSpeed = 4;
-    public float turnDst = 5;
-    public float stoppingDst = 10;
+    [SerializeField] float speed = 4;
+    [SerializeField] float turnSpeed = 4;
+    [SerializeField] float turnDst = 3;
     public int pathIndex = 0;
     Path path;
-    [SerializeField] float speedPercent = 0f;
+    [SerializeField] public float speedPercent = 0f;
 
     // Stop at traffic light variables
     public bool shouldStopAtTrafficLight = false;
-    private float trafficLightStopDist = 3;
-    private bool vehicleWasStopped = false;
-    private bool vehicleWasStoppedByTraffic = false;
-    private bool driverHasReacted = false;
+    private float trafficLightStopDist = 5;
 
     // Car collision avoidance variables
     public bool shouldBrakeBeforeCar = false;
-    private float carStopDistance = 2;
+    [SerializeField] float carStartBreakingDistance = 2f;
+    [SerializeField] float carStopDistance = 1f;
     public Vector3 frontCarPos;
-    CarObstacleAvoidance carObstacleAvoidance;
-    int recentAddedAvoidancePosIndex = -1;
+    public Transform carTarget;
+    [HideInInspector] public AvoidanceBehavior avoidanceBehavior;
+    int recentAddedAvoidancePosIndex = -50;
+    Node endNode;
 
-    TrafficLightCarController trafficLightCarController;
+    // Priority variables
+    public bool pathRequested = false;
+    public bool shouldStopPriority = false;
+    public Vector3 stopPosition = Vector3.zero;
+    [HideInInspector] public PriorityBehavior targetPriorityBehavior;
+    [HideInInspector] public PriorityBehavior priorityBehavior;
+
+    [HideInInspector] TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
-    List<Vector3> waypointsList = new List<Vector3>();
-    [SerializeField] WorldGrid grid;
+    [HideInInspector] List<Vector3> waypointsList = new List<Vector3>();
 
     private IEnumerator followPathCoroutine;
+    private IEnumerator reactionTimeCoroutine;
+    private static float minDistanceToSpawnNewTarget = 20f;
+
+    public PriorityLevel priorityLevel = PriorityLevel.Max;
 
     // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
     void Start()
     {
+        carStartBreakingDistance = Random.Range(1f, 4f);
+        carStartBreakingDistance = 2.5f;
+        trafficLightStopDist = Random.Range(4f, 6f);
+        carStopDistance = Random.Range(0.5f, 2f);
+        carStopDistance = 1.5f;
+        float speedMultiplier = Random.Range(1f, 1.01f);
+        speed *= speedMultiplier;
+        turnSpeed *= speedMultiplier;
         StartCoroutine(UpdatePath());
         trafficLightCarController = GetComponent<TrafficLightCarController>();
-        carObstacleAvoidance = GetComponent<CarObstacleAvoidance>();
     }
 
-    public void OnPathFound(Vector3[] waypoints, bool pathSuccessful)
+    public void OnPathFound(Vector3[] waypoints, bool pathSuccessful, Node _startNode, Node _endNode)
     {
         if (pathSuccessful)
         {
+            pathRequested = false;
+            endNode = _endNode;
             waypointsList = new List<Vector3>();
             foreach (Vector3 waypoint in waypoints)
             {
                 waypointsList.Add(waypoint);
             }
-            if(followPathCoroutine != null)
+            if (followPathCoroutine != null)
                 StopCoroutine(followPathCoroutine);
-            path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
+            path = new Path(waypointsList, transform.position, turnDst);
             followPathCoroutine = FollowPath();
             StartCoroutine(followPathCoroutine);
         }
@@ -75,7 +92,7 @@ public class PathFollower : MonoBehaviour
         }
         if (target == Vector3.zero)
         {
-            target = grid.GetRandomPosInRoads();
+            target = WorldGrid.Instance.GetRandomNodeInRoads().worldPosition;
         }
         PathfinderRequestManager.RequestPath(transform.position, target, transform.forward, OnPathFound);
 
@@ -84,23 +101,64 @@ public class PathFollower : MonoBehaviour
             yield return new WaitForSeconds(minPathUpdateTime);
 
             float distance = Vector3.Distance(transform.position, target);
-            if (distance < 8f)
+            if (distance < 3f)
             {
-                float newDistance = 0f;
-                Vector3 newTargetPos = Vector3.zero;
-                Vector3 oldPos = target;
-                while (newDistance < 20f)
-                {
-                    newTargetPos = grid.GetRandomPosInRoads();
-                    newDistance = Vector3.Distance(oldPos, newTargetPos);
-                }
-                PathfinderRequestManager.RequestPath(oldPos, newTargetPos, transform.forward, OnPathFound);
-                target = newTargetPos;
+                RequestNewPath();
             }
         }
     }
 
-    // EL problema es que no está encontrando un camino valido a veces, probablemente porque no se encuentre un nodo valido? Pintar nodo start y nodo end en el mundo.
+    // This method returns the position in the path in pathIndex+numNodes
+    public Vector3 GetPosInPathInNumNodes(int numNodes)
+    {
+        if (PathEnds(numNodes))
+            return Vector3.zero;
+
+        return waypointsList[pathIndex + numNodes];
+    }
+
+    public float GetAngleBetweenCurrentNodeAndNumNodes(int numNodes)
+    {
+        if (PathEnds(numNodes))
+            return Mathf.Infinity;
+
+        Vector3 dirFromCurrentNodeToTarget = (waypointsList[pathIndex+numNodes] - waypointsList[pathIndex]).normalized;
+        Vector3 currentNodeForward = (waypointsList[pathIndex+1] - waypointsList[pathIndex]).normalized;
+        float angle = Vector3.Angle(currentNodeForward, dirFromCurrentNodeToTarget);
+        return angle;
+    }
+
+    private bool PathEnds(int numNodes)
+    {
+        int numNodesInPath = waypointsList.Count;
+        if (pathIndex + numNodes >= numNodesInPath)
+        {
+            RequestNewPath();
+            return true;
+        }
+        return false;
+    }
+    public void RequestNewPath()
+    {
+        if (endNode == null)
+            return;
+
+        float newDistance = 0f;
+        Vector3 newTargetPos = Vector3.zero;
+        Vector3 oldPos = target;
+        Node newNode = null;
+        while (newDistance < minDistanceToSpawnNewTarget)
+        {
+            newNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+            newTargetPos = newNode.worldPosition;
+            newDistance = Vector3.Distance(oldPos, newTargetPos);
+        }
+
+        PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
+        target = newTargetPos;
+        pathRequested = true;
+    }
+
     IEnumerator FollowPath()
     {
         pathIndex = 0;
@@ -117,46 +175,28 @@ public class PathFollower : MonoBehaviour
                 // Reset the obstacle avoider
                 if (pathIndex == recentAddedAvoidancePosIndex)
                 {
-                    carObstacleAvoidance.objectHit = false;
+                    avoidanceBehavior.objectHit = false;
+                    recentAddedAvoidancePosIndex = -50;
                 }
                 pathIndex++;
-                if(pathIndex >= path.turnBoundaries.Count)
-                {
-                    Debug.Log("QUE SE ROMPE EL CODIGO JAJA");
-                }
             }
 
-            if (shouldBrakeBeforeCar && !vehicleWasStoppedByTraffic)
+            if (shouldStopPriority)
             {
-                speedPercent = StopBeforeCar();
-                driverHasReacted = true;
+                speedPercent = SlowSpeedPriority();
+            }
+            else if (shouldBrakeBeforeCar)
+            {
+                speedPercent = SlowSpeedBeforeCar();
             }
             else if (shouldStopAtTrafficLight)
             {
-                speedPercent = StopAtTrafficLight();
-                driverHasReacted = true;
+                speedPercent = SlowSpeedAtTrafficLight();
             }
             else
             {
-                if (driverHasReacted)
-                {
-                    float reactionTime = Random.Range(0.2f, 0.7f);
-                    yield return new WaitForSeconds(reactionTime);
-                    driverHasReacted = false;
-                }
-
-                // When the car is stopped, set the speedPercent to 0 so that it accelerates from 0 and not instantly.
-                if (vehicleWasStopped)
-                {
-                    speedPercent = 0f;
-                    vehicleWasStopped = false;
-                    if (vehicleWasStoppedByTraffic)
-                        vehicleWasStoppedByTraffic = true;
-                }
-
                 speedPercent += 0.002f;
                 speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
-
             }
             Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
             if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
@@ -166,9 +206,45 @@ public class PathFollower : MonoBehaviour
 
         }
     }
-    public void SetTrafficLightPos(Vector3 _trafficLightPos)
+    public void StopAtTrafficLight(bool subscription)
     {
-        shouldStopAtTrafficLight = true;
+        if (shouldStopAtTrafficLight == false)
+        {
+            if (trafficLightCarController.currentRoad == null)
+                return;
+
+            if(reactionTimeCoroutine != null)
+            {
+                StopCoroutine(reactionTimeCoroutine);
+            }
+            reactionTimeCoroutine = TrafficLightReactionTime(subscription);
+            StartCoroutine(reactionTimeCoroutine);
+        }
+    }
+
+    public void ContinueAtTrafficLight(bool subscription)
+    {
+        // Start Coroutine to delay the variable change
+        if (shouldStopAtTrafficLight == true)
+        {
+            if (reactionTimeCoroutine != null)
+            {
+                StopCoroutine(reactionTimeCoroutine);
+            }
+            reactionTimeCoroutine = TrafficLightReactionTime(subscription);
+            StartCoroutine(reactionTimeCoroutine);
+        }
+    }
+
+    IEnumerator TrafficLightReactionTime(bool subscription)
+    {
+        float reactionTime;
+        if (subscription)
+            reactionTime = 0f;
+        else
+            reactionTime = Random.Range(0.3f, 0.7f);
+        yield return new WaitForSeconds(reactionTime);
+        shouldStopAtTrafficLight = !shouldStopAtTrafficLight;
     }
 
     public void SetNewPathByAvoidance(Vector3 newPos)
@@ -176,50 +252,60 @@ public class PathFollower : MonoBehaviour
         //Create a new Path and add this position in the correct index.
         waypointsList.Insert(pathIndex, newPos);
         recentAddedAvoidancePosIndex = pathIndex;
-        path = new Path(waypointsList, transform.position, turnDst, stoppingDst);
+        path = new Path(waypointsList, transform.position, turnDst);
     }
 
-    float StopBeforeCar()
+    float SlowSpeedPriority()
     {
         float speedPercent;
-
-        float distance = Vector3.Distance(transform.position, frontCarPos);
-        speedPercent = Mathf.Clamp01((distance - 1f) / carStopDistance);
+        float distance = Vector3.Distance(transform.position, stopPosition);
+        speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
         if (speedPercent < 0.03f)
         {
             speedPercent = 0f;
-            vehicleWasStopped = true;
         }
-
         return speedPercent;
     }
-    float StopAtTrafficLight()
+
+    float SlowSpeedBeforeCar()
     {
-        float speedPercent = 1;
-        // Hay que cambiar la comprobación
-        if (trafficLightStopDist > 0)
+        float speedPercent;
+
+        //float distance = Vector3.Distance(transform.position, frontCarPos);
+        float distance = Vector3.Distance(transform.position, carTarget.position);
+        speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        if (speedPercent < 0.03f)
         {
-            float distance = trafficLightCarController.GiveDistanceToPathFollower();
-            speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
-            if (speedPercent < 0.03f)
-            {
-                speedPercent = 0f;
-                vehicleWasStoppedByTraffic = true;
-                vehicleWasStopped = true;
-            }
+            speedPercent = 0f;
+        }
+
+        return speedPercent;
+    }
+    float SlowSpeedAtTrafficLight()
+    {
+        float distance = trafficLightCarController.GiveDistanceToPathFollower();
+        speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
+        if (speedPercent < 0.03f)
+        {
+            speedPercent = 0f;
         }
         return speedPercent;
     }
-
-
 
     public void OnDrawGizmos()
     {
         if (visualDebug && path != null)
         {
             path.DrawWithGizmos();
-
         }
-
     }
+}
+
+
+public enum PriorityLevel
+{
+    Stop,
+    Yield,
+    Roundabout, 
+    Max
 }

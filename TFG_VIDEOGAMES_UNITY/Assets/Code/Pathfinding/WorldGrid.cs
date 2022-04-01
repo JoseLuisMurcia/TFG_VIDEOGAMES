@@ -13,6 +13,21 @@ public class WorldGrid : MonoBehaviour
     private List<Road> roads = new List<Road>();
     private List<Line> debugLines = new List<Line>();
     float distancePerNode = 2.5f;
+
+    public static WorldGrid Instance;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            //DontDestroyOnLoad(gameObject);
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
     public int MaxSize
     {
         get
@@ -73,7 +88,7 @@ public class WorldGrid : MonoBehaviour
 
     private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode)
     {
-        if(distance < 3f && dot > 0)
+        if (distance < 3f && dot > 0)
         {
             Vector3 unionNodePos = (exitNode.worldPosition + entryNode.worldPosition) * 0.5f;
             Node unionNode = new Node(unionNodePos, null);
@@ -134,35 +149,7 @@ public class WorldGrid : MonoBehaviour
         }
     }
 
-    public Vector3 GetRandomPosInRoads()
-    {
-        Vector3 randomPos = Vector3.zero;
-        int numRoads = roads.Count;
-        int roadIndex = Random.Range(0, numRoads);
-        Road selectedRoad = roads[roadIndex];
-        while (selectedRoad.typeOfRoad == TypeOfRoad.Intersection)
-        {
-            roadIndex = Random.Range(0, numRoads);
-            selectedRoad = roads[roadIndex];
-        }
-        int numLanes = selectedRoad.numberOfLanes;
-        int selectedLane = Random.Range(0, numLanes);
-        int numNodes = selectedRoad.lanes[selectedLane].nodes.Count;
-        if (numNodes > 0)
-        {
-            int selectedNode = Random.Range(1, numNodes-1);
-            randomPos = selectedRoad.lanes[selectedLane].nodes[selectedNode].worldPosition;
-        }
-        else
-        {
-            randomPos = selectedRoad.transform.position;
-        }
-        if(randomPos == Vector3.zero)
-        {
-            Debug.LogError("SE VA A LIAR");
-        }
-        return randomPos;
-    }
+
 
     private void ConnectRoadsThroughIntersection(Road road)
     {
@@ -187,8 +174,7 @@ public class WorldGrid : MonoBehaviour
                             {
                                 Vector3 exitNodeForward = (exit.worldPosition - exit.previousNode.worldPosition).normalized;
                                 Vector3 dirToMovePosition = (entry.worldPosition - exit.worldPosition).normalized;
-                                //float dot = Vector3.Dot(exitNodeForward, dirToMovePosition);
-                                float signedAngle = Vector3.SignedAngle(dirToMovePosition, exitNodeForward, Vector3.up);
+                                float signedAngle = Vector3.SignedAngle(exitNodeForward, dirToMovePosition, Vector3.up);
                                 float absoluteAngle = Mathf.Abs(signedAngle);
                                 float minAngle = 10f;
                                 // Conectar rectas 
@@ -219,11 +205,11 @@ public class WorldGrid : MonoBehaviour
                                     Vector3 perpendicularDirection = new Vector3(perpendicularDir.x, 0, perpendicularDir.y);
                                     if (signedAngle > 0)
                                     {
-                                        unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
+                                        unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
                                     }
                                     else
                                     {
-                                        unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
+                                        unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
                                     }
 
                                     Node unionNode = new Node(unionNodePos, null);
@@ -597,7 +583,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     float distance = Vector3.Distance(entry.position, node.worldPosition);
                     Vector3 targetDir = node.worldPosition - entry.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(targetDir, entry.forward, Vector3.up) > 0)
+                    if (distance < bestDistance && Vector3.SignedAngle(entry.forward, targetDir, Vector3.up) < 0)
                     {
                         bestDistance = distance;
                         bestNode = node;
@@ -620,7 +606,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     float distance = Vector3.Distance(exit.position, node.worldPosition);
                     Vector3 targetDir = node.worldPosition - exit.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(targetDir, exit.forward, Vector3.up) < 0)
+                    if (distance < bestDistance && Vector3.SignedAngle(exit.forward, targetDir, Vector3.up) > 0)
                     {
                         bestDistance = distance;
                         bestNode = node;
@@ -638,7 +624,6 @@ public class WorldGrid : MonoBehaviour
     {
         List<Vector3> referencePoints = roundabout.laneReferencePoints;
         int numNodes = referencePoints.Count;
-        Vector3 startRefPoint = roundabout.laneReferencePoints[0];
         Vector2 centre = V3ToV2(roundabout.transform.position);
 
         // Lines creation
@@ -998,9 +983,40 @@ public class WorldGrid : MonoBehaviour
         ConnectNodesInRoad(road);
     }
 
+
     #endregion
 
     #region Auxiliar methods
+
+    // Method that finds a random node in roads, used to spawn a car in it and to acquire a new target node
+    public Node GetRandomNodeInRoads()
+    {
+        Node randomNode = null;
+        int numRoads = roads.Count;
+        int roadIndex = Random.Range(0, numRoads);
+        Road selectedRoad = roads[roadIndex];
+        // Do not select an intersection
+        while (selectedRoad.typeOfRoad == TypeOfRoad.Intersection)
+        {
+            roadIndex = Random.Range(0, numRoads);
+            selectedRoad = roads[roadIndex];
+        }
+        int numLanes = selectedRoad.numberOfLanes;
+        int selectedLane = Random.Range(0, numLanes);
+        int numNodes = selectedRoad.lanes[selectedLane].nodes.Count;
+        if (numNodes > 0)
+        {
+            int selectedNode = Random.Range(1, numNodes - 1);
+            randomNode = selectedRoad.lanes[selectedLane].nodes[selectedNode];
+        }
+
+        if (randomNode == null)
+        {
+            Debug.LogError("SE VA A LIAR");
+        }
+        return randomNode;
+    }
+
     private Vector2 V3ToV2(Vector3 v3)
     {
         return new Vector2(v3.x, v3.z);
@@ -1052,37 +1068,47 @@ public class WorldGrid : MonoBehaviour
     {
         Node closestNode = null;
         float bestDistance = float.PositiveInfinity;
-        RaycastHit hit;
-        Ray ray = new Ray(worldPoint + carForward + Vector3.up * 50, Vector3.down);
-        if (Physics.Raycast(ray, out hit, 100, roadMask))
+        Vector3[] rayPositions = new Vector3[3];
+        rayPositions[0] = worldPoint;
+        rayPositions[1] = worldPoint + carForward * 1.5f;
+        rayPositions[2] = worldPoint - carForward * 1.5f;
+        int i = 0;
+        while (closestNode == null && i < rayPositions.Length)
         {
-            GameObject _gameObject = hit.collider.gameObject;
-
-            Road road = _gameObject.GetComponent<Road>();
-            if (road)
+            RaycastHit hit;
+            Ray ray = new Ray(rayPositions[i] + Vector3.up * 50, Vector3.down);
+            if (Physics.Raycast(ray, out hit, 100, roadMask))
             {
-                foreach (Lane lane in road.lanes)
+                GameObject _gameObject = hit.collider.gameObject;
+
+                Road road = _gameObject.GetComponent<Road>();
+                if (road)
                 {
-                    foreach (Node node in lane.nodes)
+                    foreach (Lane lane in road.lanes)
                     {
-                        float currentDistance = Vector3.Distance(node.worldPosition, worldPoint);
-                        if (currentDistance <= bestDistance)
+                        foreach (Node node in lane.nodes)
                         {
-                            Vector3 dirToMovePosition = (node.worldPosition - worldPoint).normalized;
-                            float dot = Vector3.Dot(carForward, dirToMovePosition);
-                            if (dot > 0)
+                            float currentDistance = Vector3.Distance(node.worldPosition, worldPoint);
+                            if (currentDistance <= bestDistance)
                             {
-                                closestNode = node;
-                                bestDistance = currentDistance;
+                                Vector3 dirToMovePosition = (node.worldPosition - worldPoint).normalized;
+                                float dot = Vector3.Dot(carForward, dirToMovePosition);
+                                if (dot > 0)
+                                {
+                                    closestNode = node;
+                                    bestDistance = currentDistance;
+                                }
                             }
                         }
                     }
                 }
             }
+            i++;
         }
+
         if (closestNode == null)
         {
-            Debug.LogError("SE VA A ROMPER START");
+            Debug.LogError("SE ROMPIO EL START NODE LA CONCHA DE LA LORA");
         }
         return closestNode;
     }
@@ -1113,9 +1139,11 @@ public class WorldGrid : MonoBehaviour
                 }
             }
         }
-        if(closestNode == null)
+        if (closestNode == null)
         {
-            Debug.LogError("SE VA A ROMPER END");
+
+            Debug.LogError("SE ROMPIO EL END NODE LA CONCHA DE LA LORA");
+
         }
         return closestNode;
     }

@@ -52,6 +52,7 @@ public class TrafficLightScheduler : MonoBehaviour
                 case TrafficLightColor.Amber:
                     yield return new WaitForSeconds(amberTime);
                     // Se pone en rojo el que se tiene que poner
+                    currentColor = TrafficLightColor.Red;
                     SetNewColor(TrafficLightColor.Red);
                     // Ponemos en verde el nuevo semaforo
                     SetNewActiveTrafficLight();
@@ -76,7 +77,8 @@ public class TrafficLightScheduler : MonoBehaviour
 
     private void SetNewColor(TrafficLightColor color)
     {
-        currentTrafficLight.road.trafficLightEvents.LightChange(color);
+        currentTrafficLight.currentColor = color;
         currentTrafficLight.colorChanger.SetColor(color);
+        currentTrafficLight.road.trafficLightEvents.LightChange(color, false);
     }
 }

@@ -5,30 +5,27 @@ using UnityEngine;
 public class Pathfinding : MonoBehaviour
 {
     PathfinderRequestManager requestManager;
-    WorldGrid grid;
     void Awake()
     {
         requestManager = GetComponent<PathfinderRequestManager>();
-        grid = GetComponent<WorldGrid>();
     }
 
+    public void StartFindPath(Node startNode, Node targetNode)
+    {
+        StartCoroutine(FindPath(startNode, targetNode));
+    }
     public void StartFindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
     {
         StartCoroutine(FindPath(startPos, targetPos, carForward));
     }
 
-    // I need to find the closest node from startPost to targetPos
-    IEnumerator FindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
+    IEnumerator FindPath(Node startNode, Node targetNode)
     {
         Vector3[] waypoints = new Vector3[0];
         bool pathSuccess = false;
 
-        Node startNode = grid.FindStartNode(startPos, carForward);
         startNode.gCost = 0;
-        Node targetNode = grid.FindEndNode(targetPos);
-
-
-        Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
+        Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
         HashSet<Node> closedSet = new HashSet<Node>();
         openSet.Add(startNode);
 
@@ -50,11 +47,11 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                float newMovementCostToNeighbour = currentNode.gCost + GetAlternativeHeuristic(currentNode, neighbour);
                 if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                 {
                     neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
+                    neighbour.hCost = GetAlternativeHeuristic(neighbour, targetNode);
                     neighbour.parent = currentNode;
 
                     if (!openSet.Contains(neighbour))
@@ -74,7 +71,67 @@ public class Pathfinding : MonoBehaviour
         {
             waypoints = RetracePath(startNode, targetNode);
         }
-        requestManager.FinishedProcessingPath(waypoints, pathSuccess);
+        requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
+
+    }
+    // I need to find the closest node from startPost to targetPos
+    IEnumerator FindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
+    {
+        Vector3[] waypoints = new Vector3[0];
+        bool pathSuccess = false;
+
+        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
+        startNode.gCost = 0;
+        Node targetNode = WorldGrid.Instance.FindEndNode(targetPos);
+
+
+        Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
+        HashSet<Node> closedSet = new HashSet<Node>();
+        openSet.Add(startNode);
+
+        while (openSet.Count > 0)
+        {
+            Node currentNode = openSet.RemoveFirst();
+            closedSet.Add(currentNode);
+            if (currentNode == targetNode)
+            {
+                pathSuccess = true;
+                break;
+            }
+
+            foreach (Node neighbour in currentNode.neighbours)
+            {
+
+                if (closedSet.Contains(neighbour))
+                {
+                    continue;
+                }
+
+                float newMovementCostToNeighbour = currentNode.gCost + GetAlternativeHeuristic(currentNode, neighbour);
+                if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                {
+                    neighbour.gCost = newMovementCostToNeighbour;
+                    neighbour.hCost = GetAlternativeHeuristic(neighbour, targetNode);
+                    neighbour.parent = currentNode;
+
+                    if (!openSet.Contains(neighbour))
+                    {
+                        openSet.Add(neighbour);
+                    }
+                    else
+                    {
+                        openSet.UpdateItem(neighbour);
+                    }
+                }
+            }
+        }
+
+        yield return null;
+        if (pathSuccess)
+        {
+            waypoints = RetracePath(startNode, targetNode);
+        }
+        requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
 
     }
 
@@ -99,22 +156,22 @@ public class Pathfinding : MonoBehaviour
         return waypoints;
     }
 
-    Vector3[] SimplifyPath(List<Node> path)
-    {
-        List<Vector3> waypoints = new List<Vector3>();
-        Vector2 directionOld = Vector2.zero;
-        waypoints.Add(path[0].worldPosition);
-        for (int i = 1; i < path.Count; i++)
-        {
-            Vector2 directionNew = new Vector2(path[i - 1].worldPosition.x - path[i].worldPosition.x, path[i - 1].worldPosition.z - path[i].worldPosition.z);
-            if (directionNew != directionOld)
-            {
-                waypoints.Add(path[i].worldPosition);
-            }
-            directionOld = directionNew;
-        }
-        return waypoints.ToArray();
-    }
+    //Vector3[] SimplifyPath(List<Node> path)
+    //{
+    //    List<Vector3> waypoints = new List<Vector3>();
+    //    Vector2 directionOld = Vector2.zero;
+    //    waypoints.Add(path[0].worldPosition);
+    //    for (int i = 1; i < path.Count; i++)
+    //    {
+    //        Vector2 directionNew = new Vector2(path[i - 1].worldPosition.x - path[i].worldPosition.x, path[i - 1].worldPosition.z - path[i].worldPosition.z);
+    //        if (directionNew != directionOld)
+    //        {
+    //            waypoints.Add(path[i].worldPosition);
+    //        }
+    //        directionOld = directionNew;
+    //    }
+    //    return waypoints.ToArray();
+    //}
 
     float GetDistanceHeuristic(Node nodeA, Node nodeB)
     {

@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 355647666155603535}
   - component: {fileID: 355647666155603532}
   - component: {fileID: 355647666155603536}
-  - component: {fileID: 355647666155603534}
   - component: {fileID: 355647666155603533}
+  - component: {fileID: 3835732693800151094}
   m_Layer: 11
   m_Name: Car
   m_TagString: Untagged
@@ -35,6 +35,7 @@ Transform:
   - {fileID: 355647666310560056}
   - {fileID: 355647667887039392}
   - {fileID: 355647667269768991}
+  - {fileID: 1230340673063912609}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
@@ -65,8 +66,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.1257845, y: 1.1392574, z: 2.5038185}
-  m_Center: {x: -0.015741555, y: 0.53676593, z: -0.014059408}
+  m_Size: {x: 1.456542, y: 1.1392574, z: 2.4321551}
+  m_Center: {x: -0.0050135646, y: 0.53676593, z: -0.20898555}
 --- !u!114 &355647666155603536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,45 +80,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb772070f72ab294a9d73ef7ce96f6c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  speed: 2.5
-  turnSpeed: 3
-  turnDst: 0.7
-  stoppingDst: 1.5
+  speed: 3
+  turnSpeed: 3.2
+  turnDst: 1
   pathIndex: 0
+  speedPercent: 0
   shouldStopAtTrafficLight: 0
   shouldBrakeBeforeCar: 0
+  carStartBreakingDistance: 2
+  carStopDistance: 1
   frontCarPos: {x: 0, y: 0, z: 0}
+  carTarget: {fileID: 0}
+  pathRequested: 0
+  shouldStopPriority: 0
+  stopPosition: {x: 0, y: 0, z: 0}
   visualDebug: 0
---- !u!114 &355647666155603534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 355647666155603531}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2fb614d9108bbc448b4f0fe88881665c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  centerSensor: {fileID: 355647667188519731}
-  leftSensor: {fileID: 355647666982200993}
-  rightSensor: {fileID: 355647666873026547}
-  leftCarsSensor: {fileID: 355647666681846492}
-  rightCarsSensor: {fileID: 355647666536096751}
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 1024
-  carLayer:
-    serializedVersion: 2
-    m_Bits: 2048
-  objectHit: 0
-  obstacleRayDistance: 0.75
-  sideReach: 2
-  centerReach: 5
-  carRayDistance: 0.65
-  grid: {fileID: 0}
+  priorityLevel: 2
 --- !u!114 &355647666155603533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -130,8 +108,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d52d14bf6e209a945b67bb6fdf45b2ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodes: []
-  distanceToStopInAmberLight: 5
+  currentRoad: {fileID: 0}
+  trafficLight: {fileID: 0}
+--- !u!114 &3835732693800151094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 355647666155603531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9693a66a3ca021d4487dbccec7981de6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  carLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  signalLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  visualDebug: 0
 --- !u!1 &355647666310560055
 GameObject:
   m_ObjectHideFlags: 0
@@ -229,7 +229,7 @@ GameObject:
   m_Component:
   - component: {fileID: 355647666536096751}
   m_Layer: 0
-  m_Name: CarRightSensor
+  m_Name: RightSensor 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -242,13 +242,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666536096750}
-  m_LocalRotation: {x: 0, y: 0.08715578, z: 0, w: 0.9961947}
+  m_LocalRotation: {x: 0, y: 0.2588191, z: 0, w: 0.9659258}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 10, z: 0}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 30, z: 0}
 --- !u!1 &355647666681846491
 GameObject:
   m_ObjectHideFlags: 0
@@ -259,7 +259,7 @@ GameObject:
   m_Component:
   - component: {fileID: 355647666681846492}
   m_Layer: 0
-  m_Name: CarLeftSensor
+  m_Name: LeftSensor 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -272,13 +272,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666681846491}
-  m_LocalRotation: {x: 0, y: 0.08715578, z: 0, w: 0.9961947}
+  m_LocalRotation: {x: 0, y: -0.17364825, z: 0, w: 0.9848078}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 10, z: 0}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: -20, z: 0}
 --- !u!1 &355647666766185302
 GameObject:
   m_ObjectHideFlags: 0
@@ -384,13 +384,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666873026546}
-  m_LocalRotation: {x: 0, y: 0.13052616, z: 0, w: 0.9914449}
+  m_LocalRotation: {x: 0, y: 0.052335896, z: 0, w: 0.9986295}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 15, z: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 6, z: 0}
 --- !u!1 &355647666915564222
 GameObject:
   m_ObjectHideFlags: 0
@@ -496,13 +496,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355647666982200992}
-  m_LocalRotation: {x: 0, y: -0.13052624, z: 0, w: 0.9914449}
+  m_LocalRotation: {x: 0, y: -0.052335896, z: 0, w: 0.9986295}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 355647667269768991}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: -15, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -6, z: 0}
 --- !u!1 &355647667188519730
 GameObject:
   m_ObjectHideFlags: 0
@@ -562,8 +562,10 @@ Transform:
   m_Children:
   - {fileID: 355647667188519731}
   - {fileID: 355647666982200993}
-  - {fileID: 355647666873026547}
   - {fileID: 355647666681846492}
+  - {fileID: 2869831432993462079}
+  - {fileID: 355647666873026547}
+  - {fileID: 220661899470967250}
   - {fileID: 355647666536096751}
   m_Father: {fileID: 355647666155603537}
   m_RootOrder: 2
@@ -847,4 +849,249 @@ Transform:
   - {fileID: 355647667644538913}
   m_Father: {fileID: 355647666155603537}
   m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2258581593672210108
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5865581428883481575}
+  m_Layer: 0
+  m_Name: LeftSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5865581428883481575
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2258581593672210108}
+  m_LocalRotation: {x: 0, y: -0.06975647, z: 0, w: 0.9975641}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1230340673063912609}
+  m_RootOrder: 1
+  m_LocalEulerAnglesHint: {x: 0, y: -8, z: 0}
+--- !u!1 &2486669005513779731
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9206682791747474556}
+  m_Layer: 0
+  m_Name: RightSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9206682791747474556
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2486669005513779731}
+  m_LocalRotation: {x: 0, y: 0.06975647, z: 0, w: 0.9975641}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1230340673063912609}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 8, z: 0}
+--- !u!1 &3240598127034350622
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 220661899470967250}
+  m_Layer: 0
+  m_Name: RightSensor 2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &220661899470967250
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3240598127034350622}
+  m_LocalRotation: {x: 0, y: 0.17364816, z: 0, w: 0.9848078}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 355647667269768991}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 20, z: 0}
+--- !u!1 &5242106187519081294
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2869831432993462079}
+  m_Layer: 0
+  m_Name: LeftSensor 3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2869831432993462079
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5242106187519081294}
+  m_LocalRotation: {x: 0, y: -0.258819, z: 0, w: 0.9659259}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 355647667269768991}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: -30, z: 0}
+--- !u!1 &6962171570562382810
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6487052091767480329}
+  m_Layer: 0
+  m_Name: CarLeftSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6487052091767480329
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6962171570562382810}
+  m_LocalRotation: {x: 0, y: -0.258819, z: 0, w: 0.9659259}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1230340673063912609}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 0, y: -30, z: 0}
+--- !u!1 &7285394640456971201
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 508150244462442036}
+  m_Layer: 0
+  m_Name: CarRightSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &508150244462442036
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7285394640456971201}
+  m_LocalRotation: {x: 0, y: 0.2588191, z: 0, w: 0.9659258}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1230340673063912609}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 30, z: 0}
+--- !u!1 &7847890338774079374
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8043893597220807234}
+  m_Layer: 0
+  m_Name: CenterSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8043893597220807234
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7847890338774079374}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1230340673063912609}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8671900909582558851
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1230340673063912609}
+  m_Layer: 0
+  m_Name: DriverPos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1230340673063912609
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8671900909582558851}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.54, y: 0.466, z: 1.23}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 8043893597220807234}
+  - {fileID: 5865581428883481575}
+  - {fileID: 9206682791747474556}
+  - {fileID: 6487052091767480329}
+  - {fileID: 508150244462442036}
+  m_Father: {fileID: 355647666155603537}
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

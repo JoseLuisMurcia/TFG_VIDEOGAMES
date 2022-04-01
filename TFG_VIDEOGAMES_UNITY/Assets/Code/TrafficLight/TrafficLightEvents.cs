@@ -6,12 +6,12 @@ using UnityEngine;
 public class TrafficLightEvents : MonoBehaviour
 {
 
-    public event Action<TrafficLightColor> onLightChange;
-    public void LightChange(TrafficLightColor newColor)
+    public event Action<TrafficLightColor, bool> onLightChange;
+    public void LightChange(TrafficLightColor newColor, bool subscription)
     {
         if(onLightChange != null)
         {
-            onLightChange(newColor);
+            onLightChange(newColor, subscription);
         }
     }
 }
