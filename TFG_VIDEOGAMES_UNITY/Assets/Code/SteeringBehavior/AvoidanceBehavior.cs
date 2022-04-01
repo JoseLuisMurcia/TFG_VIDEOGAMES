@@ -18,13 +18,15 @@ public class AvoidanceBehavior
     LayerMask obstacleLayer, carLayer;
     private Transform transform;
     private bool visualDebug;
+    private PriorityBehavior priorityBehavior;
 
-    public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
+    public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController, PriorityBehavior _priorityBehavior)
     {
         carLayer = _carLayer;
         obstacleLayer = _obstacleLayer;
         whiskers = _whiskers;
         pathFollower = _pathFollower;
+        priorityBehavior = _priorityBehavior;
         trafficLightController = _trafficLightCarController;
     }
 
@@ -46,13 +48,14 @@ public class AvoidanceBehavior
     {
         if (carTarget != null)
         {
+            float distance = 3.5f;
             if (trafficLightController.currentRoad != null)
             {
                 if (DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
                 {
                     UnableTarget();
                 }
-                else if (Vector3.Distance(carTarget.position, transform.position) > 4.5)
+                else if (Vector3.Distance(carTarget.position, transform.position) > distance)
                 {
                     UnableTarget();
                 }
@@ -64,7 +67,7 @@ public class AvoidanceBehavior
             }
             else
             {
-                if (Vector3.Distance(carTarget.position, transform.position) > 4.5)
+                if (Vector3.Distance(carTarget.position, transform.position) > distance)
                 {
                     UnableTarget();
                 }
@@ -82,12 +85,14 @@ public class AvoidanceBehavior
         hasTarget = false;
         pathFollower.carTarget = null;
         pathFollower.shouldBrakeBeforeCar = false;
+        pathFollower.targetPriorityBehavior = null;
     }
 
     private void EnableTarget()
     {
         pathFollower.carTarget = carTarget;
         hasTarget = true;
+        pathFollower.targetPriorityBehavior = carTarget.GetComponent<PathFollower>().priorityBehavior;
         pathFollower.shouldBrakeBeforeCar = true;
         Debug.DrawLine(rayOrigin, carTarget.position, Color.magenta);
     }

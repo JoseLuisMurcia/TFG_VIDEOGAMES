@@ -32,6 +32,8 @@ public class PathFollower : MonoBehaviour
     public bool pathRequested = false;
     public bool shouldStopPriority = false;
     public Vector3 stopPosition = Vector3.zero;
+    [HideInInspector] public PriorityBehavior targetPriorityBehavior;
+    [HideInInspector] public PriorityBehavior priorityBehavior;
 
     [HideInInspector] TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
