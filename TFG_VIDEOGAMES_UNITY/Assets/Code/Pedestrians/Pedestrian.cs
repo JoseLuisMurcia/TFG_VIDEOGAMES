@@ -7,11 +7,13 @@ public class Pedestrian : MonoBehaviour
 {
     public Camera cam;
     public NavMeshAgent agent;
+    float turnSpeed = 0.1f;
     // Start is called before the first frame update
     void Start()
     {
         cam = Camera.main;
         agent = GetComponent<NavMeshAgent>();
+        //PedestrianSpawner.instance.spa
     }
 
     // Update is called once per frame
@@ -23,8 +25,7 @@ public class Pedestrian : MonoBehaviour
             RaycastHit hit;
             if(Physics.Raycast(ray, out hit))
             {
-                //Vector3.Lerp();
-                //transform.LookAt(hit.point, Vector3.up);
+
                 StartCoroutine(LookAtTarget(hit.point));
             }
         }
@@ -36,11 +37,10 @@ public class Pedestrian : MonoBehaviour
         float t = 0;
         Quaternion initialRotation = transform.rotation;
         Vector3 direction = target - transform.position;
-        transform.rotation = initialRotation;
         while (t < 1)
         {
-            Quaternion.Slerp(initialRotation, Quaternion.LookRotation(direction), t);
-            t += 0.1f;
+            transform.rotation = Quaternion.Slerp(initialRotation, Quaternion.LookRotation(direction), t);
+            t += 0.0001f;
         }
         agent.SetDestination(target);
         yield return null;
