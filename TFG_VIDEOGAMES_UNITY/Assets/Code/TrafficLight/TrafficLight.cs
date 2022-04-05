@@ -58,6 +58,9 @@ public class TrafficLight : MonoBehaviour
                 break;
         }
         Gizmos.DrawSphere(transform.position + Vector3.up * 3f, 0.7f);
+
+        //Gizmos.color = Color.cyan;
+        //Gizmos.DrawSphere(rayPos, .5f);
     }
 
 }

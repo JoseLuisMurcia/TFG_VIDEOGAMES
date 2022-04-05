@@ -19,9 +19,9 @@ public class Pedestrian : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (UnityEngine.Input.GetMouseButtonDown(0))
         {
-            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cam.ScreenPointToRay(UnityEngine.Input.mousePosition);
             RaycastHit hit;
             if(Physics.Raycast(ray, out hit))
             {
