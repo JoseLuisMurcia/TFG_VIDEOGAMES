@@ -28,11 +28,14 @@ public class Road : MonoBehaviour
     [SerializeField] public bool invertPath;
 
     [HideInInspector] public float boxColliderSize;
+    [HideInInspector] public Bounds bounds;
+
     private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
+        bounds = GetComponent<MeshFilter>().mesh.bounds;
         leftBottom = gameObject.transform.Find("LeftBottom");
         SetConnections();
         SetLanes();
@@ -203,7 +206,8 @@ public enum TypeOfRoad
     Curve,
     Roundabout,
     Split,
-    Deviation
+    Deviation,
+    Slant
 }
 
 public enum NumDirection

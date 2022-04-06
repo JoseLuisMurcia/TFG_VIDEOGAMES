@@ -81,6 +81,9 @@ public class WorldGrid : MonoBehaviour
                 case TypeOfRoad.Roundabout:
                     CreateNodesForRoundabout((Roundabout)road);
                     break;
+                case TypeOfRoad.Slant:
+                    CreateNodesForSlant(road);
+                    break;
             }
         }
         ConnectAllRoads();
@@ -779,6 +782,130 @@ public class WorldGrid : MonoBehaviour
         ConnectNodesInRoad(road);
     }
 
+    private void CreateNodesForSlant(Road road)
+    {
+        int numberOfLanes = road.numberOfLanes;
+        List<Vector3> referencePoints = road.laneReferencePoints;
+        int numNodes = referencePoints.Count;
+        Vector3 startRefPoint = referencePoints[0];
+        Vector3 endRefPoint = referencePoints[numNodes-1];
+        float zWidth = road.bounds.extents.z;
+        zWidth = road.bounds.extents.z * road.transform.localScale.z * 0.7f;
+        float xWidth = road.bounds.extents.x;
+
+        // Calculate the offset points
+        Vector3[][] lanePositions = new Vector3[numberOfLanes][];
+        for (int i = 0; i < numberOfLanes; i++)
+        {
+            lanePositions[i] = new Vector3[numNodes];
+            for (int j = 0; j < numNodes; j++)
+            {
+                if (numberOfLanes == 1)
+                {
+                    lanePositions[i][j] = referencePoints[j];
+                }
+                else if (numberOfLanes == 2)
+                {
+                    float distance = zWidth * .5f;
+                    switch (i)
+                    {
+                        case 0:
+                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance;
+                            break;
+                        case 1:
+                            if (road.numDirection == NumDirection.OneDirectional)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance;
+                            }
+                            else
+                            {
+                                int inverseJ = numNodes - j - 1;
+                                lanePositions[i][inverseJ] = referencePoints[j] + road.transform.forward * distance;
+                            }
+                            break;
+                    }
+
+                }
+                else if (numberOfLanes == 4)
+                {
+                    float distance = zWidth;
+                    int inverseJ = numNodes - j - 1;
+                    switch (i)
+                    {
+                        case 0:
+                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance * .8f;
+                            break;
+                        case 1:
+                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance * .3f;
+                            break;
+                        case 2:
+                            if (road.numDirection == NumDirection.OneDirectional)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance * .3f;
+                            }
+                            else
+                            {
+                                lanePositions[i][inverseJ] = referencePoints[j] + road.transform.forward * distance * .3f;
+                            }
+                            break;
+                        case 3:
+                            if (road.numDirection == NumDirection.OneDirectional)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance * .8f;
+                            }
+                            else
+                            {
+                                lanePositions[i][inverseJ] = referencePoints[j] + road.transform.forward * distance * .8f;
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        if (road.invertPath)
+        {
+            Vector3[][] invertedLanePositions = new Vector3[numberOfLanes][];
+            for (int i = 0; i < numberOfLanes; i++)
+            {
+                invertedLanePositions[i] = new Vector3[numNodes];
+                for (int j = 0; j < numNodes; j++)
+                {
+                    invertedLanePositions[i][numNodes - j - 1] = lanePositions[i][j];
+                }
+            }
+
+            lanePositions = invertedLanePositions;
+        }
+
+        // With the lines and the offsets created, find points in the line matching the lane offset calculated before for each lane.
+        for (int i = 0; i < numberOfLanes; i++)
+        {
+            Vector3 laneStartPoint = lanePositions[i][0];
+            Vector3 laneEndPoint = lanePositions[i][numNodes - 1];
+            debugNodes.Add(laneStartPoint);
+            Node entryNode = new Node(laneStartPoint, road);
+            Node exitNode = new Node(laneEndPoint, road);
+            grid.Add(entryNode);
+            road.lanes[i].nodes.Add(entryNode);
+            road.entryNodes.Add(entryNode);
+            road.exitNodes.Add(exitNode);
+            Node previousNode = entryNode;
+
+            for (int j = 1; j < numNodes - 1; j++)
+            {
+                Node newNode = new Node(lanePositions[i][j], road);
+                previousNode.AddNeighbour(newNode);
+                previousNode = newNode;
+                grid.Add(newNode);
+                road.lanes[i].nodes.Add(newNode);
+            }
+            previousNode.AddNeighbour(exitNode);
+            road.lanes[i].nodes.Add(exitNode);
+            grid.Add(exitNode);
+        }
+        ConnectNodesInRoad(road);
+    }
     private List<Line> CreateLinesForRoadPoints(Road road)
     {
         List<Vector3> referencePoints = road.laneReferencePoints;
@@ -1020,11 +1147,6 @@ public class WorldGrid : MonoBehaviour
     private Vector2 V3ToV2(Vector3 v3)
     {
         return new Vector2(v3.x, v3.z);
-    }
-
-    private Vector2 V2ToV3(Vector2 v2)
-    {
-        return new Vector3(v2.x, 0f, v2.y);
     }
 
     private Vector3 GetOppositeVector(Vector3 origin, Vector3 anchor)

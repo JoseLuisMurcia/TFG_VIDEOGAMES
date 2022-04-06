@@ -28,7 +28,7 @@ public class ProceduralRoad : MonoBehaviour
     [SerializeField] public bool invertPath;
 
     [HideInInspector] public float boxColliderSize;
-    private MeshRenderer meshRenderer;
+    private MeshFilter meshFilter;
     private void Awake()
     {
         trafficLightEvents = GetComponent<TrafficLightEvents>();
@@ -59,7 +59,7 @@ public class ProceduralRoad : MonoBehaviour
         {
             CreateIntersectionPriorityTriggers();
         }
-        meshRenderer = GetComponent<MeshRenderer>();
+        meshFilter = GetComponent<MeshFilter>();
     }
 
     private void CreateIntersectionPriorityTriggers()
@@ -200,17 +200,18 @@ public class ProceduralRoad : MonoBehaviour
         {
             Gizmos.DrawRay(rayPos, new Vector3(0, 5, 0));
         }
-        if (meshRenderer)
+        if (meshFilter)
         {
-            Vector3 size = Vector3.one * .25f;
+            Bounds bounds = meshFilter.mesh.bounds;
+            Vector3 center = transform.TransformPoint(bounds.center);
+            Vector3 size = Vector3.one * .1f;
             Gizmos.color = Color.cyan;
-            Gizmos.DrawCube(meshRenderer.bounds.center, size);
-            Gizmos.color = Color.red;
-            Gizmos.DrawCube(meshRenderer.bounds.center + meshRenderer.bounds.extents, size);
-            Vector3 startPoint = meshRenderer.bounds.center + new Vector3(meshRenderer.bounds.extents.x, 0, meshRenderer.bounds.extents.z);
-            Vector3 endPoint = meshRenderer.bounds.center - new Vector3(meshRenderer.bounds.extents.x, 0, meshRenderer.bounds.extents.z);
-            Gizmos.DrawCube(startPoint, size);
-            Gizmos.DrawCube(endPoint, size);
+            Gizmos.DrawCube(center, size);
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawCube(transform.TransformPoint(bounds.min), size);
+            //Gizmos.DrawCube(center + new Vector3(bounds.min.x * transform.localScale.x, bounds.min.y * transform.localScale.y, bounds.min.z * transform.localScale.z), size);
+            Gizmos.DrawCube(transform.TransformPoint(bounds.max), size);
+            //Gizmos.DrawCube(center + new Vector3(bounds.max.x * transform.localScale.x, bounds.max.y * transform.localScale.y, bounds.max.z * transform.localScale.z), size);
         }
         
     }
