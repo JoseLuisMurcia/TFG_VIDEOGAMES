@@ -207,13 +207,15 @@ public enum TypeOfRoad
     Roundabout,
     Split,
     Deviation,
-    Slant
+    Slant,
+    Bridge
 }
 
 public enum NumDirection
 {
     OneDirectional,
-    TwoDirectional
+    TwoDirectional,
+    ZERO
 }
 public class Lane
 {

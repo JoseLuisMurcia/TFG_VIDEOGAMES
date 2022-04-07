@@ -196,10 +196,10 @@ public class ProceduralRoad : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        foreach (Vector3 rayPos in rayPositions)
-        {
-            Gizmos.DrawRay(rayPos, new Vector3(0, 5, 0));
-        }
+        //foreach (Vector3 rayPos in rayPositions)
+        //{
+        //    Gizmos.DrawRay(rayPos, new Vector3(0, 5, 0));
+        //}
         if (meshFilter)
         {
             Bounds bounds = meshFilter.mesh.bounds;
