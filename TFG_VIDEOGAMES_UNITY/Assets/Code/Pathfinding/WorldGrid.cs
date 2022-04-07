@@ -52,7 +52,6 @@ public class WorldGrid : MonoBehaviour
             }
         }
     }
-
     void CreateGrid()
     {
         grid = new List<Node>();
@@ -91,7 +90,6 @@ public class WorldGrid : MonoBehaviour
         }
         ConnectAllRoads();
     }
-
     private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode)
     {
         if (distance < 3f && dot > 0)
@@ -104,7 +102,6 @@ public class WorldGrid : MonoBehaviour
             grid.Add(unionNode);
         }
     }
-
     private void ConnectAllRoads()
     {
         // Connect the exit and entry nodes in the roads
@@ -118,6 +115,10 @@ public class WorldGrid : MonoBehaviour
                 {
                     foreach (Node neighbourEntryNode in connection.entryNodes)
                     {
+                        if(road.typeOfRoad == TypeOfRoad.Bridge)
+                        {
+                            Debug.Log("Hello bridge hehe");
+                        }
                         float distance = Vector3.Distance(exitNode.worldPosition, neighbourEntryNode.worldPosition);
                         // Check dot, you cant connect an exit node to an entry that's behind
                         Vector3 exitNodeForward = (exitNode.worldPosition - exitNode.previousNode.worldPosition).normalized;
@@ -154,9 +155,6 @@ public class WorldGrid : MonoBehaviour
 
         }
     }
-
-
-
     private void ConnectRoadsThroughIntersection(Road road)
     {
         // maxDistance should be generated taking into account the bounds size
@@ -277,7 +275,6 @@ public class WorldGrid : MonoBehaviour
     }
 
     #region Node creation
-
 
     private void CreateNodesForSplit(Split road)
     {
@@ -920,10 +917,9 @@ public class WorldGrid : MonoBehaviour
         Vector3 upperEndPoint = RotatePointAroundPivot(endPoint, middlePoint, angles);
         upperEndPoint.y = upperBridgeHeight;
 
-        CreateNodesFromStartAndEnd(road, startPoint, endPoint, road.lowerNumDirection, road.invertLowerRoad, road.lowerRoadNumLanes, false, road.lowerLanes);
-        CreateNodesFromStartAndEnd(road, upperStartPoint, upperEndPoint, road.upperNumDirection, road.invertUpperRoad, road.upperRoadNumLanes, true, road.upperLanes);
+        CreateNodesFromStartAndEnd(road, startPoint, endPoint, road.lowerNumDirection, road.invertLowerRoad, road.lowerRoadNumLanes, false, road.lanes);
+        CreateNodesFromStartAndEnd(road, upperStartPoint, upperEndPoint, road.upperNumDirection, road.invertUpperRoad, road.upperRoadNumLanes, true, road.lanes);
     }
-
     private void CreateNodesFromStartAndEnd(Road road, Vector3 start, Vector3 end, NumDirection numDirection, bool invert, int numberOfLanes, bool upperBridge, List<Lane> lanes)
     {
         Vector3[] startPoints = new Vector3[numberOfLanes];
