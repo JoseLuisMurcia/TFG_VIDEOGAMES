@@ -156,6 +156,62 @@ public class WorldGrid : MonoBehaviour
                         }
 
                     }
+                    else if(connection.numberOfLanes == 2 && connection.numDirection == NumDirection.OneDirectional)
+                    {
+                        // Crear punto medio entre el entry y exit correspondiente
+                        // Este punto medio será entry o exit si el nodo más cercano de la connection es entry o exit
+                        // Si el nodo mas cercano
+                        Node closestEntryNode = null;
+                        Node closestExitNode = null;
+                        float distance;
+                        float bestDistance = Mathf.Infinity;
+
+                        Node closestNodeFromConnection = GetClosestNodeToRoadFromConnection(road.exitNodes[0], connection);
+                        foreach (Node exitNode in road.exitNodes)
+                        {
+                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, exitNode.worldPosition);
+                            if (distance < bestDistance)
+                            {
+                                closestExitNode = exitNode;
+                                bestDistance = distance;
+                            }
+                        }
+                        bestDistance = Mathf.Infinity;
+                        foreach (Node entryNode in road.entryNodes)
+                        {
+                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, entryNode.worldPosition);
+                            if (distance < bestDistance)
+                            {
+                                closestEntryNode = entryNode;
+                                bestDistance = distance;
+                            }
+                        }
+
+                        // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
+                        if (connection.entryNodes.Contains(closestNodeFromConnection))
+                        {
+                            grid.Remove(closestEntryNode);
+                            debugNodes.Remove(closestEntryNode.worldPosition);
+                            road.entryNodes.Remove(closestEntryNode);
+
+                            debugNodes.Remove(closestExitNode.worldPosition);
+                            Vector3 newPos = (closestEntryNode.worldPosition + closestExitNode.worldPosition) * .5f;
+                            closestExitNode.worldPosition = newPos;
+
+                        }
+                        else // Es un nodo exit y tenemos que crear un entry, podemos borrar nuestro nodo exit
+                        {
+                            grid.Remove(closestExitNode);
+                            closestExitNode.previousNode.neighbours.Remove(closestExitNode);
+                            debugNodes.Remove(closestExitNode.worldPosition);
+                            road.exitNodes.Remove(closestExitNode);
+
+                            debugNodes.Remove(closestEntryNode.worldPosition);
+                            Vector3 newPos = closestEntryNode.worldPosition * .75f + closestExitNode.worldPosition * .25f;
+                            debugNodes.Add(newPos);
+                            closestEntryNode.worldPosition = newPos;
+                        }
+                    } 
                 }
             }
         }
