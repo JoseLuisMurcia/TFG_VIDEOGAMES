@@ -1125,6 +1125,7 @@ public class WorldGrid : MonoBehaviour
             // Calculate all the possible nodes that could fit in a reasonable distance
             float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
             float xDistance = GetDistanceToReach(entryNode.worldPosition.x, exitNode.worldPosition.x);
+            float yDistance = GetDistanceToReach(entryNode.worldPosition.y, exitNode.worldPosition.y);
             float zDistance = GetDistanceToReach(entryNode.worldPosition.z, exitNode.worldPosition.z);
             int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
             int nodesToAdd = totalNodesInRoad - 2;
@@ -1137,7 +1138,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     float multiplier = j / ((float)nodesToAdd + 1f);
                     Vector3 newNodePos;
-                    newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
+                    newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y + yDistance * multiplier, entryNode.worldPosition.z + zDistance * multiplier);
                     Node newNode = new Node(newNodePos, road);
                     previousNode.AddNeighbour(newNode);
                     grid.Add(newNode);

@@ -122,8 +122,6 @@ public class Road : MonoBehaviour
             box.isTrigger = true;
             box.size = Vector3.one * 3;
             IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>() as IntersectionTriggers;
-
-
             num++;
         }
 
