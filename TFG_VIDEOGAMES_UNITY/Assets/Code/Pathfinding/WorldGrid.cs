@@ -88,8 +88,90 @@ public class WorldGrid : MonoBehaviour
                     break;
             }
         }
+        RoundaboutCorrection();
         ConnectAllRoads();
     }
+    private void RoundaboutCorrection()
+    {
+        foreach (Road road in roads)
+        {
+            if (road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                foreach (Road connection in road.connections)
+                {
+                    if (connection.numberOfLanes == 1)
+                    {
+                        // Crear punto medio entre el entry y exit correspondiente
+                        // Este punto medio será entry o exit si el nodo más cercano de la connection es entry o exit
+                        // Si el nodo mas cercano
+                        Node closestEntryNode = null;
+                        Node closestExitNode = null;
+                        float distance;
+                        float bestDistance = Mathf.Infinity;
+
+                        Node closestNodeFromConnection = GetClosestNodeToRoadFromConnection(road.exitNodes[0], connection);
+                        foreach (Node exitNode in road.exitNodes)
+                        {
+                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, exitNode.worldPosition);
+                            if (distance < bestDistance)
+                            {
+                                closestExitNode = exitNode;
+                                bestDistance = distance;
+                            }
+                        }
+                        bestDistance = Mathf.Infinity;
+                        foreach (Node entryNode in road.entryNodes)
+                        {
+                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, entryNode.worldPosition);
+                            if (distance < bestDistance)
+                            {
+                                closestEntryNode = entryNode;
+                                bestDistance = distance;
+                            }
+                        }
+
+                        // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
+                        if (connection.entryNodes.Contains(closestNodeFromConnection))
+                        {
+                            grid.Remove(closestEntryNode);
+                            debugNodes.Remove(closestEntryNode.worldPosition);
+                            road.entryNodes.Remove(closestEntryNode);
+
+                            debugNodes.Remove(closestExitNode.worldPosition);
+                            Vector3 newPos = (closestEntryNode.worldPosition + closestExitNode.worldPosition) * .5f;
+                            closestExitNode.worldPosition = newPos;
+
+                        }
+                        else // Es un nodo exit y tenemos que crear un entry, podemos borrar nuestro nodo exit
+                        {
+                            grid.Remove(closestExitNode);
+                            closestExitNode.previousNode.neighbours.Remove(closestExitNode);
+                            debugNodes.Remove(closestExitNode.worldPosition);
+                            road.exitNodes.Remove(closestExitNode);
+
+                            debugNodes.Remove(closestEntryNode.worldPosition);
+                            Vector3 newPos = (closestEntryNode.worldPosition + closestExitNode.worldPosition) * .5f;
+                            debugNodes.Add(newPos);
+                            closestEntryNode.worldPosition = newPos;
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+    private Node GetClosestNodeToRoadFromConnection(Node node, Road connection)
+    {
+        Node entryNode = connection.entryNodes[0];
+        Node exitNode = connection.exitNodes[0];
+        if (Vector3.Distance(entryNode.worldPosition, node.worldPosition) > Vector3.Distance(exitNode.worldPosition, node.worldPosition))
+        {
+            return exitNode;
+        }
+        return entryNode;
+    }
+
     private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode)
     {
         if (distance < 3f && dot > 0)
@@ -115,10 +197,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     foreach (Node neighbourEntryNode in connection.entryNodes)
                     {
-                        if(road.typeOfRoad == TypeOfRoad.Bridge)
-                        {
-                            Debug.Log("Hello bridge hehe");
-                        }
+
                         float distance = Vector3.Distance(exitNode.worldPosition, neighbourEntryNode.worldPosition);
                         // Check dot, you cant connect an exit node to an entry that's behind
                         Vector3 exitNodeForward = (exitNode.worldPosition - exitNode.previousNode.worldPosition).normalized;
@@ -575,10 +654,10 @@ public class WorldGrid : MonoBehaviour
         foreach (Transform entry in entries)
         {
             debugNodes.Add(entry.position);
+            Node entryNode = new Node(entry.position, roundabout);
+            roundabout.entryNodes.Add(entryNode);
+            grid.Add(entryNode);
 
-        }
-        foreach (Transform entry in entries)
-        {
             foreach (Lane lane in roundabout.lanes)
             {
                 float bestDistance = Mathf.Infinity;
@@ -594,14 +673,15 @@ public class WorldGrid : MonoBehaviour
                     }
                 }
                 // Connect the best node to the entry
-                Node entryNode = new Node(entry.position, roundabout);
-                roundabout.entryNodes.Add(entryNode);
                 entryNode.AddNeighbour(bestNode);
-                grid.Add(entryNode);
+
             }
         }
         foreach (Transform exit in exits)
         {
+            Node exitNode = new Node(exit.position, roundabout);
+            roundabout.exitNodes.Add(exitNode);
+            grid.Add(exitNode);
             foreach (Lane lane in roundabout.lanes)
             {
                 float bestDistance = Mathf.Infinity;
@@ -617,10 +697,8 @@ public class WorldGrid : MonoBehaviour
                     }
                 }
                 // Connect the best node to the exit
-                Node exitNode = new Node(exit.position, roundabout);
-                roundabout.exitNodes.Add(exitNode);
                 bestNode.AddNeighbour(exitNode);
-                grid.Add(exitNode);
+
             }
         }
     }

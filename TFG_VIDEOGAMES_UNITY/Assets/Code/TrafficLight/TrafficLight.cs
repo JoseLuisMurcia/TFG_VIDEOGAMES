@@ -39,6 +39,7 @@ public class TrafficLight : MonoBehaviour
             if(road != null)
             {
                 road.trafficLight = this;
+                road.CreateTrafficLightTriggers();
             }
         }
     }
