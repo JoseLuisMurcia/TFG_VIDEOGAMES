@@ -79,7 +79,7 @@ public class PathFollower : MonoBehaviour
         }
         else
         {
-            Debug.Log("Va a haber problemas");
+            Debug.Log("Path not found for car: " + gameObject.name);
         }
     }
 

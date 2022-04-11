@@ -16,6 +16,7 @@ public class Bridge : Road
         typeOfRoad = TypeOfRoad.Bridge;
         numDirection = NumDirection.ZERO;
         SetLanes();
+        Destroy(boxCollider);
     }
     private void SetLanes()
     {
