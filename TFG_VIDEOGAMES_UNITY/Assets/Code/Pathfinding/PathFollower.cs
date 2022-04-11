@@ -6,12 +6,11 @@ public class PathFollower : MonoBehaviour
 {
     const float minPathUpdateTime = .2f;
 
-    private Vector3 target;
     [SerializeField] float speed = 4;
     [SerializeField] float turnSpeed = 4;
     [SerializeField] float turnDst = 3;
     public int pathIndex = 0;
-    Path path;
+    Path path = null;
     [SerializeField] public float speedPercent = 0f;
 
     // Stop at traffic light variables
@@ -41,7 +40,7 @@ public class PathFollower : MonoBehaviour
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
-    private static float minDistanceToSpawnNewTarget = 20f;
+    private static float minDistanceToSpawnNewTarget = 18f;
 
     public PriorityLevel priorityLevel = PriorityLevel.Max;
 
@@ -56,8 +55,24 @@ public class PathFollower : MonoBehaviour
         float speedMultiplier = Random.Range(1f, 1.01f);
         speed *= speedMultiplier;
         turnSpeed *= speedMultiplier;
-        StartCoroutine(UpdatePath());
         trafficLightCarController = GetComponent<TrafficLightCarController>();
+    }
+
+    public void StartPathfinding(Node _startNode)
+    {
+        float newDistance = 0f;
+        Vector3 newTargetPos = Vector3.zero;
+        Node newNode = null;
+        while (newDistance < minDistanceToSpawnNewTarget)
+        {
+            newNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+            newTargetPos = newNode.worldPosition;
+            newDistance = Vector3.Distance(_startNode.worldPosition, newTargetPos);
+        }
+
+        PathfinderRequestManager.RequestPath(_startNode, newNode, transform.forward, OnPathFound);
+        pathRequested = true;
+        StartCoroutine(UpdatePath());
     }
 
     public void OnPathFound(Vector3[] waypoints, bool pathSuccessful, Node _startNode, Node _endNode)
@@ -79,32 +94,48 @@ public class PathFollower : MonoBehaviour
         }
         else
         {
+            path = null;
+            SpawnSpheres(_startNode.worldPosition, _endNode.worldPosition);
             Debug.Log("Path not found for car: " + gameObject.name);
         }
     }
 
+    private void SpawnSpheres(Vector3 _startNode, Vector3 _endNode)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform.parent;
+        startSphere.transform.position = _startNode + Vector3.up;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
+
+        GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        endSphere.transform.parent = transform.parent;
+        endSphere.transform.position = _endNode + Vector3.up;
+        endSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
+    }
+
     IEnumerator UpdatePath()
     {
-
-        if (Time.timeSinceLevelLoad < .3f)
-        {
-            yield return new WaitForSeconds(.3f);
-        }
-        if (target == Vector3.zero)
-        {
-            target = WorldGrid.Instance.GetRandomNodeInRoads().worldPosition;
-        }
-        PathfinderRequestManager.RequestPath(transform.position, target, transform.forward, OnPathFound);
+        //if (Time.timeSinceLevelLoad < .3f)
+        //{
+        //    yield return new WaitForSeconds(.3f);
+        //}
+        //if (target == Vector3.zero)
+        //{
+        //    target = WorldGrid.Instance.GetRandomNodeInRoads().worldPosition;
+        //}
+        //PathfinderRequestManager.RequestPath(transform.position, target, transform.forward, OnPathFound);
 
         while (true)
         {
             yield return new WaitForSeconds(minPathUpdateTime);
-
-            float distance = Vector3.Distance(transform.position, target);
-            if (distance < 3f)
+            if(path != null)
             {
-                RequestNewPath();
-            }
+                float distance = Vector3.Distance(transform.position, endNode.worldPosition);
+                if (distance < 3f)
+                {
+                    RequestNewPath();
+                }
+            }  
         }
     }
 
@@ -145,17 +176,15 @@ public class PathFollower : MonoBehaviour
 
         float newDistance = 0f;
         Vector3 newTargetPos = Vector3.zero;
-        Vector3 oldPos = target;
         Node newNode = null;
         while (newDistance < minDistanceToSpawnNewTarget)
         {
             newNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
             newTargetPos = newNode.worldPosition;
-            newDistance = Vector3.Distance(oldPos, newTargetPos);
+            newDistance = Vector3.Distance(endNode.worldPosition, newTargetPos);
         }
 
         PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
-        target = newTargetPos;
         pathRequested = true;
     }
 

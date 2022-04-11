@@ -19,12 +19,12 @@ public class PathfinderRequestManager : MonoBehaviour
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
-    {
-        PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
-        instance.pathRequestQueue.Enqueue(newRequest);
-        instance.TryProcessNext();
-    }
+    //public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
+    //{
+    //    PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
+    //    instance.pathRequestQueue.Enqueue(newRequest);
+    //    instance.TryProcessNext();
+    //}
 
     public static void RequestPath(Node pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
     {
@@ -39,14 +39,14 @@ public class PathfinderRequestManager : MonoBehaviour
         {
             currentPathRequest = pathRequestQueue.Dequeue();
             isProcessingPath = true;
-            if (currentPathRequest.pathEnd != Vector3.zero)
-            {
-                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.carForward);
-            }
-            else
-            {
-                pathfinding.StartFindPath(currentPathRequest.nodeStart, currentPathRequest.nodeEnd);
-            }
+            //if (currentPathRequest.pathEnd != Vector3.zero)
+            //{
+            //    pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.carForward);
+            //}
+            //else
+            //{
+            pathfinding.StartFindPath(currentPathRequest.nodeStart, currentPathRequest.nodeEnd);
+            //}
         }
     }
 

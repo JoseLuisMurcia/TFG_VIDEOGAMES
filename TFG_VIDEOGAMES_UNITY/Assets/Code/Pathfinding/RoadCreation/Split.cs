@@ -16,6 +16,11 @@ public class Split : Road
 
         typeOfRoad = TypeOfRoad.Split;
         numberOfLanes = 2;
+
+        foreach (Transform child in transform)
+        {
+            child.gameObject.SetActive(false);
+        }
     }
 
 }

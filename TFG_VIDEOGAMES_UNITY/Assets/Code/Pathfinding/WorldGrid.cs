@@ -1282,7 +1282,7 @@ public class WorldGrid : MonoBehaviour
 
         if (randomNode == null)
         {
-            Debug.LogError("SE VA A LIAR");
+            Debug.LogError("SE ROMPIO EL GetRandomNodeInRoads PUTA MADRE");
         }
         return randomNode;
     }

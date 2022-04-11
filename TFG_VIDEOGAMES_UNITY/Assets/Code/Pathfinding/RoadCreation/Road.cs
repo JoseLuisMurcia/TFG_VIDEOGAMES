@@ -37,10 +37,6 @@ public class Road : MonoBehaviour
         pathCreator = GetComponent<PathCreator>();
         bounds = GetComponent<MeshFilter>().mesh.bounds;
         leftBottom = gameObject.transform.Find("LeftBottom");
-        foreach (Transform child in transform)
-        {
-            child.gameObject.SetActive(false);
-        }
         SetConnections();
         SetLanes();
         SortReferencePoints();
@@ -53,12 +49,7 @@ public class Road : MonoBehaviour
         {
             Destroy(boxCollider);
         }
-        else
-        {
-            Vector3 boxSize = boxCollider.size;
-            boxCollider.size = new Vector3(boxSize.x * .8f, boxSize.y, boxSize.z * .8f);
-            boxCollider.isTrigger = true;
-        }
+
 
         if (typeOfRoad == TypeOfRoad.Intersection)
         {
@@ -66,10 +57,10 @@ public class Road : MonoBehaviour
         }
 
 
-        foreach (Transform child in transform)
-        {
-            child.gameObject.SetActive(true);
-        }
+        //foreach (Transform child in transform)
+        //{
+        //    child.gameObject.SetActive(true);
+        //}
     }
 
     public void CreateTrafficLightTriggers()

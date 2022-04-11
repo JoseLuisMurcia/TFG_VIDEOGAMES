@@ -8,8 +8,12 @@ public class CarSpawner : MonoBehaviour
 
     public void SpawnOneCar()
     {
-        Vector3 randomPos = WorldGrid.Instance.GetRandomNodeInRoads().worldPosition;
-        Instantiate(carPrefab, randomPos, Quaternion.identity);
+        Node startNode = WorldGrid.Instance.GetRandomNodeInRoads();
+        GameObject instantiatedCar = Instantiate(carPrefab, startNode.worldPosition, Quaternion.identity);
+        // Spawn with the correct rotation
+        instantiatedCar.transform.LookAt(startNode.neighbours[0].worldPosition);
+        PathFollower pathFollower = instantiatedCar.GetComponent<PathFollower>();
+        pathFollower.StartPathfinding(startNode);
     }
 
     public void SpawnFiveCars()

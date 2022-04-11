@@ -23,7 +23,10 @@ public class Deviation : Road
         startPos = startTransform.position;
         endPos = endTransform.position;
 
-        
+        foreach (Transform child in transform)
+        {
+            child.gameObject.SetActive(false);
+        }
     }
 
     private void Sort2DirectionReferencePoints(PathCreator _pathCreator)

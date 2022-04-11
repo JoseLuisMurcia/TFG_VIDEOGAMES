@@ -27,12 +27,22 @@ public class Roundabout : Road
         laneWidth = Mathf.Abs(Vector3.Distance(pos1, pos2));
         typeOfRoad = TypeOfRoad.Roundabout;
         numDirection = NumDirection.OneDirectional;
+
+
+        Vector3 boxSize = boxCollider.size;
+        boxCollider.size = new Vector3(boxSize.x * .8f, boxSize.y, boxSize.z * .8f);
+        boxCollider.isTrigger = true;
+
+        foreach (Transform child in transform)
+        {
+            child.gameObject.SetActive(false);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
         WhiskersManager manager = other.gameObject.GetComponent<WhiskersManager>();
-        if(manager != null)
+        if (manager != null)
         {
             manager.RoundaboutTrigger(true);
         }
