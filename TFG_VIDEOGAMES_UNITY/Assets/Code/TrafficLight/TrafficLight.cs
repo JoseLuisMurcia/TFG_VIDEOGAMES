@@ -44,26 +44,6 @@ public class TrafficLight : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
-    {
-        switch (currentColor)
-        {
-            case TrafficLightColor.Green:
-                Gizmos.color = Color.green;
-                break;
-            case TrafficLightColor.Amber:
-                Gizmos.color = Color.yellow;
-                break;
-            case TrafficLightColor.Red:
-                Gizmos.color = Color.red;
-                break;
-        }
-        Gizmos.DrawSphere(transform.position + Vector3.up * 3f, 0.7f);
-
-        //Gizmos.color = Color.cyan;
-        //Gizmos.DrawSphere(rayPos, .5f);
-    }
-
 }
 
 public enum TrafficLightColor

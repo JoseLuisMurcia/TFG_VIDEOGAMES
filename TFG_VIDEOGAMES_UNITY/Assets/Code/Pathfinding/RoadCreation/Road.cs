@@ -79,7 +79,7 @@ public class Road : MonoBehaviour
             exitPos = laneReferencePoints[laneReferencePoints.Count - 1];
         }
 
-
+        entryPos = (entryPos + transform.position) * 0.5f;
         // Create the object
         GameObject entryTrigger = new GameObject("TrafficLight Entry Trigger");
         entryTrigger.transform.position = entryPos;
@@ -87,8 +87,7 @@ public class Road : MonoBehaviour
         entryTrigger.AddComponent<EnterTriggerArea>();
         BoxCollider box = entryTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
-        Vector3 boxSize = Vector3.one * 2.5f;
-        box.size = boxSize;
+        box.size = new Vector3(transform.localScale.x * .4f, 2f, transform.localScale.z * .9f);
 
         GameObject exitTrigger = new GameObject("TrafficLight Exit Trigger");
         exitTrigger.transform.position = exitPos;
@@ -96,7 +95,7 @@ public class Road : MonoBehaviour
         exitTrigger.AddComponent<ExitTriggerArea>();
         box = exitTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
-        box.size = boxSize;
+        box.size = Vector3.one * 2.5f;
     }
     private void CreateIntersectionPriorityTriggers()
     {

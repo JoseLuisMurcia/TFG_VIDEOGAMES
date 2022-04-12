@@ -47,6 +47,8 @@ public class TrafficLightCarController : MonoBehaviour
 
     public float GiveDistanceToPathFollower()
     {
+        if (currentRoad == null)
+            UnsubscribeToTrafficLight();
         return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
     }
 

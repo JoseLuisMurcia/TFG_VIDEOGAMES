@@ -151,14 +151,8 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 if (!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                if (!priorityBehavior.hasSignalInSight)
-                {
-                    if (intersectionInSight)
-                    {
-                        //priorityBehavior.ProcessCarHit(ray, hit, sensor);
-                    }
+                if (!priorityBehavior.hasSignalInSight && intersectionInSight) //priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
-                }
                 if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
