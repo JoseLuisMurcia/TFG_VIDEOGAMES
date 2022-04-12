@@ -300,6 +300,10 @@ public class PriorityBehavior
 
     private bool TargetHasRelevantCars()
     {
+        if(pathFollower.targetPriorityBehavior == null)
+        {
+            Debug.Log("OH OH JAJAJ");
+        }
         return pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0;
     }
 }

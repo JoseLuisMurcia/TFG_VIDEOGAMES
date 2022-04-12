@@ -36,7 +36,7 @@ public class WhiskersManager : MonoBehaviour
             }
         }
         CreateIncorporationWhiskers(whiskersParent);
-        avoidanceBehavior = new AvoidanceBehavior(carLayer, obstacleLayer, whiskers, pathFollower, trafficLightCarController, priorityBehavior);
+        avoidanceBehavior = new AvoidanceBehavior(carLayer, obstacleLayer, whiskers, pathFollower, trafficLightCarController);
         priorityBehavior = new PriorityBehavior(carLayer, signalLayer, whiskers, pathFollower, avoidanceBehavior);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
@@ -72,7 +72,7 @@ public class WhiskersManager : MonoBehaviour
     {
         rayOrigin = whiskers[0].position;
         avoidanceBehavior.Update(transform, visualDebug);
-        priorityBehavior.Update(transform, visualDebug);
+        //priorityBehavior.Update(transform, visualDebug);
 
         CheckCars();
         if (!priorityBehavior.hasSignalInSight)
@@ -155,7 +155,7 @@ public class WhiskersManager : MonoBehaviour
                 {
                     if (intersectionInSight)
                     {
-                        priorityBehavior.ProcessCarHit(ray, hit, sensor);
+                        //priorityBehavior.ProcessCarHit(ray, hit, sensor);
                     }
 
                 }
