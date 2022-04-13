@@ -16,7 +16,6 @@ public class PriorityBehavior
 
     List<PathFollower> carsInSight = new List<PathFollower>();
     List<PathFollower> relevantCarsInSight = new List<PathFollower>();
-    List<CarDistanceFrame> carDistances = new List<CarDistanceFrame>();
     private bool visualDebug = false;
     public bool isInRoundabout = false;
     private AvoidanceBehavior avoidanceBehavior;
@@ -58,18 +57,6 @@ public class PriorityBehavior
                 RemoveSignalFromSight();
             }
         }
-    }
-
-    private bool NextNodesAreStraight()
-    {
-        float angle = pathFollower.GetAngleBetweenCurrentNodeAndNumNodes(4);
-        if (angle != Mathf.Infinity)
-        {
-            float threshold = 6f;
-            if (angle < threshold)
-                return true;
-        }
-        return false;
     }
 
     public void RemoveSignalFromSight()
@@ -308,11 +295,3 @@ public class PriorityBehavior
     }
 }
 
-public class CarDistanceFrame
-{
-    float newDistance;
-    float previousDistance;
-    PathFollower carHit;
-
-
-}

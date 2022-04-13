@@ -56,6 +56,7 @@ public class PathFollower : MonoBehaviour
         speed *= speedMultiplier;
         turnSpeed *= speedMultiplier;
         trafficLightCarController = GetComponent<TrafficLightCarController>();
+        priorityLevel = PriorityLevel.Max;
     }
 
     public void StartPathfinding(Node _startNode)

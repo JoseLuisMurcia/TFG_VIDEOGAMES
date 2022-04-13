@@ -47,11 +47,11 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                float newMovementCostToNeighbour = currentNode.gCost + GetAlternativeHeuristic(currentNode, neighbour);
+                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
                 if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                 {
                     neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetAlternativeHeuristic(neighbour, targetNode);
+                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
                     neighbour.parent = currentNode;
 
                     if (!openSet.Contains(neighbour))
@@ -107,11 +107,11 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                float newMovementCostToNeighbour = currentNode.gCost + GetAlternativeHeuristic(currentNode, neighbour);
+                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
                 if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                 {
                     neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetAlternativeHeuristic(neighbour, targetNode);
+                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
                     neighbour.parent = currentNode;
 
                     if (!openSet.Contains(neighbour))
@@ -175,10 +175,6 @@ public class Pathfinding : MonoBehaviour
 
     float GetDistanceHeuristic(Node nodeA, Node nodeB)
     {
-        if(nodeA == null || nodeB == null)
-        {
-            Debug.LogError("QUE SE ROMPE");
-        }
         float dstX = Mathf.Abs(nodeA.worldPosition.x - nodeB.worldPosition.x);
         float dstY = Mathf.Abs(nodeA.worldPosition.z - nodeB.worldPosition.z);
 

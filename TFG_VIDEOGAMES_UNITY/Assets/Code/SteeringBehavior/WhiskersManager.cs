@@ -72,9 +72,10 @@ public class WhiskersManager : MonoBehaviour
     {
         rayOrigin = whiskers[0].position;
         avoidanceBehavior.Update(transform, visualDebug);
-        //priorityBehavior.Update(transform, visualDebug);
+        priorityBehavior.Update(transform, visualDebug);
 
         CheckCars();
+
         if (!priorityBehavior.hasSignalInSight)
         {
             CheckSignals();
@@ -107,12 +108,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 priorityBehavior.ProcessCarHit(ray, hit, sensor);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -130,7 +131,7 @@ public class WhiskersManager : MonoBehaviour
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
             }
         }
     }
@@ -139,6 +140,7 @@ public class WhiskersManager : MonoBehaviour
     {
         if (avoidanceBehavior.hasTarget && priorityBehavior.hasSignalInSight)
             return;
+
         RaycastHit hit;
         foreach (Transform sensor in whiskers)
         {
@@ -151,7 +153,7 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 if (!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                if (!priorityBehavior.hasSignalInSight && intersectionInSight) //priorityBehavior.ProcessCarHit(ray, hit, sensor);
+                if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
                 if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
