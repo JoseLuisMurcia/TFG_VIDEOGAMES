@@ -13,7 +13,7 @@ public class CarSpawner : MonoBehaviour
         // Spawn with the correct rotation
         instantiatedCar.transform.LookAt(startNode.neighbours[0].worldPosition);
         PathFollower pathFollower = instantiatedCar.GetComponent<PathFollower>();
-        pathFollower.StartPathfinding(startNode);
+        pathFollower.StartPathfindingOnSpawn(startNode);
     }
 
     public void SpawnFiveCars()

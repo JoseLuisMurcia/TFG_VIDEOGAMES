@@ -36,19 +36,21 @@ public class TrafficLightCarController : MonoBehaviour
                 break;
             case TrafficLightColor.Red:
                 distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
-                if (distance > 1)
+                if (distance > 1f)
                 {
                     pathFollower.StopAtTrafficLight(subscription);
                 }
                 break;
         }
-        //Debug.Log("THE TRAFFIC LIGHT HAS CHANGED TO: " + newColor);
     }
 
     public float GiveDistanceToPathFollower()
     {
         if (currentRoad == null)
+        {
             pathFollower.shouldStopAtTrafficLight = false;
+            return 100f;
+        }
         return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
     }
 

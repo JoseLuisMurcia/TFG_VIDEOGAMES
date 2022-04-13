@@ -57,9 +57,29 @@ public class PathFollower : MonoBehaviour
         turnSpeed *= speedMultiplier;
         trafficLightCarController = GetComponent<TrafficLightCarController>();
         priorityLevel = PriorityLevel.Max;
+        StartCoroutine(StartPathfindingOnWorldCreation());
     }
 
-    public void StartPathfinding(Node _startNode)
+    IEnumerator StartPathfindingOnWorldCreation()
+    {
+        yield return new WaitForSeconds(1f);
+        if (path == null)
+        {
+            Node targetNode = WorldGrid.Instance.GetRandomNodeInRoads();
+            float newDistance = Vector3.Distance(targetNode.worldPosition, transform.position);
+            while (newDistance < minDistanceToSpawnNewTarget)
+            {
+                targetNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+                newDistance = Vector3.Distance(transform.position, targetNode.worldPosition);
+            }
+
+            PathfinderRequestManager.RequestPath(transform.position, targetNode, transform.forward, OnPathFound);
+            pathRequested = true;
+            StartCoroutine(UpdatePath());
+        }
+    }
+
+    public void StartPathfindingOnSpawn(Node _startNode)
     {
         float newDistance = 0f;
         Vector3 newTargetPos = Vector3.zero;
@@ -129,14 +149,14 @@ public class PathFollower : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(minPathUpdateTime);
-            if(path != null)
+            if (path != null)
             {
                 float distance = Vector3.Distance(transform.position, endNode.worldPosition);
                 if (distance < 3f)
                 {
                     RequestNewPath();
                 }
-            }  
+            }
         }
     }
 
@@ -154,8 +174,8 @@ public class PathFollower : MonoBehaviour
         if (PathEnds(numNodes))
             return Mathf.Infinity;
 
-        Vector3 dirFromCurrentNodeToTarget = (waypointsList[pathIndex+numNodes] - waypointsList[pathIndex]).normalized;
-        Vector3 currentNodeForward = (waypointsList[pathIndex+1] - waypointsList[pathIndex]).normalized;
+        Vector3 dirFromCurrentNodeToTarget = (waypointsList[pathIndex + numNodes] - waypointsList[pathIndex]).normalized;
+        Vector3 currentNodeForward = (waypointsList[pathIndex + 1] - waypointsList[pathIndex]).normalized;
         float angle = Vector3.Angle(currentNodeForward, dirFromCurrentNodeToTarget);
         return angle;
     }
@@ -243,7 +263,7 @@ public class PathFollower : MonoBehaviour
             if (trafficLightCarController.currentRoad == null)
                 return;
 
-            if(reactionTimeCoroutine != null)
+            if (reactionTimeCoroutine != null)
             {
                 StopCoroutine(reactionTimeCoroutine);
             }
@@ -336,6 +356,6 @@ public enum PriorityLevel
 {
     Stop,
     Yield,
-    Roundabout, 
+    Roundabout,
     Max
 }
