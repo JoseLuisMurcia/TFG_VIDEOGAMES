@@ -88,133 +88,257 @@ public class WorldGrid : MonoBehaviour
                     break;
             }
         }
-        RoundaboutCorrection();
+        CreateConnectionsForRoundabouts();
         ConnectAllRoads();
     }
-    private void RoundaboutCorrection()
+
+    private void CreateConnectionsForRoundabouts()
     {
         foreach (Road road in roads)
         {
             if (road.typeOfRoad == TypeOfRoad.Roundabout)
             {
-                foreach (Road connection in road.connections)
+                Roundabout roundabout = (Roundabout)road;
+                foreach (Road connection in roundabout.connections)
                 {
+                    // Find the correct entries and exits
+                    bool entryNotFound = true;
+                    int i = 0;
+                    int entryId = -1;
+                    Vector3 middlePos = Vector3.zero;
+                    while (entryNotFound && i < roundabout.connections.Count)
+                    {
+                        middlePos = (roundabout.entries[i].position + roundabout.exits[i].position) * .5f;
+                        Vector3 dir = (middlePos - roundabout.transform.position).normalized;
+                        Vector3 rayPos = middlePos + dir * 2f;
+                        Vector3 rayOrigin = rayPos + Vector3.up * 25f;
+                        Ray ray = new Ray(rayOrigin, Vector3.down);
+                        RaycastHit hit;
+                        //Debug.DrawRay(rayPos + Vector3.up * 50, Vector3.down * 55f, Color.magenta, 30f);
+                        if (Physics.Raycast(ray, out hit, 55f, roadMask))
+                        {
+                            Road hitRoad = hit.collider.gameObject.GetComponent<Road>();
+                            if (road != null && hitRoad == connection)
+                            {
+                                entryId = i;
+                                entryNotFound = false;
+                            }
+                        }
+                        i++;
+                    }
+
+                    // Now the entry and exit to the connection has been found
+                    Transform entryTransform = roundabout.entries[entryId];
+                    Transform exitTransform = roundabout.exits[entryId];
+                    Vector3 entry = entryTransform.position;
+                    Vector3 exit = exitTransform.position;
+
                     if (connection.numberOfLanes == 1)
                     {
-                        // Crear punto medio entre el entry y exit correspondiente
-                        // Este punto medio será entry o exit si el nodo más cercano de la connection es entry o exit
-                        // Si el nodo mas cercano
-                        Node closestEntryNode = null;
-                        Node closestExitNode = null;
-                        float distance;
-                        float bestDistance = Mathf.Infinity;
-
-                        Node closestNodeFromConnection = GetClosestNodeToRoadFromConnection(road.exitNodes[0], connection);
-                        foreach (Node exitNode in road.exitNodes)
-                        {
-                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, exitNode.worldPosition);
-                            if (distance < bestDistance)
-                            {
-                                closestExitNode = exitNode;
-                                bestDistance = distance;
-                            }
-                        }
-                        bestDistance = Mathf.Infinity;
-                        foreach (Node entryNode in road.entryNodes)
-                        {
-                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, entryNode.worldPosition);
-                            if (distance < bestDistance)
-                            {
-                                closestEntryNode = entryNode;
-                                bestDistance = distance;
-                            }
-                        }
-
+                        // Ahora hay que crear un Entry o un Exit node en funcion de si el nodo más cercano de esa carretera es entry o exit.
+                        Node closestNodeFromConnection = GetClosestNodeToRoad(middlePos, connection);
+                        bool createExit = false;
                         // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
                         if (connection.entryNodes.Contains(closestNodeFromConnection))
                         {
-                            grid.Remove(closestEntryNode);
-                            debugNodes.Remove(closestEntryNode.worldPosition);
-                            road.entryNodes.Remove(closestEntryNode);
-
-                            debugNodes.Remove(closestExitNode.worldPosition);
-                            Vector3 newPos = (closestEntryNode.worldPosition + closestExitNode.worldPosition) * .5f;
-                            closestExitNode.worldPosition = newPos;
-
+                            createExit = true;
                         }
-                        else // Es un nodo exit y tenemos que crear un entry, podemos borrar nuestro nodo exit
+
+                        float angleThreshold = 5f;
+                        if (createExit)
                         {
-                            grid.Remove(closestExitNode);
-                            closestExitNode.previousNode.neighbours.Remove(closestExitNode);
-                            debugNodes.Remove(closestExitNode.worldPosition);
-                            road.exitNodes.Remove(closestExitNode);
+                            Node exitNode = new Node(middlePos, roundabout);
+                            roundabout.exitNodes.Add(exitNode);
+                            grid.Add(exitNode);
 
-                            debugNodes.Remove(closestEntryNode.worldPosition);
-                            Vector3 newPos = (closestEntryNode.worldPosition + closestExitNode.worldPosition) * .5f;
-                            debugNodes.Add(newPos);
-                            closestEntryNode.worldPosition = newPos;
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(middlePos, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - middlePos;
+                                    if (distance < bestDistance && Vector3.SignedAngle(exitTransform.forward, targetDir, Vector3.up) < -angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the exit
+                                bestNode.AddNeighbour(exitNode);
+
+                            }
+
                         }
+                        else
+                        {
+                            Node entryNode = new Node(middlePos, roundabout);
+                            roundabout.entryNodes.Add(entryNode);
+                            debugNodes.Add(middlePos);
+                            grid.Add(entryNode);
+
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(middlePos, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - middlePos;
+                                    if (distance < bestDistance && Vector3.SignedAngle(entryTransform.forward, targetDir, Vector3.up) > angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the entry
+                                entryNode.AddNeighbour(bestNode);
+
+                            }
+                        }
+
+
 
                     }
-                    else if(connection.numberOfLanes == 2 && connection.numDirection == NumDirection.OneDirectional)
+                    else
                     {
-                        // Crear punto medio entre el entry y exit correspondiente
-                        // Este punto medio será entry o exit si el nodo más cercano de la connection es entry o exit
-                        // Si el nodo mas cercano
-                        Node closestEntryNode = null;
-                        Node closestExitNode = null;
-                        float distance;
-                        float bestDistance = Mathf.Infinity;
-
-                        Node closestNodeFromConnection = GetClosestNodeToRoadFromConnection(road.exitNodes[0], connection);
-                        foreach (Node exitNode in road.exitNodes)
+                        float angleThreshold = 2f;
+                        if (connection.numDirection == NumDirection.OneDirectional) // 2 lanes and one direction
                         {
-                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, exitNode.worldPosition);
-                            if (distance < bestDistance)
+                            // Ahora hay que crear un Entry o un Exit node en funcion de si el nodo más cercano de esa carretera es entry o exit.
+                            Node closestNodeFromConnection = GetClosestNodeToRoad(middlePos, connection);
+                            bool createExit = false;
+                            // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
+                            if (connection.entryNodes.Contains(closestNodeFromConnection))
                             {
-                                closestExitNode = exitNode;
-                                bestDistance = distance;
+                                createExit = true;
+                            }
+                            if (createExit)
+                            {
+                                Node exitNode1 = new Node(exit, roundabout);
+                                Node exitNode2 = new Node(entry, roundabout);
+                                List<Node> exitNodes = new List<Node> { exitNode1, exitNode2 };
+
+                                foreach (Node exitNode in exitNodes)
+                                {
+                                    grid.Add(exitNode);
+                                    roundabout.exitNodes.Add(exitNode);
+                                    foreach (Lane lane in roundabout.lanes)
+                                    {
+                                        float bestDistance = Mathf.Infinity;
+                                        Node bestNode = null;
+                                        foreach (Node node in lane.nodes)
+                                        {
+                                            float distance = Vector3.Distance(exitNode.worldPosition, node.worldPosition);
+                                            Vector3 targetDir = node.worldPosition - exitNode.worldPosition;
+                                            if (distance < bestDistance && Vector3.SignedAngle(exitTransform.forward, targetDir, Vector3.up) < -angleThreshold)
+                                            {
+                                                bestDistance = distance;
+                                                bestNode = node;
+                                            }
+                                        }
+                                        // Connect the best node to the exit
+                                        bestNode.AddNeighbour(exitNode);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Node entryNode1 = new Node(exit, roundabout);
+                                Node entryNode2 = new Node(entry, roundabout);
+                                List<Node> entryNodes = new List<Node> { entryNode1, entryNode2 };
+
+                                foreach (Node entryNode in entryNodes)
+                                {
+                                    debugNodes.Add(entryNode.worldPosition);
+                                    grid.Add(entryNode);
+                                    roundabout.entryNodes.Add(entryNode);
+                                    foreach (Lane lane in roundabout.lanes)
+                                    {
+                                        float bestDistance = Mathf.Infinity;
+                                        Node bestNode = null;
+                                        foreach (Node node in lane.nodes)
+                                        {
+                                            float distance = Vector3.Distance(entryNode.worldPosition, node.worldPosition);
+                                            Vector3 targetDir = node.worldPosition - entryNode.worldPosition;
+                                            Vector3 forward = entryNode.worldPosition == entryTransform.position ? entryTransform.forward : exitTransform.forward;
+                                            if (distance < bestDistance && Vector3.SignedAngle(entryTransform.forward, targetDir, Vector3.up) > angleThreshold)
+                                            {
+                                                bestDistance = distance;
+                                                bestNode = node;
+                                            }
+                                        }
+                                        // Connect the best node to the entry
+                                        entryNode.AddNeighbour(bestNode);
+
+                                    }
+                                }
+
                             }
                         }
-                        bestDistance = Mathf.Infinity;
-                        foreach (Node entryNode in road.entryNodes)
+                        else // 2 lanes and both directions
                         {
-                            distance = Vector3.Distance(closestNodeFromConnection.worldPosition, entryNode.worldPosition);
-                            if (distance < bestDistance)
+                            Node exitNode = new Node(exit, roundabout);
+                            grid.Add(exitNode);
+                            roundabout.exitNodes.Add(exitNode);
+                            foreach (Lane lane in roundabout.lanes)
                             {
-                                closestEntryNode = entryNode;
-                                bestDistance = distance;
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(exitNode.worldPosition, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - exitNode.worldPosition;
+                                    if (distance < bestDistance && Vector3.SignedAngle(exitTransform.forward, targetDir, Vector3.up) < -angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the exit
+                                bestNode.AddNeighbour(exitNode);
+                            }
+
+                            Node entryNode = new Node(entry, roundabout);
+                            debugNodes.Add(entryNode.worldPosition);
+                            grid.Add(entryNode);
+                            roundabout.entryNodes.Add(entryNode);
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(entryNode.worldPosition, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - entryNode.worldPosition;
+                                    if (distance < bestDistance && Vector3.SignedAngle(entryTransform.forward, targetDir, Vector3.up) > angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the entry
+                                entryNode.AddNeighbour(bestNode);
+
                             }
                         }
+                    }
 
-                        // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
-                        if (connection.entryNodes.Contains(closestNodeFromConnection))
-                        {
-                            grid.Remove(closestEntryNode);
-                            debugNodes.Remove(closestEntryNode.worldPosition);
-                            road.entryNodes.Remove(closestEntryNode);
-
-                            debugNodes.Remove(closestExitNode.worldPosition);
-                            Vector3 newPos = (closestEntryNode.worldPosition + closestExitNode.worldPosition) * .5f;
-                            closestExitNode.worldPosition = newPos;
-
-                        }
-                        else // Es un nodo exit y tenemos que crear un entry, podemos borrar nuestro nodo exit
-                        {
-                            grid.Remove(closestExitNode);
-                            closestExitNode.previousNode.neighbours.Remove(closestExitNode);
-                            debugNodes.Remove(closestExitNode.worldPosition);
-                            road.exitNodes.Remove(closestExitNode);
-
-                            debugNodes.Remove(closestEntryNode.worldPosition);
-                            Vector3 newPos = closestEntryNode.worldPosition * .75f + closestExitNode.worldPosition * .25f;
-                            debugNodes.Add(newPos);
-                            closestEntryNode.worldPosition = newPos;
-                        }
-                    } 
                 }
             }
         }
+    }
+
+    private Node GetClosestNodeToRoad(Vector3 position, Road connection)
+    {
+        Node entryNode = connection.entryNodes[0];
+        Node exitNode = connection.exitNodes[0];
+        if (Vector3.Distance(entryNode.worldPosition, position) > Vector3.Distance(exitNode.worldPosition, position))
+        {
+            return exitNode;
+        }
+        return entryNode;
     }
 
     private Node GetClosestNodeToRoadFromConnection(Node node, Road connection)
@@ -702,61 +826,6 @@ public class WorldGrid : MonoBehaviour
 
         // Connect nodes between lanes
         ConnectNodesInRoad(roundabout);
-
-        // Connect entry and exit nodes hehe
-        List<Transform> entries = roundabout.entries;
-        List<Transform> exits = roundabout.exits;
-
-        foreach (Transform entry in entries)
-        {
-            debugNodes.Add(entry.position);
-            Node entryNode = new Node(entry.position, roundabout);
-            roundabout.entryNodes.Add(entryNode);
-            grid.Add(entryNode);
-
-            foreach (Lane lane in roundabout.lanes)
-            {
-                float bestDistance = Mathf.Infinity;
-                Node bestNode = null;
-                foreach (Node node in lane.nodes)
-                {
-                    float distance = Vector3.Distance(entry.position, node.worldPosition);
-                    Vector3 targetDir = node.worldPosition - entry.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(entry.forward, targetDir, Vector3.up) < 0)
-                    {
-                        bestDistance = distance;
-                        bestNode = node;
-                    }
-                }
-                // Connect the best node to the entry
-                entryNode.AddNeighbour(bestNode);
-
-            }
-        }
-        foreach (Transform exit in exits)
-        {
-            Node exitNode = new Node(exit.position, roundabout);
-            roundabout.exitNodes.Add(exitNode);
-            grid.Add(exitNode);
-            foreach (Lane lane in roundabout.lanes)
-            {
-                float bestDistance = Mathf.Infinity;
-                Node bestNode = null;
-                foreach (Node node in lane.nodes)
-                {
-                    float distance = Vector3.Distance(exit.position, node.worldPosition);
-                    Vector3 targetDir = node.worldPosition - exit.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(exit.forward, targetDir, Vector3.up) > 0)
-                    {
-                        bestDistance = distance;
-                        bestNode = node;
-                    }
-                }
-                // Connect the best node to the exit
-                bestNode.AddNeighbour(exitNode);
-
-            }
-        }
     }
     private List<Line> CreateLinesForRoundabout(Roundabout roundabout)
     {
