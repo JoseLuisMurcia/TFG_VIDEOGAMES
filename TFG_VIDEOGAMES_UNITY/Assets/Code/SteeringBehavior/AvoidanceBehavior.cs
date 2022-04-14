@@ -58,7 +58,7 @@ public class AvoidanceBehavior
 
     private bool TargetIsFar()
     {
-        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 4f;
+        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 3.5f;
     }
     private void UnableTarget()
     {
@@ -157,7 +157,7 @@ public class AvoidanceBehavior
         Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
         Vector3 carForward = transform.forward;
         float angleTolerance = 75f;
-        if (Vector3.Angle(hitCarForward, carForward) < angleTolerance)
+        if (Vector3.Angle(hitCarForward, carForward) < angleTolerance && Vector3.Distance(transform.position, hit.point) < 4.5f)
         {
             hitCarPathFollower = hit.collider.gameObject.GetComponent<PathFollower>();
             hitCarTrafficLightController = hit.collider.gameObject.GetComponent<TrafficLightCarController>();
@@ -166,16 +166,44 @@ public class AvoidanceBehavior
             {
                 if (!DifferentRoads(trafficLightController, hitCarTrafficLightController) && BothShouldStopBeforeLight())
                 {
-                    EnableTarget(hitCarPathFollower.transform);
-                    return;
+                    if (hasTarget)
+                    {
+                        if (NewCarIsCloserThanTarget())
+                        {
+                            EnableTarget(hitCarPathFollower.transform);
+                        }
+                    }
+                    else
+                    {
+                        EnableTarget(hitCarPathFollower.transform);
+                        return;
+                    }
                 }
 
             }
             else
             {
-                EnableTarget(hitCarPathFollower.transform);
-                return;
+                if (hasTarget)
+                {
+                    if (NewCarIsCloserThanTarget())
+                    {
+                        EnableTarget(hitCarPathFollower.transform);
+                    }
+                }
+                else
+                {
+                    EnableTarget(hitCarPathFollower.transform);
+                    return;
+                }
             }
         }
     }
+
+    private bool NewCarIsCloserThanTarget()
+    {
+        Vector3 hitCarPos = hitCarPathFollower.transform.position;
+        Vector3 carPos = transform.position;
+        return Vector3.Distance(carPos, hitCarPos) < Vector3.Distance(carPos, pathFollower.carTarget.position);
+    }
+
 }

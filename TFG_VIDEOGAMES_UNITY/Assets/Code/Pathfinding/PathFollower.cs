@@ -37,6 +37,7 @@ public class PathFollower : MonoBehaviour
     [HideInInspector] TrafficLightCarController trafficLightCarController;
     [SerializeField] bool visualDebug;
     [HideInInspector] List<Vector3> waypointsList = new List<Vector3>();
+    [HideInInspector] List<Node> nodeList = new List<Node>();
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
@@ -67,7 +68,7 @@ public class PathFollower : MonoBehaviour
         {
             Node targetNode = WorldGrid.Instance.GetRandomNodeInRoads();
             float newDistance = Vector3.Distance(targetNode.worldPosition, transform.position);
-            while (newDistance < minDistanceToSpawnNewTarget)
+            while (newDistance < 5f)
             {
                 targetNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
                 newDistance = Vector3.Distance(transform.position, targetNode.worldPosition);
@@ -96,16 +97,17 @@ public class PathFollower : MonoBehaviour
         StartCoroutine(UpdatePath());
     }
 
-    public void OnPathFound(Vector3[] waypoints, bool pathSuccessful, Node _startNode, Node _endNode)
+    public void OnPathFound(List<Node> waypointNodes, bool pathSuccessful, Node _startNode, Node _endNode)
     {
         if (pathSuccessful)
         {
             pathRequested = false;
             endNode = _endNode;
-            waypointsList = new List<Vector3>();
-            foreach (Vector3 waypoint in waypoints)
+            nodeList = waypointNodes;
+            waypointsList.Clear();
+            foreach(Node node in waypointNodes)
             {
-                waypointsList.Add(waypoint);
+                waypointsList.Add(node.worldPosition);
             }
             if (followPathCoroutine != null)
                 StopCoroutine(followPathCoroutine);
@@ -167,6 +169,26 @@ public class PathFollower : MonoBehaviour
             return Vector3.zero;
 
         return waypointsList[pathIndex + numNodes];
+    }
+
+    public Node GetStoppingNodeFromCurrentNode()
+    {
+        Node currentNode = nodeList[pathIndex];
+        Road currentRoad = currentNode.road;
+        Node stoppingNode = null;
+        int i = 0;
+        while(stoppingNode == null && currentRoad == nodeList[pathIndex + i].road && i<20)
+        {
+            // TO FIX - Path ends
+            // Hay que controlar que el indice no se pase de la capacidad maxima de la lista
+            if(currentRoad.exitNodes.Contains(nodeList[pathIndex + i]))
+            {
+                stoppingNode = nodeList[pathIndex + i];
+            }
+            i++;
+        }
+        // Hay que averiguar el stopping node de la carretera, tiene que ser del carril que esté en nuestra trayectoria. Bucle for de
+        return stoppingNode;
     }
 
     public float GetAngleBetweenCurrentNodeAndNumNodes(int numNodes)
@@ -319,17 +341,20 @@ public class PathFollower : MonoBehaviour
 
     float SlowSpeedBeforeCar()
     {
-        float speedPercent;
+        float _speedPercent;
 
         //float distance = Vector3.Distance(transform.position, frontCarPos);
         float distance = Vector3.Distance(transform.position, carTarget.position);
-        speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
-        if (speedPercent < 0.03f)
+        float previousSP = speedPercent;
+        _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        if (_speedPercent - previousSP > 0.2f)
+            speedPercent += 0.01f;
+        if (_speedPercent < 0.03f)
         {
-            speedPercent = 0f;
+            _speedPercent = 0f;
         }
 
-        return speedPercent;
+        return _speedPercent;
     }
     float SlowSpeedAtTrafficLight()
     {

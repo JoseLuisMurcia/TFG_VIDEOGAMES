@@ -352,12 +352,12 @@ public class WorldGrid : MonoBehaviour
         return entryNode;
     }
 
-    private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode)
+    private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode, Road road)
     {
         if (distance < 3f && dot > 0)
         {
             Vector3 unionNodePos = (exitNode.worldPosition + entryNode.worldPosition) * 0.5f;
-            Node unionNode = new Node(unionNodePos, null);
+            Node unionNode = new Node(unionNodePos, road);
             exitNode.AddNeighbour(unionNode);
             unionNode.AddNeighbour(entryNode);
             unionNodes.Add(unionNodePos);
@@ -385,7 +385,7 @@ public class WorldGrid : MonoBehaviour
                         float dot = Vector3.Dot(exitNodeForward, dirToMovePosition);
                         if (connection.typeOfRoad == TypeOfRoad.Deviation)
                         {
-                            PerformSpecialConnection(distance, dot, exitNode, neighbourEntryNode);
+                            PerformSpecialConnection(distance, dot, exitNode, neighbourEntryNode, connection);
                         }
                         if (distance < bestDistance && dot > 0)
                         {
@@ -399,7 +399,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     // Perform connection
                     Vector3 unionNodePos = (exitNode.worldPosition + bestEntryNode.worldPosition) * 0.5f;
-                    Node unionNode = new Node(unionNodePos, null);
+                    Node unionNode = new Node(unionNodePos, road);
                     exitNode.AddNeighbour(unionNode);
                     unionNode.AddNeighbour(bestEntryNode);
                     unionNodes.Add(unionNodePos);
@@ -445,7 +445,7 @@ public class WorldGrid : MonoBehaviour
                                 {
                                     // Perform connection
                                     Vector3 unionNodePos = (exit.worldPosition + entry.worldPosition) * 0.5f;
-                                    Node unionNode = new Node(unionNodePos, null);
+                                    Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
                                     unionNodes.Add(unionNodePos);
@@ -475,7 +475,7 @@ public class WorldGrid : MonoBehaviour
                                         unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
                                     }
 
-                                    Node unionNode = new Node(unionNodePos, null);
+                                    Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
                                     unionNodes.Add(unionNodePos);

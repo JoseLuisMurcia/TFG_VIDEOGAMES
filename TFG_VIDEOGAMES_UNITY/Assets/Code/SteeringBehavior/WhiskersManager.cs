@@ -15,7 +15,7 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private float centerReach = 5.5f;
+    private float centerReach = 3.5f;
     private float sideReach = 20f;
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
@@ -138,9 +138,6 @@ public class WhiskersManager : MonoBehaviour
 
     void CheckCars()
     {
-        if (avoidanceBehavior.hasTarget && priorityBehavior.hasSignalInSight)
-            return;
-
         RaycastHit hit;
         foreach (Transform sensor in whiskers)
         {
@@ -152,7 +149,7 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                if (!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
+                avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
                 if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);

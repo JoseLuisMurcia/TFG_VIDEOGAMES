@@ -19,21 +19,21 @@ public class PathfinderRequestManager : MonoBehaviour
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
+    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<List<Node>, bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
         instance.TryProcessNext();
     }
 
-    public static void RequestPath(Node pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
+    public static void RequestPath(Node pathStart, Node pathEnd, Vector3 carForward, Action<List<Node>, bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
         instance.TryProcessNext();
     }
 
-    public static void RequestPath(Vector3 pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
+    public static void RequestPath(Vector3 pathStart, Node pathEnd, Vector3 carForward, Action<List<Node>, bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
@@ -66,7 +66,7 @@ public class PathfinderRequestManager : MonoBehaviour
         }
     }
 
-    public void FinishedProcessingPath(Vector3[] path, bool success, Node startNode, Node endNode)
+    public void FinishedProcessingPath(List<Node> path, bool success, Node startNode, Node endNode)
     {
         currentPathRequest.callback(path, success, startNode, endNode);
         isProcessingPath = false;
@@ -80,9 +80,9 @@ public class PathfinderRequestManager : MonoBehaviour
         public Node endNode;
         public Node startNode;
         public Vector3 carForward;
-        public Action<Vector3[], bool, Node, Node> callback;
+        public Action<List<Node>, bool, Node, Node> callback;
 
-        public PathRequest(Vector3 _startPos, Vector3 _endPos, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
+        public PathRequest(Vector3 _startPos, Vector3 _endPos, Vector3 _carForward, Action<List<Node>, bool, Node, Node> _callback)
         {
             startPos = _startPos;
             endPos = _endPos;
@@ -93,7 +93,7 @@ public class PathfinderRequestManager : MonoBehaviour
             endNode = null;
         }
 
-        public PathRequest(Node _nodeStart, Node _nodeEnd, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
+        public PathRequest(Node _nodeStart, Node _nodeEnd, Vector3 _carForward, Action<List<Node>, bool, Node, Node> _callback)
         {
             startNode = _nodeStart;
             endNode = _nodeEnd;
@@ -104,7 +104,7 @@ public class PathfinderRequestManager : MonoBehaviour
             endPos = Vector3.zero;
         }
 
-        public PathRequest(Vector3 _startPos, Node _nodeEnd, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
+        public PathRequest(Vector3 _startPos, Node _nodeEnd, Vector3 _carForward, Action<List<Node>, bool, Node, Node> _callback)
         {
             startPos = _startPos;
             endNode = _nodeEnd;

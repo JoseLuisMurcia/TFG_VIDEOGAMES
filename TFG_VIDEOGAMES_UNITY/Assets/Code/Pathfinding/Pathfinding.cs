@@ -29,7 +29,7 @@ public class Pathfinding : MonoBehaviour
 
     IEnumerator FindPath(Node startNode, Node targetNode)
     {
-        Vector3[] waypoints = new Vector3[0];
+        List<Node> waypoints = new List<Node>();
         bool pathSuccess = false;
 
         startNode.gCost = 0;
@@ -82,24 +82,20 @@ public class Pathfinding : MonoBehaviour
         requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
     }
 
-    Vector3[] RetracePath(Node startNode, Node endNode)
+    List<Node> RetracePath(Node startNode, Node endNode)
     {
-        List<Node> path = new List<Node>();
+        List<Node> waypoints = new List<Node>();
         Node currentNode = endNode;
         while (currentNode != startNode)
         {
-            path.Add(currentNode);
+            waypoints.Add(currentNode);
             currentNode = currentNode.parent;
         }
-        path.Add(startNode);
+        waypoints.Add(startNode);
 
         //Vector3[] waypoints = SimplifyPath(path);
-        Vector3[] waypoints = new Vector3[path.Count];
-        for (int i = 0; i < path.Count; i++)
-        {
-            waypoints[i] = path[i].worldPosition;
-        }
-        Array.Reverse(waypoints);
+
+        waypoints.Reverse();
         return waypoints;
     }
 

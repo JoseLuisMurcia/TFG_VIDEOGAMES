@@ -187,10 +187,11 @@ public class PriorityBehavior
             {
                 if (pathFollower.stopPosition == Vector3.zero)
                 {
-                    if (distanceWithSpeed < 1f)
-                        distanceWithSpeed = 0.2f;
 
-                    pathFollower.stopPosition = transform.position + transform.forward * distanceWithSpeed * .25f;
+                    // pathFollower.stopPosition = transform.position + transform.forward * distanceWithSpeed * .25f;
+                    pathFollower.stopPosition = pathFollower.GetStoppingNodeFromCurrentNode().worldPosition;
+                    if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
+                        pathFollower.stopPosition += transform.forward.normalized * 2f;
                 }
             }
         }
