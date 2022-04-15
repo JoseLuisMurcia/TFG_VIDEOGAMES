@@ -28,7 +28,7 @@ public class PriorityBehavior
         whiskers = _whiskers;
         pathFollower = _pathFollower;
         avoidanceBehavior = _avoidanceBehavior;
-        pathFollower.priorityBehavior = this; 
+        pathFollower.priorityBehavior = this;
     }
 
     public void Update(Transform _transform, bool _visualDebug)
@@ -36,7 +36,7 @@ public class PriorityBehavior
         rayOrigin = whiskers[0].position;
         visualDebug = _visualDebug;
         transform = _transform;
-        
+
         if (hasSignalInSight)
             CheckIfSignalOutOfRange();
 
@@ -81,8 +81,11 @@ public class PriorityBehavior
         }
     }
 
-    private bool AngleNotRelevant(float angleToCarInSight, PathFollower carInSight)
+    private bool AngleNotRelevant(float angleToCarInSight, PathFollower carInSight, float dot)
     {
+        if (dot < 0)
+            return true;
+
         if (carInSight.priorityLevel == PriorityLevel.Roundabout)
             return false;
 
@@ -109,34 +112,36 @@ public class PriorityBehavior
         Vector3 carForward = transform.forward.normalized;
         float angleToFuturePos = Vector3.SignedAngle(carForward, dirToFuturePos, Vector3.up);
 
+
         foreach (PathFollower car in carsInSight)
         {
             Vector3 dirToCarInSight = (car.transform.position - transform.position).normalized;
             float angleToCarInSight = Vector3.SignedAngle(carForward, dirToCarInSight, Vector3.up);
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             float dot = Vector3.Dot(carForward, dirToCarInSight);
-            if (distanceToCar > maxDistance || dot < 0 || AngleNotRelevant(angleToCarInSight, car))
+
+            if (distanceToCar > maxDistance || AngleNotRelevant(angleToCarInSight, car, dot))
             {
                 carsToBeRemoved.Add(car);
             }
 
-            if (distanceToCar <= relevantDistance && dot > 0 && !pathFollower.pathRequested)
+            if (distanceToCar <= relevantDistance && !pathFollower.pathRequested)
             {
                 // HERE CHECK THE PATH TRAJECTORY
                 if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
                 {
-                    if (!isInRoundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout && distanceToCar <= 6f) // Hay que meter una comprobacion extra
+                    // ROUNDABOUT CASE
+                    if (!isInRoundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout && distanceToCar <= 4f && angleToCarInSight < 0) // Hay que meter una comprobacion extra
                     {
-                        if (angleToCarInSight < 0)
-                            relevantCarsInSight.Add(car);
+                        relevantCarsInSight.Add(car);
                     }
-                    else
+                    else // EVERY OTHER CASE
                     {
-                        if (isInRoundabout)
+                        if (isInRoundabout) // IF YOU ARE INSIDE A ROUNDABOUT, JUST GO, NO STOPPING POINTS
                         {
                             carsToBeRemoved.Add(car);
                         }
-                        else
+                        else // CLASSIC INTERSECTION SCENARIO
                         {
                             bool carInSightHasHigherPrio = (car.priorityLevel > pathFollower.priorityLevel) ? true : false;
                             // Nuestro coche va a tirar a la izquierda
@@ -157,7 +162,7 @@ public class PriorityBehavior
                                     relevantCarsInSight.Add(car);
                             }
                         }
-                        
+
                     }
 
 
@@ -165,6 +170,7 @@ public class PriorityBehavior
 
             }
         }
+        // TO FIX - If the car coming is too slow for our speed, dont event concern about it, ignore it
         // Improve this by speedPercent calculations and distance?¿
         foreach (PathFollower car in relevantCarsInSight)
         {
@@ -180,6 +186,7 @@ public class PriorityBehavior
             //    stopDistanceMultiplier = 2f;
             //}
 
+            // Si está lejos o tu estas en una rotonda y él no, eliminar
             if (distanceToCar > relevantDistance || (isInRoundabout && !car.priorityBehavior.isInRoundabout))
                 carsToBeRemoved.Add(car);
 
@@ -187,11 +194,22 @@ public class PriorityBehavior
             {
                 if (pathFollower.stopPosition == Vector3.zero)
                 {
-
-                    // pathFollower.stopPosition = transform.position + transform.forward * distanceWithSpeed * .25f;
-                    pathFollower.stopPosition = pathFollower.GetStoppingNodeFromCurrentNode().worldPosition;
                     if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
-                        pathFollower.stopPosition += transform.forward.normalized * 2f;
+                    {
+
+                        pathFollower.stopPosition = transform.position + transform.forward.normalized * 3f;                       
+                    }
+                    else
+                    {
+                        // TO FIX - ESTO CRASHEA
+                        // Se está llamando cuando no se debe llamar, repasar la logica del metodo
+                        Node nodeStop = pathFollower.GetStoppingNodeFromCurrentNode();
+                        if(nodeStop == null)
+                        {
+                            Debug.LogError("HOSTIA PROBLEMAS");
+                        }
+                        pathFollower.stopPosition = nodeStop.worldPosition;
+                    }
                 }
             }
         }
@@ -205,7 +223,7 @@ public class PriorityBehavior
         int numRelevantCars = relevantCarsInSight.Count;
         if (numRelevantCars > 0)
         {
-            if (avoidanceBehavior.hasTarget)
+            if (avoidanceBehavior.hasTarget) // Tienes tu target pero como el coche de delante no tiene relevant cars pues de repente pegan el aceleron
             {
                 if (TargetHasRelevantCars())
                 {
@@ -288,11 +306,12 @@ public class PriorityBehavior
 
     private bool TargetHasRelevantCars()
     {
-        if(pathFollower.targetPriorityBehavior == null)
+        if (pathFollower.targetPriorityBehavior == null)
         {
             Debug.Log("OH OH JAJAJ");
         }
         return pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0;
     }
+
 }
 

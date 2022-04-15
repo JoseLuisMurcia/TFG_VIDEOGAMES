@@ -98,7 +98,7 @@ public class WhiskersManager : MonoBehaviour
 
             if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
             {
-                reach = 7f;
+                reach = 6f;
                 if (sensor.localEulerAngles.y < 180f)
                 {
                     continue;
@@ -113,7 +113,7 @@ public class WhiskersManager : MonoBehaviour
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.white);
             }
         }
     }
@@ -131,7 +131,7 @@ public class WhiskersManager : MonoBehaviour
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.red);
             }
         }
     }
@@ -152,11 +152,11 @@ public class WhiskersManager : MonoBehaviour
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }

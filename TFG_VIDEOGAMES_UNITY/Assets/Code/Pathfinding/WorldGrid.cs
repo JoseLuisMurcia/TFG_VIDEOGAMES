@@ -106,7 +106,7 @@ public class WorldGrid : MonoBehaviour
                     int i = 0;
                     int entryId = -1;
                     Vector3 middlePos = Vector3.zero;
-                    while (entryNotFound && i < roundabout.connections.Count)
+                    while (entryNotFound && i < 4)
                     {
                         middlePos = (roundabout.entries[i].position + roundabout.exits[i].position) * .5f;
                         Vector3 dir = (middlePos - roundabout.transform.position).normalized;
@@ -126,7 +126,8 @@ public class WorldGrid : MonoBehaviour
                         }
                         i++;
                     }
-
+                    if (roundabout.connections.Count < 4)
+                        Debug.Log("hehe");
                     // Now the entry and exit to the connection has been found
                     Transform entryTransform = roundabout.entries[entryId];
                     Transform exitTransform = roundabout.exits[entryId];

@@ -9,7 +9,7 @@ public class PathFollower : MonoBehaviour
     [SerializeField] float speed = 4;
     [SerializeField] float turnSpeed = 4;
     [SerializeField] float turnDst = 3;
-    public int pathIndex = 0;
+    [HideInInspector] public int pathIndex = 0;
     Path path = null;
     [SerializeField] public float speedPercent = 0f;
 
@@ -21,16 +21,16 @@ public class PathFollower : MonoBehaviour
     public bool shouldBrakeBeforeCar = false;
     [SerializeField] float carStartBreakingDistance = 2f;
     [SerializeField] float carStopDistance = 1f;
-    public Vector3 frontCarPos;
+    [HideInInspector] public Vector3 frontCarPos;
     public Transform carTarget;
     [HideInInspector] public AvoidanceBehavior avoidanceBehavior;
     int recentAddedAvoidancePosIndex = -50;
     Node endNode;
 
     // Priority variables
-    public bool pathRequested = false;
+    [HideInInspector] public bool pathRequested = false;
     public bool shouldStopPriority = false;
-    public Vector3 stopPosition = Vector3.zero;
+    [HideInInspector] public Vector3 stopPosition = Vector3.zero;
     [HideInInspector] public PriorityBehavior targetPriorityBehavior;
     [HideInInspector] public PriorityBehavior priorityBehavior;
 
@@ -68,7 +68,7 @@ public class PathFollower : MonoBehaviour
         {
             Node targetNode = WorldGrid.Instance.GetRandomNodeInRoads();
             float newDistance = Vector3.Distance(targetNode.worldPosition, transform.position);
-            while (newDistance < 5f)
+            while (newDistance < minDistanceToSpawnNewTarget)
             {
                 targetNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
                 newDistance = Vector3.Distance(transform.position, targetNode.worldPosition);
@@ -105,7 +105,7 @@ public class PathFollower : MonoBehaviour
             endNode = _endNode;
             nodeList = waypointNodes;
             waypointsList.Clear();
-            foreach(Node node in waypointNodes)
+            foreach (Node node in waypointNodes)
             {
                 waypointsList.Add(node.worldPosition);
             }
@@ -177,17 +177,39 @@ public class PathFollower : MonoBehaviour
         Road currentRoad = currentNode.road;
         Node stoppingNode = null;
         int i = 0;
-        while(stoppingNode == null && currentRoad == nodeList[pathIndex + i].road && i<20)
+        bool roadChange = false;
+        while (stoppingNode == null && i < 6 && !roadChange)
         {
+            
             // TO FIX - Path ends
             // Hay que controlar que el indice no se pase de la capacidad maxima de la lista
-            if(currentRoad.exitNodes.Contains(nodeList[pathIndex + i]))
+            if (currentRoad.exitNodes.Contains(nodeList[pathIndex + i]))
             {
                 stoppingNode = nodeList[pathIndex + i];
             }
             i++;
+
+            if (PathEnds(i))
+            {
+                roadChange = true;
+            }
+            else
+            {
+                if (currentRoad != nodeList[pathIndex + i].road)
+                    roadChange = true;
+            }
         }
         // Hay que averiguar el stopping node de la carretera, tiene que ser del carril que esté en nuestra trayectoria. Bucle for de
+        if (stoppingNode == null)
+        {
+            // If it has not been found it is because we have gone over the road
+
+            Debug.LogWarning("NO STOPPING NODE HAS BEEN FOUND");
+            if (roadChange)
+            {
+                Debug.LogWarning("THE PATH WAS ABOUT TO END");
+            }
+        }
         return stoppingNode;
     }
 
@@ -202,6 +224,15 @@ public class PathFollower : MonoBehaviour
         return angle;
     }
 
+    private bool PathEndsNoRequest(int numNodes)
+    {
+        int numNodesInPath = waypointsList.Count;
+        if (pathIndex + numNodes >= numNodesInPath)
+        {
+            return true;
+        }
+        return false;
+    }
     private bool PathEnds(int numNodes)
     {
         int numNodesInPath = waypointsList.Count;
@@ -329,27 +360,30 @@ public class PathFollower : MonoBehaviour
 
     float SlowSpeedPriority()
     {
-        float speedPercent;
+        float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
-        speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
-        if (speedPercent < 0.03f)
+        _speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
+        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
+            _speedPercent = speedPercent += 0.002f;
+
+        if (_speedPercent < 0.03f)
         {
-            speedPercent = 0f;
+            _speedPercent = 0f;
         }
-        return speedPercent;
+        return _speedPercent;
     }
 
     float SlowSpeedBeforeCar()
     {
         float _speedPercent;
-
         //float distance = Vector3.Distance(transform.position, frontCarPos);
         float distance = Vector3.Distance(transform.position, carTarget.position);
-        float previousSP = speedPercent;
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
-        if (_speedPercent - previousSP > 0.2f)
-            speedPercent += 0.01f;
-        if (_speedPercent < 0.03f)
+
+        if (_speedPercent - speedPercent > 0.1f)
+            _speedPercent = speedPercent += 0.002f;
+
+        if (_speedPercent < 0.03f && _speedPercent > 0.5f)
         {
             _speedPercent = 0f;
         }
