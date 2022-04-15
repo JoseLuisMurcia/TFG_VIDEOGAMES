@@ -629,7 +629,7 @@ public class WorldGrid : MonoBehaviour
         Vector3 straightEndPos = road.endPos;
         Vector3[] startPositions = new Vector3[numLanes];
         Vector3[] endPositions = new Vector3[numLanes];
-        List<Vector3> linePoints = new List<Vector3>();
+        List<Vector3> linePoints;
         bool invertPath = road.invertPath;
         if (numLanes == 2)
         {
@@ -717,12 +717,17 @@ public class WorldGrid : MonoBehaviour
 
         // Curve creation
         int numLinePoints = linePoints.Count;
-        entryNode = new Node(linePoints[0], road);
+        if(numLanes == 2)
+        {
+            entryNode = road.lanes[0].nodes[0];
+        }
+        else
+        {
+            entryNode = road.lanes[1].nodes[0];
+        }
+        
         exitNode = new Node(linePoints[numLinePoints - 1], road);
-        road.entryNodes.Add(entryNode);
         road.exitNodes.Add(exitNode);
-        grid.Add(entryNode);
-        debugNodes.Add(entryNode.worldPosition);
         previousNode = entryNode;
         for (int i = 1; i < numLinePoints - 1; i++)
         {

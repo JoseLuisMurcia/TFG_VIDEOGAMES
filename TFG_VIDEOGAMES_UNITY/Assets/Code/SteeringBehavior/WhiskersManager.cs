@@ -16,7 +16,7 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
     private float centerReach = 3.5f;
-    private float sideReach = 20f;
+    private float sideReach = 15f;
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
 

@@ -178,7 +178,7 @@ public class PathFollower : MonoBehaviour
         Node stoppingNode = null;
         int i = 0;
         bool roadChange = false;
-        while (stoppingNode == null && i < 6 && !roadChange)
+        while (stoppingNode == null && !roadChange)
         {
             
             // TO FIX - Path ends
