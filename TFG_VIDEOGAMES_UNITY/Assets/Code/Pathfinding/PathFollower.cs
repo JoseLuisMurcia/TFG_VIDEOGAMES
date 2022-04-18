@@ -6,6 +6,7 @@ public class PathFollower : MonoBehaviour
 {
     const float minPathUpdateTime = .2f;
 
+    [Header("Specs")]
     [SerializeField] float speed = 4;
     [SerializeField] float turnSpeed = 4;
     [SerializeField] float turnDst = 3;
@@ -14,10 +15,13 @@ public class PathFollower : MonoBehaviour
     [SerializeField] public float speedPercent = 0f;
 
     // Stop at traffic light variables
+    [Header("TrafficLight")]
     public bool shouldStopAtTrafficLight = false;
     private float trafficLightStopDist = 5;
+    [HideInInspector] TrafficLightCarController trafficLightCarController;
 
     // Car collision avoidance variables
+    [Header("CarAvoidance")]
     public bool shouldBrakeBeforeCar = false;
     [SerializeField] float carStartBreakingDistance = 2f;
     [SerializeField] float carStopDistance = 1f;
@@ -28,14 +32,17 @@ public class PathFollower : MonoBehaviour
     Node endNode;
 
     // Priority variables
-    [HideInInspector] public bool pathRequested = false;
+    [Header("Priority")]
     public bool shouldStopPriority = false;
+    public PriorityLevel priorityLevel = PriorityLevel.Max;
+    [HideInInspector] public bool pathRequested = false;
     [HideInInspector] public Vector3 stopPosition = Vector3.zero;
     [HideInInspector] public PriorityBehavior targetPriorityBehavior;
     [HideInInspector] public PriorityBehavior priorityBehavior;
 
-    [HideInInspector] TrafficLightCarController trafficLightCarController;
-    [SerializeField] bool visualDebug;
+    [Header("Others")]
+    [SerializeField] bool pathDebug;
+    public bool isFullyStopped = false;
     [HideInInspector] List<Vector3> waypointsList = new List<Vector3>();
     [HideInInspector] List<Node> nodeList = new List<Node>();
 
@@ -43,7 +50,7 @@ public class PathFollower : MonoBehaviour
     private IEnumerator reactionTimeCoroutine;
     private static float minDistanceToSpawnNewTarget = 18f;
 
-    public PriorityLevel priorityLevel = PriorityLevel.Max;
+    
 
     // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
     void Start()
@@ -301,6 +308,8 @@ public class PathFollower : MonoBehaviour
                 speedPercent += 0.002f;
                 speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
             }
+            if (speedPercent > 0.001f) isFullyStopped = false;
+
             Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
             if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
             transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
@@ -364,7 +373,7 @@ public class PathFollower : MonoBehaviour
         float distance = Vector3.Distance(transform.position, stopPosition);
         _speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
         if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
-            _speedPercent = speedPercent += 0.002f;
+            _speedPercent = speedPercent += 0.005f;
 
         if (_speedPercent < 0.03f)
         {
@@ -380,12 +389,14 @@ public class PathFollower : MonoBehaviour
         float distance = Vector3.Distance(transform.position, carTarget.position);
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
-        if (_speedPercent - speedPercent > 0.1f)
+        // This is how I prevent the unreal acceleration
+        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
             _speedPercent = speedPercent += 0.002f;
 
-        if (_speedPercent < 0.03f && _speedPercent > 0.5f)
+        if (_speedPercent < 0.05f)
         {
             _speedPercent = 0f;
+            isFullyStopped = true;
         }
 
         return _speedPercent;
@@ -394,20 +405,22 @@ public class PathFollower : MonoBehaviour
     {
         float distance = trafficLightCarController.GiveDistanceToPathFollower();
         speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
-        if (speedPercent < 0.03f)
+        if (speedPercent < 0.04f)
         {
             speedPercent = 0f;
+            isFullyStopped = true;
         }
         return speedPercent;
     }
 
     public void OnDrawGizmos()
     {
-        if (visualDebug && path != null)
+        if (pathDebug && path != null)
         {
             path.DrawWithGizmos();
         }
     }
+
 }
 
 

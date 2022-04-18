@@ -15,7 +15,7 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private float centerReach = 3.5f;
+    private float centerReach = 4.5f;
     private float sideReach = 15f;
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
@@ -73,6 +73,8 @@ public class WhiskersManager : MonoBehaviour
         rayOrigin = whiskers[0].position;
         avoidanceBehavior.Update(transform, visualDebug);
         priorityBehavior.Update(transform, visualDebug);
+
+        if (pathFollower.isFullyStopped) return;
 
         CheckCars();
 
@@ -152,11 +154,11 @@ public class WhiskersManager : MonoBehaviour
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }

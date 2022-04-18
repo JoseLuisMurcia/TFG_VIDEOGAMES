@@ -87,18 +87,18 @@ public class PriorityBehavior
         if (carInSight.priorityLevel == PriorityLevel.Roundabout)
             return false;
 
-        bool notRelevant = false;
-        Vector3 carInSightForward = carInSight.transform.forward.normalized;
+        Vector3 carInSightForward = carInSight.transform.forward;
+        Vector3 myForward = transform.forward;
         float threshHold = 0.4f;
         if (angleToCarInSight < 0 && (carInSightForward.x < -threshHold || carInSightForward.z < -threshHold))
         {
-            notRelevant = true;
+            return true;
         }
         else if (angleToCarInSight > 0 && (carInSightForward.x > threshHold || carInSightForward.z > threshHold))
         {
-            notRelevant = true;
+            return true;
         }
-        return notRelevant;
+        return false;
     }
     private void ProcessRelevantPriorityCarsInSight()
     {
