@@ -9,14 +9,20 @@ public class Pedestrian : MonoBehaviour
 	private Animator animator;
 
     private float baseSpeed;
-    private float angularSpeed;
-    private float acceleration;
+    private float baseAngularSpeed;
+    private float baseAcceleration;
+
+    private bool slowedDown = false;
   
 	void Start()
     {
         cam = Camera.main;
         agent = GetComponent<NavMeshAgent>();
 		animator = GetComponent<Animator>();
+
+        baseSpeed = agent.speed;
+        baseAngularSpeed = agent.angularSpeed;
+        baseAcceleration = agent.acceleration;
     }
 
     // Update is called once per frame
@@ -32,6 +38,15 @@ public class Pedestrian : MonoBehaviour
 			}
         }
 
+        if (agent.isOnOffMeshLink && !slowedDown)
+        {
+            ReduceSpeedOnLink();
+        }
+        else
+        {
+            if(slowedDown) ResetSpecs();
+        }
+
         if (agent.remainingDistance > agent.stoppingDistance)
         {
             animator.SetBool("IsMoving", true);
@@ -45,6 +60,18 @@ public class Pedestrian : MonoBehaviour
 
     private void ReduceSpeedOnLink()
     {
+        float speedSlash = 0.12f;
+        agent.speed = baseSpeed * speedSlash;
+        agent.angularSpeed = baseAngularSpeed * speedSlash;
+        agent.acceleration = baseAcceleration * speedSlash;
+        slowedDown = true;
+    }
 
+    private void ResetSpecs()
+    {
+        agent.speed = baseSpeed;
+        agent.angularSpeed = baseAngularSpeed;
+        agent.acceleration = baseAcceleration;
+        slowedDown = false;
     }
 }
