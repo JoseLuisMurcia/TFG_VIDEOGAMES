@@ -52,7 +52,6 @@ public class WorldGrid : MonoBehaviour
             }
         }
     }
-
     void CreateGrid()
     {
         grid = new List<Node>();
@@ -81,24 +80,291 @@ public class WorldGrid : MonoBehaviour
                 case TypeOfRoad.Roundabout:
                     CreateNodesForRoundabout((Roundabout)road);
                     break;
+                case TypeOfRoad.Slant:
+                    CreateNodesForSlant(road);
+                    break;
+                case TypeOfRoad.Bridge:
+                    CreateNodesForBridge((Bridge)road);
+                    break;
             }
         }
+        CreateConnectionsForRoundabouts();
         ConnectAllRoads();
     }
 
-    private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode)
+    private void CreateConnectionsForRoundabouts()
+    {
+        foreach (Road road in roads)
+        {
+            if (road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                Roundabout roundabout = (Roundabout)road;
+                foreach (Road connection in roundabout.connections)
+                {
+                    // Find the correct entries and exits
+                    bool entryNotFound = true;
+                    int i = 0;
+                    int entryId = -1;
+                    Vector3 middlePos = Vector3.zero;
+                    while (entryNotFound && i < 4)
+                    {
+                        middlePos = (roundabout.entries[i].position + roundabout.exits[i].position) * .5f;
+                        Vector3 dir = (middlePos - roundabout.transform.position).normalized;
+                        Vector3 rayPos = middlePos + dir * 2f;
+                        Vector3 rayOrigin = rayPos + Vector3.up * 25f;
+                        Ray ray = new Ray(rayOrigin, Vector3.down);
+                        RaycastHit hit;
+                        //Debug.DrawRay(rayPos + Vector3.up * 50, Vector3.down * 55f, Color.magenta, 30f);
+                        if (Physics.Raycast(ray, out hit, 55f, roadMask))
+                        {
+                            Road hitRoad = hit.collider.gameObject.GetComponent<Road>();
+                            if (road != null && hitRoad == connection)
+                            {
+                                entryId = i;
+                                entryNotFound = false;
+                            }
+                        }
+                        i++;
+                    }
+                    if (roundabout.connections.Count < 4)
+                        Debug.Log("hehe");
+                    // Now the entry and exit to the connection has been found
+                    Transform entryTransform = roundabout.entries[entryId];
+                    Transform exitTransform = roundabout.exits[entryId];
+                    Vector3 entry = entryTransform.position;
+                    Vector3 exit = exitTransform.position;
+
+                    if (connection.numberOfLanes == 1)
+                    {
+                        // Ahora hay que crear un Entry o un Exit node en funcion de si el nodo más cercano de esa carretera es entry o exit.
+                        Node closestNodeFromConnection = GetClosestNodeToRoad(middlePos, connection);
+                        bool createExit = false;
+                        // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
+                        if (connection.entryNodes.Contains(closestNodeFromConnection))
+                        {
+                            createExit = true;
+                        }
+
+                        float angleThreshold = 5f;
+                        if (createExit)
+                        {
+                            Node exitNode = new Node(middlePos, roundabout);
+                            roundabout.exitNodes.Add(exitNode);
+                            grid.Add(exitNode);
+
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(middlePos, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - middlePos;
+                                    if (distance < bestDistance && Vector3.SignedAngle(exitTransform.forward, targetDir, Vector3.up) < -angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the exit
+                                bestNode.AddNeighbour(exitNode);
+
+                            }
+
+                        }
+                        else
+                        {
+                            Node entryNode = new Node(middlePos, roundabout);
+                            roundabout.entryNodes.Add(entryNode);
+                            debugNodes.Add(middlePos);
+                            grid.Add(entryNode);
+
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(middlePos, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - middlePos;
+                                    if (distance < bestDistance && Vector3.SignedAngle(entryTransform.forward, targetDir, Vector3.up) > angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the entry
+                                entryNode.AddNeighbour(bestNode);
+
+                            }
+                        }
+
+
+
+                    }
+                    else
+                    {
+                        float angleThreshold = 2f;
+                        if (connection.numDirection == NumDirection.OneDirectional) // 2 lanes and one direction
+                        {
+                            // Ahora hay que crear un Entry o un Exit node en funcion de si el nodo más cercano de esa carretera es entry o exit.
+                            Node closestNodeFromConnection = GetClosestNodeToRoad(middlePos, connection);
+                            bool createExit = false;
+                            // El nodo vecino un entry y tenemos que crear unicamente un exit en la rotonda
+                            if (connection.entryNodes.Contains(closestNodeFromConnection))
+                            {
+                                createExit = true;
+                            }
+                            if (createExit)
+                            {
+                                Node exitNode1 = new Node(exit, roundabout);
+                                Node exitNode2 = new Node(entry, roundabout);
+                                List<Node> exitNodes = new List<Node> { exitNode1, exitNode2 };
+
+                                foreach (Node exitNode in exitNodes)
+                                {
+                                    grid.Add(exitNode);
+                                    roundabout.exitNodes.Add(exitNode);
+                                    foreach (Lane lane in roundabout.lanes)
+                                    {
+                                        float bestDistance = Mathf.Infinity;
+                                        Node bestNode = null;
+                                        foreach (Node node in lane.nodes)
+                                        {
+                                            float distance = Vector3.Distance(exitNode.worldPosition, node.worldPosition);
+                                            Vector3 targetDir = node.worldPosition - exitNode.worldPosition;
+                                            if (distance < bestDistance && Vector3.SignedAngle(exitTransform.forward, targetDir, Vector3.up) < -angleThreshold)
+                                            {
+                                                bestDistance = distance;
+                                                bestNode = node;
+                                            }
+                                        }
+                                        // Connect the best node to the exit
+                                        bestNode.AddNeighbour(exitNode);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Node entryNode1 = new Node(exit, roundabout);
+                                Node entryNode2 = new Node(entry, roundabout);
+                                List<Node> entryNodes = new List<Node> { entryNode1, entryNode2 };
+
+                                foreach (Node entryNode in entryNodes)
+                                {
+                                    debugNodes.Add(entryNode.worldPosition);
+                                    grid.Add(entryNode);
+                                    roundabout.entryNodes.Add(entryNode);
+                                    foreach (Lane lane in roundabout.lanes)
+                                    {
+                                        float bestDistance = Mathf.Infinity;
+                                        Node bestNode = null;
+                                        foreach (Node node in lane.nodes)
+                                        {
+                                            float distance = Vector3.Distance(entryNode.worldPosition, node.worldPosition);
+                                            Vector3 targetDir = node.worldPosition - entryNode.worldPosition;
+                                            Vector3 forward = entryNode.worldPosition == entryTransform.position ? entryTransform.forward : exitTransform.forward;
+                                            if (distance < bestDistance && Vector3.SignedAngle(entryTransform.forward, targetDir, Vector3.up) > angleThreshold)
+                                            {
+                                                bestDistance = distance;
+                                                bestNode = node;
+                                            }
+                                        }
+                                        // Connect the best node to the entry
+                                        entryNode.AddNeighbour(bestNode);
+
+                                    }
+                                }
+
+                            }
+                        }
+                        else // 2 lanes and both directions
+                        {
+                            Node exitNode = new Node(exit, roundabout);
+                            grid.Add(exitNode);
+                            roundabout.exitNodes.Add(exitNode);
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(exitNode.worldPosition, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - exitNode.worldPosition;
+                                    if (distance < bestDistance && Vector3.SignedAngle(exitTransform.forward, targetDir, Vector3.up) < -angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the exit
+                                bestNode.AddNeighbour(exitNode);
+                            }
+
+                            Node entryNode = new Node(entry, roundabout);
+                            debugNodes.Add(entryNode.worldPosition);
+                            grid.Add(entryNode);
+                            roundabout.entryNodes.Add(entryNode);
+                            foreach (Lane lane in roundabout.lanes)
+                            {
+                                float bestDistance = Mathf.Infinity;
+                                Node bestNode = null;
+                                foreach (Node node in lane.nodes)
+                                {
+                                    float distance = Vector3.Distance(entryNode.worldPosition, node.worldPosition);
+                                    Vector3 targetDir = node.worldPosition - entryNode.worldPosition;
+                                    if (distance < bestDistance && Vector3.SignedAngle(entryTransform.forward, targetDir, Vector3.up) > angleThreshold)
+                                    {
+                                        bestDistance = distance;
+                                        bestNode = node;
+                                    }
+                                }
+                                // Connect the best node to the entry
+                                entryNode.AddNeighbour(bestNode);
+
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    private Node GetClosestNodeToRoad(Vector3 position, Road connection)
+    {
+        Node entryNode = connection.entryNodes[0];
+        Node exitNode = connection.exitNodes[0];
+        if (Vector3.Distance(entryNode.worldPosition, position) > Vector3.Distance(exitNode.worldPosition, position))
+        {
+            return exitNode;
+        }
+        return entryNode;
+    }
+
+    private Node GetClosestNodeToRoadFromConnection(Node node, Road connection)
+    {
+        Node entryNode = connection.entryNodes[0];
+        Node exitNode = connection.exitNodes[0];
+        if (Vector3.Distance(entryNode.worldPosition, node.worldPosition) > Vector3.Distance(exitNode.worldPosition, node.worldPosition))
+        {
+            return exitNode;
+        }
+        return entryNode;
+    }
+
+    private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode, Road road)
     {
         if (distance < 3f && dot > 0)
         {
             Vector3 unionNodePos = (exitNode.worldPosition + entryNode.worldPosition) * 0.5f;
-            Node unionNode = new Node(unionNodePos, null);
+            Node unionNode = new Node(unionNodePos, road);
             exitNode.AddNeighbour(unionNode);
             unionNode.AddNeighbour(entryNode);
             unionNodes.Add(unionNodePos);
             grid.Add(unionNode);
         }
     }
-
     private void ConnectAllRoads()
     {
         // Connect the exit and entry nodes in the roads
@@ -112,6 +378,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     foreach (Node neighbourEntryNode in connection.entryNodes)
                     {
+
                         float distance = Vector3.Distance(exitNode.worldPosition, neighbourEntryNode.worldPosition);
                         // Check dot, you cant connect an exit node to an entry that's behind
                         Vector3 exitNodeForward = (exitNode.worldPosition - exitNode.previousNode.worldPosition).normalized;
@@ -119,7 +386,7 @@ public class WorldGrid : MonoBehaviour
                         float dot = Vector3.Dot(exitNodeForward, dirToMovePosition);
                         if (connection.typeOfRoad == TypeOfRoad.Deviation)
                         {
-                            PerformSpecialConnection(distance, dot, exitNode, neighbourEntryNode);
+                            PerformSpecialConnection(distance, dot, exitNode, neighbourEntryNode, connection);
                         }
                         if (distance < bestDistance && dot > 0)
                         {
@@ -133,7 +400,7 @@ public class WorldGrid : MonoBehaviour
                 {
                     // Perform connection
                     Vector3 unionNodePos = (exitNode.worldPosition + bestEntryNode.worldPosition) * 0.5f;
-                    Node unionNode = new Node(unionNodePos, null);
+                    Node unionNode = new Node(unionNodePos, road);
                     exitNode.AddNeighbour(unionNode);
                     unionNode.AddNeighbour(bestEntryNode);
                     unionNodes.Add(unionNodePos);
@@ -148,9 +415,6 @@ public class WorldGrid : MonoBehaviour
 
         }
     }
-
-
-
     private void ConnectRoadsThroughIntersection(Road road)
     {
         // maxDistance should be generated taking into account the bounds size
@@ -182,7 +446,7 @@ public class WorldGrid : MonoBehaviour
                                 {
                                     // Perform connection
                                     Vector3 unionNodePos = (exit.worldPosition + entry.worldPosition) * 0.5f;
-                                    Node unionNode = new Node(unionNodePos, null);
+                                    Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
                                     unionNodes.Add(unionNodePos);
@@ -212,7 +476,7 @@ public class WorldGrid : MonoBehaviour
                                         unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
                                     }
 
-                                    Node unionNode = new Node(unionNodePos, null);
+                                    Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
                                     unionNodes.Add(unionNodePos);
@@ -365,7 +629,7 @@ public class WorldGrid : MonoBehaviour
         Vector3 straightEndPos = road.endPos;
         Vector3[] startPositions = new Vector3[numLanes];
         Vector3[] endPositions = new Vector3[numLanes];
-        List<Vector3> linePoints = new List<Vector3>();
+        List<Vector3> linePoints;
         bool invertPath = road.invertPath;
         if (numLanes == 2)
         {
@@ -453,12 +717,17 @@ public class WorldGrid : MonoBehaviour
 
         // Curve creation
         int numLinePoints = linePoints.Count;
-        entryNode = new Node(linePoints[0], road);
+        if(numLanes == 2)
+        {
+            entryNode = road.lanes[0].nodes[0];
+        }
+        else
+        {
+            entryNode = road.lanes[1].nodes[0];
+        }
+        
         exitNode = new Node(linePoints[numLinePoints - 1], road);
-        road.entryNodes.Add(entryNode);
         road.exitNodes.Add(exitNode);
-        grid.Add(entryNode);
-        debugNodes.Add(entryNode.worldPosition);
         previousNode = entryNode;
         for (int i = 1; i < numLinePoints - 1; i++)
         {
@@ -563,62 +832,6 @@ public class WorldGrid : MonoBehaviour
 
         // Connect nodes between lanes
         ConnectNodesInRoad(roundabout);
-
-        // Connect entry and exit nodes hehe
-        List<Transform> entries = roundabout.entries;
-        List<Transform> exits = roundabout.exits;
-
-        foreach (Transform entry in entries)
-        {
-            debugNodes.Add(entry.position);
-
-        }
-        foreach (Transform entry in entries)
-        {
-            foreach (Lane lane in roundabout.lanes)
-            {
-                float bestDistance = Mathf.Infinity;
-                Node bestNode = null;
-                foreach (Node node in lane.nodes)
-                {
-                    float distance = Vector3.Distance(entry.position, node.worldPosition);
-                    Vector3 targetDir = node.worldPosition - entry.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(entry.forward, targetDir, Vector3.up) < 0)
-                    {
-                        bestDistance = distance;
-                        bestNode = node;
-                    }
-                }
-                // Connect the best node to the entry
-                Node entryNode = new Node(entry.position, roundabout);
-                roundabout.entryNodes.Add(entryNode);
-                entryNode.AddNeighbour(bestNode);
-                grid.Add(entryNode);
-            }
-        }
-        foreach (Transform exit in exits)
-        {
-            foreach (Lane lane in roundabout.lanes)
-            {
-                float bestDistance = Mathf.Infinity;
-                Node bestNode = null;
-                foreach (Node node in lane.nodes)
-                {
-                    float distance = Vector3.Distance(exit.position, node.worldPosition);
-                    Vector3 targetDir = node.worldPosition - exit.position;
-                    if (distance < bestDistance && Vector3.SignedAngle(exit.forward, targetDir, Vector3.up) > 0)
-                    {
-                        bestDistance = distance;
-                        bestNode = node;
-                    }
-                }
-                // Connect the best node to the exit
-                Node exitNode = new Node(exit.position, roundabout);
-                roundabout.exitNodes.Add(exitNode);
-                bestNode.AddNeighbour(exitNode);
-                grid.Add(exitNode);
-            }
-        }
     }
     private List<Line> CreateLinesForRoundabout(Roundabout roundabout)
     {
@@ -778,7 +991,254 @@ public class WorldGrid : MonoBehaviour
         }
         ConnectNodesInRoad(road);
     }
+    private void CreateNodesForSlant(Road road)
+    {
+        int numberOfLanes = road.numberOfLanes;
+        List<Vector3> referencePoints = road.laneReferencePoints;
+        int numNodes = referencePoints.Count;
+        float zWidth = road.bounds.extents.z;
+        zWidth = road.bounds.extents.z * road.transform.localScale.z * 0.7f;
+        float xWidth = road.bounds.extents.x;
 
+        // Calculate the offset points
+        Vector3[][] lanePositions = new Vector3[numberOfLanes][];
+        for (int i = 0; i < numberOfLanes; i++)
+        {
+            lanePositions[i] = new Vector3[numNodes];
+            for (int j = 0; j < numNodes; j++)
+            {
+                if (numberOfLanes == 1)
+                {
+                    lanePositions[i][j] = referencePoints[j];
+                }
+                else if (numberOfLanes == 2)
+                {
+                    float distance = zWidth * .5f;
+                    switch (i)
+                    {
+                        case 0:
+                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance;
+                            break;
+                        case 1:
+                            if (road.numDirection == NumDirection.OneDirectional)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance;
+                            }
+                            else
+                            {
+                                int inverseJ = numNodes - j - 1;
+                                lanePositions[i][inverseJ] = referencePoints[j] + road.transform.forward * distance;
+                            }
+                            break;
+                    }
+
+                }
+                else if (numberOfLanes == 4)
+                {
+                    float distance = zWidth;
+                    int inverseJ = numNodes - j - 1;
+                    switch (i)
+                    {
+                        case 0:
+                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance * .8f;
+                            break;
+                        case 1:
+                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance * .3f;
+                            break;
+                        case 2:
+                            if (road.numDirection == NumDirection.OneDirectional)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance * .3f;
+                            }
+                            else
+                            {
+                                lanePositions[i][inverseJ] = referencePoints[j] + road.transform.forward * distance * .3f;
+                            }
+                            break;
+                        case 3:
+                            if (road.numDirection == NumDirection.OneDirectional)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance * .8f;
+                            }
+                            else
+                            {
+                                lanePositions[i][inverseJ] = referencePoints[j] + road.transform.forward * distance * .8f;
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        if (road.invertPath)
+        {
+            Vector3[][] invertedLanePositions = new Vector3[numberOfLanes][];
+            for (int i = 0; i < numberOfLanes; i++)
+            {
+                invertedLanePositions[i] = new Vector3[numNodes];
+                for (int j = 0; j < numNodes; j++)
+                {
+                    invertedLanePositions[i][numNodes - j - 1] = lanePositions[i][j];
+                }
+            }
+
+            lanePositions = invertedLanePositions;
+        }
+
+        // With the lines and the offsets created, find points in the line matching the lane offset calculated before for each lane.
+        for (int i = 0; i < numberOfLanes; i++)
+        {
+            Vector3 laneStartPoint = lanePositions[i][0];
+            Vector3 laneEndPoint = lanePositions[i][numNodes - 1];
+            debugNodes.Add(laneStartPoint);
+            Node entryNode = new Node(laneStartPoint, road);
+            Node exitNode = new Node(laneEndPoint, road);
+            grid.Add(entryNode);
+            road.lanes[i].nodes.Add(entryNode);
+            road.entryNodes.Add(entryNode);
+            road.exitNodes.Add(exitNode);
+            Node previousNode = entryNode;
+
+            for (int j = 1; j < numNodes - 1; j++)
+            {
+                Node newNode = new Node(lanePositions[i][j], road);
+                previousNode.AddNeighbour(newNode);
+                previousNode = newNode;
+                grid.Add(newNode);
+                road.lanes[i].nodes.Add(newNode);
+            }
+            previousNode.AddNeighbour(exitNode);
+            road.lanes[i].nodes.Add(exitNode);
+            grid.Add(exitNode);
+        }
+        ConnectNodesInRoad(road);
+    }
+    private void CreateNodesForBridge(Bridge road)
+    {
+        Vector3 startPoint = road.laneReferencePoints[0];
+        Vector3 endPoint = road.laneReferencePoints[1];
+        Vector3 middlePoint = (startPoint + endPoint) * .5f;
+
+        float upperBridgeHeight = road.transform.TransformPoint(road.bounds.max).y;
+        Vector3 angles = new Vector3(0, 90, 0);
+        Vector3 upperStartPoint = RotatePointAroundPivot(startPoint, middlePoint, angles);
+        upperStartPoint.y = upperBridgeHeight;
+        Vector3 upperEndPoint = RotatePointAroundPivot(endPoint, middlePoint, angles);
+        upperEndPoint.y = upperBridgeHeight;
+
+        CreateNodesFromStartAndEnd(road, startPoint, endPoint, road.lowerNumDirection, road.invertLowerRoad, road.lowerRoadNumLanes, false, road.lanes);
+        CreateNodesFromStartAndEnd(road, upperStartPoint, upperEndPoint, road.upperNumDirection, road.invertUpperRoad, road.upperRoadNumLanes, true, road.lanes);
+    }
+    private void CreateNodesFromStartAndEnd(Road road, Vector3 start, Vector3 end, NumDirection numDirection, bool invert, int numberOfLanes, bool upperBridge, List<Lane> lanes)
+    {
+        Vector3[] startPoints = new Vector3[numberOfLanes];
+        Vector3[] endPoints = new Vector3[numberOfLanes];
+        float zWidth = road.bounds.extents.z * road.transform.localScale.z * 0.6f;
+        float xWidth = road.bounds.extents.x * road.transform.localScale.x * 0.6f;
+        if (numberOfLanes == 1)
+        {
+            startPoints[0] = start;
+            endPoints[0] = end;
+        }
+        else if (numberOfLanes == 2)
+        {
+            float distance = zWidth * .5f;
+            Vector3 direction = upperBridge ? -road.transform.right : road.transform.forward;
+            startPoints[0] = start - direction * distance;
+            endPoints[0] = end - direction * distance;
+
+            startPoints[1] = start + direction * distance;
+            endPoints[1] = end + direction * distance;
+        }
+        else // caso 4 carriles
+        {
+            startPoints[0] = start - road.transform.forward * zWidth * .8f;
+            endPoints[0] = end - road.transform.forward * zWidth * .8f;
+
+            startPoints[1] = start - road.transform.forward * zWidth * .3f;
+            endPoints[1] = end - road.transform.forward * zWidth * .3f;
+
+            startPoints[2] = start + road.transform.forward * zWidth * .3f;
+            endPoints[2] = end + road.transform.forward * zWidth * .3f;
+
+            startPoints[3] = start + road.transform.forward * zWidth * .8f;
+            endPoints[3] = end + road.transform.forward * zWidth * .8f;
+        }
+
+        if (invert)
+        {
+            Vector3[] invertedStartPoints = new Vector3[numberOfLanes];
+            Vector3[] invertedEndPoints = new Vector3[numberOfLanes];
+
+            for (int i = 0; i < numberOfLanes; i++)
+            {
+                invertedStartPoints[i] = endPoints[i];
+                invertedEndPoints[i] = startPoints[i];
+            }
+            startPoints = invertedStartPoints;
+            endPoints = invertedEndPoints;
+        }
+
+        for (int i = 0; i < numberOfLanes; i++)
+        {
+            Node entryNode;
+            Node exitNode;
+            if (numDirection == NumDirection.TwoDirectional && i < numberOfLanes / 2 && numberOfLanes > 1)
+            {
+                entryNode = new Node(endPoints[i], road);
+                exitNode = new Node(startPoints[i], road);
+            }
+            else
+            {
+                entryNode = new Node(startPoints[i], road);
+                exitNode = new Node(endPoints[i], road);
+            }
+            road.entryNodes.Add(entryNode);
+            road.exitNodes.Add(exitNode);
+            debugNodes.Add(entryNode.worldPosition);
+
+            // Calculate all the possible nodes that could fit in a reasonable distance
+            float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
+            float xDistance = GetDistanceToReach(entryNode.worldPosition.x, exitNode.worldPosition.x);
+            float yDistance = GetDistanceToReach(entryNode.worldPosition.y, exitNode.worldPosition.y);
+            float zDistance = GetDistanceToReach(entryNode.worldPosition.z, exitNode.worldPosition.z);
+            int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
+            int nodesToAdd = totalNodesInRoad - 2;
+            grid.Add(entryNode);
+            lanes[i].nodes.Add(entryNode);
+            if (nodesToAdd > 0)
+            {
+                Node previousNode = entryNode;
+                for (int j = 1; j <= nodesToAdd; j++)
+                {
+                    float multiplier = j / ((float)nodesToAdd + 1f);
+                    Vector3 newNodePos;
+                    newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y + yDistance * multiplier, entryNode.worldPosition.z + zDistance * multiplier);
+                    Node newNode = new Node(newNodePos, road);
+                    previousNode.AddNeighbour(newNode);
+                    grid.Add(newNode);
+                    lanes[i].nodes.Add(newNode);
+                    previousNode = newNode;
+                }
+                previousNode.AddNeighbour(exitNode);
+            }
+            else
+            {
+                entryNode.AddNeighbour(exitNode);
+            }
+            lanes[i].nodes.Add(exitNode);
+            grid.Add(exitNode);
+        }
+    }
+
+    private void CreateNodesForStraightRoad(Road road)
+    {
+        int numberOfLanes = road.numberOfLanes;
+        Vector3 startRefPoint = road.laneReferencePoints[0];
+        Vector3 endRefPoint = road.laneReferencePoints[1];
+        CreateNodesFromStartAndEnd(road, startRefPoint, endRefPoint, road.numDirection, road.invertPath, numberOfLanes, false, road.lanes);
+        ConnectNodesInRoad(road);
+    }
     private List<Line> CreateLinesForRoadPoints(Road road)
     {
         List<Vector3> referencePoints = road.laneReferencePoints;
@@ -861,133 +1321,18 @@ public class WorldGrid : MonoBehaviour
         }
     }
 
-    private void CreateNodesForStraightRoad(Road road)
-    {
-        Vector3 leftBottom = road.leftBottom.position;
-        int numberOfLanes = road.numberOfLanes;
-        Vector3 startRefPoint = road.laneReferencePoints[0];
-        Vector3 endRefPoint = road.laneReferencePoints[1];
-        // Swap if incorrect
-        if (Vector3.Distance(startRefPoint, leftBottom) > Vector3.Distance(endRefPoint, leftBottom))
-        {
-            Vector3 copy = new Vector3(startRefPoint.x, startRefPoint.y, startRefPoint.z);
-            startRefPoint = endRefPoint;
-            endRefPoint = copy;
-        }
-        Vector3[] startPoints = new Vector3[numberOfLanes];
-        Vector3[] endPoints = new Vector3[numberOfLanes];
-
-        if (numberOfLanes == 1) // caso de que hay un carril, fijas la posicion y a generar nodos desde ahí hasta el final.
-        {
-            startPoints[0] = startRefPoint;
-            endPoints[0] = endRefPoint;
-        }
-        else if (numberOfLanes == 2) // caso 2 carriles, a partir del punto central bajo sacas el punto de partida que es el punto medio entre el central bajo y el izquierdo bajo y a generar
-        {
-            // Distancia entre left y center pero invertida
-            startPoints[0] = (startRefPoint + leftBottom) * 0.5f;
-            endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], startRefPoint, endRefPoint);
-
-            Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
-
-            startPoints[1] = (startRefPoint + rightBottom) * 0.5f;
-            endPoints[1] = GetOppositeVector(endPoints[0], endRefPoint);
-        }
-        else // caso 4 carriles
-        {
-            Vector3 leftHalf = (startRefPoint + leftBottom) * 0.5f;
-            Vector3 leftHalfEnd = GetVectorWithSameDistanceAsSources(leftHalf, startRefPoint, endRefPoint);
-            startPoints[0] = (leftHalf + leftBottom) * 0.5f;
-            endPoints[0] = GetVectorWithSameDistanceAsSources(startPoints[0], leftHalf, leftHalfEnd);
-
-            startPoints[1] = (startRefPoint + leftHalf) * 0.5f;
-            endPoints[1] = GetVectorWithSameDistanceAsSources(leftHalf, startPoints[1], leftHalfEnd);
-            endPoints[1] = GetOppositeVector(endPoints[0], leftHalfEnd);
-
-            Vector3 rightBottom = GetOppositeVector(leftBottom, startRefPoint);
-            Vector3 rightHalf = (startRefPoint + rightBottom) * 0.5f;
-            Vector3 rightHalfEnd = GetVectorWithSameDistanceAsSources(rightHalf, startRefPoint, endRefPoint);
-
-
-            startPoints[2] = (startRefPoint + rightHalf) * 0.5f;
-            endPoints[2] = (endRefPoint + rightHalfEnd) * 0.5f;
-
-            startPoints[3] = (rightHalf + rightBottom) * 0.5f;
-            endPoints[3] = GetOppositeVector(endPoints[2], rightHalfEnd);
-        }
-
-        if (road.invertPath)
-        {
-            Vector3[] invertedStartPoints = new Vector3[numberOfLanes];
-            Vector3[] invertedEndPoints = new Vector3[numberOfLanes];
-
-            for (int i = 0; i < numberOfLanes; i++)
-            {
-                int invertedIndex = numberOfLanes - i - 1;
-                invertedStartPoints[invertedIndex] = startPoints[i];
-                invertedEndPoints[invertedIndex] = endPoints[i];
-            }
-            startPoints = invertedStartPoints;
-            endPoints = invertedEndPoints;
-        }
-
-        for (int i = 0; i < numberOfLanes; i++)
-        {
-            Node entryNode;
-            Node exitNode;
-            if (road.numDirection == NumDirection.TwoDirectional && i < numberOfLanes / 2 && numberOfLanes > 1)
-            {
-                entryNode = new Node(endPoints[i], road);
-                exitNode = new Node(startPoints[i], road);
-            }
-            else
-            {
-                entryNode = new Node(startPoints[i], road);
-                exitNode = new Node(endPoints[i], road);
-            }
-            road.entryNodes.Add(entryNode);
-            road.exitNodes.Add(exitNode);
-            debugNodes.Add(entryNode.worldPosition);
-
-            // Calculate all the possible nodes that could fit in a reasonable distance
-            float distance = Vector3.Distance(entryNode.worldPosition, exitNode.worldPosition);
-            float xDistance = GetDistanceToReach(entryNode.worldPosition.x, exitNode.worldPosition.x);
-            float zDistance = GetDistanceToReach(entryNode.worldPosition.z, exitNode.worldPosition.z);
-            int totalNodesInRoad = Mathf.FloorToInt(distance / distancePerNode);
-            int nodesToAdd = totalNodesInRoad - 2;
-            grid.Add(entryNode);
-            road.lanes[i].nodes.Add(entryNode);
-            if (nodesToAdd > 0)
-            {
-                Node previousNode = entryNode;
-                for (int j = 1; j <= nodesToAdd; j++)
-                {
-                    float multiplier = j / ((float)nodesToAdd + 1f);
-                    Vector3 newNodePos;
-                    newNodePos = new Vector3(entryNode.worldPosition.x + xDistance * multiplier, entryNode.worldPosition.y, entryNode.worldPosition.z + zDistance * multiplier);
-                    Node newNode = new Node(newNodePos, road);
-                    previousNode.AddNeighbour(newNode);
-                    grid.Add(newNode);
-                    road.lanes[i].nodes.Add(newNode);
-                    previousNode = newNode;
-                }
-                previousNode.AddNeighbour(exitNode);
-            }
-            else
-            {
-                entryNode.AddNeighbour(exitNode);
-            }
-            road.lanes[i].nodes.Add(exitNode);
-            grid.Add(exitNode);
-        }
-        ConnectNodesInRoad(road);
-    }
-
 
     #endregion
 
     #region Auxiliar methods
 
+    private Vector3 RotatePointAroundPivot(Vector3 point, Vector3 pivot, Vector3 angles)
+    {
+        Vector3 dir = point - new Vector3(pivot.x, pivot.y, pivot.z);
+        dir = Quaternion.Euler(angles) * dir;
+        point = dir + pivot;
+        return point;
+    }
     // Method that finds a random node in roads, used to spawn a car in it and to acquire a new target node
     public Node GetRandomNodeInRoads()
     {
@@ -1012,7 +1357,7 @@ public class WorldGrid : MonoBehaviour
 
         if (randomNode == null)
         {
-            Debug.LogError("SE VA A LIAR");
+            Debug.LogError("SE ROMPIO EL GetRandomNodeInRoads PUTA MADRE");
         }
         return randomNode;
     }
@@ -1020,11 +1365,6 @@ public class WorldGrid : MonoBehaviour
     private Vector2 V3ToV2(Vector3 v3)
     {
         return new Vector2(v3.x, v3.z);
-    }
-
-    private Vector2 V2ToV3(Vector2 v2)
-    {
-        return new Vector3(v2.x, 0f, v2.y);
     }
 
     private Vector3 GetOppositeVector(Vector3 origin, Vector3 anchor)

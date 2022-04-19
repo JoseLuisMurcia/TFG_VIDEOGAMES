@@ -12,6 +12,7 @@ public class TrafficLightScheduler : MonoBehaviour
     [SerializeField] float greenTime = 2f;
     [SerializeField] float amberTime = 1f;
     [SerializeField] float redTime = 3f;
+    [SerializeField] float transitionTime = 1f;
 
     private void Start()
     {
@@ -55,7 +56,7 @@ public class TrafficLightScheduler : MonoBehaviour
                     currentColor = TrafficLightColor.Red;
                     SetNewColor(TrafficLightColor.Red);
                     // Ponemos en verde el nuevo semaforo
-                    SetNewActiveTrafficLight();
+                    StartCoroutine(SetNewActiveTrafficLight());
                     break; 
 
                 case TrafficLightColor.Red:
@@ -67,13 +68,22 @@ public class TrafficLightScheduler : MonoBehaviour
         }
     }
 
-    private void SetNewActiveTrafficLight()
+    IEnumerator SetNewActiveTrafficLight()
     {
         waitingQueue.Enqueue(currentTrafficLight);
         currentTrafficLight = waitingQueue.Dequeue();
+        yield return new WaitForSeconds(transitionTime);
         currentColor = TrafficLightColor.Green;
         SetNewColor(currentColor);
     }
+
+    //private void SetNewActiveTrafficLight()
+    //{
+    //    waitingQueue.Enqueue(currentTrafficLight);
+    //    currentTrafficLight = waitingQueue.Dequeue();
+    //    currentColor = TrafficLightColor.Green;
+    //    SetNewColor(currentColor);
+    //}
 
     private void SetNewColor(TrafficLightColor color)
     {

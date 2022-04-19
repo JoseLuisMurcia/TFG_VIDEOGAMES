@@ -19,14 +19,21 @@ public class PathfinderRequestManager : MonoBehaviour
         pathfinding = GetComponent<Pathfinding>();
     }
 
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
+    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Vector3 carForward, Action<List<Node>, bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
         instance.TryProcessNext();
     }
 
-    public static void RequestPath(Node pathStart, Node pathEnd, Vector3 carForward, Action<Vector3[], bool, Node, Node> callback)
+    public static void RequestPath(Node pathStart, Node pathEnd, Vector3 carForward, Action<List<Node>, bool, Node, Node> callback)
+    {
+        PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
+        instance.pathRequestQueue.Enqueue(newRequest);
+        instance.TryProcessNext();
+    }
+
+    public static void RequestPath(Vector3 pathStart, Node pathEnd, Vector3 carForward, Action<List<Node>, bool, Node, Node> callback)
     {
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, carForward, callback);
         instance.pathRequestQueue.Enqueue(newRequest);
@@ -39,18 +46,27 @@ public class PathfinderRequestManager : MonoBehaviour
         {
             currentPathRequest = pathRequestQueue.Dequeue();
             isProcessingPath = true;
-            if (currentPathRequest.pathEnd != Vector3.zero)
+
+
+            if (currentPathRequest.startNode != null)
             {
-                pathfinding.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd, currentPathRequest.carForward);
+                pathfinding.StartFindPath(currentPathRequest.startNode, currentPathRequest.endNode);
             }
             else
             {
-                pathfinding.StartFindPath(currentPathRequest.nodeStart, currentPathRequest.nodeEnd);
+                if (currentPathRequest.endNode == null)
+                {
+                    pathfinding.StartFindPath(currentPathRequest.startPos, currentPathRequest.endPos, currentPathRequest.carForward);
+                }
+                else
+                {
+                    pathfinding.StartFindPath(currentPathRequest.startPos, currentPathRequest.endNode, currentPathRequest.carForward);
+                }
             }
         }
     }
 
-    public void FinishedProcessingPath(Vector3[] path, bool success, Node startNode, Node endNode)
+    public void FinishedProcessingPath(List<Node> path, bool success, Node startNode, Node endNode)
     {
         currentPathRequest.callback(path, success, startNode, endNode);
         isProcessingPath = false;
@@ -59,31 +75,44 @@ public class PathfinderRequestManager : MonoBehaviour
 
     struct PathRequest
     {
-        public Vector3 pathStart;
-        public Vector3 pathEnd;
-        public Node nodeEnd;
-        public Node nodeStart;
+        public Vector3 startPos;
+        public Vector3 endPos;
+        public Node endNode;
+        public Node startNode;
         public Vector3 carForward;
-        public Action<Vector3[], bool, Node, Node> callback;
+        public Action<List<Node>, bool, Node, Node> callback;
 
-        public PathRequest(Vector3 _start, Vector3 _end, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
+        public PathRequest(Vector3 _startPos, Vector3 _endPos, Vector3 _carForward, Action<List<Node>, bool, Node, Node> _callback)
         {
-            pathStart = _start;
-            pathEnd = _end;
+            startPos = _startPos;
+            endPos = _endPos;
             callback = _callback;
             carForward = _carForward;
-            nodeEnd = null;
-            nodeStart = null;
+
+            startNode = null;
+            endNode = null;
         }
 
-        public PathRequest(Node _nodeStart, Node _nodeEnd, Vector3 _carForward, Action<Vector3[], bool, Node, Node> _callback)
+        public PathRequest(Node _nodeStart, Node _nodeEnd, Vector3 _carForward, Action<List<Node>, bool, Node, Node> _callback)
         {
-            nodeStart = _nodeStart;
-            nodeEnd = _nodeEnd;
+            startNode = _nodeStart;
+            endNode = _nodeEnd;
             callback = _callback;
             carForward = _carForward;
-            pathStart = Vector3.zero;
-            pathEnd = Vector3.zero;
+
+            startPos = Vector3.zero;
+            endPos = Vector3.zero;
+        }
+
+        public PathRequest(Vector3 _startPos, Node _nodeEnd, Vector3 _carForward, Action<List<Node>, bool, Node, Node> _callback)
+        {
+            startPos = _startPos;
+            endNode = _nodeEnd;
+            callback = _callback;
+            carForward = _carForward;
+
+            startNode = null;
+            endPos = Vector3.zero;
         }
     }
 }

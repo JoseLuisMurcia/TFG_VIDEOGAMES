@@ -15,8 +15,8 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private float centerReach = 5.5f;
-    private float sideReach = 20f;
+    private float centerReach = 4.5f;
+    private float sideReach = 15f;
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
 
@@ -36,7 +36,7 @@ public class WhiskersManager : MonoBehaviour
             }
         }
         CreateIncorporationWhiskers(whiskersParent);
-        avoidanceBehavior = new AvoidanceBehavior(carLayer, obstacleLayer, whiskers, pathFollower, trafficLightCarController, priorityBehavior);
+        avoidanceBehavior = new AvoidanceBehavior(carLayer, obstacleLayer, whiskers, pathFollower, trafficLightCarController);
         priorityBehavior = new PriorityBehavior(carLayer, signalLayer, whiskers, pathFollower, avoidanceBehavior);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
@@ -74,7 +74,10 @@ public class WhiskersManager : MonoBehaviour
         avoidanceBehavior.Update(transform, visualDebug);
         priorityBehavior.Update(transform, visualDebug);
 
+        if (pathFollower.isFullyStopped) return;
+
         CheckCars();
+
         if (!priorityBehavior.hasSignalInSight)
         {
             CheckSignals();
@@ -97,7 +100,7 @@ public class WhiskersManager : MonoBehaviour
 
             if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
             {
-                reach = 7f;
+                reach = 6f;
                 if (sensor.localEulerAngles.y < 180f)
                 {
                     continue;
@@ -107,12 +110,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 priorityBehavior.ProcessCarHit(ray, hit, sensor);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.white);
             }
         }
     }
@@ -130,15 +133,13 @@ public class WhiskersManager : MonoBehaviour
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.red);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.red);
             }
         }
     }
 
     void CheckCars()
     {
-        if (avoidanceBehavior.hasTarget && priorityBehavior.hasSignalInSight)
-            return;
         RaycastHit hit;
         foreach (Transform sensor in whiskers)
         {
@@ -150,15 +151,9 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                if (!avoidanceBehavior.hasTarget) avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                if (!priorityBehavior.hasSignalInSight)
-                {
-                    if (intersectionInSight)
-                    {
-                        priorityBehavior.ProcessCarHit(ray, hit, sensor);
-                    }
+                avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
+                if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
-                }
                 if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else

@@ -6,27 +6,24 @@ using UnityEngine;
 // With the grid, we can find the node in that position and check if it is walkable and the movement penalty
 public class AvoidanceBehavior
 {
-    List<Transform> whiskers = new List<Transform>(); 
+    List<Transform> whiskers = new List<Transform>();
     public bool objectHit = false;
     private PathFollower pathFollower;
     public PathFollower hitCarPathFollower;
     private TrafficLightCarController trafficLightController;
     private TrafficLightCarController hitCarTrafficLightController;
     private Vector3 rayOrigin;
-    private Transform carTarget;
     public bool hasTarget = false;
     LayerMask obstacleLayer, carLayer;
     private Transform transform;
     private bool visualDebug;
-    private PriorityBehavior priorityBehavior;
 
-    public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController, PriorityBehavior _priorityBehavior)
+    public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
     {
         carLayer = _carLayer;
         obstacleLayer = _obstacleLayer;
         whiskers = _whiskers;
         pathFollower = _pathFollower;
-        priorityBehavior = _priorityBehavior;
         trafficLightController = _trafficLightCarController;
     }
 
@@ -41,60 +38,45 @@ public class AvoidanceBehavior
         rayOrigin = whiskers[0].position;
 
         //CheckRoadObstacles();
-        CheckIfTargetIsValid();
+        if (hasTarget) CheckIfTargetIsValid();
     }
 
     private void CheckIfTargetIsValid()
     {
-        if (carTarget != null)
+        if (TargetIsFar())
         {
-            float distance = 3.5f;
-            if (trafficLightController.currentRoad != null)
-            {
-                if (DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
-                {
-                    UnableTarget();
-                }
-                else if (Vector3.Distance(carTarget.position, transform.position) > distance)
-                {
-                    UnableTarget();
-                }
-                else
-                {
-                    EnableTarget();
-                }
-
-            }
-            else
-            {
-                if (Vector3.Distance(carTarget.position, transform.position) > distance)
-                {
-                    UnableTarget();
-                }
-                else
-                {
-                    EnableTarget();
-                }
-            }
-
+            UnableTarget();
         }
+        else if (trafficLightController.currentRoad != null)
+        {
+            if (DifferentRoads(trafficLightController, hitCarTrafficLightController))
+            {
+                UnableTarget();
+            }
+        }
+    }
+
+    private bool TargetIsFar()
+    {
+        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 3.5f;
     }
     private void UnableTarget()
     {
-        carTarget = null;
         hasTarget = false;
         pathFollower.carTarget = null;
         pathFollower.shouldBrakeBeforeCar = false;
         pathFollower.targetPriorityBehavior = null;
     }
 
-    private void EnableTarget()
+    private void EnableTarget(Transform hitCarTransform)
     {
-        pathFollower.carTarget = carTarget;
-        hasTarget = true;
-        pathFollower.targetPriorityBehavior = carTarget.GetComponent<PathFollower>().priorityBehavior;
+        if (hasTarget)
+            return;
+        pathFollower.carTarget = hitCarTransform;
         pathFollower.shouldBrakeBeforeCar = true;
-        Debug.DrawLine(rayOrigin, carTarget.position, Color.magenta);
+        pathFollower.targetPriorityBehavior = hitCarTransform.GetComponent<PathFollower>().priorityBehavior;
+        hasTarget = true;
+        Debug.DrawLine(rayOrigin, hitCarTransform.position, Color.magenta);
     }
 
     private void CheckRoadObstacles()
@@ -148,16 +130,26 @@ public class AvoidanceBehavior
         //}
     }
 
-    private bool DifferentRoads(Road carRoad, Road hitCarRoad)
+    private bool DifferentRoads(TrafficLightCarController carTrafficLightCont, TrafficLightCarController hitCarTrafficLightCont)
     {
+        Road ownRoad = carTrafficLightCont.currentRoad;
+        Road hitCarRoad = hitCarTrafficLightCont.currentRoad;
+
         if (hitCarRoad == null)
             return true;
 
-        if (carRoad == hitCarRoad)
+        if (ownRoad == hitCarRoad)
             return false;
 
 
         return false;
+    }
+
+    private bool BothShouldStopBeforeLight()
+    {
+        bool shouldStopAtLight = pathFollower.shouldStopAtTrafficLight;
+        bool hitCarShouldStopAtLight = hitCarPathFollower.shouldStopAtTrafficLight;
+        return (shouldStopAtLight && hitCarShouldStopAtLight) || (!shouldStopAtLight && !hitCarShouldStopAtLight);
     }
 
     public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
@@ -165,31 +157,53 @@ public class AvoidanceBehavior
         Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
         Vector3 carForward = transform.forward;
         float angleTolerance = 75f;
-        if (Vector3.Angle(hitCarForward, carForward) < angleTolerance)
+        if (Vector3.Angle(hitCarForward, carForward) < angleTolerance && Vector3.Distance(transform.position, hit.point) < 4.5f)
         {
             hitCarPathFollower = hit.collider.gameObject.GetComponent<PathFollower>();
             hitCarTrafficLightController = hit.collider.gameObject.GetComponent<TrafficLightCarController>();
 
-            if (trafficLightController.currentRoad != null)
+            if (trafficLightController.currentRoad != null) // If our car has to stop before traffic, only enable the target traffic light if the car is in the same traffic light as us.
             {
-                if (DifferentRoads(trafficLightController.currentRoad, hitCarTrafficLightController.currentRoad))
+                if (!DifferentRoads(trafficLightController, hitCarTrafficLightController) && BothShouldStopBeforeLight())
                 {
-                    UnableTarget();
-                }
-                else
-                {
-                    carTarget = hitCarPathFollower.transform;
-                    EnableTarget();
-                    return;
+                    if (hasTarget)
+                    {
+                        if (NewCarIsCloserThanTarget())
+                        {
+                            EnableTarget(hitCarPathFollower.transform);
+                        }
+                    }
+                    else
+                    {
+                        EnableTarget(hitCarPathFollower.transform);
+                        return;
+                    }
                 }
 
             }
             else
             {
-                carTarget = hitCarPathFollower.transform;
-                EnableTarget();
-                return;
+                if (hasTarget)
+                {
+                    if (NewCarIsCloserThanTarget())
+                    {
+                        EnableTarget(hitCarPathFollower.transform);
+                    }
+                }
+                else
+                {
+                    EnableTarget(hitCarPathFollower.transform);
+                    return;
+                }
             }
         }
     }
+
+    private bool NewCarIsCloserThanTarget()
+    {
+        Vector3 hitCarPos = hitCarPathFollower.transform.position;
+        Vector3 carPos = transform.position;
+        return Vector3.Distance(carPos, hitCarPos) < Vector3.Distance(carPos, pathFollower.carTarget.position);
+    }
+
 }

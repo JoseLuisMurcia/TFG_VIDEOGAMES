@@ -16,12 +16,20 @@ public class Pathfinding : MonoBehaviour
     }
     public void StartFindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
     {
-        StartCoroutine(FindPath(startPos, targetPos, carForward));
+        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
+        Node targetNode = WorldGrid.Instance.FindEndNode(targetPos);
+        StartCoroutine(FindPath(startNode, targetNode));
+    }
+
+    public void StartFindPath(Vector3 startPos, Node targetNode, Vector3 carForward)
+    {
+        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
+        StartCoroutine(FindPath(startNode, targetNode));
     }
 
     IEnumerator FindPath(Node startNode, Node targetNode)
     {
-        Vector3[] waypoints = new Vector3[0];
+        List<Node> waypoints = new List<Node>();
         bool pathSuccess = false;
 
         startNode.gCost = 0;
@@ -47,11 +55,11 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                float newMovementCostToNeighbour = currentNode.gCost + GetAlternativeHeuristic(currentNode, neighbour);
+                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
                 if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                 {
                     neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetAlternativeHeuristic(neighbour, targetNode);
+                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
                     neighbour.parent = currentNode;
 
                     if (!openSet.Contains(neighbour))
@@ -72,87 +80,22 @@ public class Pathfinding : MonoBehaviour
             waypoints = RetracePath(startNode, targetNode);
         }
         requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
-
-    }
-    // I need to find the closest node from startPost to targetPos
-    IEnumerator FindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
-    {
-        Vector3[] waypoints = new Vector3[0];
-        bool pathSuccess = false;
-
-        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
-        startNode.gCost = 0;
-        Node targetNode = WorldGrid.Instance.FindEndNode(targetPos);
-
-
-        Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
-        HashSet<Node> closedSet = new HashSet<Node>();
-        openSet.Add(startNode);
-
-        while (openSet.Count > 0)
-        {
-            Node currentNode = openSet.RemoveFirst();
-            closedSet.Add(currentNode);
-            if (currentNode == targetNode)
-            {
-                pathSuccess = true;
-                break;
-            }
-
-            foreach (Node neighbour in currentNode.neighbours)
-            {
-
-                if (closedSet.Contains(neighbour))
-                {
-                    continue;
-                }
-
-                float newMovementCostToNeighbour = currentNode.gCost + GetAlternativeHeuristic(currentNode, neighbour);
-                if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
-                {
-                    neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetAlternativeHeuristic(neighbour, targetNode);
-                    neighbour.parent = currentNode;
-
-                    if (!openSet.Contains(neighbour))
-                    {
-                        openSet.Add(neighbour);
-                    }
-                    else
-                    {
-                        openSet.UpdateItem(neighbour);
-                    }
-                }
-            }
-        }
-
-        yield return null;
-        if (pathSuccess)
-        {
-            waypoints = RetracePath(startNode, targetNode);
-        }
-        requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
-
     }
 
-    Vector3[] RetracePath(Node startNode, Node endNode)
+    List<Node> RetracePath(Node startNode, Node endNode)
     {
-        List<Node> path = new List<Node>();
+        List<Node> waypoints = new List<Node>();
         Node currentNode = endNode;
         while (currentNode != startNode)
         {
-            path.Add(currentNode);
+            waypoints.Add(currentNode);
             currentNode = currentNode.parent;
         }
-        path.Add(startNode);
+        waypoints.Add(startNode);
 
         //Vector3[] waypoints = SimplifyPath(path);
-        Vector3[] waypoints = new Vector3[path.Count];
-        for (int i = 0; i < path.Count; i++)
-        {
-            waypoints[i] = path[i].worldPosition;
-        }
-        Array.Reverse(waypoints);
+
+        waypoints.Reverse();
         return waypoints;
     }
 
@@ -175,10 +118,6 @@ public class Pathfinding : MonoBehaviour
 
     float GetDistanceHeuristic(Node nodeA, Node nodeB)
     {
-        if(nodeA == null || nodeB == null)
-        {
-            Debug.LogError("QUE SE ROMPE");
-        }
         float dstX = Mathf.Abs(nodeA.worldPosition.x - nodeB.worldPosition.x);
         float dstY = Mathf.Abs(nodeA.worldPosition.z - nodeB.worldPosition.z);
 

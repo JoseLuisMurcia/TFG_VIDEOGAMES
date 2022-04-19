@@ -39,25 +39,9 @@ public class TrafficLight : MonoBehaviour
             if(road != null)
             {
                 road.trafficLight = this;
+                road.CreateTrafficLightTriggers();
             }
         }
-    }
-
-    private void OnDrawGizmos()
-    {
-        switch (currentColor)
-        {
-            case TrafficLightColor.Green:
-                Gizmos.color = Color.green;
-                break;
-            case TrafficLightColor.Amber:
-                Gizmos.color = Color.yellow;
-                break;
-            case TrafficLightColor.Red:
-                Gizmos.color = Color.red;
-                break;
-        }
-        Gizmos.DrawSphere(transform.position + Vector3.up * 3f, 0.7f);
     }
 
 }
