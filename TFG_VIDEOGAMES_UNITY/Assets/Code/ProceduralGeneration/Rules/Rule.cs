@@ -17,7 +17,8 @@ namespace Procedural
         {
             if (randomResult)
             {
-                int randomIndex = UnityEngine.Random.Range(0, results.Length);
+                int randomIndex = Random.Range(0, results.Length);
+                return results[randomIndex];
             }
             return results[0];
         }
