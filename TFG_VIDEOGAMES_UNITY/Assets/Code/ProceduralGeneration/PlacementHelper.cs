@@ -34,9 +34,9 @@ namespace Procedural
             switch (direction)
             {
                 case Direction.Up:
-                    return new Vector3Int(0, 0, 1);
+                    return Vector3Int.forward;
                 case Direction.Down:
-                    return new Vector3Int(0, 0, -1);
+                    return Vector3Int.back;
                 case Direction.Left:
                     return Vector3Int.left;
                 case Direction.Right:

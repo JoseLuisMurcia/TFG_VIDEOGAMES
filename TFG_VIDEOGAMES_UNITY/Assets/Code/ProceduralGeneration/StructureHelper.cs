@@ -97,7 +97,7 @@ namespace Procedural
 			KeyValuePair<Vector3Int, Direction> freeSpot,
 			ref List<Vector3Int> tempPositionsBlocked)
 		{
-			Vector3Int direction = Vector3Int.zero;
+			Vector3Int direction;
 			if (freeSpot.Value == Direction.Down || freeSpot.Value == Direction.Up)
 			{
 				direction = Vector3Int.right;
