@@ -17,6 +17,9 @@ public class EnterTriggerArea : MonoBehaviour
         // FIND THE CAR THAT HAS COLLIDED WITH THE TRIGGER AND SUBSCRIBE IT TO THE ROADTRIGGERENTER
         TrafficLightCarController carController = other.gameObject.GetComponent<TrafficLightCarController>();
 
+        if (carController == null)
+            return;
+
         // Hacer un check con el producto escalar, si sale negativo no debería suscribirse
         Vector3 carForward = carController.transform.forward;
         Vector3 dirToMovePosition = (road.trafficLight.transform.position - carController.transform.position).normalized;

@@ -10,7 +10,6 @@ public class PriorityBehavior
     private Vector3 rayOrigin;
     private Transform carTarget;
     public bool hasSignalInSight = false;
-    LayerMask carLayer, signalLayer;
     private Transform transform;
     private Transform signalInSight;
 
@@ -21,10 +20,8 @@ public class PriorityBehavior
     private AvoidanceBehavior avoidanceBehavior;
 
 
-    public PriorityBehavior(LayerMask _carLayer, LayerMask _signalLayer, List<Transform> _whiskers, PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
+    public PriorityBehavior(List<Transform> _whiskers, PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
     {
-        carLayer = _carLayer;
-        signalLayer = _signalLayer;
         whiskers = _whiskers;
         pathFollower = _pathFollower;
         avoidanceBehavior = _avoidanceBehavior;
@@ -177,11 +174,6 @@ public class PriorityBehavior
 
             float divisionVal = carSpeed / carInSightSpeed;
             float distanceWithSpeed = divisionVal * distanceToCar;
-            //float angleBetweenForwards = Vector3.Angle(transform.forward, car.transform.forward);
-            //if(angleBetweenForwards > 160 && pathFollower.carTarget != null && !TargetHasRelevantCars())
-            //{
-            //    stopDistanceMultiplier = 2f;
-            //}
 
             // Si está lejos o tu estas en una rotonda y él no, eliminar
             if (isInRoundabout && !car.priorityBehavior.isInRoundabout)
@@ -193,19 +185,23 @@ public class PriorityBehavior
                 {
                     if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
                     {
-
-                        pathFollower.stopPosition = transform.position + transform.forward.normalized * 3f;                       
+                        pathFollower.stopPosition = transform.position + transform.forward.normalized * 3f;
                     }
                     else
                     {
                         // TO FIX - ESTO CRASHEA
                         // Se está llamando cuando no se debe llamar, repasar la logica del metodo
                         Node nodeStop = pathFollower.GetStoppingNodeFromCurrentNode();
-                        if(nodeStop == null)
+                        if (nodeStop == null)
                         {
-                            Debug.LogError("HOSTIA PROBLEMAS");
+                            //Debug.LogError("HOSTIA PROBLEMAS");
+                            carsToBeRemoved.Add(car);
                         }
-                        pathFollower.stopPosition = nodeStop.worldPosition;
+                        else
+                        {
+                            pathFollower.stopPosition = nodeStop.worldPosition;
+
+                        }
                     }
                 }
             }

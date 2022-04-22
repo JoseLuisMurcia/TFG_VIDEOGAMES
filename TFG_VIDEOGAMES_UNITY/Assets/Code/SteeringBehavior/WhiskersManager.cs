@@ -5,11 +5,11 @@ using UnityEngine;
 public class WhiskersManager : MonoBehaviour
 {
     private AvoidanceBehavior avoidanceBehavior;
-    private PriorityBehavior targetPriorityBehavior;
     private PriorityBehavior priorityBehavior;
+    private PedestrianAvoidanceBehavior pedestrianBehavior;
     private PathFollower pathFollower;
     private TrafficLightCarController trafficLightCarController;
-    [SerializeField] LayerMask obstacleLayer, carLayer, signalLayer;
+    [SerializeField] LayerMask obstacleLayer, carLayer, signalLayer, pedestrianLayer;
 
     private List<Transform> whiskers = new List<Transform>();
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
@@ -36,8 +36,9 @@ public class WhiskersManager : MonoBehaviour
             }
         }
         CreateIncorporationWhiskers(whiskersParent);
-        avoidanceBehavior = new AvoidanceBehavior(carLayer, obstacleLayer, whiskers, pathFollower, trafficLightCarController);
-        priorityBehavior = new PriorityBehavior(carLayer, signalLayer, whiskers, pathFollower, avoidanceBehavior);
+        avoidanceBehavior = new AvoidanceBehavior(whiskers, pathFollower, trafficLightCarController);
+        priorityBehavior = new PriorityBehavior(whiskers, pathFollower, avoidanceBehavior);
+        pedestrianBehavior = new PedestrianAvoidanceBehavior(whiskers, pathFollower);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
 
@@ -73,11 +74,12 @@ public class WhiskersManager : MonoBehaviour
         rayOrigin = whiskers[0].position;
         avoidanceBehavior.Update(transform, visualDebug);
         priorityBehavior.Update(transform, visualDebug);
+        pedestrianBehavior.Update(transform, visualDebug);
 
         if (pathFollower.isFullyStopped) return;
 
         CheckCars();
-
+        CheckPedestrians();
         if (!priorityBehavior.hasSignalInSight)
         {
             CheckSignals();
@@ -133,7 +135,7 @@ public class WhiskersManager : MonoBehaviour
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.red);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.red);
             }
         }
     }
@@ -154,7 +156,26 @@ public class WhiskersManager : MonoBehaviour
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
 
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+            }
+            else
+            {
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+            }
+        }
+    }
+
+    void CheckPedestrians()
+    {
+        RaycastHit hit;
+        foreach (Transform sensor in whiskers)
+        {
+            float reach = 7.5f;
+            Ray ray = new Ray(rayOrigin, sensor.forward);
+            if (Physics.Raycast(ray, out hit, reach, pedestrianLayer))
+            {
                 if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                pedestrianBehavior.ProcessPedestrianHit(ray, hit, sensor);
             }
             else
             {
@@ -162,7 +183,6 @@ public class WhiskersManager : MonoBehaviour
             }
         }
     }
-
     private float SetReachForCarRays(float _yRotation)
     {
         float reach;
