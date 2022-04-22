@@ -32,21 +32,11 @@ public class Pedestrian : MonoBehaviour
         {
             Ray ray = cam.ScreenPointToRay(UnityEngine.Input.mousePosition);
             RaycastHit hit;
-            if(Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit))
             {
-				agent.SetDestination(hit.point);
-			}
+                agent.SetDestination(hit.point);
+            }
         }
-
-        if (agent.isOnOffMeshLink && !slowedDown)
-        {
-            ReduceSpeedOnLink();
-        }
-        else
-        {
-            if(slowedDown) ResetSpecs();
-        }
-
         if (agent.remainingDistance > agent.stoppingDistance)
         {
             animator.SetBool("IsMoving", true);
@@ -58,20 +48,4 @@ public class Pedestrian : MonoBehaviour
 
     }
 
-    private void ReduceSpeedOnLink()
-    {
-        float speedSlash = 0.12f;
-        agent.speed = baseSpeed * speedSlash;
-        agent.angularSpeed = baseAngularSpeed * speedSlash;
-        agent.acceleration = baseAcceleration * speedSlash;
-        slowedDown = true;
-    }
-
-    private void ResetSpecs()
-    {
-        agent.speed = baseSpeed;
-        agent.angularSpeed = baseAngularSpeed;
-        agent.acceleration = baseAcceleration;
-        slowedDown = false;
-    }
 }
