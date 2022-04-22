@@ -126,8 +126,6 @@ public class WorldGrid : MonoBehaviour
                         }
                         i++;
                     }
-                    if (roundabout.connections.Count < 4)
-                        Debug.Log("hehe");
                     // Now the entry and exit to the connection has been found
                     Transform entryTransform = roundabout.entries[entryId];
                     Transform exitTransform = roundabout.exits[entryId];

@@ -8,7 +8,10 @@ public class ExitTriggerArea : MonoBehaviour
     {
         // FIND THE CAR THAT HAS COLLIDED WITH THE TRIGGER AND UNSUBSCRIBE IT TO THE ROADTRIGGERENTER
         TrafficLightCarController carController = other.gameObject.GetComponent<TrafficLightCarController>();
-        if(carController.currentRoad != null)
+        if (carController == null)
+            return;
+
+        if (carController.currentRoad != null)
             carController.UnsubscribeToTrafficLight();
     }
 }

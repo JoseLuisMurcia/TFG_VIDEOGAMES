@@ -14,14 +14,11 @@ public class AvoidanceBehavior
     private TrafficLightCarController hitCarTrafficLightController;
     private Vector3 rayOrigin;
     public bool hasTarget = false;
-    LayerMask obstacleLayer, carLayer;
     private Transform transform;
     private bool visualDebug;
 
-    public AvoidanceBehavior(LayerMask _carLayer, LayerMask _obstacleLayer, List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
+    public AvoidanceBehavior(List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
     {
-        carLayer = _carLayer;
-        obstacleLayer = _obstacleLayer;
         whiskers = _whiskers;
         pathFollower = _pathFollower;
         trafficLightController = _trafficLightCarController;

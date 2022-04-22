@@ -40,6 +40,11 @@ public class PathFollower : MonoBehaviour
     [HideInInspector] public PriorityBehavior targetPriorityBehavior;
     [HideInInspector] public PriorityBehavior priorityBehavior;
 
+    // Pedestrian variables
+    [Header("Pedestrian")]
+    public bool shouldStopPedestrian = false;
+    public Vector3 pedestrianStopPos;
+
     [Header("Others")]
     [SerializeField] bool pathDebug;
     public bool isFullyStopped = false;
@@ -58,7 +63,7 @@ public class PathFollower : MonoBehaviour
         carStartBreakingDistance = Random.Range(1f, 4f);
         //carStartBreakingDistance = 2.5f;
         trafficLightStopDist = Random.Range(4f, 6f);
-        carStopDistance = Random.Range(0.5f, 2f);
+        carStopDistance = Random.Range(1f, 2f);
         //carStopDistance = 1.5f;
         float speedMultiplier = Random.Range(0.9f, 1.6f);
         speed *= speedMultiplier;
@@ -291,7 +296,11 @@ public class PathFollower : MonoBehaviour
                 pathIndex++;
             }
 
-            if (shouldStopPriority)
+            if (shouldStopPedestrian)
+            {
+                speedPercent = SlowSpeedPedestrian();
+            }
+            else if (shouldStopPriority)
             {
                 speedPercent = SlowSpeedPriority();
             }
@@ -365,6 +374,22 @@ public class PathFollower : MonoBehaviour
         waypointsList.Insert(pathIndex, newPos);
         recentAddedAvoidancePosIndex = pathIndex;
         path = new Path(waypointsList, transform.position, turnDst);
+    }
+
+    float SlowSpeedPedestrian()
+    {
+        float _speedPercent;
+        // Maybe its better to calculate a stop position before the crossing and not the targetPos
+        float distance = Vector3.Distance(transform.position, pedestrianStopPos);
+        _speedPercent = Mathf.Clamp01((distance - 1.5f) / carStartBreakingDistance);
+        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
+            _speedPercent = speedPercent += 0.005f;
+
+        if (_speedPercent < 0.03f)
+        {
+            _speedPercent = 0f;
+        }
+        return _speedPercent;
     }
 
     float SlowSpeedPriority()
