@@ -23,8 +23,10 @@ public class PathFollower : MonoBehaviour
     // Car collision avoidance variables
     [Header("CarAvoidance")]
     public bool reactingToCarInFront = false;
+    public bool reactionDelay = false;
     public bool shouldBrakeBeforeCar = false;
-    public bool braking = false;
+    public bool brakingDelay = false;
+    public bool accelerationDelay = false;
     [SerializeField] float carStartBreakingDistance = 2f;
     [SerializeField] float carStopDistance = 1f;
     [HideInInspector] public Vector3 frontCarPos;
@@ -411,6 +413,9 @@ public class PathFollower : MonoBehaviour
 
     float SlowSpeedBeforeCar()
     {
+        if (reactionDelay)
+            return speedPercent;
+
         float _speedPercent;
         //float distance = Vector3.Distance(transform.position, frontCarPos);
         float distance = Vector3.Distance(transform.position, carTarget.position);
@@ -429,13 +434,16 @@ public class PathFollower : MonoBehaviour
             }
         }
 
-        if(speedPercent - _speedPercent > 0f) // Braking
+        if (speedPercent - _speedPercent > 0f && !brakingDelay) // Braking
         {
-            braking = true;
+            StartCoroutine(BrakingDelay());
+            return _speedPercent;
         }
-        else
+
+        if (_speedPercent - speedPercent > 0f && !accelerationDelay) // Accelerating
         {
-            braking = false;
+            StartCoroutine(AccelerationDelay());
+            return _speedPercent;
         }
 
         // Accelerating - This is how I prevent the unreal acceleration when the car is fully stopped and grabs a fast target
@@ -450,6 +458,26 @@ public class PathFollower : MonoBehaviour
         }
 
         return _speedPercent;
+    }
+
+    IEnumerator BrakingDelay()
+    {
+        brakingDelay = true;
+        reactionDelay = true;
+        float reactionTime = Random.Range(0.3f, 0.7f);
+        yield return new WaitForSeconds(reactionTime);
+        accelerationDelay = false;
+        reactionDelay = false;
+    }
+
+    IEnumerator AccelerationDelay()
+    {
+        accelerationDelay = true;
+        reactionDelay = true;
+        float reactionTime = Random.Range(0.3f, 0.7f);
+        yield return new WaitForSeconds(reactionTime);
+        brakingDelay = false;
+        reactionDelay = false;
     }
 
     IEnumerator ResumeTheCar()
