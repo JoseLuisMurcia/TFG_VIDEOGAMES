@@ -22,7 +22,9 @@ public class PathFollower : MonoBehaviour
 
     // Car collision avoidance variables
     [Header("CarAvoidance")]
+    public bool reactingToCarInFront = false;
     public bool shouldBrakeBeforeCar = false;
+    public bool braking = false;
     [SerializeField] float carStartBreakingDistance = 2f;
     [SerializeField] float carStopDistance = 1f;
     [HideInInspector] public Vector3 frontCarPos;
@@ -55,15 +57,15 @@ public class PathFollower : MonoBehaviour
     private IEnumerator reactionTimeCoroutine;
     private static float minDistanceToSpawnNewTarget = 18f;
 
-    
+
 
     // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
     void Start()
     {
-        carStartBreakingDistance = Random.Range(1f, 4f);
+        carStartBreakingDistance = Random.Range(1.5f, 4f);
         //carStartBreakingDistance = 2.5f;
         trafficLightStopDist = Random.Range(4f, 6f);
-        carStopDistance = Random.Range(1f, 2f);
+        carStopDistance = Random.Range(1.3f, 1.7f);
         //carStopDistance = 1.5f;
         float speedMultiplier = Random.Range(0.9f, 1.6f);
         speed *= speedMultiplier;
@@ -192,7 +194,7 @@ public class PathFollower : MonoBehaviour
         bool roadChange = false;
         while (stoppingNode == null && !roadChange)
         {
-            
+
             // TO FIX - Path ends
             // Hay que controlar que el indice no se pase de la capacidad maxima de la lista
             if (currentRoad.exitNodes.Contains(nodeList[pathIndex + i]))
@@ -397,7 +399,7 @@ public class PathFollower : MonoBehaviour
         float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
         _speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
-        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
+        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
             _speedPercent = speedPercent += 0.005f;
 
         if (_speedPercent < 0.03f)
@@ -414,11 +416,34 @@ public class PathFollower : MonoBehaviour
         float distance = Vector3.Distance(transform.position, carTarget.position);
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
-        // This is how I prevent the unreal acceleration
+
+        if (isFullyStopped && _speedPercent > 0f) // The car is fully stopped and the car in front is resuming the car
+        {
+            if (!reactingToCarInFront)
+            {
+                StartCoroutine(ResumeTheCar());
+            }
+            else
+            {
+                return 0f;
+            }
+        }
+
+        if(speedPercent - _speedPercent > 0f) // Braking
+        {
+            braking = true;
+        }
+        else
+        {
+            braking = false;
+        }
+
+        // Accelerating - This is how I prevent the unreal acceleration when the car is fully stopped and grabs a fast target
         if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
             _speedPercent = speedPercent += 0.002f;
 
-        if (_speedPercent < 0.05f)
+
+        if (_speedPercent < 0.05f) // Set the car to fully stopped
         {
             _speedPercent = 0f;
             isFullyStopped = true;
@@ -426,6 +451,16 @@ public class PathFollower : MonoBehaviour
 
         return _speedPercent;
     }
+
+    IEnumerator ResumeTheCar()
+    {
+        reactingToCarInFront = true;
+        float reactionTime = Random.Range(0.3f, 0.9f);
+        yield return new WaitForSeconds(reactionTime);
+        isFullyStopped = false;
+        reactingToCarInFront = false;
+    }
+
     float SlowSpeedAtTrafficLight()
     {
         float distance = trafficLightCarController.GiveDistanceToPathFollower();

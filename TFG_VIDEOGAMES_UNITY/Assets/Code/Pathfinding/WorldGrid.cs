@@ -447,6 +447,7 @@ public class WorldGrid : MonoBehaviour
                                     Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
+                                    road.lanes[0].nodes.Add(unionNode);
                                     unionNodes.Add(unionNodePos);
                                     grid.Add(unionNode);
 
@@ -477,6 +478,7 @@ public class WorldGrid : MonoBehaviour
                                     Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
+                                    road.lanes[0].nodes.Add(unionNode);
                                     unionNodes.Add(unionNodePos);
                                     grid.Add(unionNode);
                                 }
@@ -1409,7 +1411,7 @@ public class WorldGrid : MonoBehaviour
         Vector3[] rayPositions = new Vector3[3];
         rayPositions[0] = worldPoint;
         rayPositions[1] = worldPoint + carForward * 1.5f;
-        rayPositions[2] = worldPoint - carForward * 1.5f;
+        rayPositions[2] = worldPoint + carForward * 2.5f;
         int i = 0;
         while (closestNode == null && i < rayPositions.Length)
         {
@@ -1446,9 +1448,50 @@ public class WorldGrid : MonoBehaviour
 
         if (closestNode == null)
         {
+            i = 0;
+            while (closestNode == null && i < rayPositions.Length)
+            {
+                RaycastHit hit;
+                Ray ray = new Ray(rayPositions[i] + Vector3.up * 50, Vector3.down);
+                if (Physics.Raycast(ray, out hit, 100, roadMask))
+                {
+                    GameObject _gameObject = hit.collider.gameObject;
+
+                    Road road = _gameObject.GetComponent<Road>();
+                    if (road)
+                    {
+                        foreach (Lane lane in road.lanes)
+                        {
+                            foreach (Node node in lane.nodes)
+                            {
+                                float currentDistance = Vector3.Distance(node.worldPosition, worldPoint);
+                                if (currentDistance <= bestDistance)
+                                {
+                                    Vector3 dirToMovePosition = (node.worldPosition - worldPoint).normalized;
+                                    float dot = Vector3.Dot(carForward, dirToMovePosition);
+                                    if (dot > 0)
+                                    {
+                                        closestNode = node;
+                                        bestDistance = currentDistance;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                i++;
+            }
+            CreateDebugRays(rayPositions);
+
             Debug.LogError("SE ROMPIO EL START NODE LA CONCHA DE LA LORA");
         }
         return closestNode;
+    }
+
+    private void CreateDebugRays(Vector3[] rayPositions)
+    {
+        foreach (Vector3 ray in rayPositions)
+            Debug.DrawLine(ray - Vector3.up * 5f, ray + Vector3.up * 5f, Color.red, 50f);
     }
 
     public Node FindEndNode(Vector3 worldPoint)
