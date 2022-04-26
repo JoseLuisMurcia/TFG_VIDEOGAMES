@@ -7,6 +7,7 @@ public class PathFollower : MonoBehaviour
     const float minPathUpdateTime = .2f;
 
     [Header("Specs")]
+    private TypeOfCar typeOfCar;
     [SerializeField] float speed = 4;
     [SerializeField] float turnSpeed = 4;
     [SerializeField] float turnDst = 3;
@@ -25,11 +26,11 @@ public class PathFollower : MonoBehaviour
     public bool reactingToCarInFront = false;
     public bool reactionDelay = false;
     public bool shouldBrakeBeforeCar = false;
-    public bool brakingDelay = false;
-    public bool accelerationDelay = false;
+    //public bool brakingDelay = false;
+    //public bool accelerationDelay = false;
+    public bool distanceChanging = false;
     [SerializeField] float carStartBreakingDistance = 2f;
     [SerializeField] float carStopDistance = 1f;
-    [HideInInspector] public Vector3 frontCarPos;
     public Transform carTarget;
     [HideInInspector] public AvoidanceBehavior avoidanceBehavior;
     int recentAddedAvoidancePosIndex = -50;
@@ -59,19 +60,103 @@ public class PathFollower : MonoBehaviour
     private IEnumerator reactionTimeCoroutine;
     private static float minDistanceToSpawnNewTarget = 18f;
 
-
-
-    // Falla si el objetivo se consigue dentro de una interseccion ya que al mandar una peticion de adquirir un nodo en la interseccion , se es incapaz.
+    private void Awake()
+    {
+        switch (gameObject.name)
+        {
+            case "delivery":
+                typeOfCar = TypeOfCar.Delivery;
+                break;
+            case "sedan":
+                typeOfCar = TypeOfCar.Sedan;
+                break;
+            case "sedanSport":
+                typeOfCar = TypeOfCar.SedanSport;
+                break;
+            case "suv":
+                typeOfCar = TypeOfCar.Suv;
+                break;
+            case "suvLuxury":
+                typeOfCar = TypeOfCar.SuvLuxury;
+                break;
+            case "truck":
+                typeOfCar = TypeOfCar.Truck;
+                break;
+            case "van":
+                typeOfCar = TypeOfCar.Van;
+                break;
+        }
+    }
+    private void SetSpecsForTypeCar()
+    {
+        float speedMultiplier;
+        switch (typeOfCar)
+        {
+            case TypeOfCar.Delivery:
+                carStartBreakingDistance = Random.Range(2.5f, 4f);
+                //carStartBreakingDistance = 2.5f;
+                trafficLightStopDist = Random.Range(4.5f, 6.5f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                //carStopDistance = 1.5f;
+                speedMultiplier = Random.Range(0.7f, 1.1f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            case TypeOfCar.Sedan:
+                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                trafficLightStopDist = Random.Range(4f, 6f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                speedMultiplier = Random.Range(0.9f, 1.6f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            case TypeOfCar.SedanSport:
+                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                trafficLightStopDist = Random.Range(4f, 6f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                speedMultiplier = Random.Range(1.3f, 1.9f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            case TypeOfCar.Suv:
+                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                trafficLightStopDist = Random.Range(4f, 6f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                speedMultiplier = Random.Range(1f, 1.3f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            case TypeOfCar.SuvLuxury:
+                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                trafficLightStopDist = Random.Range(4f, 6f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                speedMultiplier = Random.Range(1.2f, 1.6f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            case TypeOfCar.Truck:
+                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                trafficLightStopDist = Random.Range(4f, 6f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                speedMultiplier = Random.Range(0.8f, 1.1f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            case TypeOfCar.Van:
+                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                trafficLightStopDist = Random.Range(4f, 6f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                speedMultiplier = Random.Range(0.7f, 1.1f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier;
+                break;
+            default:
+                break;
+        }
+    }
     void Start()
     {
-        carStartBreakingDistance = Random.Range(1.5f, 4f);
-        //carStartBreakingDistance = 2.5f;
-        trafficLightStopDist = Random.Range(4f, 6f);
-        carStopDistance = Random.Range(1.3f, 1.7f);
-        //carStopDistance = 1.5f;
-        float speedMultiplier = Random.Range(0.9f, 1.6f);
-        speed *= speedMultiplier;
-        turnSpeed *= speedMultiplier;
+        SetSpecsForTypeCar();
         trafficLightCarController = GetComponent<TrafficLightCarController>();
         priorityLevel = PriorityLevel.Max;
         StartCoroutine(StartPathfindingOnWorldCreation());
@@ -413,11 +498,13 @@ public class PathFollower : MonoBehaviour
 
     float SlowSpeedBeforeCar()
     {
+        if (!distanceChanging && !isFullyStopped && speedPercent > 0.3f) // Make the distance held with the car in front variable, to give the illusion of changing speed
+            StartCoroutine(ChangeDistanceWithCarInFront());
+
         if (reactionDelay)
             return speedPercent;
 
         float _speedPercent;
-        //float distance = Vector3.Distance(transform.position, frontCarPos);
         float distance = Vector3.Distance(transform.position, carTarget.position);
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
@@ -434,21 +521,14 @@ public class PathFollower : MonoBehaviour
             }
         }
 
-        if (speedPercent - _speedPercent > 0f && !brakingDelay) // Braking
+        if(_speedPercent - speedPercent > 0.1f && _speedPercent > 0.2f)
         {
-            StartCoroutine(BrakingDelay());
-            return _speedPercent;
-        }
-
-        if (_speedPercent - speedPercent > 0f && !accelerationDelay) // Accelerating
-        {
-            StartCoroutine(AccelerationDelay());
-            return _speedPercent;
+            _speedPercent = speedPercent + 0.005f;
         }
 
         // Accelerating - This is how I prevent the unreal acceleration when the car is fully stopped and grabs a fast target
-        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
-            _speedPercent = speedPercent += 0.002f;
+        //if (_speedPercent - speedPercent > 0.05f && _speedPercent > 0.5f)
+        //    _speedPercent = speedPercent += 0.002f;
 
 
         if (_speedPercent < 0.05f) // Set the car to fully stopped
@@ -460,30 +540,39 @@ public class PathFollower : MonoBehaviour
         return _speedPercent;
     }
 
-    IEnumerator BrakingDelay()
+    IEnumerator ChangeDistanceWithCarInFront()
     {
-        brakingDelay = true;
-        reactionDelay = true;
-        float reactionTime = Random.Range(0.3f, 0.7f);
-        yield return new WaitForSeconds(reactionTime);
-        accelerationDelay = false;
-        reactionDelay = false;
+        distanceChanging = true;
+        float timeToChangeDistance = Random.Range(2f, 6f);
+        yield return new WaitForSeconds(timeToChangeDistance);
+        carStopDistance = Random.Range(1.3f, 1.7f);
+        distanceChanging = false;
     }
 
-    IEnumerator AccelerationDelay()
-    {
-        accelerationDelay = true;
-        reactionDelay = true;
-        float reactionTime = Random.Range(0.3f, 0.7f);
-        yield return new WaitForSeconds(reactionTime);
-        brakingDelay = false;
-        reactionDelay = false;
-    }
+    //IEnumerator BrakingDelay()
+    //{
+    //    brakingDelay = true;
+    //    reactionDelay = true;
+    //    float reactionTime = Random.Range(0.3f, 0.7f);
+    //    yield return new WaitForSeconds(reactionTime);
+    //    accelerationDelay = false;
+    //    reactionDelay = false;
+    //}
+
+    //IEnumerator AccelerationDelay()
+    //{
+    //    accelerationDelay = true;
+    //    reactionDelay = true;
+    //    float reactionTime = Random.Range(0.3f, 0.7f);
+    //    yield return new WaitForSeconds(reactionTime);
+    //    brakingDelay = false;
+    //    reactionDelay = false;
+    //}
 
     IEnumerator ResumeTheCar()
     {
         reactingToCarInFront = true;
-        float reactionTime = Random.Range(0.3f, 0.9f);
+        float reactionTime = Random.Range(0.3f, 0.7f);
         yield return new WaitForSeconds(reactionTime);
         isFullyStopped = false;
         reactingToCarInFront = false;
@@ -518,4 +607,15 @@ public enum PriorityLevel
     Yield,
     Roundabout,
     Max
+}
+
+public enum TypeOfCar
+{
+    Delivery,
+    Sedan,
+    SedanSport,
+    Suv,
+    SuvLuxury,
+    Truck,
+    Van
 }
