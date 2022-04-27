@@ -5,6 +5,7 @@ using UnityEngine;
 public class CarSpawner : MonoBehaviour
 {
     [SerializeField] GameObject[] carPrefabs;
+    [SerializeField] Material[] carMaterials;
     public Dictionary<string, GameObject> carPrefabsDictionary = new Dictionary<string, GameObject>();
 
     private void Start()
@@ -21,23 +22,23 @@ public class CarSpawner : MonoBehaviour
         {
             key = "delivery";
         }
-        else if (randomNumber >= 0.05f && randomNumber < 0.15f)
+        else if (randomNumber >= 0.05f && randomNumber < 0.1f)
         {
             key = "van";
         }
-        else if (randomNumber >= 0.15f && randomNumber < 0.2f)
+        else if (randomNumber >= 0.1f && randomNumber < 0.15f)
         {
             key = "suvLuxury";
         }
-        else if (randomNumber >= 0.2f && randomNumber < 0.25f)
+        else if (randomNumber >= 0.15f && randomNumber < 0.2f)
         {
             key = "truck";
         }
-        else if (randomNumber >= 0.25f && randomNumber < 0.65f)
+        else if (randomNumber >= 0.2f && randomNumber < 0.7f)
         {
             key = "sedan";
         }
-        else if (randomNumber >= 0.65f && randomNumber < 0.8f)
+        else if (randomNumber >= 0.7f && randomNumber < 0.8f)
         {
             key = "sedanSport";
         }
@@ -49,10 +50,32 @@ public class CarSpawner : MonoBehaviour
         carPrefabsDictionary.TryGetValue(key, out prefab);
 
         GameObject instantiatedCar = Instantiate(prefab, startNode.worldPosition, Quaternion.identity);
+        RandomizeCarColor(instantiatedCar.transform);
+
         // Spawn with the correct rotation
         instantiatedCar.transform.LookAt(startNode.neighbours[0].worldPosition);
         PathFollower pathFollower = instantiatedCar.GetComponent<PathFollower>();
         pathFollower.StartPathfindingOnSpawn(startNode);
+    }
+
+    private void RandomizeCarColor(Transform car)
+    {
+        GameObject body = null;
+        foreach(Transform child in car)
+        {
+            if (child.gameObject.name == "body")
+            {
+                body = child.gameObject;
+                break;
+            }
+        }
+
+        Renderer carRenderer = body.GetComponent<MeshRenderer>();
+        int matId = Random.Range(0, carMaterials.Length);
+        Material[] _materials = carRenderer.materials;
+        _materials[1] = carMaterials[matId];
+        carRenderer.materials = _materials;
+        Debug.Log(carRenderer.materials);
     }
 
     public void SpawnFiveCars()
