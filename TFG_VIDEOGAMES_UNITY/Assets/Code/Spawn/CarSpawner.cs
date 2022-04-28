@@ -10,7 +10,7 @@ public class CarSpawner : MonoBehaviour
 
     private void Start()
     {
-        foreach(GameObject car in carPrefabs)
+        foreach (GameObject car in carPrefabs)
             carPrefabsDictionary.Add(car.name, car);
     }
     public void SpawnOneCar()
@@ -50,7 +50,7 @@ public class CarSpawner : MonoBehaviour
         carPrefabsDictionary.TryGetValue(key, out prefab);
 
         GameObject instantiatedCar = Instantiate(prefab, startNode.worldPosition, Quaternion.identity);
-        RandomizeCarColor(instantiatedCar.transform);
+        RandomizeCarColor(instantiatedCar.transform, key);
 
         // Spawn with the correct rotation
         instantiatedCar.transform.LookAt(startNode.neighbours[0].worldPosition);
@@ -58,10 +58,11 @@ public class CarSpawner : MonoBehaviour
         pathFollower.StartPathfindingOnSpawn(startNode);
     }
 
-    private void RandomizeCarColor(Transform car)
+    private void RandomizeCarColor(Transform car, string key)
     {
+
         GameObject body = null;
-        foreach(Transform child in car)
+        foreach (Transform child in car)
         {
             if (child.gameObject.name == "body")
             {
@@ -69,13 +70,18 @@ public class CarSpawner : MonoBehaviour
                 break;
             }
         }
-
         Renderer carRenderer = body.GetComponent<MeshRenderer>();
         int matId = Random.Range(0, carMaterials.Length);
         Material[] _materials = carRenderer.materials;
         _materials[1] = carMaterials[matId];
         carRenderer.materials = _materials;
-        Debug.Log(carRenderer.materials);
+        if (key == "sedanSport")
+        {
+            Renderer spoilerRenderer = body.transform.GetComponentInChildren<MeshRenderer>();
+            Material[] _spoilerMats = spoilerRenderer.materials;
+            _spoilerMats[1] = carMaterials[matId];
+            spoilerRenderer.materials = _spoilerMats;
+        }
     }
 
     public void SpawnFiveCars()

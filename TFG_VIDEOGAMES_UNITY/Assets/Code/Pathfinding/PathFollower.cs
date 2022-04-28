@@ -8,9 +8,9 @@ public class PathFollower : MonoBehaviour
 
     [Header("Specs")]
     private TypeOfCar typeOfCar;
-    [SerializeField] float speed = 4;
-    [SerializeField] float turnSpeed = 4;
-    [SerializeField] float turnDst = 3;
+    [SerializeField] float speed;
+    [SerializeField] float turnSpeed;
+    [SerializeField] float turnDst;
     [HideInInspector] public int pathIndex = 0;
     Path path = null;
     [SerializeField] public float speedPercent = 0f;
@@ -29,8 +29,8 @@ public class PathFollower : MonoBehaviour
     //public bool brakingDelay = false;
     //public bool accelerationDelay = false;
     public bool distanceChanging = false;
-    [SerializeField] float carStartBreakingDistance = 2f;
-    [SerializeField] float carStopDistance = 1f;
+    [SerializeField] float carStartBreakingDistance;
+    [SerializeField] float carStopDistance;
     public Transform carTarget;
     [HideInInspector] public AvoidanceBehavior avoidanceBehavior;
     int recentAddedAvoidancePosIndex = -50;
@@ -62,28 +62,32 @@ public class PathFollower : MonoBehaviour
 
     private void Awake()
     {
+
         switch (gameObject.name)
         {
-            case "delivery":
+            case "delivery" + "(Clone)":
                 typeOfCar = TypeOfCar.Delivery;
                 break;
-            case "sedan":
+            case "sedan" + "(Clone)":
                 typeOfCar = TypeOfCar.Sedan;
                 break;
-            case "sedanSport":
+            case "sedanSport" + "(Clone)":
                 typeOfCar = TypeOfCar.SedanSport;
                 break;
-            case "suv":
+            case "suv" + "(Clone)":
                 typeOfCar = TypeOfCar.Suv;
                 break;
-            case "suvLuxury":
+            case "suvLuxury" + "(Clone)" :
                 typeOfCar = TypeOfCar.SuvLuxury;
                 break;
-            case "truck":
+            case "truck" + "(Clone)":
                 typeOfCar = TypeOfCar.Truck;
                 break;
-            case "van":
+            case "van" + "(Clone)":
                 typeOfCar = TypeOfCar.Van;
+                break;
+            default:
+                Debug.LogWarning("haha wtf bro");
                 break;
         }
     }
@@ -151,6 +155,7 @@ public class PathFollower : MonoBehaviour
                 turnSpeed *= speedMultiplier;
                 break;
             default:
+                Debug.Log("haha wtf bro");
                 break;
         }
     }
