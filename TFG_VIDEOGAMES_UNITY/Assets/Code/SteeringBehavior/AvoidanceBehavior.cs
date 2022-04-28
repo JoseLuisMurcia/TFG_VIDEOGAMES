@@ -60,18 +60,14 @@ public class AvoidanceBehavior
     private void UnableTarget()
     {
         hasTarget = false;
-        pathFollower.carTarget = null;
-        pathFollower.shouldBrakeBeforeCar = false;
-        pathFollower.targetPriorityBehavior = null;
+        pathFollower.UnableTarget();
     }
 
     private void EnableTarget(Transform hitCarTransform)
     {
         if (hasTarget)
             return;
-        pathFollower.carTarget = hitCarTransform;
-        pathFollower.shouldBrakeBeforeCar = true;
-        pathFollower.targetPriorityBehavior = hitCarTransform.GetComponent<PathFollower>().priorityBehavior;
+        pathFollower.EnableTarget(hitCarTransform, hitCarPathFollower.priorityBehavior, hitCarPathFollower);
         hasTarget = true;
         Debug.DrawLine(rayOrigin, hitCarTransform.position, Color.magenta);
     }
