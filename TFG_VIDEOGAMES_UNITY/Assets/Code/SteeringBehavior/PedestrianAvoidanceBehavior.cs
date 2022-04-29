@@ -4,26 +4,24 @@ using UnityEngine;
 
 public class PedestrianAvoidanceBehavior
 {
-    List<Transform> whiskers = new List<Transform>();
     private PathFollower pathFollower;
     private Transform transform;
     private bool visualDebug;
     Vector3 rayOrigin;
     private List<Pedestrian> relevantPedestrians = new List<Pedestrian>();
-    public PedestrianAvoidanceBehavior(List<Transform> _whiskers, PathFollower _pathFollower)
+    public PedestrianAvoidanceBehavior(PathFollower _pathFollower)
     {
-        whiskers = _whiskers;
         pathFollower = _pathFollower;
     }
 
 
     // Update is called once per frame
-    public void Update(Transform _transform, bool _visualDebug)
+    public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
     {
         // Think about if avoiding an obstacle you come too close with a car.
         visualDebug = _visualDebug;
         transform = _transform;
-        rayOrigin = whiskers[0].position;
+        rayOrigin = _rayOrigin;
 
         if(relevantPedestrians.Count > 0) ProcessRelevantPedestrians();
     }

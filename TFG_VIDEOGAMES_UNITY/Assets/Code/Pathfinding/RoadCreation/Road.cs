@@ -230,14 +230,6 @@ public class Road : MonoBehaviour
 
         return true;
     }
-
-    //private void OnDrawGizmos()
-    //{
-    //    foreach (Vector3 rayPos in rayPositions)
-    //    {
-    //        Gizmos.DrawRay(rayPos, new Vector3(0, 5, 0));
-    //    }
-    //}
 }
 
 public enum TypeOfRoad

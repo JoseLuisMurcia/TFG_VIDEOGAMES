@@ -7,6 +7,7 @@ public class WhiskersManager : MonoBehaviour
     private AvoidanceBehavior avoidanceBehavior;
     private PriorityBehavior priorityBehavior;
     private PedestrianAvoidanceBehavior pedestrianBehavior;
+    private OvertakeBehavior overtakeBehavior;
     private PathFollower pathFollower;
     private TrafficLightCarController trafficLightCarController;
     [SerializeField] LayerMask obstacleLayer, carLayer, signalLayer, pedestrianLayer;
@@ -15,10 +16,17 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private float centerReach = 4.5f;
-    private float sideReach = 15f;
+    private const float centerReach = 4.5f;
+    private const float sideReach = 15f;
+    
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
+
+    [Header("Overtake")]
+    private const float overtakeRayReach = 7.5f;
+    private Vector3 overtakeMirrorPos;
+    private List<Vector3> overtakeRaysForward = new List<Vector3>();
+    private BoxCollider boxCollider;
 
     //[SerializeField] bool visualDebug = false;
     void Start()
@@ -36,9 +44,11 @@ public class WhiskersManager : MonoBehaviour
             }
         }
         CreateIncorporationWhiskers(whiskersParent);
-        avoidanceBehavior = new AvoidanceBehavior(whiskers, pathFollower, trafficLightCarController);
-        priorityBehavior = new PriorityBehavior(whiskers, pathFollower, avoidanceBehavior);
-        pedestrianBehavior = new PedestrianAvoidanceBehavior(whiskers, pathFollower);
+        CreateOvertakeRays();
+        avoidanceBehavior = new AvoidanceBehavior(pathFollower, trafficLightCarController);
+        priorityBehavior = new PriorityBehavior(pathFollower, avoidanceBehavior);
+        overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior);
+        pedestrianBehavior = new PedestrianAvoidanceBehavior(pathFollower);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
 
@@ -67,19 +77,38 @@ public class WhiskersManager : MonoBehaviour
         }
 
     }
+    void CreateOvertakeRays()
+    {
+        int numRays = 4;
+        float minRot = -162f;
+        float maxRot = -177f;
+        float difference = Mathf.Abs(maxRot) - Mathf.Abs(minRot);
+        float increment = difference / numRays;
 
-    // Update is called once per frame
+        boxCollider = GetComponent<BoxCollider>();
+        overtakeMirrorPos = boxCollider.bounds.max - transform.forward * .25f - new Vector3(0, boxCollider.size.y * .2f, 0);
+
+        for (int i=0; i< numRays; i++)
+        {
+            Quaternion rotation = Quaternion.Euler(0, minRot - increment * i, 0);
+            overtakeRaysForward.Add(rotation * transform.forward);
+        }
+    }
     void Update()
     {
         rayOrigin = whiskers[0].position;
-        avoidanceBehavior.Update(transform, visualDebug);
-        priorityBehavior.Update(transform, visualDebug);
-        pedestrianBehavior.Update(transform, visualDebug);
+        overtakeMirrorPos = boxCollider.bounds.max - transform.forward * .25f - new Vector3(0, boxCollider.size.y * .2f, 0);
+
+        avoidanceBehavior.Update(transform, visualDebug, rayOrigin);
+        priorityBehavior.Update(transform, visualDebug, rayOrigin);
+        pedestrianBehavior.Update(transform, visualDebug, rayOrigin);
+        overtakeBehavior.Update(transform, visualDebug, rayOrigin);
 
         if (pathFollower.isFullyStopped) return;
 
         CheckCars();
         CheckPedestrians();
+        CheckOvertake();
         if (!priorityBehavior.hasSignalInSight)
         {
             CheckSignals();
@@ -89,7 +118,6 @@ public class WhiskersManager : MonoBehaviour
             CheckForIncorporation();
         }
     }
-
     void CheckForIncorporation()
     {
         if (priorityBehavior.isInRoundabout)
@@ -139,7 +167,22 @@ public class WhiskersManager : MonoBehaviour
             }
         }
     }
-
+    void CheckOvertake()
+    {
+        RaycastHit hit;
+        foreach (Vector3 sensorForward in overtakeRaysForward)
+        {
+            Ray ray = new Ray(overtakeMirrorPos, sensorForward);
+            if (Physics.Raycast(ray, out hit, overtakeRayReach, carLayer))
+            {
+                if (visualDebug) Debug.DrawLine(overtakeMirrorPos, hit.point, Color.black);
+            }
+            else
+            {
+                if (visualDebug) Debug.DrawLine(overtakeMirrorPos, overtakeMirrorPos + sensorForward * overtakeRayReach, Color.white);
+            }
+        }
+    }
     void CheckCars()
     {
         RaycastHit hit;
@@ -164,7 +207,6 @@ public class WhiskersManager : MonoBehaviour
             }
         }
     }
-
     void CheckPedestrians()
     {
         RaycastHit hit;
@@ -174,12 +216,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, pedestrianLayer))
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 pedestrianBehavior.ProcessPedestrianHit(ray, hit, sensor);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -205,13 +247,17 @@ public class WhiskersManager : MonoBehaviour
         }
         return reach;
     }
-
     public void RoundaboutTrigger(bool entry)
     {
         priorityBehavior.isInRoundabout = entry;
         pathFollower.priorityLevel = PriorityLevel.Max;
         if (!entry)
             priorityBehavior.RemoveSignalFromSight();
+    }
+
+    private void OnDrawGizmos()
+    {
+        
     }
 
 }

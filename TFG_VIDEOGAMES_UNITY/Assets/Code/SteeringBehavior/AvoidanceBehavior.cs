@@ -6,7 +6,6 @@ using UnityEngine;
 // With the grid, we can find the node in that position and check if it is walkable and the movement penalty
 public class AvoidanceBehavior
 {
-    List<Transform> whiskers = new List<Transform>();
     public bool objectHit = false;
     private PathFollower pathFollower;
     public PathFollower hitCarPathFollower;
@@ -17,23 +16,21 @@ public class AvoidanceBehavior
     private Transform transform;
     private bool visualDebug;
 
-    public AvoidanceBehavior(List<Transform> _whiskers, PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
+    public AvoidanceBehavior(PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
     {
-        whiskers = _whiskers;
         pathFollower = _pathFollower;
         trafficLightController = _trafficLightCarController;
     }
 
 
     // Update is called once per frame
-    public void Update(Transform _transform, bool _visualDebug)
+    public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
     {
         // Think about if avoiding an obstacle you come too close with a car.
         visualDebug = _visualDebug;
         transform = _transform;
         if (objectHit) return;
-        rayOrigin = whiskers[0].position;
-
+        rayOrigin = _rayOrigin;
         //CheckRoadObstacles();
         if (hasTarget) CheckIfTargetIsValid();
     }
@@ -55,7 +52,7 @@ public class AvoidanceBehavior
 
     private bool TargetIsFar()
     {
-        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 3.5f;
+        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 4.5f;
     }
     private void UnableTarget()
     {

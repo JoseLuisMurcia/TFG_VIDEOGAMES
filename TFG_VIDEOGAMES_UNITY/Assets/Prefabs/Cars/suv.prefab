@@ -397,8 +397,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.32, y: 1.4, z: 2.6}
-  m_Center: {x: 0, y: 0.65, z: -0.15}
+  m_Size: {x: 1.32, y: 1.3722937, z: 2.6}
+  m_Center: {x: 0, y: 0.66385305, z: -0.14999998}
 --- !u!114 &979071569604664571
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -416,11 +416,10 @@ MonoBehaviour:
   turnDst: 1
   pathIndex: 0
   speedPercent: 0
+  movementSpeed: 0
   shouldStopAtTrafficLight: 0
   reactingToCarInFront: 0
-  reactionDelay: 0
   shouldBrakeBeforeCar: 0
-  distanceChanging: 0
   carStartBreakingDistance: 2
   carStopDistance: 1
   carTarget: {fileID: 0}
@@ -432,6 +431,10 @@ MonoBehaviour:
   pedestrianStopPos: {x: 0, y: 0, z: 0}
   pathDebug: 0
   isFullyStopped: 0
+  reactionDelay: 0
+  adjustingDistance: 0
+  cooldown: 0
+  distanceToTarget: -1
 --- !u!114 &979071569604664570
 MonoBehaviour:
   m_ObjectHideFlags: 0

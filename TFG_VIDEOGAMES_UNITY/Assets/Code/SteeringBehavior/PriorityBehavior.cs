@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class PriorityBehavior
 {
-    List<Transform> whiskers = new List<Transform>();
-
     private PathFollower pathFollower;
     private Vector3 rayOrigin;
     private Transform carTarget;
@@ -20,17 +18,16 @@ public class PriorityBehavior
     private AvoidanceBehavior avoidanceBehavior;
 
 
-    public PriorityBehavior(List<Transform> _whiskers, PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
+    public PriorityBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
     {
-        whiskers = _whiskers;
         pathFollower = _pathFollower;
         avoidanceBehavior = _avoidanceBehavior;
         pathFollower.priorityBehavior = this;
     }
 
-    public void Update(Transform _transform, bool _visualDebug)
+    public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
     {
-        rayOrigin = whiskers[0].position;
+        rayOrigin = _rayOrigin;
         visualDebug = _visualDebug;
         transform = _transform;
 

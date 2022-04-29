@@ -93,7 +93,7 @@ public class PathFollower : MonoBehaviour
                 typeOfCar = TypeOfCar.Van;
                 break;
             default:
-                Debug.LogWarning("haha wtf bro");
+                Debug.LogWarning("haha wtf bro: " + gameObject.name);
                 break;
         }
     }
@@ -267,8 +267,8 @@ public class PathFollower : MonoBehaviour
             yield return new WaitForSeconds(minPathUpdateTime);
             if (path != null)
             {
-                float distance = Vector3.Distance(transform.position, endNode.worldPosition);
-                if (distance < 3f)
+                int numNodesInPath = path.lookPoints.Count;
+                if (pathIndex >= numNodesInPath - 3)
                 {
                     RequestNewPath();
                 }
@@ -519,7 +519,7 @@ public class PathFollower : MonoBehaviour
         distanceToTarget = distance;
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
-        if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.1f && !isFullyStopped && !cooldown)
+        if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.05f && !isFullyStopped && !cooldown)
         {
             StartCoroutine(AdjustDistance());
         }
@@ -536,9 +536,13 @@ public class PathFollower : MonoBehaviour
             }
         }
 
-        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.2f)
+        if (_speedPercent - speedPercent > 0.1f)
         {
             _speedPercent = speedPercent + 0.005f;
+        }
+        else if(speedPercent - _speedPercent >= 0.2f)
+        {
+            _speedPercent = speedPercent - 0.01f;
         }
 
 
@@ -554,22 +558,42 @@ public class PathFollower : MonoBehaviour
     IEnumerator AdjustDistance()
     {
         adjustingDistance = true;
-        int randomInt = Random.Range(0, 2);
-        // It updates every 10th of a second, so 40 means 4 seconds of going back
+
+        float minRange = 1.5f;
+        float maxRange = 10f;
+        float increaseValue = 0.04f;
+        int numIterations = 60;
+        int randomInt = Random.Range(0, 3);
+        // It updates every 10th of a second, so 40 iterations means 4 seconds of adjusting distance
         float updateFreq = .1f;
+
+        // Security check so that it does not get stupid close
+        if (randomInt == 0)
+        {
+            float distanceResult = carStartBreakingDistance - increaseValue * numIterations;
+            if (distanceResult < minRange)
+                randomInt = 1;
+        }
+        else
+        {
+            float distanceResult = carStartBreakingDistance + increaseValue * numIterations;
+            if (distanceResult > maxRange)
+                randomInt = 0;
+        }
+
         int i = 0;
-        while (i < 50)
+        while (i < numIterations)
         {
             yield return new WaitForSeconds(updateFreq);
-            if (randomInt == 0) 
+            if (randomInt == 0)
             {
                 // Get closer to the car in front
-                carStartBreakingDistance -= 0.02f;
+                carStartBreakingDistance -= increaseValue;
             }
             else
             {
                 // Get further from the car in front
-                carStartBreakingDistance += 0.02f;
+                carStartBreakingDistance += increaseValue;
             }
             i++;
         }
@@ -581,13 +605,13 @@ public class PathFollower : MonoBehaviour
 
     IEnumerator AdjustDistanceCooldown()
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2f);
         cooldown = false;
     }
 
-    public void UnableTarget()
+    public void UnableTarget() // Habría que investigar por qué a veces se llama a unable target cuando no se debería
     {
-        carStartBreakingDistance = originalBreakingDistance;
+        //carStartBreakingDistance = originalBreakingDistance;
         carTarget = null;
         shouldBrakeBeforeCar = false;
         targetPriorityBehavior = null;

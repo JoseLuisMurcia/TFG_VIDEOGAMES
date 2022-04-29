@@ -496,6 +496,11 @@ public class WorldGrid : MonoBehaviour
             foreach (Node n in grid)
             {
                 Gizmos.color = Color.white;
+                if (n.road.numberOfLanes >= 2 && n.road.numDirection == NumDirection.OneDirectional)
+                {
+                    if (n.road.lanes[0].nodes.Contains(n))
+                        Gizmos.color = Color.magenta;
+                }
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.1f));
 
                 foreach (Node neighbour in n.neighbours)
@@ -717,7 +722,7 @@ public class WorldGrid : MonoBehaviour
 
         // Curve creation
         int numLinePoints = linePoints.Count;
-        if(numLanes == 2)
+        if (numLanes == 2)
         {
             entryNode = road.lanes[0].nodes[0];
         }
@@ -725,7 +730,7 @@ public class WorldGrid : MonoBehaviour
         {
             entryNode = road.lanes[1].nodes[0];
         }
-        
+
         exitNode = new Node(linePoints[numLinePoints - 1], road);
         road.exitNodes.Add(exitNode);
         previousNode = entryNode;
@@ -783,24 +788,17 @@ public class WorldGrid : MonoBehaviour
                 {
                     lineDir = -lineDir;
                 }
-                if (numberOfLanes == 1)
+                float distance = Mathf.Abs(laneWidth * .5f);
+                switch (i)
                 {
-                    lanePositions[i][j] = referencePoints[j];
+                    case 0: // La interior
+                        lanePositions[i][j] = lineCentre + lineDir * distance;
+                        break;
+                    case 1: // La exterior
+                        lanePositions[i][j] = lineCentre - lineDir * distance;
+                        break;
                 }
-                else if (numberOfLanes == 2)
-                {
-                    float distance = Mathf.Abs(laneWidth * .5f);
-                    switch (i)
-                    {
-                        case 0:
-                            lanePositions[i][j] = lineCentre - lineDir * distance;
-                            break;
-                        case 1:
-                            lanePositions[i][j] = lineCentre + lineDir * distance;
-                            break;
-                    }
 
-                }
             }
         }
 
@@ -1230,7 +1228,6 @@ public class WorldGrid : MonoBehaviour
             grid.Add(exitNode);
         }
     }
-
     private void CreateNodesForStraightRoad(Road road)
     {
         int numberOfLanes = road.numberOfLanes;
@@ -1320,7 +1317,6 @@ public class WorldGrid : MonoBehaviour
             }
         }
     }
-
 
     #endregion
 
