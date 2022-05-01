@@ -61,6 +61,13 @@ public class PathFollower : MonoBehaviour
     public float distanceToTarget = -1f;
     float originalBreakingDistance;
 
+    [Header("Overtake")]
+    public LaneSide laneSide;
+    public bool roadValidForOvertaking;
+
+    [Header("PathSwing")]
+    private float minRange;
+    private float maxRange;
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
@@ -174,7 +181,23 @@ public class PathFollower : MonoBehaviour
         priorityLevel = PriorityLevel.Max;
         StartCoroutine(StartPathfindingOnWorldCreation());
     }
+    private void Update()
+    {
+        if(path != null)
+        {
+            Road currentRoad = nodeList[pathIndex].road;
+            if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional)
+            {
+                roadValidForOvertaking = true;
+            }
+            else
+            {
+                roadValidForOvertaking = false;
+            }
 
+            //if(followPathCoroutine.)
+        }
+    }
     IEnumerator StartPathfindingOnWorldCreation()
     {
         yield return new WaitForSeconds(1f);
@@ -193,7 +216,6 @@ public class PathFollower : MonoBehaviour
             StartCoroutine(UpdatePath());
         }
     }
-
     public void StartPathfindingOnSpawn(Node _startNode)
     {
         float newDistance = 0f;
@@ -210,19 +232,16 @@ public class PathFollower : MonoBehaviour
         pathRequested = true;
         StartCoroutine(UpdatePath());
     }
-
-    public void OnPathFound(List<Node> waypointNodes, bool pathSuccessful, Node _startNode, Node _endNode)
+    public void OnPathFound(PathfindingResult pathfindingResult, bool pathSuccessful, Node _startNode, Node _endNode)
     {
         if (pathSuccessful)
         {
             pathRequested = false;
             endNode = _endNode;
-            nodeList = waypointNodes;
+            nodeList = pathfindingResult.nodes;
             waypointsList.Clear();
-            foreach (Node node in waypointNodes)
-            {
-                waypointsList.Add(node.worldPosition);
-            }
+            waypointsList = pathfindingResult.pathPositions;
+
             if (followPathCoroutine != null)
                 StopCoroutine(followPathCoroutine);
             path = new Path(waypointsList, transform.position, turnDst);
@@ -236,7 +255,6 @@ public class PathFollower : MonoBehaviour
             Debug.Log("Path not found for car: " + gameObject.name);
         }
     }
-
     private void SpawnSpheres(Vector3 _startNode, Vector3 _endNode)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -249,7 +267,6 @@ public class PathFollower : MonoBehaviour
         endSphere.transform.position = _endNode + Vector3.up;
         endSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
     }
-
     IEnumerator UpdatePath()
     {
         //if (Time.timeSinceLevelLoad < .3f)
@@ -275,7 +292,6 @@ public class PathFollower : MonoBehaviour
             }
         }
     }
-
     // This method returns the position in the path in pathIndex+numNodes
     public Vector3 GetPosInPathInNumNodes(int numNodes)
     {
@@ -284,7 +300,6 @@ public class PathFollower : MonoBehaviour
 
         return waypointsList[pathIndex + numNodes];
     }
-
     public Node GetStoppingNodeFromCurrentNode()
     {
         Node currentNode = nodeList[pathIndex];
@@ -656,7 +671,11 @@ public class PathFollower : MonoBehaviour
 
 }
 
-
+public enum LaneSide
+{
+    Right,
+    Left
+}
 public enum PriorityLevel
 {
     Stop,

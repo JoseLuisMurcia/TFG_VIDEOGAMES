@@ -23,8 +23,6 @@ public class OvertakeBehavior
         rayOrigin = _rayOrigin;
         visualDebug = _visualDebug;
         transform = _transform;
-
-
     }
 
 

@@ -66,7 +66,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Size: {x: 1.456542, y: 1.0604693, z: 2.4321551}
-  m_Center: {x: -0.005013585, y: 0.57616, z: -0.20898557}
+  m_Center: {x: 0, y: 0.57616, z: -0.20898557}
 --- !u!114 &355647666155603536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,6 +103,8 @@ MonoBehaviour:
   adjustingDistance: 0
   cooldown: 0
   distanceToTarget: -1
+  laneSide: 0
+  roadValidForOvertaking: 0
 --- !u!114 &355647666155603533
 MonoBehaviour:
   m_ObjectHideFlags: 0

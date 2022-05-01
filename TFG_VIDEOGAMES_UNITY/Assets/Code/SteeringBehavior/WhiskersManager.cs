@@ -18,7 +18,7 @@ public class WhiskersManager : MonoBehaviour
     private Vector3 rayOrigin;
     private const float centerReach = 4.5f;
     private const float sideReach = 15f;
-    
+
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
 
@@ -86,9 +86,9 @@ public class WhiskersManager : MonoBehaviour
         float increment = difference / numRays;
 
         boxCollider = GetComponent<BoxCollider>();
-        overtakeMirrorPos = boxCollider.bounds.max - transform.forward * .25f - new Vector3(0, boxCollider.size.y * .2f, 0);
+        overtakeMirrorPos = transform.position - transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
 
-        for (int i=0; i< numRays; i++)
+        for (int i = 0; i < numRays; i++)
         {
             Quaternion rotation = Quaternion.Euler(0, minRot - increment * i, 0);
             overtakeRaysForward.Add(rotation * transform.forward);
@@ -97,7 +97,7 @@ public class WhiskersManager : MonoBehaviour
     void Update()
     {
         rayOrigin = whiskers[0].position;
-        overtakeMirrorPos = boxCollider.bounds.max - transform.forward * .25f - new Vector3(0, boxCollider.size.y * .2f, 0);
+        overtakeMirrorPos = transform.position - transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
 
         avoidanceBehavior.Update(transform, visualDebug, rayOrigin);
         priorityBehavior.Update(transform, visualDebug, rayOrigin);
@@ -257,7 +257,7 @@ public class WhiskersManager : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        
+
     }
 
 }

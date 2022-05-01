@@ -29,7 +29,7 @@ public class Pathfinding : MonoBehaviour
 
     IEnumerator FindPath(Node startNode, Node targetNode)
     {
-        List<Node> waypoints = new List<Node>();
+        PathfindingResult result = new PathfindingResult();
         bool pathSuccess = false;
 
         startNode.gCost = 0;
@@ -77,44 +77,41 @@ public class Pathfinding : MonoBehaviour
         yield return null;
         if (pathSuccess)
         {
-            waypoints = RetracePath(startNode, targetNode);
+            result = RetracePath(startNode, targetNode);
         }
-        requestManager.FinishedProcessingPath(waypoints, pathSuccess, startNode, targetNode);
+        requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
     }
 
-    List<Node> RetracePath(Node startNode, Node endNode)
+    PathfindingResult RetracePath(Node startNode, Node endNode)
     {
-        List<Node> waypoints = new List<Node>();
+        List<Node> nodes = new List<Node>();
         Node currentNode = endNode;
         while (currentNode != startNode)
         {
-            waypoints.Add(currentNode);
+            nodes.Add(currentNode);
             currentNode = currentNode.parent;
         }
-        waypoints.Add(startNode);
-
-        //Vector3[] waypoints = SimplifyPath(path);
-
-        waypoints.Reverse();
-        return waypoints;
+        nodes.Add(startNode);
+        nodes.Reverse();
+        List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
+        PathfindingResult result = new PathfindingResult(nodes, waypoints);
+        return result;
     }
 
-    //Vector3[] SimplifyPath(List<Node> path)
-    //{
-    //    List<Vector3> waypoints = new List<Vector3>();
-    //    Vector2 directionOld = Vector2.zero;
-    //    waypoints.Add(path[0].worldPosition);
-    //    for (int i = 1; i < path.Count; i++)
-    //    {
-    //        Vector2 directionNew = new Vector2(path[i - 1].worldPosition.x - path[i].worldPosition.x, path[i - 1].worldPosition.z - path[i].worldPosition.z);
-    //        if (directionNew != directionOld)
-    //        {
-    //            waypoints.Add(path[i].worldPosition);
-    //        }
-    //        directionOld = directionNew;
-    //    }
-    //    return waypoints.ToArray();
-    //}
+    // FIX THIS HERE
+    private List<Vector3> ModifyPathLateralOffset(List<Node> nodes)
+    {
+        List<Vector3> waypoints = new List<Vector3>();
+        waypoints.Add(nodes[0].worldPosition);
+        for(int i=0; i< nodes.Count-1; i++)
+        {
+            Vector3 dirToNextNode = (nodes[i + 1].worldPosition - nodes[i].worldPosition).normalized;
+            Vector2 perpDir = Vector2.Perpendicular(new Vector2(dirToNextNode.x, dirToNextNode.z));
+            Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
+            waypoints.Add(nodes[i + 1].worldPosition + perpendicularDirection * .5f);
+        }
+        return waypoints;
+    }
 
     float GetDistanceHeuristic(Node nodeA, Node nodeB)
     {
@@ -126,11 +123,18 @@ public class Pathfinding : MonoBehaviour
         return 14f * dstX + 10f * (dstY - dstX);
     }
 
-    int GetAlternativeHeuristic(Node nodeA, Node nodeB)
-    {
-        int Distance_X = (int)Mathf.Abs(nodeA.worldPosition.x - nodeB.worldPosition.x);
-        int Distance_Y = (int)Mathf.Abs(nodeA.worldPosition.z - nodeB.worldPosition.z);
-        return (int)Mathf.Sqrt(Distance_X * Distance_X + Distance_Y * Distance_Y);
-    }
+    
+}
 
+
+public struct PathfindingResult
+{
+    public List<Node> nodes;
+    public List<Vector3> pathPositions;
+
+    public PathfindingResult(List<Node> _nodes, List<Vector3> _pathPositions)
+    {
+        nodes = _nodes;
+        pathPositions = _pathPositions;
+    }
 }
