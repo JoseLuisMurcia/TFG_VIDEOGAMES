@@ -27,6 +27,11 @@ public class Pathfinding : MonoBehaviour
         StartCoroutine(FindPath(startNode, targetNode));
     }
 
+    public void StartLaneSwap(Node startNode)
+    {
+        StartCoroutine(SwapLane(startNode));
+    }
+
     IEnumerator FindPath(Node startNode, Node targetNode)
     {
         PathfindingResult result = new PathfindingResult();
@@ -98,6 +103,38 @@ public class Pathfinding : MonoBehaviour
         return result;
     }
 
+    IEnumerator SwapLane(Node startNode)
+    {
+        // El startNode real es el vecino más lejano del startNode que se recibe como argumento
+        // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
+
+        Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea
+        List<Node> nodes = new List<Node>();
+        // Como se hasta donde tengo que estar devolviendo el camino? Cuando son suficientes nodos?
+        // Devolver 75 neighbours[0] por los loles xd
+
+        int numNodesToOvertake = 75;
+        nodes.Add(realStartNode);
+        for (int i = 0; i < numNodesToOvertake-1; i++)
+        {
+            nodes.Add(nodes[i].neighbours[0]);
+        }
+        Node targetNode = nodes[numNodesToOvertake-1].neighbours[0];
+
+        yield return null;
+
+        PathfindingResult result = ReturnLaneSwap(nodes);
+
+        requestManager.FinishedProcessingPath(result, true, realStartNode, targetNode);
+    }
+
+    PathfindingResult ReturnLaneSwap(List<Node> nodes)
+    {
+        List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
+        PathfindingResult result = new PathfindingResult(nodes, waypoints);
+        return result;
+    }
+
     private List<Vector3> ModifyPathLateralOffset(List<Node> nodes)
     {
         float maxLeftOffset = .5f;
@@ -125,7 +162,7 @@ public class Pathfinding : MonoBehaviour
             }
             else
             {
-                lastNodeInSegment = nodesPerSegment * (i+1) - 1;
+                lastNodeInSegment = nodesPerSegment * (i + 1) - 1;
             }
 
             int halfPoint = (firstNodeInSegment + lastNodeInSegment) / 2;
@@ -151,7 +188,7 @@ public class Pathfinding : MonoBehaviour
                 {
                     currentOffset -= offsetIncrement;
                 }
-               
+
                 Vector3 dirToNextNode = (nodes[j + 1].worldPosition - nodes[j].worldPosition).normalized;
                 Vector2 perpDir = Vector2.Perpendicular(new Vector2(dirToNextNode.x, dirToNextNode.z));
                 Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
@@ -172,14 +209,6 @@ public class Pathfinding : MonoBehaviour
     }
 
 
-}
-
-public enum PathModificator
-{
-    LeftSwing,
-    RightSwing,
-    LeftStraight,
-    RightStraight
 }
 
 public struct PathfindingResult

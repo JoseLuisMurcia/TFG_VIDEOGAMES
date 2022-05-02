@@ -255,6 +255,30 @@ public class PathFollower : MonoBehaviour
             Debug.Log("Path not found for car: " + gameObject.name);
         }
     }
+
+    public void OnLaneSwap(PathfindingResult pathfindingResult, bool pathSuccessful, Node _startNode, Node _endNode)
+    {
+        if (pathSuccessful)
+        {
+            pathRequested = false;
+            endNode = _endNode;
+            nodeList = pathfindingResult.nodes;
+            waypointsList.Clear();
+            waypointsList = pathfindingResult.pathPositions;
+
+            if (followPathCoroutine != null)
+                StopCoroutine(followPathCoroutine);
+            path = new Path(waypointsList, transform.position, turnDst);
+            followPathCoroutine = FollowPath();
+            StartCoroutine(followPathCoroutine);
+        }
+        else
+        {
+            path = null;
+            SpawnSpheres(_startNode.worldPosition, _endNode.worldPosition);
+            Debug.Log("Lane swap not found for car: " + gameObject.name);
+        }
+    }
     private void SpawnSpheres(Vector3 _startNode, Vector3 _endNode)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -388,6 +412,15 @@ public class PathFollower : MonoBehaviour
         }
 
         PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
+        pathRequested = true;
+    }
+
+    public void RequestLaneSwap()
+    {
+        if (endNode == null)
+            return;
+
+        PathfinderRequestManager.RequestLaneSwap(nodeList[pathIndex], OnLaneSwap);
         pathRequested = true;
     }
 

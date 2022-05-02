@@ -40,6 +40,13 @@ public class PathfinderRequestManager : MonoBehaviour
         instance.TryProcessNext();
     }
 
+    public static void RequestLaneSwap(Node pathStart, Action<PathfindingResult, bool, Node, Node> callback)
+    {
+        PathRequest newRequest = new PathRequest(pathStart, callback);
+        instance.pathRequestQueue.Enqueue(newRequest);
+        instance.TryProcessNext();
+    }
+
     void TryProcessNext()
     {
         if (!isProcessingPath && pathRequestQueue.Count > 0)
@@ -48,21 +55,29 @@ public class PathfinderRequestManager : MonoBehaviour
             isProcessingPath = true;
 
 
-            if (currentPathRequest.startNode != null)
+            if(currentPathRequest.carForward == Vector3.zero && currentPathRequest.endNode == null && currentPathRequest.endPos == Vector3.zero)
             {
-                pathfinding.StartFindPath(currentPathRequest.startNode, currentPathRequest.endNode);
+                pathfinding.StartLaneSwap(currentPathRequest.startNode);
             }
             else
             {
-                if (currentPathRequest.endNode == null)
+                if (currentPathRequest.startNode != null)
                 {
-                    pathfinding.StartFindPath(currentPathRequest.startPos, currentPathRequest.endPos, currentPathRequest.carForward);
+                    pathfinding.StartFindPath(currentPathRequest.startNode, currentPathRequest.endNode);
                 }
                 else
                 {
-                    pathfinding.StartFindPath(currentPathRequest.startPos, currentPathRequest.endNode, currentPathRequest.carForward);
+                    if (currentPathRequest.endNode == null)
+                    {
+                        pathfinding.StartFindPath(currentPathRequest.startPos, currentPathRequest.endPos, currentPathRequest.carForward);
+                    }
+                    else
+                    {
+                        pathfinding.StartFindPath(currentPathRequest.startPos, currentPathRequest.endNode, currentPathRequest.carForward);
+                    }
                 }
             }
+            
         }
     }
 
@@ -112,6 +127,18 @@ public class PathfinderRequestManager : MonoBehaviour
             carForward = _carForward;
 
             startNode = null;
+            endPos = Vector3.zero;
+        }
+
+        // LaneSwap
+        public PathRequest(Node _nodeStart, Action<PathfindingResult, bool, Node, Node> _callback) 
+        {
+            startNode = _nodeStart;
+            callback = _callback;
+
+            carForward = Vector3.zero;
+            endNode = null;
+            startPos = Vector3.zero;
             endPos = Vector3.zero;
         }
     }
