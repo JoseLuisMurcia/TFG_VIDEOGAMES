@@ -98,17 +98,65 @@ public class Pathfinding : MonoBehaviour
         return result;
     }
 
-    // FIX THIS HERE
     private List<Vector3> ModifyPathLateralOffset(List<Node> nodes)
     {
+        float maxLeftOffset = .5f;
+        float maxRightOffset = -.5f;
+
+        int numNodesInPath = nodes.Count;
+        const int nodesPerSegment = 50;
+        int numSegments = numNodesInPath / nodesPerSegment;
+        if (numSegments == 0)
+            numSegments = 1;
+
         List<Vector3> waypoints = new List<Vector3>();
         waypoints.Add(nodes[0].worldPosition);
-        for(int i=0; i< nodes.Count-1; i++)
+        int firstNodeInSegment;
+        int lastNodeInSegment = -1;
+
+        for (int i = 0; i < numSegments; i++)
         {
-            Vector3 dirToNextNode = (nodes[i + 1].worldPosition - nodes[i].worldPosition).normalized;
-            Vector2 perpDir = Vector2.Perpendicular(new Vector2(dirToNextNode.x, dirToNextNode.z));
-            Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
-            waypoints.Add(nodes[i + 1].worldPosition + perpendicularDirection * .5f);
+            int randomInt = UnityEngine.Random.Range(0, 2);
+            // If to check if this is the last segment, in this case, merge all the points from the incomplete one in front,
+            firstNodeInSegment = lastNodeInSegment + 1;
+            if (i == numSegments - 1)
+            {
+                lastNodeInSegment = numNodesInPath - 2;
+            }
+            else
+            {
+                lastNodeInSegment = nodesPerSegment * (i+1) - 1;
+            }
+
+            int halfPoint = (firstNodeInSegment + lastNodeInSegment) / 2;
+            float offsetIncrement;
+
+            if (randomInt == 0) // Go right
+            {
+                offsetIncrement = maxRightOffset / halfPoint;
+            }
+            else // Go left
+            {
+                offsetIncrement = maxLeftOffset / halfPoint;
+            }
+
+            float currentOffset = 0f;
+            for (int j = firstNodeInSegment; j <= lastNodeInSegment; j++)
+            {
+                if (j < halfPoint)
+                {
+                    currentOffset += offsetIncrement;
+                }
+                else
+                {
+                    currentOffset -= offsetIncrement;
+                }
+               
+                Vector3 dirToNextNode = (nodes[j + 1].worldPosition - nodes[j].worldPosition).normalized;
+                Vector2 perpDir = Vector2.Perpendicular(new Vector2(dirToNextNode.x, dirToNextNode.z));
+                Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
+                waypoints.Add(nodes[j + 1].worldPosition + perpendicularDirection * currentOffset);
+            }
         }
         return waypoints;
     }
@@ -123,9 +171,16 @@ public class Pathfinding : MonoBehaviour
         return 14f * dstX + 10f * (dstY - dstX);
     }
 
-    
+
 }
 
+public enum PathModificator
+{
+    LeftSwing,
+    RightSwing,
+    LeftStraight,
+    RightStraight
+}
 
 public struct PathfindingResult
 {
