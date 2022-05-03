@@ -62,12 +62,7 @@ public class PathFollower : MonoBehaviour
     float originalBreakingDistance;
 
     [Header("Overtake")]
-    public LaneSide laneSide;
     public bool roadValidForOvertaking;
-
-    [Header("PathSwing")]
-    private float minRange;
-    private float maxRange;
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
@@ -195,7 +190,6 @@ public class PathFollower : MonoBehaviour
                 roadValidForOvertaking = false;
             }
 
-            //if(followPathCoroutine.)
         }
     }
     IEnumerator StartPathfindingOnWorldCreation()
@@ -706,6 +700,7 @@ public class PathFollower : MonoBehaviour
 
 public enum LaneSide
 {
+    None = -1,
     Right,
     Left
 }

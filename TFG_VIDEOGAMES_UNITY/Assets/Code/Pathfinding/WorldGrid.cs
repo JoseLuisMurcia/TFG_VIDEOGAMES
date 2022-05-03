@@ -357,6 +357,14 @@ public class WorldGrid : MonoBehaviour
         {
             Vector3 unionNodePos = (exitNode.worldPosition + entryNode.worldPosition) * 0.5f;
             Node unionNode = new Node(unionNodePos, road);
+            foreach (Lane lane in road.lanes)
+            {
+                if (lane.nodes.Contains(exitNode))
+                {
+                    lane.nodes.Add(unionNode);
+                    break;
+                }
+            }
             exitNode.AddNeighbour(unionNode);
             unionNode.AddNeighbour(entryNode);
             unionNodes.Add(unionNodePos);
@@ -399,6 +407,14 @@ public class WorldGrid : MonoBehaviour
                     // Perform connection
                     Vector3 unionNodePos = (exitNode.worldPosition + bestEntryNode.worldPosition) * 0.5f;
                     Node unionNode = new Node(unionNodePos, road);
+                    foreach (Lane lane in road.lanes)
+                    {
+                        if (lane.nodes.Contains(exitNode))
+                        {
+                            lane.nodes.Add(unionNode);
+                            break;
+                        }
+                    }
                     exitNode.AddNeighbour(unionNode);
                     unionNode.AddNeighbour(bestEntryNode);
                     unionNodes.Add(unionNodePos);

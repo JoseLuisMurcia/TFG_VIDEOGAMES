@@ -115,11 +115,13 @@ public class Pathfinding : MonoBehaviour
 
         int numNodesToOvertake = 75;
         nodes.Add(realStartNode);
-        for (int i = 0; i < numNodesToOvertake-1; i++)
+
+
+        for (int i = 0; i < numNodesToOvertake - 1; i++)
         {
-            nodes.Add(nodes[i].neighbours[0]);
+            nodes.Add(nodes[i].neighbours[1]);
         }
-        Node targetNode = nodes[numNodesToOvertake-1].neighbours[0];
+        Node targetNode = nodes[numNodesToOvertake - 1].neighbours[1];
 
         yield return null;
 

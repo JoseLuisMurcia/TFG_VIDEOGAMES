@@ -14,12 +14,33 @@ public class Node : IHeapItem<Node>
 	public Road road;
 	public readonly List<Node> neighbours = new List<Node>();
 	public Node previousNode; // Used by grid creation
+	public LaneSide laneSide;
 
 	public Node(Vector3 _worldPos, Road _road)
 	{
 		worldPosition = _worldPos;
 		road = _road;
+		SetLaneSide();
 	}
+
+	private void SetLaneSide()
+    {
+		if(road.numberOfLanes > 1 && road.numDirection == NumDirection.OneDirectional)
+        {
+            if (road.lanes[0].nodes.Contains(this))
+            {
+				laneSide = LaneSide.Left;
+            }
+            else
+            {
+				laneSide = LaneSide.Right;
+			}
+        }
+        else
+        {
+			laneSide = LaneSide.None;
+        }
+    }
 
 	public float fCost
 	{
