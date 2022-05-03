@@ -11,7 +11,7 @@ public class OvertakeBehavior
     private bool visualDebug = false;
     private AvoidanceBehavior avoidanceBehavior;
 
-
+    public bool canOvertake = true;
     public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
     {
         pathFollower = _pathFollower;
@@ -24,8 +24,6 @@ public class OvertakeBehavior
         visualDebug = _visualDebug;
         transform = _transform;
     }
-
-
 
 
 }

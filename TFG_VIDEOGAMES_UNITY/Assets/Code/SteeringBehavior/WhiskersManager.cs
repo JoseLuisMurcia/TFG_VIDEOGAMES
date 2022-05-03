@@ -23,12 +23,13 @@ public class WhiskersManager : MonoBehaviour
     public bool intersectionInSight = false;
 
     [Header("Overtake")]
-    private const float overtakeRayReach = 7.5f;
-    private Vector3 overtakeMirrorPos;
-    private List<Vector3> overtakeRaysForward = new List<Vector3>();
+    private Vector3 leftMirrorPos;
+    private Vector3 rightMirrorPos;
+    private List<Vector3> lOvertakeRaysForward = new List<Vector3>();
+    private List<Vector3> rOvertakeRaysForward = new List<Vector3>();
+    private List<float> overtakeRaysReach = new List<float>() { 5f, 2.5f, 1.5f, 2f, 3f, 7.5f };
     private BoxCollider boxCollider;
 
-    //[SerializeField] bool visualDebug = false;
     void Start()
     {
         pathFollower = GetComponent<PathFollower>();
@@ -79,25 +80,28 @@ public class WhiskersManager : MonoBehaviour
     }
     void CreateOvertakeRays()
     {
-        int numRays = 4;
-        float minRot = -162f;
-        float maxRot = -177f;
-        float difference = Mathf.Abs(maxRot) - Mathf.Abs(minRot);
-        float increment = difference / numRays;
+        List<float> leftAngles = new List<float>() { -10f, -30f, -70f, -120f, -150f, -170f };
+        List<float> rightAngles = new List<float>() { 10f, 30f, 70f, 120f, 150f, 170f };
+        int numRays = leftAngles.Count;
 
         boxCollider = GetComponent<BoxCollider>();
-        overtakeMirrorPos = transform.position - transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
+        leftMirrorPos = transform.position - transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
+        rightMirrorPos = transform.position + transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
 
         for (int i = 0; i < numRays; i++)
         {
-            Quaternion rotation = Quaternion.Euler(0, minRot - increment * i, 0);
-            overtakeRaysForward.Add(rotation * transform.forward);
+            Quaternion rotation = Quaternion.Euler(0, leftAngles[i], 0);
+            lOvertakeRaysForward.Add(rotation * transform.forward);
+
+            rotation = Quaternion.Euler(0, rightAngles[i], 0);
+            rOvertakeRaysForward.Add(rotation * transform.forward);
         }
     }
     void Update()
     {
         rayOrigin = whiskers[0].position;
-        overtakeMirrorPos = transform.position - transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
+        leftMirrorPos = transform.position - transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
+        rightMirrorPos = transform.position + transform.right * .5f + new Vector3(0, boxCollider.size.y * .2f, 0);
 
         avoidanceBehavior.Update(transform, visualDebug, rayOrigin);
         priorityBehavior.Update(transform, visualDebug, rayOrigin);
@@ -108,7 +112,11 @@ public class WhiskersManager : MonoBehaviour
 
         CheckCars();
         CheckPedestrians();
-        CheckOvertake();
+        if (pathFollower.roadValidForOvertaking && avoidanceBehavior.hasTarget)
+        {
+            CheckOvertake(pathFollower.laneSide);
+        }
+
         if (!priorityBehavior.hasSignalInSight)
         {
             CheckSignals();
@@ -167,21 +175,50 @@ public class WhiskersManager : MonoBehaviour
             }
         }
     }
-    void CheckOvertake()
+    void CheckOvertake(LaneSide laneSide)
     {
         RaycastHit hit;
-        foreach (Vector3 sensorForward in overtakeRaysForward)
+        int i = 0;
+        
+        if(laneSide == LaneSide.Right)
         {
-            Ray ray = new Ray(overtakeMirrorPos, sensorForward);
-            if (Physics.Raycast(ray, out hit, overtakeRayReach, carLayer))
+            foreach (Vector3 sensorForward in lOvertakeRaysForward)
             {
-                if (visualDebug) Debug.DrawLine(overtakeMirrorPos, hit.point, Color.black);
-            }
-            else
-            {
-                if (visualDebug) Debug.DrawLine(overtakeMirrorPos, overtakeMirrorPos + sensorForward * overtakeRayReach, Color.white);
+                Ray ray = new Ray(leftMirrorPos, sensorForward);
+                if (Physics.Raycast(ray, out hit, overtakeRaysReach[i], carLayer))
+                {
+                    if (visualDebug) Debug.DrawLine(leftMirrorPos, hit.point, Color.black);
+                    overtakeBehavior.canOvertake = false;
+                    return;
+                }
+                else
+                {
+                    if (visualDebug) Debug.DrawLine(leftMirrorPos, leftMirrorPos + sensorForward * overtakeRaysReach[i], Color.white);
+                }
+                i++;
             }
         }
+        else
+        {
+            foreach (Vector3 sensorForward in rOvertakeRaysForward)
+            {
+                Ray ray = new Ray(rightMirrorPos, sensorForward);
+                if (Physics.Raycast(ray, out hit, overtakeRaysReach[i], carLayer))
+                {
+                    if (visualDebug) Debug.DrawLine(rightMirrorPos, hit.point, Color.black);
+                    overtakeBehavior.canOvertake = false;
+                    return;
+                }
+                else
+                {
+                    if (visualDebug) Debug.DrawLine(rightMirrorPos, rightMirrorPos + sensorForward * overtakeRaysReach[i], Color.white);
+                }
+                i++;
+            }
+        }
+
+        overtakeBehavior.canOvertake = true;
+
     }
     void CheckCars()
     {

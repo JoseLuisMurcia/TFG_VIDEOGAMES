@@ -86,8 +86,13 @@ public class WorldGrid : MonoBehaviour
                 case TypeOfRoad.Bridge:
                     CreateNodesForBridge((Bridge)road);
                     break;
+                case TypeOfRoad.StraightSlant:
+                    CreateNodesForStraightRoad(road);
+                    break;
             }
         }
+        foreach (Node node in grid)
+            node.SetLaneSide();
         CreateConnectionsForRoundabouts();
         ConnectAllRoads();
     }
@@ -514,7 +519,8 @@ public class WorldGrid : MonoBehaviour
                 Gizmos.color = Color.white;
                 if (n.road.numberOfLanes >= 2 && n.road.numDirection == NumDirection.OneDirectional)
                 {
-                    if (n.road.lanes[0].nodes.Contains(n))
+                    //if (n.road.lanes[0].nodes.Contains(n))
+                    if (n.laneSide == LaneSide.Left)
                         Gizmos.color = Color.magenta;
                 }
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.1f));
@@ -909,18 +915,51 @@ public class WorldGrid : MonoBehaviour
                     switch (i)
                     {
                         case 0:
-                            lanePositions[i][j] = lineCentre - lineDir * distance;
-                            break;
-                        case 1:
-                            if (road.numDirection == NumDirection.OneDirectional)
+                            if (road.invertPath)
                             {
-                                lanePositions[i][j] = lineCentre + lineDir * distance;
+                                lanePositions[i][j] = lineCentre - lineDir * distance;
+
                             }
                             else
                             {
-                                int inverseJ = numNodes - j - 1;
-                                lanePositions[i][inverseJ] = lineCentre + lineDir * distance;
+                                if (road.numDirection == NumDirection.OneDirectional)
+                                {
+                                    lanePositions[i][j] = lineCentre + lineDir * distance;
+
+                                }
+                                else
+                                {
+                                    lanePositions[i][j] = lineCentre - lineDir * distance;
+                                }
+
                             }
+                            break;
+                        case 1:
+                            if (road.invertPath)
+                            {
+                                if (road.numDirection == NumDirection.OneDirectional)
+                                {
+                                    lanePositions[i][j] = lineCentre + lineDir * distance;
+                                }
+                                else
+                                {
+                                    int inverseJ = numNodes - j - 1;
+                                    lanePositions[i][inverseJ] = lineCentre + lineDir * distance;
+                                }
+                            }
+                            else
+                            {
+                                if (road.numDirection == NumDirection.OneDirectional)
+                                {
+                                    lanePositions[i][j] = lineCentre - lineDir * distance;
+                                }
+                                else
+                                {
+                                    int inverseJ = numNodes - j - 1;
+                                    lanePositions[i][inverseJ] = lineCentre + lineDir * distance;
+                                }
+                            }
+                            
                             break;
                     }
 
@@ -1125,6 +1164,7 @@ public class WorldGrid : MonoBehaviour
             road.lanes[i].nodes.Add(exitNode);
             grid.Add(exitNode);
         }
+        // Loop and swap the lanes? xd
         ConnectNodesInRoad(road);
     }
     private void CreateNodesForBridge(Bridge road)
@@ -1148,7 +1188,6 @@ public class WorldGrid : MonoBehaviour
         Vector3[] startPoints = new Vector3[numberOfLanes];
         Vector3[] endPoints = new Vector3[numberOfLanes];
         float zWidth = road.bounds.extents.z * road.transform.localScale.z * 0.6f;
-        float xWidth = road.bounds.extents.x * road.transform.localScale.x * 0.6f;
         if (numberOfLanes == 1)
         {
             startPoints[0] = start;
@@ -1158,11 +1197,36 @@ public class WorldGrid : MonoBehaviour
         {
             float distance = zWidth * .5f;
             Vector3 direction = upperBridge ? -road.transform.right : road.transform.forward;
-            startPoints[0] = start - direction * distance;
-            endPoints[0] = end - direction * distance;
 
-            startPoints[1] = start + direction * distance;
-            endPoints[1] = end + direction * distance;
+            if(road.typeOfRoad == TypeOfRoad.StraightSlant)
+            {
+                if (invert)
+                {
+                    startPoints[0] = end - direction * distance;
+                    endPoints[0] = start - direction * distance;
+
+                    startPoints[1] = end + direction * distance;
+                    endPoints[1] = start + direction * distance;
+                }
+                else
+                {
+                    startPoints[0] = start + direction * distance;
+                    endPoints[0] = end + direction * distance;
+
+                    startPoints[1] = start - direction * distance;
+                    endPoints[1] = end - direction * distance;
+                }
+                
+            }
+            else
+            {
+                startPoints[0] = start - direction * distance;
+                endPoints[0] = end - direction * distance;
+
+                startPoints[1] = start + direction * distance;
+                endPoints[1] = end + direction * distance;
+            }
+            
         }
         else // caso 4 carriles
         {
@@ -1179,7 +1243,7 @@ public class WorldGrid : MonoBehaviour
             endPoints[3] = end + road.transform.forward * zWidth * .8f;
         }
 
-        if (invert)
+        if (invert && TypeOfRoad.StraightSlant != road.typeOfRoad)
         {
             Vector3[] invertedStartPoints = new Vector3[numberOfLanes];
             Vector3[] invertedEndPoints = new Vector3[numberOfLanes];

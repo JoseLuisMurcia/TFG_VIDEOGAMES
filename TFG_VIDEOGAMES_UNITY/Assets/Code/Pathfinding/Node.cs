@@ -20,10 +20,9 @@ public class Node : IHeapItem<Node>
 	{
 		worldPosition = _worldPos;
 		road = _road;
-		SetLaneSide();
 	}
 
-	private void SetLaneSide()
+	public void SetLaneSide()
     {
 		if(road.numberOfLanes > 1 && road.numDirection == NumDirection.OneDirectional)
         {

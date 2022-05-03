@@ -55,7 +55,7 @@ public class PathfinderRequestManager : MonoBehaviour
             isProcessingPath = true;
 
 
-            if(currentPathRequest.carForward == Vector3.zero && currentPathRequest.endNode == null && currentPathRequest.endPos == Vector3.zero)
+            if(currentPathRequest.carForward == Vector3.zero)
             {
                 pathfinding.StartLaneSwap(currentPathRequest.startNode);
             }

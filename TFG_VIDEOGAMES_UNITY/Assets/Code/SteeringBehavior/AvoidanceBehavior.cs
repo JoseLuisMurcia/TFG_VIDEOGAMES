@@ -16,6 +16,8 @@ public class AvoidanceBehavior
     private Transform transform;
     private bool visualDebug;
 
+    private List<PathFollower> blackList = new List<PathFollower>();
+
     public AvoidanceBehavior(PathFollower _pathFollower, TrafficLightCarController _trafficLightCarController)
     {
         pathFollower = _pathFollower;
@@ -48,13 +50,17 @@ public class AvoidanceBehavior
                 UnableTarget();
             }
         }
+        else if (pathFollower.roadValidForOvertaking && !BothCarsInSameLane(pathFollower.laneSide, hitCarPathFollower.laneSide))
+        {
+            UnableTarget();
+        }
     }
 
     private bool TargetIsFar()
     {
         return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 4.5f;
     }
-    private void UnableTarget()
+    public void UnableTarget()
     {
         hasTarget = false;
         pathFollower.UnableTarget();
@@ -156,39 +162,66 @@ public class AvoidanceBehavior
             {
                 if (!DifferentRoads(trafficLightController, hitCarTrafficLightController) && BothShouldStopBeforeLight())
                 {
-                    if (hasTarget)
-                    {
-                        if (NewCarIsCloserThanTarget())
-                        {
-                            EnableTarget(hitCarPathFollower.transform);
-                        }
-                    }
-                    else
-                    {
-                        EnableTarget(hitCarPathFollower.transform);
+                    if (NewTargetIsValid())
                         return;
-                    }
                 }
 
             }
             else
             {
-                if (hasTarget)
-                {
-                    if (NewCarIsCloserThanTarget())
-                    {
-                        EnableTarget(hitCarPathFollower.transform);
-                    }
-                }
-                else
-                {
-                    EnableTarget(hitCarPathFollower.transform);
+                if (NewTargetIsValid())
                     return;
-                }
             }
         }
     }
 
+    private bool NewTargetIsValid()
+    {
+        if (hasTarget)
+        {
+            if (NewCarIsCloserThanTarget())
+            {
+                if (pathFollower.roadValidForOvertaking)
+                {
+                    if (BothCarsInSameLane(pathFollower.laneSide, hitCarPathFollower.laneSide) && !blackList.Contains(hitCarPathFollower))
+                    {
+                        EnableTarget(hitCarPathFollower.transform);
+                        return true;
+                    }
+                    return false;
+                }
+                else
+                {
+                    EnableTarget(hitCarPathFollower.transform);
+                    return true;
+                }
+
+            }
+            return false;
+        }
+        else
+        {
+            if (pathFollower.roadValidForOvertaking)
+            {
+                if (BothCarsInSameLane(pathFollower.laneSide, hitCarPathFollower.laneSide) && !blackList.Contains(hitCarPathFollower))
+                {
+                    EnableTarget(hitCarPathFollower.transform);
+                    return true;
+                }
+                return false;
+            }
+            else
+            {
+                EnableTarget(hitCarPathFollower.transform);
+                return true;
+            }
+        }
+    }
+
+    private bool BothCarsInSameLane(LaneSide laneSide, LaneSide targetLaneSide)
+    {
+        return laneSide == targetLaneSide;
+    }
     private bool NewCarIsCloserThanTarget()
     {
         Vector3 hitCarPos = hitCarPathFollower.transform.position;
@@ -196,4 +229,9 @@ public class AvoidanceBehavior
         return Vector3.Distance(carPos, hitCarPos) < Vector3.Distance(carPos, pathFollower.carTarget.position);
     }
 
+
+    public void AddCarToBlacklist(PathFollower targetPathFollower)
+    {
+        blackList.Add(targetPathFollower);
+    }
 }

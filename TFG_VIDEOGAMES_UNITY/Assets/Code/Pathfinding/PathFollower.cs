@@ -63,6 +63,8 @@ public class PathFollower : MonoBehaviour
 
     [Header("Overtake")]
     public bool roadValidForOvertaking;
+    public LaneSide laneSide = LaneSide.None;
+    public bool overtaking = false;
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
@@ -184,12 +186,24 @@ public class PathFollower : MonoBehaviour
             if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional)
             {
                 roadValidForOvertaking = true;
+                if(nodeList[pathIndex].laneSide == LaneSide.Left)
+                {
+                    laneSide = LaneSide.Left;
+                }
+                else
+                {
+                    laneSide = LaneSide.Right;
+                }
             }
             else
             {
                 roadValidForOvertaking = false;
+                laneSide = LaneSide.None;
             }
-
+        }
+        else
+        {
+            laneSide = LaneSide.None;
         }
     }
     IEnumerator StartPathfindingOnWorldCreation()
@@ -249,7 +263,6 @@ public class PathFollower : MonoBehaviour
             Debug.Log("Path not found for car: " + gameObject.name);
         }
     }
-
     public void OnLaneSwap(PathfindingResult pathfindingResult, bool pathSuccessful, Node _startNode, Node _endNode)
     {
         if (pathSuccessful)
@@ -270,7 +283,7 @@ public class PathFollower : MonoBehaviour
         {
             path = null;
             SpawnSpheres(_startNode.worldPosition, _endNode.worldPosition);
-            Debug.Log("Lane swap not found for car: " + gameObject.name);
+            Debug.LogError("Lane swap not found for car: " + gameObject.name);
         }
     }
     private void SpawnSpheres(Vector3 _startNode, Vector3 _endNode)
@@ -411,10 +424,8 @@ public class PathFollower : MonoBehaviour
 
     public void RequestLaneSwap()
     {
-        if (endNode == null)
-            return;
-
         PathfinderRequestManager.RequestLaneSwap(nodeList[pathIndex], OnLaneSwap);
+        overtaking = true;
         pathRequested = true;
     }
 
@@ -560,6 +571,14 @@ public class PathFollower : MonoBehaviour
         float distance = Vector3.Distance(transform.position, carTarget.position);
         distanceToTarget = distance;
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+
+        if(laneSide == LaneSide.Right && speed > targetPathFollower.speed)
+        {
+            RequestLaneSwap();
+            avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
+            avoidanceBehavior.UnableTarget();
+            return speedPercent;
+        }
 
         if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.05f && !isFullyStopped && !cooldown)
         {

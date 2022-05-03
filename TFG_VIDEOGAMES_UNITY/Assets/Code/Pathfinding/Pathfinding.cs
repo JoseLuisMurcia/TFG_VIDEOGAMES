@@ -119,9 +119,9 @@ public class Pathfinding : MonoBehaviour
 
         for (int i = 0; i < numNodesToOvertake - 1; i++)
         {
-            nodes.Add(nodes[i].neighbours[1]);
+            nodes.Add(nodes[i].neighbours[0]);
         }
-        Node targetNode = nodes[numNodesToOvertake - 1].neighbours[1];
+        Node targetNode = nodes[numNodesToOvertake - 1].neighbours[0];
 
         yield return null;
 
@@ -139,8 +139,8 @@ public class Pathfinding : MonoBehaviour
 
     private List<Vector3> ModifyPathLateralOffset(List<Node> nodes)
     {
-        float maxLeftOffset = .5f;
-        float maxRightOffset = -.5f;
+        float maxLeftOffset = .2f;
+        float maxRightOffset = -.2f;
 
         int numNodesInPath = nodes.Count;
         const int nodesPerSegment = 50;

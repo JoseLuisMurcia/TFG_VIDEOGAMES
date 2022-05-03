@@ -241,7 +241,8 @@ public enum TypeOfRoad
     Split,
     Deviation,
     Slant,
-    Bridge
+    Bridge,
+    StraightSlant
 }
 
 public enum NumDirection
