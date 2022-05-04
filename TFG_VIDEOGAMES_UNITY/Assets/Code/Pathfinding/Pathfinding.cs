@@ -107,7 +107,7 @@ public class Pathfinding : MonoBehaviour
     {
         // El startNode real es el vecino más lejano del startNode que se recibe como argumento
         // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
-
+        SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
         Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea
         List<Node> nodes = new List<Node>();
         // Como se hasta donde tengo que estar devolviendo el camino? Cuando son suficientes nodos?
@@ -130,6 +130,20 @@ public class Pathfinding : MonoBehaviour
         requestManager.FinishedProcessingPath(result, true, realStartNode, targetNode);
     }
 
+    void SpawnSphere(Vector3 _startNode, Vector3 _neighbor0)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform.parent;
+        startSphere.transform.position = _startNode + Vector3.up * .3f;
+        startSphere.transform.localScale = startSphere.transform.localScale * .5f;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
+
+        GameObject neighbor0 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        neighbor0.transform.parent = transform.parent;
+        neighbor0.transform.position = _neighbor0 + Vector3.up * .3f;
+        neighbor0.transform.localScale = neighbor0.transform.localScale * .5f;
+        neighbor0.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
+    }
     PathfindingResult ReturnLaneSwap(List<Node> nodes)
     {
         List<Vector3> waypoints = ModifyPathLateralOffset(nodes);

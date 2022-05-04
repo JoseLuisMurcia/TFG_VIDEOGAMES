@@ -91,10 +91,10 @@ public class WorldGrid : MonoBehaviour
                     break;
             }
         }
-        foreach (Node node in grid)
-            node.SetLaneSide();
         CreateConnectionsForRoundabouts();
         ConnectAllRoads();
+        foreach (Node node in grid)
+            node.SetLaneSide();
     }
 
     private void CreateConnectionsForRoundabouts()
@@ -442,6 +442,25 @@ public class WorldGrid : MonoBehaviour
 
         // No solo hay que conectar la interseccion con las carreteras colindantes, sino crear conexiones entre las colindantes a través de la interseccion
         // Coger todos los exit nodes de cada conexion y tratar de conectarlos con el resto de conexiones a través de sus entries
+        road.numberOfLanes = 0;
+        road.lanes = new List<Lane>();
+        foreach (Road connecter in road.connections)
+        {
+            if (connecter.numberOfLanes >= 2)
+            {
+                road.numberOfLanes = 2;
+                for (int i = 0; i < 2; i++)
+                    road.lanes.Add(new Lane());
+                break;
+            }
+        }
+        if (road.numberOfLanes == 0)
+        {
+            road.numberOfLanes = 1;
+            road.lanes = new List<Lane>();
+            road.lanes.Add(new Lane());
+        }
+
         foreach (Road connecter in road.connections)
         {
             foreach (Node exit in connecter.exitNodes)
@@ -460,7 +479,7 @@ public class WorldGrid : MonoBehaviour
                                 float signedAngle = Vector3.SignedAngle(exitNodeForward, dirToMovePosition, Vector3.up);
                                 float absoluteAngle = Mathf.Abs(signedAngle);
                                 float minAngle = 10f;
-                                // Conectar rectas 
+                                // Conectar rectas  // Aqui HAY QUE HACER ALGO COPON
                                 if (absoluteAngle <= minAngle)
                                 {
                                     // Perform connection
@@ -468,17 +487,30 @@ public class WorldGrid : MonoBehaviour
                                     Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
-                                    road.lanes[0].nodes.Add(unionNode);
+                                    if (connecter.numberOfLanes >= 2 && connecter.numDirection == NumDirection.OneDirectional && connected.numberOfLanes >= 2 && connected.numDirection == NumDirection.OneDirectional)
+                                    {
+                                        if (connecter.lanes[0].nodes.Contains(exit))
+                                        {
+                                            road.lanes[0].nodes.Add(unionNode);
+                                        }
+                                        else
+                                        {
+                                            road.lanes[1].nodes.Add(unionNode);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        road.lanes[0].nodes.Add(unionNode);
+                                    }
                                     unionNodes.Add(unionNodePos);
                                     grid.Add(unionNode);
-
                                 }
-                                minAngle = 20f;
-                                float maxAngle = 60f;
 
                                 // Conectar giros 
                                 // Con el angle, sabemos si el nodo al que queremos ir está a la izquierda o a la derecha, con esto podremos crear un
                                 // offset para un nodo intermedio, de forma que no pisen fuera de la carretera y sea más creible
+                                minAngle = 20f;
+                                float maxAngle = 60f;
 
                                 if (absoluteAngle > minAngle && absoluteAngle < maxAngle)
                                 {
@@ -499,7 +531,15 @@ public class WorldGrid : MonoBehaviour
                                     Node unionNode = new Node(unionNodePos, road);
                                     exit.AddNeighbour(unionNode);
                                     unionNode.AddNeighbour(entry);
-                                    road.lanes[0].nodes.Add(unionNode);
+                                    if (road.numberOfLanes > 1)
+                                    {
+                                        road.lanes[1].nodes.Add(unionNode);
+                                    }
+                                    else
+                                    {
+                                        road.lanes[0].nodes.Add(unionNode);
+
+                                    }
                                     unionNodes.Add(unionNodePos);
                                     grid.Add(unionNode);
                                 }
@@ -509,7 +549,44 @@ public class WorldGrid : MonoBehaviour
                 }
             }
         }
+
+        if (road.numberOfLanes < 2)
+            return;
+
+        foreach (Lane lane in road.lanes)
+        {
+            foreach (Node unionNode in lane.nodes)
+            {
+                Node exit = unionNode.previousNode;
+                Node entry = unionNode.neighbours[0];
+
+                Vector3 exitNodeForward = (exit.worldPosition - exit.previousNode.worldPosition).normalized;
+                Vector3 dirToMovePosition = (entry.worldPosition - exit.worldPosition).normalized;
+                float signedAngle = Vector3.SignedAngle(exitNodeForward, dirToMovePosition, Vector3.up);
+                float absoluteAngle = Mathf.Abs(signedAngle);
+                float maxAngle = 4f;
+                if (absoluteAngle <= maxAngle)
+                {
+                    Road connecter = exit.road;
+                    Road connected = entry.road;
+                    if (connecter.numberOfLanes >= 2 && connecter.numDirection == NumDirection.OneDirectional && connected.numberOfLanes >= 2 && connected.numDirection == NumDirection.OneDirectional)
+                    {
+                        if (road.lanes[0].nodes.Contains(unionNode))
+                        {
+                            unionNode.AddNeighbour(connected.entryNodes[1]);
+                            connecter.exitNodes[1].AddNeighbour(unionNode);
+                        }
+                        else
+                        {
+                            unionNode.AddNeighbour(connected.entryNodes[0]);
+                            connecter.exitNodes[0].AddNeighbour(unionNode);
+                        }
+                    }
+                }
+            }
+        }
     }
+
     void OnDrawGizmos()
     {
         if (grid != null && displayGridGizmos)
@@ -519,11 +596,22 @@ public class WorldGrid : MonoBehaviour
                 Gizmos.color = Color.white;
                 if (n.road.numberOfLanes >= 2 && n.road.numDirection == NumDirection.OneDirectional)
                 {
-                    //if (n.road.lanes[0].nodes.Contains(n))
                     if (n.laneSide == LaneSide.Left)
+                    {
                         Gizmos.color = Color.magenta;
+                        Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
+                    }
+                    else
+                    {
+                        Gizmos.DrawCube(n.worldPosition, Vector3.one * .1f);
+
+                    }
                 }
-                Gizmos.DrawCube(n.worldPosition, Vector3.one * (0.1f));
+                else
+                {
+                    Gizmos.DrawCube(n.worldPosition, Vector3.one * .1f);
+
+                }
 
                 foreach (Node neighbour in n.neighbours)
                 {
@@ -535,10 +623,10 @@ public class WorldGrid : MonoBehaviour
                 }
             }
 
-            foreach (Vector3 debugPos in debugNodes)
+            foreach (Vector3 startLanePos in debugNodes)
             {
                 Gizmos.color = Color.red;
-                Gizmos.DrawCube(debugPos, Vector3.one * (0.15f));
+                Gizmos.DrawCube(startLanePos, Vector3.one * (0.15f));
             }
 
             foreach (Vector3 unionPos in unionNodes)
@@ -959,7 +1047,7 @@ public class WorldGrid : MonoBehaviour
                                     lanePositions[i][inverseJ] = lineCentre + lineDir * distance;
                                 }
                             }
-                            
+
                             break;
                     }
 
@@ -1198,7 +1286,7 @@ public class WorldGrid : MonoBehaviour
             float distance = zWidth * .5f;
             Vector3 direction = upperBridge ? -road.transform.right : road.transform.forward;
 
-            if(road.typeOfRoad == TypeOfRoad.StraightSlant)
+            if (road.typeOfRoad == TypeOfRoad.StraightSlant)
             {
                 if (invert)
                 {
@@ -1216,7 +1304,7 @@ public class WorldGrid : MonoBehaviour
                     startPoints[1] = start - direction * distance;
                     endPoints[1] = end - direction * distance;
                 }
-                
+
             }
             else
             {
@@ -1226,7 +1314,7 @@ public class WorldGrid : MonoBehaviour
                 startPoints[1] = start + direction * distance;
                 endPoints[1] = end + direction * distance;
             }
-            
+
         }
         else // caso 4 carriles
         {
