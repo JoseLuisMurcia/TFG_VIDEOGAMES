@@ -65,6 +65,7 @@ public class PathFollower : MonoBehaviour
     public bool roadValidForOvertaking;
     public LaneSide laneSide = LaneSide.None;
     public bool overtaking = false;
+    public OvertakeBehavior overtakeBehavior;
 
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
@@ -572,10 +573,11 @@ public class PathFollower : MonoBehaviour
         distanceToTarget = distance;
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
-        if(laneSide == LaneSide.Right && speed > targetPathFollower.speed)
+        if(laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.2f && overtakeBehavior.canSwapLane && !overtaking)
         {
             RequestLaneSwap();
             avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
+            overtakeBehavior.overtakenCar = targetPathFollower;
             avoidanceBehavior.UnableTarget();
             return speedPercent;
         }

@@ -107,7 +107,16 @@ public class Pathfinding : MonoBehaviour
     {
         // El startNode real es el vecino más lejano del startNode que se recibe como argumento
         // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
-        SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
+        if(startNode.neighbours[1] == null)
+        {
+            SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
+            Debug.LogError("start node has no neighbour 1");
+            startNode = startNode.neighbours[0];
+        }
+        else
+        {
+            SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
+        }
         Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea
         List<Node> nodes = new List<Node>();
         // Como se hasta donde tengo que estar devolviendo el camino? Cuando son suficientes nodos?

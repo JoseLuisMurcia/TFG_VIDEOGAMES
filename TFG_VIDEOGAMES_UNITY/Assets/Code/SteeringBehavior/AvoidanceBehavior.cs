@@ -58,7 +58,7 @@ public class AvoidanceBehavior
 
     private bool TargetIsFar()
     {
-        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 4.5f;
+        return Vector3.Distance(pathFollower.carTarget.position, transform.position) > 5f;
     }
     public void UnableTarget()
     {

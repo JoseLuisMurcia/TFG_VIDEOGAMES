@@ -16,7 +16,7 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private const float centerReach = 4.5f;
+    private const float centerReach = 5f;
     private const float sideReach = 15f;
 
     [SerializeField] bool visualDebug = false;
@@ -27,7 +27,8 @@ public class WhiskersManager : MonoBehaviour
     private Vector3 rightMirrorPos;
     private List<Vector3> lOvertakeRaysForward = new List<Vector3>();
     private List<Vector3> rOvertakeRaysForward = new List<Vector3>();
-    private List<float> overtakeRaysReach = new List<float>() { 5f, 2.5f, 1.5f, 2f, 3f, 7.5f };
+    private List<float> overtakeRaysReach = new List<float>() { 3f, 2.5f, 1.5f, 2f, 3.5f, 7f, 7.5f };
+    private List<float> unovertakeRaysReach = new List<float>() { 5f, 3f, 1.5f, 2f, 3.5f, 5f, 5.5f };
     private BoxCollider boxCollider;
 
     void Start()
@@ -80,8 +81,8 @@ public class WhiskersManager : MonoBehaviour
     }
     void CreateOvertakeRays()
     {
-        List<float> leftAngles = new List<float>() { -10f, -30f, -70f, -120f, -150f, -170f };
-        List<float> rightAngles = new List<float>() { 10f, 30f, 70f, 120f, 150f, 170f };
+        List<float> leftAngles = new List<float>() { -15f, -30f, -70f, -130f, -160f, -170f, -175f };
+        List<float> rightAngles = new List<float>() { 10f, 30f, 70f, 125f, 145f, 160f, 165f};
         int numRays = leftAngles.Count;
 
         boxCollider = GetComponent<BoxCollider>();
@@ -112,9 +113,9 @@ public class WhiskersManager : MonoBehaviour
 
         CheckCars();
         CheckPedestrians();
-        if (pathFollower.roadValidForOvertaking && avoidanceBehavior.hasTarget)
+        if (pathFollower.roadValidForOvertaking/* && avoidanceBehavior.hasTarget */)
         {
-            CheckOvertake(pathFollower.laneSide);
+            CheckLaneSwap(pathFollower.laneSide);
         }
 
         if (!priorityBehavior.hasSignalInSight)
@@ -175,12 +176,12 @@ public class WhiskersManager : MonoBehaviour
             }
         }
     }
-    void CheckOvertake(LaneSide laneSide)
+    void CheckLaneSwap(LaneSide laneSide)
     {
         RaycastHit hit;
         int i = 0;
         
-        if(laneSide == LaneSide.Right)
+        if(laneSide == LaneSide.Right) // Swapping from right lane to the left lane
         {
             foreach (Vector3 sensorForward in lOvertakeRaysForward)
             {
@@ -188,7 +189,7 @@ public class WhiskersManager : MonoBehaviour
                 if (Physics.Raycast(ray, out hit, overtakeRaysReach[i], carLayer))
                 {
                     if (visualDebug) Debug.DrawLine(leftMirrorPos, hit.point, Color.black);
-                    overtakeBehavior.canOvertake = false;
+                    overtakeBehavior.canSwapLane = false;
                     return;
                 }
                 else
@@ -199,26 +200,24 @@ public class WhiskersManager : MonoBehaviour
             }
         }
         else
-        {
-            foreach (Vector3 sensorForward in rOvertakeRaysForward)
+        { // Swapping from left lane to the right lane
+            foreach (Vector3 sensorForward in rOvertakeRaysForward) 
             {
                 Ray ray = new Ray(rightMirrorPos, sensorForward);
-                if (Physics.Raycast(ray, out hit, overtakeRaysReach[i], carLayer))
+                if (Physics.Raycast(ray, out hit, unovertakeRaysReach[i], carLayer))
                 {
                     if (visualDebug) Debug.DrawLine(rightMirrorPos, hit.point, Color.black);
-                    overtakeBehavior.canOvertake = false;
+                    overtakeBehavior.canSwapLane = false;
                     return;
                 }
                 else
                 {
-                    if (visualDebug) Debug.DrawLine(rightMirrorPos, rightMirrorPos + sensorForward * overtakeRaysReach[i], Color.white);
+                    if (visualDebug) Debug.DrawLine(rightMirrorPos, rightMirrorPos + sensorForward * unovertakeRaysReach[i], Color.white);
                 }
                 i++;
             }
         }
-
-        overtakeBehavior.canOvertake = true;
-
+        overtakeBehavior.canSwapLane = true;
     }
     void CheckCars()
     {
