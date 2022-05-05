@@ -12,6 +12,7 @@ public class OvertakeBehavior
     public PathFollower overtakenCar;
 
     public bool canSwapLane = true;
+    public bool hasBeenNotified = false;
     public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
     {
         pathFollower = _pathFollower;
@@ -45,6 +46,26 @@ public class OvertakeBehavior
             overtakenCar = null;
             avoidanceBehavior.UnableTarget();
             pathFollower.RequestLaneSwap();
+        }
+    }
+
+    // Method called when you are on the left lane and the car in front is slower than you, you tell him to switch to the right lane
+    public void ProcessCarHit(RaycastHit hit)
+    {
+        OvertakeBehavior hitCar = hit.collider.gameObject.GetComponent<OvertakeBehavior>();
+        hitCar.OnNotification(); // Hay que comprobar que estemos en el mismo carril que el coche de enfrente
+    }
+
+    // When this method is called, the car should try to switch lane if possible
+    public void OnNotification()
+    {
+        if (hasBeenNotified)
+            return; 
+
+        hasBeenNotified = true;
+        if (canSwapLane)
+        {
+            pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
         }
     }
 

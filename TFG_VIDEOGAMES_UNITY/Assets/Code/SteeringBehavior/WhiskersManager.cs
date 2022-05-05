@@ -26,7 +26,7 @@ public class WhiskersManager : MonoBehaviour
     private Vector3 leftMirrorPos;
     private Vector3 rightMirrorPos;
     private List<float> overtakeRaysReach = new List<float>() { 3f, 2.5f, 1.5f, 2f, 3.5f, 7f, 7.5f };
-    private List<float> unovertakeRaysReach = new List<float>() { 5f, 3f, 1.5f, 2f, 3.5f, 5f, 5.5f };
+    private List<float> unovertakeRaysReach = new List<float>() { 5f, 3.5f, 1.5f, 2f, 3.5f, 4f, 4.5f };
     private BoxCollider boxCollider;
 
     private List<float> leftAngles = new List<float>() { -15f, -30f, -70f, -130f, -160f, -170f, -175f };
@@ -168,7 +168,7 @@ public class WhiskersManager : MonoBehaviour
         {
             foreach (float reach in overtakeRaysReach)
             {
-                Quaternion rotation = Quaternion.Euler(0, leftAngles[i], 0);
+                Quaternion rotation = Quaternion.AngleAxis(leftAngles[i], transform.up);
                 Vector3 rotatedForward = rotation * transform.forward;
 
                 Ray ray = new Ray(leftMirrorPos, rotatedForward);
@@ -180,7 +180,7 @@ public class WhiskersManager : MonoBehaviour
                 }
                 else
                 {
-                    if (visualDebug) Debug.DrawLine(leftMirrorPos, leftMirrorPos + rotatedForward * reach, Color.blue);
+                    if (visualDebug) Debug.DrawRay(leftMirrorPos, rotatedForward * reach, Color.blue);
                 }
                 i++;
             }
@@ -189,7 +189,7 @@ public class WhiskersManager : MonoBehaviour
         { // Swapping from left lane to the right lane
             foreach (float reach in unovertakeRaysReach)
             {
-                Quaternion rotation = Quaternion.Euler(0, rightAngles[i], 0);
+                Quaternion rotation = Quaternion.AngleAxis(rightAngles[i], transform.up);
                 Vector3 rotatedForward = rotation * transform.forward;
 
                 Ray ray = new Ray(rightMirrorPos, rotatedForward);
@@ -201,7 +201,7 @@ public class WhiskersManager : MonoBehaviour
                 }
                 else
                 {
-                    if (visualDebug) Debug.DrawLine(rightMirrorPos, rightMirrorPos + rotatedForward * reach, Color.white);
+                    if (visualDebug) Debug.DrawRay(rightMirrorPos, rotatedForward * reach, Color.blue);
                 }
                 i++;
             }
@@ -224,7 +224,8 @@ public class WhiskersManager : MonoBehaviour
             {
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
-
+                if (yRotation < 10)
+                    overtakeBehavior.ProcessCarHit(hit);
                 //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else

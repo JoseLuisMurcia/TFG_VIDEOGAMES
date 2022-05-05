@@ -109,13 +109,13 @@ public class Pathfinding : MonoBehaviour
         // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
         if(startNode.neighbours[1] == null)
         {
-            SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
+            //SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
             Debug.LogError("start node has no neighbour 1");
             startNode = startNode.neighbours[0];
         }
         else
         {
-            SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
+            //SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
         }
         Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea
         List<Node> nodes = new List<Node>();
