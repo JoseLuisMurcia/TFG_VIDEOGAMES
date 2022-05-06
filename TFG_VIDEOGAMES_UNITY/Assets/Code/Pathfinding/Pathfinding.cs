@@ -35,69 +35,88 @@ public class Pathfinding : MonoBehaviour
     IEnumerator FindPath(Node startNode, Node targetNode)
     {
         PathfindingResult result = new PathfindingResult();
-        bool pathSuccess = false;
-
-        startNode.gCost = 0;
-        Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
-        HashSet<Node> closedSet = new HashSet<Node>();
-        openSet.Add(startNode);
-
-        while (openSet.Count > 0)
+        if (startNode.laneSide != LaneSide.None && startNode.road.typeOfRoad != TypeOfRoad.Roundabout)
         {
-            Node currentNode = openSet.RemoveFirst();
-            closedSet.Add(currentNode);
-            if (currentNode == targetNode)
-            {
-                pathSuccess = true;
-                break;
-            }
+            yield return null;
+            List<Node> nodes = FindStraightNodes(startNode);
+            List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
+            result = new PathfindingResult(nodes, waypoints);
+            requestManager.FinishedProcessingPath(result, true, startNode, targetNode);
+        }
+        else
+        {
+            bool pathSuccess = false;
+            startNode.gCost = 0;
+            Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
+            HashSet<Node> closedSet = new HashSet<Node>();
+            openSet.Add(startNode);
 
-            foreach (Node neighbour in currentNode.neighbours)
+            while (openSet.Count > 0)
             {
-
-                if (closedSet.Contains(neighbour))
+                Node currentNode = openSet.RemoveFirst();
+                closedSet.Add(currentNode);
+                if (currentNode == targetNode)
                 {
-                    continue;
+                    pathSuccess = true;
+                    break;
                 }
 
-                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
-                if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                foreach (Node neighbour in currentNode.neighbours)
                 {
-                    neighbour.gCost = newMovementCostToNeighbour;
-                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
-                    neighbour.parent = currentNode;
 
-                    if (!openSet.Contains(neighbour))
+                    if (closedSet.Contains(neighbour))
                     {
-                        openSet.Add(neighbour);
+                        continue;
                     }
-                    else
+
+                    float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                    if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                     {
-                        openSet.UpdateItem(neighbour);
+                        neighbour.gCost = newMovementCostToNeighbour;
+                        neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
+                        neighbour.parent = currentNode;
+
+                        if (!openSet.Contains(neighbour))
+                        {
+                            openSet.Add(neighbour);
+                        }
+                        else
+                        {
+                            openSet.UpdateItem(neighbour);
+                        }
                     }
                 }
             }
-        }
 
-        yield return null;
-        if (pathSuccess)
-        {
-            result = RetracePath(startNode, targetNode);
+            yield return null;
+            if (pathSuccess)
+            {
+                result = RetracePath(startNode, targetNode);
+            }
+            requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
         }
-        requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
+        
     }
 
     PathfindingResult RetracePath(Node startNode, Node endNode)
     {
         List<Node> nodes = new List<Node>();
         Node currentNode = endNode;
+        Node lastOvertakingNode = null; // It would be the first overtaking able node in the path
         while (currentNode != startNode)
         {
+            if (currentNode.laneSide != LaneSide.None)
+            {
+                lastOvertakingNode = currentNode;
+            }
             nodes.Add(currentNode);
             currentNode = currentNode.parent;
         }
         nodes.Add(startNode);
         nodes.Reverse();
+
+        if (lastOvertakingNode != null)
+            nodes = FindStraightNodes(lastOvertakingNode, nodes);
         List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
         PathfindingResult result = new PathfindingResult(nodes, waypoints);
         return result;
@@ -133,11 +152,8 @@ public class Pathfinding : MonoBehaviour
             nodes.Add(nodes[i].neighbours[0]);
         }
         Node targetNode = nodes[numNodesToOvertake - 1].neighbours[0];
-
         yield return null;
-
         PathfindingResult result = ReturnLaneSwap(nodes);
-
         requestManager.FinishedProcessingPath(result, true, realStartNode, targetNode);
     }
 
@@ -235,7 +251,49 @@ public class Pathfinding : MonoBehaviour
         return 14f * dstX + 10f * (dstY - dstX);
     }
 
+    List<Node> FindStraightNodes(Node startNode, List<Node> nodes)
+    {
+        int indexToStartRemoving = nodes.IndexOf(startNode);
+        nodes.RemoveRange(indexToStartRemoving, nodes.Count - indexToStartRemoving);
 
+        Node currentNode = startNode.neighbours[0];
+        bool endOfStraightRoad = false;
+        while (!endOfStraightRoad)
+        {
+            if (currentNode.laneSide == LaneSide.None || currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                endOfStraightRoad = true;
+            }
+            else
+            {
+                nodes.Add(currentNode);
+            }
+            currentNode = currentNode.neighbours[0];
+        }
+        // Ahora hay que hacer que cuando acaben porque entran a la rotonda, darles el path que merecen.
+        return nodes;
+    }
+
+    List<Node> FindStraightNodes(Node startNode)
+    {
+        List<Node> straightNodes = new List<Node>();
+        straightNodes.Add(startNode);
+        Node currentNode = startNode.neighbours[0];
+        bool endOfStraightRoad = false;
+        while (!endOfStraightRoad)
+        {
+            if (currentNode.laneSide == LaneSide.None || currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                endOfStraightRoad = true;
+            }
+            else
+            {
+                straightNodes.Add(currentNode);
+            }
+            currentNode = currentNode.neighbours[0];
+        }
+        return straightNodes;
+    }
 }
 
 public struct PathfindingResult
