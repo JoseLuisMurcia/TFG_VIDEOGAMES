@@ -426,7 +426,6 @@ public class PathFollower : MonoBehaviour
     public void RequestLaneSwap()
     {
         PathfinderRequestManager.RequestLaneSwap(nodeList[pathIndex], OnLaneSwap);
-        overtaking = true;
         pathRequested = true;
     }
 
@@ -576,6 +575,7 @@ public class PathFollower : MonoBehaviour
         if(laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
         {
             RequestLaneSwap();
+            overtaking = true;
             avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
             overtakeBehavior.overtakenCar = targetPathFollower;
             avoidanceBehavior.UnableTarget();

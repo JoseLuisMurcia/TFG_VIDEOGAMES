@@ -98,10 +98,9 @@ public class WhiskersManager : MonoBehaviour
 
         if (pathFollower.isFullyStopped) return;
 
-        HasFurtherCarsBeforeReturning();
         CheckCars();
         CheckPedestrians();
-        if (pathFollower.roadValidForOvertaking/* && avoidanceBehavior.hasTarget */)
+        if (pathFollower.roadValidForOvertaking)
         {
             CheckLaneSwap(pathFollower.laneSide);
         }
@@ -286,7 +285,7 @@ public class WhiskersManager : MonoBehaviour
             priorityBehavior.RemoveSignalFromSight();
     }
 
-    public bool HasFurtherCarsBeforeReturning()
+    public PathFollower HasFurtherCarsBeforeReturning()
     {
         int i = 0;
         RaycastHit hit;
@@ -300,8 +299,12 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 if (visualDebug) Debug.DrawLine(rightMirrorPos, hit.point, Color.black);
-                overtakeBehavior.canSwapLane = false;
-                return true;
+                PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
+                if(pathFollower.speed - hitCar.speed > 0.2f)
+                {
+                    return hitCar;
+                }
+                return null;
             }
             else
             {
@@ -310,7 +313,7 @@ public class WhiskersManager : MonoBehaviour
             i++;
         }
 
-        return false;
+        return null;
     }
 
     private void OnDrawGizmos()

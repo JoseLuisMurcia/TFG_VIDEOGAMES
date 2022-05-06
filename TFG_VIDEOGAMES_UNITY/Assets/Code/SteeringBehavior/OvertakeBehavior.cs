@@ -46,18 +46,30 @@ public class OvertakeBehavior
         if (distance > minDistance && dot < 0 && canSwapLane)
         {
             overtakenCar = null;
-            avoidanceBehavior.UnableTarget();
 
-            if (whiskersManager.HasFurtherCarsBeforeReturning())
+            PathFollower sightedCar = whiskersManager.HasFurtherCarsBeforeReturning();
+            if (sightedCar == null) // No ha visto un coche lo suficientemente cerca y lento, elige entre volver y no
             {
-                // No vuelve
+                pathFollower.overtaking = false;
+                // Random para que vuelva o no
+                int choice = Random.Range(0, 2);
+                if (choice == 0) // Stay in the lane
+                {
+                    Debug.Log("NO LANE SWAP");
+                }
+                else // Swap lane if possible
+                {
+                    pathFollower.RequestLaneSwap();
+                    Debug.Log("LANE SWAP");
+                }
+                
             }
             else
             {
-                // Random para que vuelva o no
-            }
-            //pathFollower.RequestLaneSwap();
-            //pathFollower.overtaking = false;
+                Debug.Log("CAR SIGHTED AFTER OVERTAKING");
+                overtakenCar = sightedCar;
+                pathFollower.overtaking = true;
+            }            
         }
     }
 
@@ -67,18 +79,18 @@ public class OvertakeBehavior
         PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
         if (avoidanceBehavior.BothCarsInSameLane(pathFollower, hitCar) && pathFollower.targetPathFollower == hitCar && pathFollower.speed > hitCar.speed)
         {
-            hitCar.overtakeBehavior.OnNotification(this); 
+            hitCar.overtakeBehavior.OnNotification(this);
         }
     }
 
-    // When this method is called, the car should try to switch lane if possible
+    // When this method is called, the car should try to switch to the right lane if possible
     public void OnNotification(OvertakeBehavior notificator)
     {
         if (hasBeenNotified)
             return;
 
         hasBeenNotified = true;
-        if (canSwapLane && !requestedLaneSwap)
+        if (canSwapLane && !requestedLaneSwap && !pathFollower.overtaking)
         {
             pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
             pathFollower.overtaking = false;

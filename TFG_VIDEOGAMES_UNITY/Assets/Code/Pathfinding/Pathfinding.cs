@@ -107,11 +107,13 @@ public class Pathfinding : MonoBehaviour
     {
         // El startNode real es el vecino más lejano del startNode que se recibe como argumento
         // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
-        if(startNode.neighbours[1] == null)
+        if(startNode.neighbours.Count < 2)
         {
             //SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
-            Debug.LogError("start node has no neighbour 1");
+            Debug.LogWarning("start node has no neighbour 1");
             startNode = startNode.neighbours[0];
+            if (startNode.neighbours.Count < 2)
+                startNode = startNode.neighbours[0];
         }
         else
         {
