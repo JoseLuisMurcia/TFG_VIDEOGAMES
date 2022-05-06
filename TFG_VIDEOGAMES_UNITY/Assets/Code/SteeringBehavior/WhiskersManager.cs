@@ -32,6 +32,9 @@ public class WhiskersManager : MonoBehaviour
     private List<float> leftAngles = new List<float>() { -15f, -30f, -70f, -130f, -160f, -170f, -175f };
     private List<float> rightAngles = new List<float>() { 10f, 30f, 70f, 125f, 145f, 160f, 165f };
 
+    private List<float> unovertakeAngles = new List<float>() {2.5f, 5f, 7.5f, 12.5f};
+    private List<float> unovertakeLongRaysReach = new List<float>() { 15f, 12.5f, 10f, 7.5f};
+
     void Start()
     {
         pathFollower = GetComponent<PathFollower>();
@@ -51,7 +54,7 @@ public class WhiskersManager : MonoBehaviour
 
         avoidanceBehavior = new AvoidanceBehavior(pathFollower, trafficLightCarController);
         priorityBehavior = new PriorityBehavior(pathFollower, avoidanceBehavior);
-        overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior);
+        overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior, this);
         pedestrianBehavior = new PedestrianAvoidanceBehavior(pathFollower);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
@@ -95,6 +98,7 @@ public class WhiskersManager : MonoBehaviour
 
         if (pathFollower.isFullyStopped) return;
 
+        HasFurtherCarsBeforeReturning();
         CheckCars();
         CheckPedestrians();
         if (pathFollower.roadValidForOvertaking/* && avoidanceBehavior.hasTarget */)
@@ -224,7 +228,7 @@ public class WhiskersManager : MonoBehaviour
             {
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
-                if (yRotation < 10)
+                if (yRotation < 10 && pathFollower.roadValidForOvertaking && pathFollower.laneSide == LaneSide.Left)
                     overtakeBehavior.ProcessCarHit(hit);
                 //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
@@ -280,6 +284,33 @@ public class WhiskersManager : MonoBehaviour
         pathFollower.priorityLevel = PriorityLevel.Max;
         if (!entry)
             priorityBehavior.RemoveSignalFromSight();
+    }
+
+    public bool HasFurtherCarsBeforeReturning()
+    {
+        int i = 0;
+        RaycastHit hit;
+
+        foreach (float reach in unovertakeLongRaysReach)
+        {
+            Quaternion rotation = Quaternion.AngleAxis(unovertakeAngles[i], transform.up);
+            Vector3 rotatedForward = rotation * transform.forward;
+
+            Ray ray = new Ray(rightMirrorPos, rotatedForward);
+            if (Physics.Raycast(ray, out hit, reach, carLayer))
+            {
+                if (visualDebug) Debug.DrawLine(rightMirrorPos, hit.point, Color.black);
+                overtakeBehavior.canSwapLane = false;
+                return true;
+            }
+            else
+            {
+                if (visualDebug) Debug.DrawRay(rightMirrorPos, rotatedForward * reach, Color.red);
+            }
+            i++;
+        }
+
+        return false;
     }
 
     private void OnDrawGizmos()

@@ -8,7 +8,7 @@ public class PathFollower : MonoBehaviour
 
     [Header("Specs")]
     private TypeOfCar typeOfCar;
-    [SerializeField] float speed;
+    [SerializeField] public float speed;
     [SerializeField] float turnSpeed;
     [SerializeField] float turnDst;
     [HideInInspector] public int pathIndex = 0;
@@ -28,8 +28,8 @@ public class PathFollower : MonoBehaviour
     public bool shouldBrakeBeforeCar = false;
     [SerializeField] float carStartBreakingDistance;
     [SerializeField] float carStopDistance;
-    public Transform carTarget;
-    private PathFollower targetPathFollower;
+    [HideInInspector] public Transform carTarget;
+    [HideInInspector] public PathFollower targetPathFollower;
     [HideInInspector] public AvoidanceBehavior avoidanceBehavior;
     int recentAddedAvoidancePosIndex = -50;
     Node endNode;
@@ -184,7 +184,7 @@ public class PathFollower : MonoBehaviour
         if(path != null)
         {
             Road currentRoad = nodeList[pathIndex].road;
-            if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional)
+            if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional && currentRoad.typeOfRoad != TypeOfRoad.Roundabout)
             {
                 roadValidForOvertaking = true;
                 if(nodeList[pathIndex].laneSide == LaneSide.Left)
@@ -573,7 +573,7 @@ public class PathFollower : MonoBehaviour
         distanceToTarget = distance;
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
-        if(laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.2f && overtakeBehavior.canSwapLane && !overtaking)
+        if(laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
         {
             RequestLaneSwap();
             avoidanceBehavior.AddCarToBlacklist(targetPathFollower);

@@ -2,8 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// This class could be better if it included node information, dont put a navigation node too close to the border if possible or in a not navigable part.
-// With the grid, we can find the node in that position and check if it is walkable and the movement penalty
 public class AvoidanceBehavior
 {
     public bool objectHit = false;
@@ -23,9 +21,6 @@ public class AvoidanceBehavior
         pathFollower = _pathFollower;
         trafficLightController = _trafficLightCarController;
     }
-
-
-    // Update is called once per frame
     public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
     {
         // Think about if avoiding an obstacle you come too close with a car.
@@ -50,7 +45,7 @@ public class AvoidanceBehavior
                 UnableTarget();
             }
         }
-        else if (pathFollower.roadValidForOvertaking && !BothCarsInSameLane(pathFollower.laneSide, hitCarPathFollower.laneSide))
+        else if (pathFollower.roadValidForOvertaking && !BothCarsInSameLane(pathFollower, hitCarPathFollower))
         {
             UnableTarget();
         }
@@ -183,7 +178,7 @@ public class AvoidanceBehavior
             {
                 if (pathFollower.roadValidForOvertaking)
                 {
-                    if (BothCarsInSameLane(pathFollower.laneSide, hitCarPathFollower.laneSide) && !blackList.Contains(hitCarPathFollower))
+                    if (BothCarsInSameLane(pathFollower, hitCarPathFollower) && !blackList.Contains(hitCarPathFollower))
                     {
                         EnableTarget(hitCarPathFollower.transform);
                         return true;
@@ -203,7 +198,7 @@ public class AvoidanceBehavior
         {
             if (pathFollower.roadValidForOvertaking)
             {
-                if (BothCarsInSameLane(pathFollower.laneSide, hitCarPathFollower.laneSide) && !blackList.Contains(hitCarPathFollower))
+                if (BothCarsInSameLane(pathFollower, hitCarPathFollower) && !blackList.Contains(hitCarPathFollower))
                 {
                     EnableTarget(hitCarPathFollower.transform);
                     return true;
@@ -218,9 +213,9 @@ public class AvoidanceBehavior
         }
     }
 
-    private bool BothCarsInSameLane(LaneSide laneSide, LaneSide targetLaneSide)
+    public bool BothCarsInSameLane(PathFollower _pathFollower, PathFollower _hitPathFollower)
     {
-        return laneSide == targetLaneSide;
+        return _pathFollower.laneSide == _hitPathFollower.laneSide;
     }
     private bool NewCarIsCloserThanTarget()
     {

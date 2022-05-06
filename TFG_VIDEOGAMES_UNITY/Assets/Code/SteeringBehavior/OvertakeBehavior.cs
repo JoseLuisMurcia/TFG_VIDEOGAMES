@@ -13,11 +13,15 @@ public class OvertakeBehavior
 
     public bool canSwapLane = true;
     public bool hasBeenNotified = false;
-    public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior)
+    private bool requestedLaneSwap = false;
+    WhiskersManager whiskersManager;
+
+    public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior, WhiskersManager _whiskersManager)
     {
         pathFollower = _pathFollower;
         avoidanceBehavior = _avoidanceBehavior;
-        pathFollower.overtakeBehavior = this;  
+        pathFollower.overtakeBehavior = this;
+        whiskersManager = _whiskersManager;
     }
 
     public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
@@ -37,38 +41,52 @@ public class OvertakeBehavior
     {
         Vector3 dirToOvertakenCar = (overtakenCar.transform.position - transform.position).normalized;
         float dot = Vector3.Dot(transform.forward, dirToOvertakenCar);
-        const float minDistance = 4f;
+        const float minDistance = 3.5f;
         float distance = Vector3.Distance(transform.position, overtakenCar.transform.position);
         if (distance > minDistance && dot < 0 && canSwapLane)
         {
-            //if puede volver al carril, que lo haga
-            pathFollower.overtaking = false;
             overtakenCar = null;
             avoidanceBehavior.UnableTarget();
-            pathFollower.RequestLaneSwap();
+
+            if (whiskersManager.HasFurtherCarsBeforeReturning())
+            {
+                // No vuelve
+            }
+            else
+            {
+                // Random para que vuelva o no
+            }
+            //pathFollower.RequestLaneSwap();
+            //pathFollower.overtaking = false;
         }
     }
 
     // Method called when you are on the left lane and the car in front is slower than you, you tell him to switch to the right lane
     public void ProcessCarHit(RaycastHit hit)
     {
-        OvertakeBehavior hitCar = hit.collider.gameObject.GetComponent<OvertakeBehavior>();
-        hitCar.OnNotification(); // Hay que comprobar que estemos en el mismo carril que el coche de enfrente
-    }
-
-    // When this method is called, the car should try to switch lane if possible
-    public void OnNotification()
-    {
-        if (hasBeenNotified)
-            return; 
-
-        hasBeenNotified = true;
-        if (canSwapLane)
+        PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
+        if (avoidanceBehavior.BothCarsInSameLane(pathFollower, hitCar) && pathFollower.targetPathFollower == hitCar && pathFollower.speed > hitCar.speed)
         {
-            pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
+            hitCar.overtakeBehavior.OnNotification(this); 
         }
     }
 
+    // When this method is called, the car should try to switch lane if possible
+    public void OnNotification(OvertakeBehavior notificator)
+    {
+        if (hasBeenNotified)
+            return;
+
+        hasBeenNotified = true;
+        if (canSwapLane && !requestedLaneSwap)
+        {
+            pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
+            pathFollower.overtaking = false;
+            notificator.avoidanceBehavior.AddCarToBlacklist(pathFollower);
+            notificator.avoidanceBehavior.UnableTarget();
+            hasBeenNotified = false;
+        }
+    }
 
 }
 
