@@ -315,6 +315,17 @@ public class WhiskersManager : MonoBehaviour
 
         return null;
     }
+    public void DelayLaneSwapRequest()
+    {
+        StartCoroutine(LaneSwapRequestDelay());
+    }
+
+    IEnumerator LaneSwapRequestDelay()
+    {
+        float randomTime = Random.Range(.5f, 3);
+        yield return new WaitForSeconds(randomTime);
+        overtakeBehavior.RequestLaneSwapUntilPossible();
+    }
 
     private void OnDrawGizmos()
     {

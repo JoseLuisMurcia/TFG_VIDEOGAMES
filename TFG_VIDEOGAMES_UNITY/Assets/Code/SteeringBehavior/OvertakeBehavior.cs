@@ -13,7 +13,7 @@ public class OvertakeBehavior
 
     public bool canSwapLane = true;
     public bool hasBeenNotified = false;
-    private bool requestedLaneSwap = false;
+    private AvoidanceBehavior notificator = null;
     WhiskersManager whiskersManager;
 
     public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior, WhiskersManager _whiskersManager)
@@ -34,6 +34,9 @@ public class OvertakeBehavior
         {
             CheckOvertakenCar();
         }
+
+        if (hasBeenNotified)
+            CheckNotifications();
     }
 
 
@@ -59,8 +62,8 @@ public class OvertakeBehavior
                 }
                 else // Swap lane if possible
                 {
-                    pathFollower.RequestLaneSwap();
-                    Debug.Log("LANE SWAP");
+                    Debug.Log("SWAP LANE ON DELAY");
+                    if (!hasBeenNotified) whiskersManager.DelayLaneSwapRequest();
                 }
                 
             }
@@ -73,31 +76,50 @@ public class OvertakeBehavior
         }
     }
 
+    public void RequestLaneSwapUntilPossible()
+    {
+        if (canSwapLane && !hasBeenNotified)
+        {
+            pathFollower.RequestLaneSwap();
+            Debug.Log("LANE SWAP");
+        }
+    }
+
     // Method called when you are on the left lane and the car in front is slower than you, you tell him to switch to the right lane
     public void ProcessCarHit(RaycastHit hit)
     {
         PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
         if (avoidanceBehavior.BothCarsInSameLane(pathFollower, hitCar) && pathFollower.targetPathFollower == hitCar && pathFollower.speed > hitCar.speed)
         {
-            hitCar.overtakeBehavior.OnNotification(this);
+            hitCar.overtakeBehavior.OnNotification(this.avoidanceBehavior);
         }
     }
 
     // When this method is called, the car should try to switch to the right lane if possible
-    public void OnNotification(OvertakeBehavior notificator)
+    public void OnNotification(AvoidanceBehavior _notificator)
     {
         if (hasBeenNotified)
             return;
 
+        notificator = _notificator;
         hasBeenNotified = true;
-        if (canSwapLane && !requestedLaneSwap && !pathFollower.overtaking)
+    }
+
+    public void CheckNotifications()
+    {
+        if (canSwapLane && !pathFollower.overtaking)
         {
-            pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
-            pathFollower.overtaking = false;
-            notificator.avoidanceBehavior.AddCarToBlacklist(pathFollower);
-            notificator.avoidanceBehavior.UnableTarget();
-            hasBeenNotified = false;
+            SwitchToRightOnNotification();
         }
+    }
+
+    private void SwitchToRightOnNotification()
+    {
+        pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
+        pathFollower.overtaking = false;
+        notificator.AddCarToBlacklist(pathFollower);
+        notificator.UnableTarget();
+        hasBeenNotified = false;
     }
 
 }

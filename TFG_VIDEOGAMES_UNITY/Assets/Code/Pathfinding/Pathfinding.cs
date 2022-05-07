@@ -32,97 +32,129 @@ public class Pathfinding : MonoBehaviour
         StartCoroutine(SwapLane(startNode));
     }
 
-    IEnumerator FindPath(Node startNode, Node targetNode)
+    private IEnumerator FindPath(Node startNode, Node targetNode)
     {
-        PathfindingResult result = new PathfindingResult();
-        if (startNode.laneSide != LaneSide.None && startNode.road.typeOfRoad != TypeOfRoad.Roundabout)
+        bool pathSuccess = false;
+        startNode.gCost = 0;
+        Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
+        HashSet<Node> closedSet = new HashSet<Node>();
+        openSet.Add(startNode);
+
+        while (openSet.Count > 0)
         {
-            yield return null;
-            List<Node> nodes = FindStraightNodes(startNode);
-            List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
-            result = new PathfindingResult(nodes, waypoints);
-            requestManager.FinishedProcessingPath(result, true, startNode, targetNode);
+            Node currentNode = openSet.RemoveFirst();
+            closedSet.Add(currentNode);
+            if (currentNode == targetNode)
+            {
+                pathSuccess = true;
+                break;
+            }
+
+            foreach (Node neighbour in currentNode.neighbours)
+            {
+
+                if (closedSet.Contains(neighbour))
+                {
+                    continue;
+                }
+
+                if (CheckLaneRestriction(currentNode, neighbour))
+                    continue;
+
+                float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
+                {
+                    neighbour.gCost = newMovementCostToNeighbour;
+                    neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
+                    neighbour.parent = currentNode;
+
+                    if (!openSet.Contains(neighbour))
+                    {
+                        openSet.Add(neighbour);
+                    }
+                    else
+                    {
+                        openSet.UpdateItem(neighbour);
+                    }
+                }
+            }
+        }
+
+        yield return null;
+        PathfindingResult result = new PathfindingResult();
+
+        if (pathSuccess)
+        {
+            result = RetracePath(startNode, targetNode);
+            requestManager.FinishedProcessingPath(result, pathSuccess, startNode, result.endNode);
         }
         else
         {
-            bool pathSuccess = false;
-            startNode.gCost = 0;
-            Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
-            HashSet<Node> closedSet = new HashSet<Node>();
-            openSet.Add(startNode);
-
-            while (openSet.Count > 0)
-            {
-                Node currentNode = openSet.RemoveFirst();
-                closedSet.Add(currentNode);
-                if (currentNode == targetNode)
-                {
-                    pathSuccess = true;
-                    break;
-                }
-
-                foreach (Node neighbour in currentNode.neighbours)
-                {
-
-                    if (closedSet.Contains(neighbour))
-                    {
-                        continue;
-                    }
-
-                    float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
-                    if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
-                    {
-                        neighbour.gCost = newMovementCostToNeighbour;
-                        neighbour.hCost = GetDistanceHeuristic(neighbour, targetNode);
-                        neighbour.parent = currentNode;
-
-                        if (!openSet.Contains(neighbour))
-                        {
-                            openSet.Add(neighbour);
-                        }
-                        else
-                        {
-                            openSet.UpdateItem(neighbour);
-                        }
-                    }
-                }
-            }
-
-            yield return null;
-            if (pathSuccess)
-            {
-                result = RetracePath(startNode, targetNode);
-            }
             requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
         }
 
+
     }
 
-    PathfindingResult RetracePath(Node startNode, Node endNode)
+    private bool CheckLaneRestriction(Node currentNode, Node neighbour)
+    {
+        Road currentRoad = currentNode.road;
+        if (currentNode.laneSide == LaneSide.Left && neighbour.laneSide == LaneSide.Right && currentRoad.numberOfLanes > 1 && currentRoad.numDirection == NumDirection.OneDirectional)
+        {
+            return true;
+        }
+        else if (currentNode.laneSide == LaneSide.Right && neighbour.laneSide == LaneSide.Left && currentRoad.numberOfLanes > 1 && currentRoad.numDirection == NumDirection.OneDirectional)
+        {
+            return true;
+        }
+        return false;
+    }
+    private PathfindingResult RetracePath(Node startNode, Node endNode)
     {
         List<Node> nodes = new List<Node>();
         Node currentNode = endNode;
-        Node lastOvertakingNode = null; // It would be the first overtaking able node in the path
+
         while (currentNode != startNode)
         {
-            if (currentNode.laneSide != LaneSide.None)
-            {
-                lastOvertakingNode = currentNode;
-            }
             nodes.Add(currentNode);
             currentNode = currentNode.parent;
         }
         nodes.Add(startNode);
         nodes.Reverse();
-
-        if (lastOvertakingNode != null)
-            nodes = FindStraightNodes(lastOvertakingNode, nodes);
+        endNode = CorrectPathInRoundabout(nodes);
         List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
-        PathfindingResult result = new PathfindingResult(nodes, waypoints);
+        PathfindingResult result = new PathfindingResult(nodes, waypoints, endNode);
         return result;
     }
 
-    IEnumerator SwapLane(Node startNode)
+    Node CorrectPathInRoundabout(List<Node> nodes)
+    {
+        int entryId = -1;
+
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            if (nodes[i].road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                Road roundabout = nodes[i].road;
+                if (roundabout.entryNodes.Contains(nodes[i]))
+                {
+                    entryId = i;
+                }
+                else if (roundabout.exitNodes.Contains(nodes[i]))
+                {
+                    break;
+                }
+            }
+        }
+        if (entryId == -1)
+            return nodes[nodes.Count - 1];
+
+        List<Node> pathInRoundabout = GetPathInRoundabout(nodes[entryId]);
+        nodes.RemoveRange(entryId, nodes.Count - entryId);
+        nodes.AddRange(pathInRoundabout);
+        return nodes[nodes.Count-1];
+    }
+    private IEnumerator SwapLane(Node startNode)
     {
         // El startNode real es el vecino más lejano del startNode que se recibe como argumento
         // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
@@ -153,28 +185,14 @@ public class Pathfinding : MonoBehaviour
         }
         Node targetNode = nodes[numNodesToOvertake - 1].neighbours[0];
         yield return null;
-        PathfindingResult result = ReturnLaneSwap(nodes);
+        PathfindingResult result = ReturnLaneSwap(nodes, targetNode);
         requestManager.FinishedProcessingPath(result, true, realStartNode, targetNode);
     }
 
-    void SpawnSphere(Vector3 _startNode, Vector3 _neighbor0)
-    {
-        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        startSphere.transform.parent = transform.parent;
-        startSphere.transform.position = _startNode + Vector3.up * .3f;
-        startSphere.transform.localScale = startSphere.transform.localScale * .5f;
-        startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
-
-        GameObject neighbor0 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        neighbor0.transform.parent = transform.parent;
-        neighbor0.transform.position = _neighbor0 + Vector3.up * .3f;
-        neighbor0.transform.localScale = neighbor0.transform.localScale * .5f;
-        neighbor0.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
-    }
-    PathfindingResult ReturnLaneSwap(List<Node> nodes)
+    private PathfindingResult ReturnLaneSwap(List<Node> nodes, Node targetNode)
     {
         List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
-        PathfindingResult result = new PathfindingResult(nodes, waypoints);
+        PathfindingResult result = new PathfindingResult(nodes, waypoints, targetNode);
         return result;
     }
 
@@ -251,59 +269,6 @@ public class Pathfinding : MonoBehaviour
         return 14f * dstX + 10f * (dstY - dstX);
     }
 
-    List<Node> FindStraightNodes(Node startNode, List<Node> nodes)
-    {
-        int indexToStartRemoving = nodes.IndexOf(startNode);
-        nodes.RemoveRange(indexToStartRemoving, nodes.Count - indexToStartRemoving);
-
-        Node currentNode = startNode.neighbours[0];
-        bool endOfStraightRoad = false;
-        while (!endOfStraightRoad)
-        {
-            if (currentNode.laneSide == LaneSide.None || currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
-            {
-                endOfStraightRoad = true;
-            }
-            else
-            {
-                nodes.Add(currentNode);
-            }
-            currentNode = currentNode.neighbours[0];
-        }
-        // Ahora hay que hacer que cuando acaben porque entran a la rotonda, darles el path que merecen.
-        return nodes;
-    }
-
-    List<Node> FindStraightNodes(Node startNode)
-    {
-        List<Node> straightNodes = new List<Node>();
-        straightNodes.Add(startNode);
-        Node currentNode = startNode.neighbours[0];
-        bool endOfStraightRoad = false;
-        Node endingNode = null;
-        while (!endOfStraightRoad)
-        {
-            if (currentNode.laneSide == LaneSide.None || currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
-            {
-                endOfStraightRoad = true;
-                endingNode = currentNode;
-                if (currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
-                {
-                    List<Node> pathInRoundabout = GetPathInRoundabout(currentNode);
-                    straightNodes.AddRange(pathInRoundabout);
-                }
-            }
-            else
-            {
-                straightNodes.Add(currentNode);
-            }
-            currentNode = currentNode.neighbours[0];
-        }
-        SpawnSphere(currentNode.worldPosition);
-        SpawnSphere(endingNode.worldPosition);
-        return straightNodes;
-    }
-
     public List<Node> GetPathInRoundabout(Node entryNode)
     {
         List<Node> path = new List<Node>();
@@ -315,6 +280,8 @@ public class Pathfinding : MonoBehaviour
         int numExits = roundabout.exitNodes.Count;
         int selectedExit = UnityEngine.Random.Range(0, numExits);
         Node exitNode = roundabout.exitNodes[selectedExit];
+        Node newRoadNode = exitNode.neighbours[0].neighbours[0];
+        Road newRoad = newRoadNode.road;
 
         if (originRoad.numberOfLanes > 1 && originRoad.numDirection == NumDirection.OneDirectional)
         {
@@ -329,19 +296,28 @@ public class Pathfinding : MonoBehaviour
                 // Use the outter lane
                 useInnerLane = false;
             }
+            // Aqui hay que hacer un check para que el exit node, en caso de ser perteneciente a una carretera de dos carriles
+            // y unidireccional, sea el del carril interno y no el externo
+            if (newRoad.numDirection == NumDirection.OneDirectional && newRoad.numberOfLanes > 1)
+            {
+                if (useInnerLane)
+                {
+                    exitNode = newRoad.entryNodes[0].previousNode.previousNode;
+                }
+                else
+                {
+                    exitNode = newRoad.entryNodes[1].previousNode.previousNode;
+                }
+            }
         }
         else
         {
             // Coming fron a twoDirectionalRoad or a OneDirectionalRoad with one lane
             // Use a lane matching the destiny. Only one entry in this side
-
-
             Vector3 dirToExitNode = (exitNode.worldPosition - entryNode.worldPosition).normalized;
             Vector3 forward = (entryNode.worldPosition - entryNode.previousNode.worldPosition).normalized;
 
             float angle = Vector3.SignedAngle(forward, dirToExitNode, Vector3.up);
-            Node newRoadNode = exitNode.neighbours[0].neighbours[0];
-            Road newRoad = newRoadNode.road;
             if (newRoad.numDirection == NumDirection.OneDirectional)
             {
                 if (newRoad.numberOfLanes > 1)
@@ -460,26 +436,17 @@ public class Pathfinding : MonoBehaviour
         return path;
     }
 
-
-    void SpawnSphere(Vector3 _startNode)
-    {
-        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        startSphere.transform.parent = transform.parent;
-        startSphere.transform.position = _startNode + Vector3.up * .3f;
-        startSphere.transform.localScale = startSphere.transform.localScale * .5f;
-        startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
-    }
-
 }
 
 public struct PathfindingResult
 {
     public List<Node> nodes;
     public List<Vector3> pathPositions;
-
-    public PathfindingResult(List<Node> _nodes, List<Vector3> _pathPositions)
+    public Node endNode;
+    public PathfindingResult(List<Node> _nodes, List<Vector3> _pathPositions, Node _endNode)
     {
         nodes = _nodes;
         pathPositions = _pathPositions;
+        endNode = _endNode;
     }
 }
