@@ -95,7 +95,7 @@ public class Pathfinding : MonoBehaviour
             }
             requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
         }
-        
+
     }
 
     PathfindingResult RetracePath(Node startNode, Node endNode)
@@ -126,7 +126,7 @@ public class Pathfinding : MonoBehaviour
     {
         // El startNode real es el vecino más lejano del startNode que se recibe como argumento
         // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
-        if(startNode.neighbours.Count < 2)
+        if (startNode.neighbours.Count < 2)
         {
             //SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
             Debug.LogWarning("start node has no neighbour 1");
@@ -280,11 +280,18 @@ public class Pathfinding : MonoBehaviour
         straightNodes.Add(startNode);
         Node currentNode = startNode.neighbours[0];
         bool endOfStraightRoad = false;
+        Node endingNode = null;
         while (!endOfStraightRoad)
         {
             if (currentNode.laneSide == LaneSide.None || currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
             {
                 endOfStraightRoad = true;
+                endingNode = currentNode;
+                if (currentNode.road.typeOfRoad == TypeOfRoad.Roundabout)
+                {
+                    List<Node> pathInRoundabout = GetPathInRoundabout(currentNode);
+                    straightNodes.AddRange(pathInRoundabout);
+                }
             }
             else
             {
@@ -292,8 +299,177 @@ public class Pathfinding : MonoBehaviour
             }
             currentNode = currentNode.neighbours[0];
         }
+        SpawnSphere(currentNode.worldPosition);
+        SpawnSphere(endingNode.worldPosition);
         return straightNodes;
     }
+
+    public List<Node> GetPathInRoundabout(Node entryNode)
+    {
+        List<Node> path = new List<Node>();
+        // Get road
+        Road originRoad = entryNode.previousNode.previousNode.road;
+        Road roundabout = entryNode.road;
+        bool useInnerLane;
+
+        int numExits = roundabout.exitNodes.Count;
+        int selectedExit = UnityEngine.Random.Range(0, numExits);
+        Node exitNode = roundabout.exitNodes[selectedExit];
+
+        if (originRoad.numberOfLanes > 1 && originRoad.numDirection == NumDirection.OneDirectional)
+        {
+            // Special case where you are forced to use one lane or the other
+            if (entryNode.previousNode.previousNode.laneSide == LaneSide.Left)
+            {
+                // Use the inner lane
+                useInnerLane = true;
+            }
+            else
+            {
+                // Use the outter lane
+                useInnerLane = false;
+            }
+        }
+        else
+        {
+            // Coming fron a twoDirectionalRoad or a OneDirectionalRoad with one lane
+            // Use a lane matching the destiny. Only one entry in this side
+
+
+            Vector3 dirToExitNode = (exitNode.worldPosition - entryNode.worldPosition).normalized;
+            Vector3 forward = (entryNode.worldPosition - entryNode.previousNode.worldPosition).normalized;
+
+            float angle = Vector3.SignedAngle(forward, dirToExitNode, Vector3.up);
+            Node newRoadNode = exitNode.neighbours[0].neighbours[0];
+            Road newRoad = newRoadNode.road;
+            if (newRoad.numDirection == NumDirection.OneDirectional)
+            {
+                if (newRoad.numberOfLanes > 1)
+                {
+                    if (newRoadNode.laneSide == LaneSide.Left)
+                    {
+                        // We must use the inner lane
+                        useInnerLane = true;
+                    }
+                    else
+                    {
+                        // We must use the outter lane
+                        useInnerLane = false;
+                    }
+                }
+                else
+                {
+                    // Use the lane depending on the angle to it, if it is in front or
+                    // We can go right, forward or left
+                    if (angle > -5f && angle < 5f)
+                    {
+                        // Going forward, use the outter lane or the inner
+                        int choice = UnityEngine.Random.Range(0, 2);
+                        if (choice == 0)
+                        {
+                            useInnerLane = true;
+                        }
+                        else
+                        {
+                            useInnerLane = false;
+                        }
+                    }
+                    else if (angle > 10f)
+                    {
+                        // Going right, use the outter
+                        useInnerLane = false;
+                    }
+                    else // Negative angle
+                    {
+                        // Going left, use the inner
+                        useInnerLane = true;
+                    }
+                }
+            }
+            else // The new road is two directional
+            {
+                if (angle > -5f && angle < 5f)
+                {
+                    // Going forward, use the outter lane or the inner
+                    useInnerLane = false;
+                }
+                else if (angle > 10f)
+                {
+                    // Going right, use the outter
+                    useInnerLane = false;
+                }
+                else if (angle < -5f && angle > -60f) // Negative angle
+                {
+                    // Going left, use the inner
+                    useInnerLane = true;
+                }
+                else // Direction change -- Angle = -90f
+                {
+                    useInnerLane = true;
+                }
+            }
+
+        }
+
+        path.Add(entryNode);
+
+        Node neighbor1 = entryNode.neighbours[0];
+        Node neighbor2 = entryNode.neighbours[1];
+        Node firstLaneNode;
+        Node lastLaneNode = null;
+        if (useInnerLane)
+        {
+            if (neighbor1.laneSide == LaneSide.Left)
+            {
+                firstLaneNode = neighbor1;
+            }
+            else
+            {
+                firstLaneNode = neighbor2;
+            }
+
+        }
+        else
+        {
+            if (neighbor1.laneSide == LaneSide.Right)
+            {
+                firstLaneNode = neighbor1;
+            }
+            else
+            {
+                firstLaneNode = neighbor2;
+            }
+        }
+
+        Node currentNode = firstLaneNode;
+        while (lastLaneNode == null)
+        {
+            foreach (Node neighbor in currentNode.neighbours)
+            {
+                if (neighbor == exitNode)
+                {
+                    lastLaneNode = currentNode;
+                }
+            }
+            path.Add(currentNode);
+            currentNode = currentNode.neighbours[0];
+        }
+        path.Add(exitNode);
+        path.Add(exitNode.neighbours[0]);
+        path.Add(exitNode.neighbours[0].neighbours[0]);
+        return path;
+    }
+
+
+    void SpawnSphere(Vector3 _startNode)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform.parent;
+        startSphere.transform.position = _startNode + Vector3.up * .3f;
+        startSphere.transform.localScale = startSphere.transform.localScale * .5f;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
+    }
+
 }
 
 public struct PathfindingResult

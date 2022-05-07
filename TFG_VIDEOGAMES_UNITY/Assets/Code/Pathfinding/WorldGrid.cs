@@ -1444,12 +1444,23 @@ public class WorldGrid : MonoBehaviour
                 lane2Nodes[numNodes - 1].AddNeighbour(lane1Nodes[0]);
             }
 
-
-            for (int i = 0; i < numNodes - 1; i++)
+            if(road.typeOfRoad != TypeOfRoad.Curve)
             {
-                lane1Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
-                lane2Nodes[i].AddNeighbour(lane1Nodes[i + 1]);
+                for (int i = 0; i < numNodes - 1; i++)
+                {
+                    lane1Nodes[i].AddNeighbour(lane2Nodes[i + 1]);
+                    lane2Nodes[i].AddNeighbour(lane1Nodes[i + 1]);
+                }
             }
+            else
+            {
+                for (int i = 0; i < numNodes - 2; i++)
+                {
+                    lane1Nodes[i].AddNeighbour(lane2Nodes[i + 2]);
+                    lane2Nodes[i].AddNeighbour(lane1Nodes[i + 2]);
+                }
+            }
+            
         }
         else if (numberOfLanes == 4) // 4 lanes
         {
