@@ -26,6 +26,14 @@ public class Node : IHeapItem<Node>
     {
         if (road.numberOfLanes > 1 && road.numDirection == NumDirection.OneDirectional)
         {
+            if(road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                if (road.entryNodes.Contains(this) || road.exitNodes.Contains(this))
+                {
+                    laneSide = LaneSide.None;
+                    return;
+                }
+            }
             if (road.lanes[0].nodes.Contains(this))
             {
                 laneSide = LaneSide.Left;
@@ -37,6 +45,39 @@ public class Node : IHeapItem<Node>
         }
         else
         {
+            laneSide = LaneSide.None;
+        }
+
+        if(road.typeOfRoad == TypeOfRoad.Bridge)
+        {
+            Bridge bridge = (Bridge)road;
+            if(bridge.lowerRoadNumLanes > 1 && bridge.lowerNumDirection == NumDirection.OneDirectional)
+            {
+                if (bridge.lowerLanes[0].nodes.Contains(this))
+                {
+                    laneSide = LaneSide.Left;
+                }
+                else if(bridge.lowerLanes[1].nodes.Contains(this))
+                {
+                    laneSide = LaneSide.Right;
+                }
+            }
+
+            if (bridge.upperRoadNumLanes > 1 && bridge.upperNumDirection == NumDirection.OneDirectional)
+            {
+                if (bridge.upperLanes[0].nodes.Contains(this))
+                {
+                    laneSide = LaneSide.Left;
+                }
+                else if (bridge.upperLanes[1].nodes.Contains(this))
+                {
+                    laneSide = LaneSide.Right;
+                }
+            }
+
+            if (laneSide != LaneSide.None)
+                return;
+
             laneSide = LaneSide.None;
         }
     }

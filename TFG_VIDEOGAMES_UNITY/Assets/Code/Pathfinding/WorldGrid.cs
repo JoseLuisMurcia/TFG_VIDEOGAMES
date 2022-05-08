@@ -7,7 +7,7 @@ public class WorldGrid : MonoBehaviour
     [SerializeField] bool displayGridGizmos;
     public List<Node> grid;
     [HideInInspector] public List<Vector3> debugNodes = new List<Vector3>();
-    [HideInInspector] public List<Vector3> unionNodes = new List<Vector3>();
+    [HideInInspector] public List<Node> unionNodes = new List<Node>();
     [SerializeField] LayerMask roadMask;
     [SerializeField] GameObject allRoads;
     private List<Road> roads = new List<Road>();
@@ -95,6 +95,15 @@ public class WorldGrid : MonoBehaviour
         ConnectAllRoads();
         foreach (Node node in grid)
             node.SetLaneSide();
+        foreach(Node node in unionNodes)
+        {
+            if (node.neighbours[0].laneSide == LaneSide.Left)
+                node.laneSide = LaneSide.Left;
+            else if(node.neighbours[0].laneSide == LaneSide.Right)
+                node.laneSide = LaneSide.Right;
+            else
+                node.laneSide = LaneSide.None;
+        }
     }
 
     private void CreateConnectionsForRoundabouts()
@@ -345,17 +354,6 @@ public class WorldGrid : MonoBehaviour
         return entryNode;
     }
 
-    private Node GetClosestNodeToRoadFromConnection(Node node, Road connection)
-    {
-        Node entryNode = connection.entryNodes[0];
-        Node exitNode = connection.exitNodes[0];
-        if (Vector3.Distance(entryNode.worldPosition, node.worldPosition) > Vector3.Distance(exitNode.worldPosition, node.worldPosition))
-        {
-            return exitNode;
-        }
-        return entryNode;
-    }
-
     private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode, Road road)
     {
         if (distance < 3f && dot > 0)
@@ -372,7 +370,7 @@ public class WorldGrid : MonoBehaviour
             }
             exitNode.AddNeighbour(unionNode);
             unionNode.AddNeighbour(entryNode);
-            unionNodes.Add(unionNodePos);
+            unionNodes.Add(unionNode);
             grid.Add(unionNode);
         }
     }
@@ -422,7 +420,7 @@ public class WorldGrid : MonoBehaviour
                     }
                     exitNode.AddNeighbour(unionNode);
                     unionNode.AddNeighbour(bestEntryNode);
-                    unionNodes.Add(unionNodePos);
+                    unionNodes.Add(unionNode);
                     grid.Add(unionNode);
                 }
             }
@@ -502,7 +500,7 @@ public class WorldGrid : MonoBehaviour
                                     {
                                         road.lanes[0].nodes.Add(unionNode);
                                     }
-                                    unionNodes.Add(unionNodePos);
+                                    unionNodes.Add(unionNode);
                                     grid.Add(unionNode);
                                 }
 
@@ -540,7 +538,7 @@ public class WorldGrid : MonoBehaviour
                                         road.lanes[0].nodes.Add(unionNode);
 
                                     }
-                                    unionNodes.Add(unionNodePos);
+                                    unionNodes.Add(unionNode);
                                     grid.Add(unionNode);
                                 }
                             }
@@ -594,18 +592,16 @@ public class WorldGrid : MonoBehaviour
             foreach (Node n in grid)
             {
                 Gizmos.color = Color.white;
-                if (n.road.numberOfLanes >= 2 && n.road.numDirection == NumDirection.OneDirectional)
-                {
-                    if (n.laneSide == LaneSide.Left)
-                    {
-                        Gizmos.color = Color.magenta;
-                        Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
-                    }
-                    else
-                    {
-                        Gizmos.DrawCube(n.worldPosition, Vector3.one * .1f);
 
-                    }
+                if (n.laneSide == LaneSide.Left)
+                {
+                    Gizmos.color = Color.magenta;
+                    Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
+                }
+                else if(n.laneSide == LaneSide.Right)
+                {
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
                 }
                 else
                 {
@@ -629,10 +625,10 @@ public class WorldGrid : MonoBehaviour
                 Gizmos.DrawCube(startLanePos, Vector3.one * (0.15f));
             }
 
-            foreach (Vector3 unionPos in unionNodes)
+            foreach (Node union in unionNodes)
             {
                 Gizmos.color = Color.green;
-                Gizmos.DrawCube(unionPos, Vector3.one * (.1f));
+                Gizmos.DrawCube(union.worldPosition, Vector3.one * (.1f));
             }
 
             foreach (Road road in roads)
@@ -1262,14 +1258,14 @@ public class WorldGrid : MonoBehaviour
         Vector3 middlePoint = (startPoint + endPoint) * .5f;
 
         float upperBridgeHeight = road.transform.TransformPoint(road.bounds.max).y;
-        Vector3 angles = new Vector3(0, 90, 0);
+        Vector3 angles = new Vector3(0, -90, 0);
         Vector3 upperStartPoint = RotatePointAroundPivot(startPoint, middlePoint, angles);
         upperStartPoint.y = upperBridgeHeight;
         Vector3 upperEndPoint = RotatePointAroundPivot(endPoint, middlePoint, angles);
         upperEndPoint.y = upperBridgeHeight;
 
-        CreateNodesFromStartAndEnd(road, startPoint, endPoint, road.lowerNumDirection, road.invertLowerRoad, road.lowerRoadNumLanes, false, road.lanes);
-        CreateNodesFromStartAndEnd(road, upperStartPoint, upperEndPoint, road.upperNumDirection, road.invertUpperRoad, road.upperRoadNumLanes, true, road.lanes);
+        CreateNodesFromStartAndEnd(road, startPoint, endPoint, road.lowerNumDirection, road.invertLowerRoad, road.lowerRoadNumLanes, false, road.lowerLanes);
+        CreateNodesFromStartAndEnd(road, upperStartPoint, upperEndPoint, road.upperNumDirection, road.invertUpperRoad, road.upperRoadNumLanes, true, road.upperLanes);
     }
     private void CreateNodesFromStartAndEnd(Road road, Vector3 start, Vector3 end, NumDirection numDirection, bool invert, int numberOfLanes, bool upperBridge, List<Lane> lanes)
     {
@@ -1306,6 +1302,25 @@ public class WorldGrid : MonoBehaviour
                 }
 
             }
+            else if(road.typeOfRoad == TypeOfRoad.Bridge)
+            {
+                if (invert)
+                {
+                    startPoints[0] = end - direction * distance;
+                    endPoints[0] = start - direction * distance;
+
+                    startPoints[1] = end + direction * distance;
+                    endPoints[1] = start + direction * distance;
+                }
+                else
+                {
+                    startPoints[0] = start + direction * distance;
+                    endPoints[0] = end + direction * distance;
+
+                    startPoints[1] = start - direction * distance;
+                    endPoints[1] = end - direction * distance;
+                }
+            }
             else
             {
                 startPoints[0] = start - direction * distance;
@@ -1331,7 +1346,7 @@ public class WorldGrid : MonoBehaviour
             endPoints[3] = end + road.transform.forward * zWidth * .8f;
         }
 
-        if (invert && TypeOfRoad.StraightSlant != road.typeOfRoad)
+        if (invert && TypeOfRoad.StraightSlant != road.typeOfRoad && TypeOfRoad.Bridge != road.typeOfRoad)
         {
             Vector3[] invertedStartPoints = new Vector3[numberOfLanes];
             Vector3[] invertedEndPoints = new Vector3[numberOfLanes];
@@ -1444,7 +1459,7 @@ public class WorldGrid : MonoBehaviour
                 lane2Nodes[numNodes - 1].AddNeighbour(lane1Nodes[0]);
             }
 
-            if(road.typeOfRoad != TypeOfRoad.Curve)
+            if (road.typeOfRoad != TypeOfRoad.Curve)
             {
                 for (int i = 0; i < numNodes - 1; i++)
                 {
@@ -1460,7 +1475,7 @@ public class WorldGrid : MonoBehaviour
                     lane2Nodes[i].AddNeighbour(lane1Nodes[i + 2]);
                 }
             }
-            
+
         }
         else if (numberOfLanes == 4) // 4 lanes
         {

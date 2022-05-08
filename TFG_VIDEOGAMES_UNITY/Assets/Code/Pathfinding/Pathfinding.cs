@@ -92,18 +92,15 @@ public class Pathfinding : MonoBehaviour
         {
             requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
         }
-
-
     }
 
     private bool CheckLaneRestriction(Node currentNode, Node neighbour)
     {
-        Road currentRoad = currentNode.road;
-        if (currentNode.laneSide == LaneSide.Left && neighbour.laneSide == LaneSide.Right && currentRoad.numberOfLanes > 1 && currentRoad.numDirection == NumDirection.OneDirectional)
+        if (currentNode.laneSide == LaneSide.Left && neighbour.laneSide == LaneSide.Right)
         {
             return true;
         }
-        else if (currentNode.laneSide == LaneSide.Right && neighbour.laneSide == LaneSide.Left && currentRoad.numberOfLanes > 1 && currentRoad.numDirection == NumDirection.OneDirectional)
+        else if (currentNode.laneSide == LaneSide.Right && neighbour.laneSide == LaneSide.Left)
         {
             return true;
         }

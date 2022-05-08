@@ -11,10 +11,13 @@ public class Bridge : Road
     [SerializeField] public bool invertLowerRoad;
     [SerializeField] public int upperRoadNumLanes;
     [SerializeField] public int lowerRoadNumLanes;
+    [SerializeField] public List<Lane> lowerLanes = new List<Lane>();
+    [SerializeField] public List<Lane> upperLanes = new List<Lane>();
     void Start()
     {
         typeOfRoad = TypeOfRoad.Bridge;
         numDirection = NumDirection.ZERO;
+        numberOfLanes = lowerRoadNumLanes+upperRoadNumLanes;
         SetLanes();
         Destroy(boxCollider);
     }
@@ -22,11 +25,11 @@ public class Bridge : Road
     {
         for (int i = 0; i < lowerRoadNumLanes; i++)
         {
-            lanes.Add(new Lane());
+            lowerLanes.Add(new Lane());
         }
         for (int i = 0; i < upperRoadNumLanes; i++)
         {
-            lanes.Add(new Lane());
+            upperLanes.Add(new Lane());
         }
     }
 }
