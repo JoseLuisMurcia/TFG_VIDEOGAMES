@@ -1133,8 +1133,7 @@ public class WorldGrid : MonoBehaviour
         int numberOfLanes = road.numberOfLanes;
         List<Vector3> referencePoints = road.laneReferencePoints;
         int numNodes = referencePoints.Count;
-        float zWidth = road.bounds.extents.z;
-        zWidth = road.bounds.extents.z * road.transform.localScale.z * 0.7f;
+        float zWidth = road.bounds.extents.z * road.transform.localScale.z * .6F;
         float xWidth = road.bounds.extents.x;
 
         // Calculate the offset points

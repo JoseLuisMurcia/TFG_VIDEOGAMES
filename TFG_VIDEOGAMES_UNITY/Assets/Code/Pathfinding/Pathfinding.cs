@@ -167,7 +167,7 @@ public class Pathfinding : MonoBehaviour
         {
             //SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
         }
-        Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea
+        Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea //TO FIX ESTO SIGUE FALLANDO
         List<Node> nodes = new List<Node>();
         // Como se hasta donde tengo que estar devolviendo el camino? Cuando son suficientes nodos?
         // Devolver 75 neighbours[0] por los loles xd

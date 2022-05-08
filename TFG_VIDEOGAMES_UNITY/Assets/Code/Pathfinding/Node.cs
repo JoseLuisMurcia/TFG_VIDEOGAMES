@@ -14,7 +14,7 @@ public class Node : IHeapItem<Node>
     public Road road;
     public readonly List<Node> neighbours = new List<Node>();
     public Node previousNode; // Used by grid creation
-    public LaneSide laneSide;
+    public LaneSide laneSide = LaneSide.None;
 
     public Node(Vector3 _worldPos, Road _road)
     {
@@ -24,6 +24,18 @@ public class Node : IHeapItem<Node>
 
     public void SetLaneSide()
     {
+        if(road.typeOfRoad == TypeOfRoad.Deviation)
+        {
+            if (road.numberOfLanes == 2)
+            {
+                if(road.entryNodes.Contains(this))
+                    return;
+            }
+            
+        }
+        if (road.typeOfRoad == TypeOfRoad.Split)
+            return;
+
         if (road.numberOfLanes > 1 && road.numDirection == NumDirection.OneDirectional)
         {
             if(road.typeOfRoad == TypeOfRoad.Roundabout)
