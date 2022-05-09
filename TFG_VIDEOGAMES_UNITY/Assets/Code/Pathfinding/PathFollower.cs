@@ -317,7 +317,7 @@ public class PathFollower : MonoBehaviour
             if (path != null)
             {
                 int numNodesInPath = path.lookPoints.Count;
-                if (pathIndex >= numNodesInPath - 3)
+                if (pathIndex >= numNodesInPath - 2)
                 {
                     RequestNewPath();
                 }

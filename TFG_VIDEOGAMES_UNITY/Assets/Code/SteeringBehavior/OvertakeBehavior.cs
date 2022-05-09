@@ -10,18 +10,20 @@ public class OvertakeBehavior
     private bool visualDebug = false;
     private AvoidanceBehavior avoidanceBehavior;
     public PathFollower overtakenCar;
+    private PriorityBehavior priorityBehavior;
 
     public bool canSwapLane = true;
     public bool hasBeenNotified = false;
     private AvoidanceBehavior notificator = null;
     WhiskersManager whiskersManager;
 
-    public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior, WhiskersManager _whiskersManager)
+    public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior, WhiskersManager _whiskersManager, PriorityBehavior _priorityBehavior)
     {
         pathFollower = _pathFollower;
         avoidanceBehavior = _avoidanceBehavior;
         pathFollower.overtakeBehavior = this;
         whiskersManager = _whiskersManager;
+        priorityBehavior = _priorityBehavior;
     }
 
     public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
@@ -74,13 +76,23 @@ public class OvertakeBehavior
         }
     }
 
-    public void RequestLaneSwapUntilPossible()
+    public IEnumerator RequestLaneSwapUntilPossible()
     {
-        if (canSwapLane && !hasBeenNotified)
+        float randomTime = Random.Range(.5f, 3);
+        yield return new WaitForSeconds(randomTime);
+        RequestLaneSwapUntilPossible();
+        bool laneSwap = false;
+        float updateChecks = .3f;
+        while (!laneSwap)
         {
-            pathFollower.RequestLaneSwap();
-            Debug.Log("LANE SWAP");
-        }
+            if (canSwapLane && !hasBeenNotified && !priorityBehavior.isInRoundabout)
+            {
+                pathFollower.RequestLaneSwap();
+                Debug.Log("LANE SWAP");
+                laneSwap = true;
+            }
+            yield return new WaitForSeconds(updateChecks);
+        }   
     }
 
     // Method called when you are on the left lane and the car in front is slower than you, you tell him to switch to the right lane

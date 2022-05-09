@@ -32,8 +32,8 @@ public class WhiskersManager : MonoBehaviour
     private List<float> leftAngles = new List<float>() { -15f, -30f, -70f, -130f, -160f, -170f, -175f };
     private List<float> rightAngles = new List<float>() { 10f, 30f, 70f, 125f, 145f, 160f, 165f };
 
-    private List<float> unovertakeAngles = new List<float>() {2.5f, 5f, 7.5f, 12.5f};
-    private List<float> unovertakeLongRaysReach = new List<float>() { 15f, 12.5f, 10f, 7.5f};
+    private List<float> unovertakeAngles = new List<float>() { 2.5f, 5f, 7.5f, 12.5f };
+    private List<float> unovertakeLongRaysReach = new List<float>() { 15f, 12.5f, 10f, 7.5f };
 
     void Start()
     {
@@ -54,7 +54,7 @@ public class WhiskersManager : MonoBehaviour
 
         avoidanceBehavior = new AvoidanceBehavior(pathFollower, trafficLightCarController);
         priorityBehavior = new PriorityBehavior(pathFollower, avoidanceBehavior);
-        overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior, this);
+        overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior, this, priorityBehavior);
         pedestrianBehavior = new PedestrianAvoidanceBehavior(pathFollower);
         pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
@@ -165,6 +165,11 @@ public class WhiskersManager : MonoBehaviour
     }
     void CheckLaneSwap(LaneSide laneSide)
     {
+        if (priorityBehavior.isInRoundabout || pathFollower.priorityLevel == PriorityLevel.Roundabout)
+        {
+            overtakeBehavior.canSwapLane = false;
+            return;
+        }
         int i = 0;
         RaycastHit hit;
         if (laneSide == LaneSide.Right) // Swapping from right lane to the left lane
@@ -284,7 +289,6 @@ public class WhiskersManager : MonoBehaviour
         if (!entry)
             priorityBehavior.RemoveSignalFromSight();
     }
-
     public PathFollower HasFurtherCarsBeforeReturning()
     {
         int i = 0;
@@ -300,7 +304,7 @@ public class WhiskersManager : MonoBehaviour
             {
                 if (visualDebug) Debug.DrawLine(rightMirrorPos, hit.point, Color.black);
                 PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
-                if(pathFollower.speed - hitCar.speed > 0.2f)
+                if (pathFollower.speed - hitCar.speed > 0.2f)
                 {
                     return hitCar;
                 }
@@ -317,16 +321,8 @@ public class WhiskersManager : MonoBehaviour
     }
     public void DelayLaneSwapRequest()
     {
-        StartCoroutine(DelayLaneSwap());
+        StartCoroutine(overtakeBehavior.RequestLaneSwapUntilPossible());
     }
-
-    IEnumerator DelayLaneSwap()
-    {
-        float randomTime = Random.Range(.5f, 3);
-        yield return new WaitForSeconds(randomTime);
-        overtakeBehavior.RequestLaneSwapUntilPossible();
-    }
-
     public void DelayFreeLaneRequest(AvoidanceBehavior _notificator)
     {
         StartCoroutine(DelayFreeLane(_notificator));
