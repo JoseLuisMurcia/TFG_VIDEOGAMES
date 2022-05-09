@@ -20,18 +20,11 @@ public class Pathfinding : MonoBehaviour
         Node targetNode = WorldGrid.Instance.FindEndNode(targetPos);
         StartCoroutine(FindPath(startNode, targetNode));
     }
-
     public void StartFindPath(Vector3 startPos, Node targetNode, Vector3 carForward)
     {
         Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
         StartCoroutine(FindPath(startNode, targetNode));
     }
-
-    public void StartLaneSwap(Node startNode)
-    {
-        StartCoroutine(SwapLane(startNode));
-    }
-
     private IEnumerator FindPath(Node startNode, Node targetNode)
     {
         bool pathSuccess = false;
@@ -93,7 +86,6 @@ public class Pathfinding : MonoBehaviour
             requestManager.FinishedProcessingPath(result, pathSuccess, startNode, targetNode);
         }
     }
-
     private bool CheckLaneRestriction(Node currentNode, Node neighbour)
     {
         if (currentNode.laneSide == LaneSide.Left && neighbour.laneSide == LaneSide.Right)
@@ -123,7 +115,10 @@ public class Pathfinding : MonoBehaviour
         PathfindingResult result = new PathfindingResult(nodes, waypoints, endNode);
         return result;
     }
-
+    public void StartLaneSwap(Node startNode)
+    {
+        StartCoroutine(SwapLane(startNode));
+    }
     Node CorrectPathInRoundabout(List<Node> nodes)
     {
         int entryId = -1;
@@ -149,50 +144,58 @@ public class Pathfinding : MonoBehaviour
         List<Node> pathInRoundabout = GetPathInRoundabout(nodes[entryId]);
         nodes.RemoveRange(entryId, nodes.Count - entryId);
         nodes.AddRange(pathInRoundabout);
-        return nodes[nodes.Count-1];
+        return nodes[nodes.Count - 1];
     }
     private IEnumerator SwapLane(Node startNode)
     {
-        // El startNode real es el vecino más lejano del startNode que se recibe como argumento
-        // A partir de ese startNode real, devolver una linea recta, utilizar lane[0] o lane[1], segun el carril actual, 0 es izquierda, 1 es derecha
+        //SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
+        int i = 0;
+        while (i < 5)
+        {
+            if (startNode.neighbours.Count < 2)
+            {
+                startNode = startNode.neighbours[0];
+            }
+            else
+            {
+                i = 1000;
+            }
+        }
+
         if (startNode.neighbours.Count < 2)
         {
-            //SpawnSphere(startNode.worldPosition, startNode.neighbours[0].worldPosition);
             Debug.LogWarning("start node has no neighbour 1");
-            startNode = startNode.neighbours[0];
-            if (startNode.neighbours.Count < 2)
-                startNode = startNode.neighbours[0];
+            PathfindingResult result = new PathfindingResult();
+            requestManager.FinishedProcessingPath(result, false, null, null);
         }
         else
         {
-            //SpawnSphere(startNode.worldPosition, startNode.neighbours[1].worldPosition);
-        }
-        Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea //TO FIX ESTO SIGUE FALLANDO
-        List<Node> nodes = new List<Node>();
-        // Como se hasta donde tengo que estar devolviendo el camino? Cuando son suficientes nodos?
-        // Devolver 75 neighbours[0] por los loles xd
+            Node realStartNode = startNode.neighbours[1]; // El nodo por el que queremos comenzar es el vecino de la otra linea //TO FIX ESTO SIGUE FALLANDO
+            List<Node> nodes = new List<Node>();
+            // Como se hasta donde tengo que estar devolviendo el camino? Cuando son suficientes nodos?
+            // Devolver 75 neighbours[0] por los loles xd
 
-        int numNodesToOvertake = 75;
-        nodes.Add(realStartNode);
+            int numNodesToOvertake = 75;
+            nodes.Add(realStartNode);
 
 
-        for (int i = 0; i < numNodesToOvertake - 1; i++)
-        {
-            nodes.Add(nodes[i].neighbours[0]);
-        }
-        Node targetNode = nodes[numNodesToOvertake - 1].neighbours[0];
-        yield return null;
-        PathfindingResult result = ReturnLaneSwap(nodes, targetNode);
-        requestManager.FinishedProcessingPath(result, true, realStartNode, targetNode);
+            for (int j = 0; j < numNodesToOvertake - 1; j++)
+            {
+                nodes.Add(nodes[j].neighbours[0]);
+            }
+            Node targetNode = nodes[numNodesToOvertake - 1].neighbours[0];
+            yield return null;
+            PathfindingResult result = ReturnLaneSwap(nodes);
+            requestManager.FinishedProcessingPath(result, true, realStartNode, result.endNode);
+        } 
     }
-
-    private PathfindingResult ReturnLaneSwap(List<Node> nodes, Node targetNode)
+    private PathfindingResult ReturnLaneSwap(List<Node> nodes)
     {
+        Node endNode = CorrectPathInRoundabout(nodes);
         List<Vector3> waypoints = ModifyPathLateralOffset(nodes);
-        PathfindingResult result = new PathfindingResult(nodes, waypoints, targetNode);
+        PathfindingResult result = new PathfindingResult(nodes, waypoints, endNode);
         return result;
     }
-
     private List<Vector3> ModifyPathLateralOffset(List<Node> nodes)
     {
         float maxLeftOffset = .2f;
@@ -255,7 +258,6 @@ public class Pathfinding : MonoBehaviour
         }
         return waypoints;
     }
-
     float GetDistanceHeuristic(Node nodeA, Node nodeB)
     {
         float dstX = Mathf.Abs(nodeA.worldPosition.x - nodeB.worldPosition.x);
@@ -265,7 +267,6 @@ public class Pathfinding : MonoBehaviour
             return 14f * dstY + 10f * (dstX - dstY);
         return 14f * dstX + 10f * (dstY - dstX);
     }
-
     public List<Node> GetPathInRoundabout(Node entryNode)
     {
         List<Node> path = new List<Node>();

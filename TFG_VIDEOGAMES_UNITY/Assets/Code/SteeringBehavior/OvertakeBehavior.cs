@@ -38,8 +38,6 @@ public class OvertakeBehavior
         if (hasBeenNotified)
             CheckNotifications();
     }
-
-
     private void CheckOvertakenCar()
     {
         Vector3 dirToOvertakenCar = (overtakenCar.transform.position - transform.position).normalized;
@@ -117,8 +115,9 @@ public class OvertakeBehavior
     {
         pathFollower.RequestLaneSwap(); // If consigue cambiar de carril, pondremos hasBeenNotified a false
         pathFollower.overtaking = false;
-        notificator.AddCarToBlacklist(pathFollower);
-        notificator.UnableTarget();
+
+        // Hay que ejecutar estas dos lineas con delay
+        whiskersManager.DelayFreeLaneRequest(notificator);
         hasBeenNotified = false;
     }
 

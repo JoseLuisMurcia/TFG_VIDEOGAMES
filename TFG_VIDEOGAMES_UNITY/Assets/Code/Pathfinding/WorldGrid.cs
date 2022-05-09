@@ -93,19 +93,37 @@ public class WorldGrid : MonoBehaviour
         }
         CreateConnectionsForRoundabouts();
         ConnectAllRoads();
+        PostProcessNodes();
+    }
+    private void PostProcessNodes()
+    {
         foreach (Node node in grid)
             node.SetLaneSide();
-        foreach(Node node in unionNodes)
+        foreach (Node node in unionNodes)
         {
             if (node.neighbours[0].laneSide == LaneSide.Left)
                 node.laneSide = LaneSide.Left;
-            else if(node.neighbours[0].laneSide == LaneSide.Right)
+            else if (node.neighbours[0].laneSide == LaneSide.Right)
                 node.laneSide = LaneSide.Right;
             else
                 node.laneSide = LaneSide.None;
         }
+        foreach(Road road in roads)
+        {
+            if(road.typeOfRoad == TypeOfRoad.Bridge)
+            {
+                Bridge bridge = (Bridge)road;
+                foreach(Lane lowerLane in bridge.lowerLanes)
+                {
+                    bridge.lanes.Add(lowerLane);
+                }
+                foreach (Lane upperLane in bridge.upperLanes)
+                {
+                    bridge.lanes.Add(upperLane);
+                }
+            }
+        }
     }
-
     private void CreateConnectionsForRoundabouts()
     {
         foreach (Road road in roads)
@@ -598,7 +616,7 @@ public class WorldGrid : MonoBehaviour
                     Gizmos.color = Color.magenta;
                     Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
                 }
-                else if(n.laneSide == LaneSide.Right)
+                else if (n.laneSide == LaneSide.Right)
                 {
                     Gizmos.color = Color.black;
                     Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
@@ -1134,7 +1152,6 @@ public class WorldGrid : MonoBehaviour
         List<Vector3> referencePoints = road.laneReferencePoints;
         int numNodes = referencePoints.Count;
         float zWidth = road.bounds.extents.z * road.transform.localScale.z * .6F;
-        float xWidth = road.bounds.extents.x;
 
         // Calculate the offset points
         Vector3[][] lanePositions = new Vector3[numberOfLanes][];
@@ -1153,12 +1170,28 @@ public class WorldGrid : MonoBehaviour
                     switch (i)
                     {
                         case 0:
-                            lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance;
+                            if (road.invertPath)
+                            {
+                                lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance;
+                            }
+                            else
+                            {
+                                lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance;
+
+                            }
                             break;
                         case 1:
                             if (road.numDirection == NumDirection.OneDirectional)
                             {
+                                if (road.invertPath)
+                                {
+                                    lanePositions[i][j] = referencePoints[j] - road.transform.forward * distance;
+                                }
+                                else
+                                {
                                 lanePositions[i][j] = referencePoints[j] + road.transform.forward * distance;
+
+                                }
                             }
                             else
                             {
@@ -1301,7 +1334,7 @@ public class WorldGrid : MonoBehaviour
                 }
 
             }
-            else if(road.typeOfRoad == TypeOfRoad.Bridge)
+            else if (road.typeOfRoad == TypeOfRoad.Bridge)
             {
                 if (invert)
                 {
@@ -1536,6 +1569,12 @@ public class WorldGrid : MonoBehaviour
             selectedRoad = roads[roadIndex];
         }
         int numLanes = selectedRoad.numberOfLanes;
+
+        if(numLanes > selectedRoad.numberOfLanes)
+        {
+            RandomNodeInRoadsDebug(selectedRoad);
+        }
+
         int selectedLane = Random.Range(0, numLanes);
         int numNodes = selectedRoad.lanes[selectedLane].nodes.Count;
         if (numNodes > 0)
@@ -1549,6 +1588,11 @@ public class WorldGrid : MonoBehaviour
             Debug.LogError("SE ROMPIO EL GetRandomNodeInRoads PUTA MADRE");
         }
         return randomNode;
+    }
+    private void RandomNodeInRoadsDebug(Road road)
+    {
+        Debug.LogWarning("ROAD WITH MORE NUMBER OF LANES THAN OBJECT LANES");
+        Debug.LogWarning("Road: " + road.gameObject.name + ". TypeOfRoad: " + road.typeOfRoad.ToString() + ". Number of lanes: " + road.numberOfLanes + ". Lanes Count: " + road.lanes.Count);
     }
 
     private Vector2 V3ToV2(Vector3 v3)

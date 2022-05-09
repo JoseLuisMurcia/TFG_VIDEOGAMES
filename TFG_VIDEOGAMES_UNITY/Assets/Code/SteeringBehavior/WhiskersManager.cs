@@ -317,14 +317,26 @@ public class WhiskersManager : MonoBehaviour
     }
     public void DelayLaneSwapRequest()
     {
-        StartCoroutine(LaneSwapRequestDelay());
+        StartCoroutine(DelayLaneSwap());
     }
 
-    IEnumerator LaneSwapRequestDelay()
+    IEnumerator DelayLaneSwap()
     {
         float randomTime = Random.Range(.5f, 3);
         yield return new WaitForSeconds(randomTime);
         overtakeBehavior.RequestLaneSwapUntilPossible();
+    }
+
+    public void DelayFreeLaneRequest(AvoidanceBehavior _notificator)
+    {
+        StartCoroutine(DelayFreeLane(_notificator));
+    }
+    IEnumerator DelayFreeLane(AvoidanceBehavior _notificator)
+    {
+        float randomTime = Random.Range(.6f, 1.3f);
+        yield return new WaitForSeconds(randomTime);
+        _notificator.AddCarToBlacklist(pathFollower);
+        _notificator.UnableTarget();
     }
 
     private void OnDrawGizmos()
