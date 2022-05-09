@@ -587,7 +587,7 @@ public class PathFollower : MonoBehaviour
             StartCoroutine(AdjustDistance());
         }
 
-        if (isFullyStopped && _speedPercent > 0f) // The car is fully stopped and the car in front is resuming the car
+        if (isFullyStopped && _speedPercent > 0.01f) // The car is fully stopped and the car in front is resuming the car
         {
             if (!reactingToCarInFront)
             {
