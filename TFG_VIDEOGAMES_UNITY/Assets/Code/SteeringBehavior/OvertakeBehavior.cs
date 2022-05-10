@@ -12,7 +12,7 @@ public class OvertakeBehavior
     public PathFollower overtakenCar;
     private PriorityBehavior priorityBehavior;
 
-    public bool canSwapLane = true;
+    public bool canSwapLane = false;
     public bool hasBeenNotified = false;
     private AvoidanceBehavior notificator = null;
     WhiskersManager whiskersManager;

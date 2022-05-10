@@ -24,6 +24,9 @@ public class Node : IHeapItem<Node>
 
     public void SetLaneSide()
     {
+        if (road.lanes.Count < 2)
+            return;
+
         if(road.typeOfRoad == TypeOfRoad.Deviation)
         {
             if (road.numberOfLanes == 2)

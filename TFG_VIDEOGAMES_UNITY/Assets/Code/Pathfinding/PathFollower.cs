@@ -52,7 +52,8 @@ public class PathFollower : MonoBehaviour
     [SerializeField] bool pathDebug;
     public bool isFullyStopped = false;
     [HideInInspector] List<Vector3> waypointsList = new List<Vector3>();
-    [HideInInspector] List<Node> nodeList = new List<Node>();
+    [HideInInspector] public List<Node> nodeList = new List<Node>();
+    [SerializeField] bool codeDebug;
 
     [Header("Reactions")]
     public bool reactionDelay = false;
@@ -181,13 +182,14 @@ public class PathFollower : MonoBehaviour
     }
     private void Update()
     {
-        if(path != null)
+        if (path != null)
         {
             Road currentRoad = nodeList[pathIndex].road;
-            if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional && currentRoad.typeOfRoad != TypeOfRoad.Roundabout)
+            if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional 
+                &&  currentRoad.typeOfRoad != TypeOfRoad.Roundabout && currentRoad.typeOfRoad != TypeOfRoad.Intersection && currentRoad.typeOfRoad == TypeOfRoad.Split)
             {
                 roadValidForOvertaking = true;
-                if(nodeList[pathIndex].laneSide == LaneSide.Left)
+                if (nodeList[pathIndex].laneSide == LaneSide.Left)
                 {
                     laneSide = LaneSide.Left;
                 }
@@ -373,7 +375,6 @@ public class PathFollower : MonoBehaviour
         }
         return stoppingNode;
     }
-
     public float GetAngleBetweenCurrentNodeAndNumNodes(int numNodes)
     {
         if (PathEnds(numNodes))
@@ -383,16 +384,6 @@ public class PathFollower : MonoBehaviour
         Vector3 currentNodeForward = (waypointsList[pathIndex + 1] - waypointsList[pathIndex]).normalized;
         float angle = Vector3.Angle(currentNodeForward, dirFromCurrentNodeToTarget);
         return angle;
-    }
-
-    private bool PathEndsNoRequest(int numNodes)
-    {
-        int numNodesInPath = waypointsList.Count;
-        if (pathIndex + numNodes >= numNodesInPath)
-        {
-            return true;
-        }
-        return false;
     }
     private bool PathEnds(int numNodes)
     {
@@ -422,13 +413,11 @@ public class PathFollower : MonoBehaviour
         PathfinderRequestManager.RequestPath(endNode, newNode, transform.forward, OnPathFound);
         pathRequested = true;
     }
-
     public void RequestLaneSwap()
     {
         PathfinderRequestManager.RequestLaneSwap(nodeList[pathIndex], OnLaneSwap);
         pathRequested = true;
     }
-
     IEnumerator FollowPath()
     {
         pathIndex = 0;
@@ -497,7 +486,6 @@ public class PathFollower : MonoBehaviour
             StartCoroutine(reactionTimeCoroutine);
         }
     }
-
     public void ContinueAtTrafficLight(bool subscription)
     {
         // Start Coroutine to delay the variable change
@@ -511,7 +499,6 @@ public class PathFollower : MonoBehaviour
             StartCoroutine(reactionTimeCoroutine);
         }
     }
-
     IEnumerator TrafficLightReactionTime(bool subscription)
     {
         float reactionTime;
@@ -522,7 +509,6 @@ public class PathFollower : MonoBehaviour
         yield return new WaitForSeconds(reactionTime);
         shouldStopAtTrafficLight = !shouldStopAtTrafficLight;
     }
-
     public void SetNewPathByAvoidance(Vector3 newPos)
     {
         //Create a new Path and add this position in the correct index.
@@ -530,7 +516,6 @@ public class PathFollower : MonoBehaviour
         recentAddedAvoidancePosIndex = pathIndex;
         path = new Path(waypointsList, transform.position, turnDst);
     }
-
     float SlowSpeedPedestrian()
     {
         float _speedPercent;
@@ -546,14 +531,16 @@ public class PathFollower : MonoBehaviour
         }
         return _speedPercent;
     }
-
     float SlowSpeedPriority()
     {
         float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
         _speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
         if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
-            _speedPercent = speedPercent += 0.005f;
+            _speedPercent = speedPercent + 0.005f;
+
+        if (speedPercent - _speedPercent > 0.5f)
+            _speedPercent = speedPercent - 0.5f;
 
         if (_speedPercent < 0.03f)
         {
@@ -561,7 +548,6 @@ public class PathFollower : MonoBehaviour
         }
         return _speedPercent;
     }
-
     float SlowSpeedBeforeCar()
     {
         if (reactionDelay)
@@ -572,9 +558,10 @@ public class PathFollower : MonoBehaviour
         distanceToTarget = distance;
         _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
 
-        if(laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
+        if (laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
         {
             RequestLaneSwap();
+            SpawnSpheres(transform.position, targetPathFollower.transform.position);
             overtaking = true;
             avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
             overtakeBehavior.overtakenCar = targetPathFollower;
@@ -586,6 +573,7 @@ public class PathFollower : MonoBehaviour
         {
             StartCoroutine(AdjustDistance());
         }
+
 
         if (isFullyStopped && _speedPercent > 0.01f) // The car is fully stopped and the car in front is resuming the car
         {
@@ -599,17 +587,18 @@ public class PathFollower : MonoBehaviour
             }
         }
 
+
         if (_speedPercent - speedPercent > 0.1f)
         {
             _speedPercent = speedPercent + 0.005f;
         }
-        else if(speedPercent - _speedPercent >= 0.2f)
+        else if (speedPercent - _speedPercent >= 0.2f)
         {
             _speedPercent = speedPercent - 0.01f;
         }
 
 
-        if (_speedPercent < 0.05f) // Set the car to fully stopped
+        if (_speedPercent < 0.05f && !reactingToCarInFront) // Set the car to fully stopped
         {
             _speedPercent = 0f;
             isFullyStopped = true;
@@ -617,7 +606,6 @@ public class PathFollower : MonoBehaviour
 
         return _speedPercent;
     }
-
     IEnumerator AdjustDistance()
     {
         adjustingDistance = true;
@@ -665,13 +653,11 @@ public class PathFollower : MonoBehaviour
         cooldown = true;
         StartCoroutine(AdjustDistanceCooldown());
     }
-
     IEnumerator AdjustDistanceCooldown()
     {
         yield return new WaitForSeconds(2f);
         cooldown = false;
     }
-
     public void UnableTarget() // Habría que investigar por qué a veces se llama a unable target cuando no se debería
     {
         //carStartBreakingDistance = originalBreakingDistance;
@@ -680,7 +666,6 @@ public class PathFollower : MonoBehaviour
         targetPriorityBehavior = null;
         targetPathFollower = null;
     }
-
     public void EnableTarget(Transform _target, PriorityBehavior _targetPriorityBehavior, PathFollower _targetPathFollower)
     {
         carTarget = _target;
@@ -691,12 +676,11 @@ public class PathFollower : MonoBehaviour
     IEnumerator ResumeTheCar()
     {
         reactingToCarInFront = true;
-        float reactionTime = Random.Range(0.3f, 0.7f);
+        float reactionTime = Random.Range(0.3f, 0.8f);
         yield return new WaitForSeconds(reactionTime);
         isFullyStopped = false;
         reactingToCarInFront = false;
     }
-
     float SlowSpeedAtTrafficLight()
     {
         float distance = trafficLightCarController.GiveDistanceToPathFollower();
@@ -708,7 +692,6 @@ public class PathFollower : MonoBehaviour
         }
         return speedPercent;
     }
-
     public void OnDrawGizmos()
     {
         if (pathDebug && path != null)

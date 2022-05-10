@@ -180,19 +180,27 @@ public class PriorityBehavior
             {
                 if (pathFollower.stopPosition == Vector3.zero)
                 {
-                    if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
+                    if (pathFollower.priorityLevel == PriorityLevel.Roundabout) // AQUI ES LO QUE ESTÁ PASANDO CUANDO SE PARAN ANTES DE TIEMPO O SE PARAN TARDE
                     {
-                        pathFollower.stopPosition = transform.position + transform.forward.normalized * 3f;
+                        pathFollower.stopPosition = GetClosestStoppingPosInRoundabout();
                     }
                     else
                     {
-                        // TO FIX - ESTO CRASHEA
                         // Se está llamando cuando no se debe llamar, repasar la logica del metodo
-                        Node nodeStop = pathFollower.GetStoppingNodeFromCurrentNode();
+                        Node nodeStop = GetStoppingNodeFromCurrentRoad();
                         if (nodeStop == null)
                         {
-                            //Debug.LogError("HOSTIA PROBLEMAS");
-                            carsToBeRemoved.Add(car);
+                            // En la current road no hay un nodo, sería buena idea parar SÓLAMENTE en funcion de la distancia
+                            // SI LO QUIERO HACER AUN MEJOR, PONER UNA DISTANCIA EN FUNCION DE SI VOY A GIRAR A LA IZQUIERDA O DERECHA O RECTO :)
+                            float distance = Vector3.Distance(car.transform.position, transform.position);
+                            if (distance > 4.5f)
+                            {
+                                carsToBeRemoved.Add(car);
+                            }
+                            else
+                            {
+                                pathFollower.stopPosition = transform.position + transform.forward * .5f;
+                            }
                         }
                         else
                         {
@@ -297,5 +305,98 @@ public class PriorityBehavior
         return pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0;
     }
 
+    private Vector3 GetClosestStoppingPosInRoundabout()
+    {
+        Roundabout road = FindRoundaboutInPath(pathFollower.nodeList[pathFollower.pathIndex]);
+        float bestDistance = Mathf.Infinity;
+        float distance;
+        Vector3 bestPos = Vector3.zero;
+        Node bestNode = null;
+        foreach (Node entry in road.entryNodes)
+        {
+            distance = Vector3.Distance(entry.worldPosition, transform.position);
+            if (distance < bestDistance)
+            {
+                bestPos = entry.worldPosition;
+                bestNode = entry;
+            }
+        }
+        // Now multiply it a bit so that it is proportional to the distance to the center and it nails on the perfect spot
+        Vector3 nodeForward = (bestNode.worldPosition - bestNode.previousNode.worldPosition).normalized;
+        float distanceToTheCenter = Vector3.Distance(bestNode.worldPosition, road.transform.position);
+        bestPos = bestNode.worldPosition + nodeForward * distanceToTheCenter * .15f;
+        SpawnSphere(bestPos, Color.magenta);
+        return bestPos;
+    }
+
+    private Roundabout FindRoundaboutInPath(Node currentNode)
+    {
+        bool roundaboutFound = false;
+        Roundabout roundabout = null;
+        int i = 0;
+        while (!roundaboutFound && i < 10)
+        {
+            if (currentNode.neighbours[0].road.typeOfRoad == TypeOfRoad.Roundabout)
+            {
+                roundabout = (Roundabout)currentNode.neighbours[0].road;
+            }
+            else
+            {
+                currentNode = currentNode.neighbours[0];
+            }
+            i++;
+        }
+        return roundabout;
+    }
+
+    private Node GetStoppingNodeFromCurrentRoad()
+    {
+        Node startingNode = pathFollower.nodeList[pathFollower.pathIndex];
+        Node currentNode = startingNode;
+        Road currentRoad = currentNode.road;
+        Node stoppingNode = null;
+        int i = 0;
+        while (stoppingNode == null && i < 10)
+        {
+            if (currentRoad.exitNodes.Contains(currentNode))
+            {
+                stoppingNode = currentNode;
+            }
+            else
+            {
+                currentNode = currentNode.neighbours[0];
+            }
+            i++;
+        }
+        if (stoppingNode == null)
+        {
+            //Debug.LogError("NO STOPPING NODE FOUND");
+            //SpawnSpheres(startingNode.worldPosition, currentNode.worldPosition, Color.red);
+        }
+
+        //SpawnSphere(stoppingNode.worldPosition, Color.magenta);
+        return stoppingNode;
+    }
+
+    private void SpawnSphere(Vector3 pos, Color color)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform.parent;
+        startSphere.transform.position = pos + Vector3.up;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+    }
+
+    private void SpawnSpheres(Vector3 pos, Vector3 pos2, Color color)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform.parent;
+        startSphere.transform.position = pos + Vector3.up;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+
+        GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        endSphere.transform.parent = transform.parent;
+        endSphere.transform.position = pos2 + Vector3.up;
+        endSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+    }
 }
 

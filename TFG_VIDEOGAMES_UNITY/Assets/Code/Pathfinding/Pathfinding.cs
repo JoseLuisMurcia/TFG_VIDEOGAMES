@@ -187,7 +187,7 @@ public class Pathfinding : MonoBehaviour
             yield return null;
             PathfindingResult result = ReturnLaneSwap(nodes);
             requestManager.FinishedProcessingPath(result, true, realStartNode, result.endNode);
-        } 
+        }
     }
     private PathfindingResult ReturnLaneSwap(List<Node> nodes)
     {
@@ -429,8 +429,13 @@ public class Pathfinding : MonoBehaviour
             currentNode = currentNode.neighbours[0];
         }
         path.Add(exitNode);
-        path.Add(exitNode.neighbours[0]);
-        path.Add(exitNode.neighbours[0].neighbours[0]);
+        int nodesToAddAfterExit = 10;
+        Node currentNeighbour = exitNode.neighbours[0];
+        for (int i = 0; i < nodesToAddAfterExit; i++)
+        {
+            path.Add(currentNeighbour);
+            currentNeighbour = currentNeighbour.neighbours[0];
+        }
         return path;
     }
 

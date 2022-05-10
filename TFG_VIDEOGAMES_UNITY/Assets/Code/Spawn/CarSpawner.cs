@@ -77,7 +77,12 @@ public class CarSpawner : MonoBehaviour
         carRenderer.materials = _materials;
         if (key == "sedanSport")
         {
-            Renderer spoilerRenderer = body.transform.GetComponentInChildren<MeshRenderer>();
+            GameObject spoiler = null;
+            foreach(Transform child in body.transform)
+            {
+                spoiler = child.gameObject;
+            }
+            Renderer spoilerRenderer = spoiler.GetComponent<MeshRenderer>();
             Material[] _spoilerMats = spoilerRenderer.materials;
             _spoilerMats[1] = carMaterials[matId];
             spoilerRenderer.materials = _spoilerMats;
