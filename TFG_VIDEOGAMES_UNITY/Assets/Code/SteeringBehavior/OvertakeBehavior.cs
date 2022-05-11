@@ -96,7 +96,7 @@ public class OvertakeBehavior
     }
 
     // Method called when you are on the left lane and the car in front is slower than you, you tell him to switch to the right lane
-    public void ProcessCarHit(RaycastHit hit)
+    public void ProcessFrontCarHit(RaycastHit hit)
     {
         PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
         if (avoidanceBehavior.BothCarsInSameLane(pathFollower, hitCar) && pathFollower.targetPathFollower == hitCar && pathFollower.speed > hitCar.speed)

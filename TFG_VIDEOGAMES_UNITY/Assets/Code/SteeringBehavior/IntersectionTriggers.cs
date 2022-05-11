@@ -14,11 +14,15 @@ public class IntersectionTriggers : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         WhiskersManager carManager = other.GetComponent<WhiskersManager>();
-        if(carManager != null)
+        if(carManager != null && !carManager.intersectionInSight)
         {
             Vector3 carForward = carManager.transform.forward.normalized;
-            float angleToIntersection = Vector3.Angle(transform.forward.normalized, carForward);
-            if(angleToIntersection < 10)
+            Vector3 carPos = carManager.transform.position;
+            Vector3 intersectionPos = transform.parent.position;
+            Vector3 dirFromCarToIntersection = (intersectionPos - carPos).normalized;
+            float angleFromCarToIntersection = Vector3.Angle(carForward, dirFromCarToIntersection);
+
+            if(angleFromCarToIntersection < 45f)
             {
                 carManager.intersectionInSight = true;
                 // Tell the pathfollower that it should activate the intersection sensor

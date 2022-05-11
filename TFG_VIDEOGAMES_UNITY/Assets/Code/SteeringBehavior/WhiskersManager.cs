@@ -109,10 +109,9 @@ public class WhiskersManager : MonoBehaviour
         {
             CheckSignals();
         }
-        else
-        {
-            CheckForIncorporation();
-        }
+
+        if(intersectionInSight) CheckForIncorporation();
+        
     }
     void CheckForIncorporation()
     {
@@ -122,7 +121,7 @@ public class WhiskersManager : MonoBehaviour
         RaycastHit hit;
         foreach (Transform sensor in incorporationWhiskers)
         {
-            float reach = 12f;
+            float reach = 15f;
 
             if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
             {
@@ -231,14 +230,14 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                if (!priorityBehavior.hasSignalInSight && intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
+                if (intersectionInSight && trafficLightCarController.currentRoad == null) priorityBehavior.ProcessCarHit(ray, hit, sensor);
                 if (yRotation < 10 && pathFollower.roadValidForOvertaking && pathFollower.laneSide == LaneSide.Left)
-                    overtakeBehavior.ProcessCarHit(hit);
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                    overtakeBehavior.ProcessFrontCarHit(hit);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }

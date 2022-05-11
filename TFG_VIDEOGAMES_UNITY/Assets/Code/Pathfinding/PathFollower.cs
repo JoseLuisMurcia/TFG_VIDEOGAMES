@@ -558,6 +558,7 @@ public class PathFollower : MonoBehaviour
 
         if (_speedPercent < 0.03f)
         {
+            isFullyStopped = true;
             _speedPercent = 0f;
         }
         return _speedPercent;
@@ -583,7 +584,7 @@ public class PathFollower : MonoBehaviour
             return speedPercent;
         }
 
-        if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.05f && !isFullyStopped && !cooldown)
+        if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.05f && !isFullyStopped && !cooldown && !targetPathFollower.isFullyStopped)
         {
             StartCoroutine(AdjustDistance());
         }
