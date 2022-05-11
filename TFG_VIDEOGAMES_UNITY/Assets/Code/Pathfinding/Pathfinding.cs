@@ -198,8 +198,8 @@ public class Pathfinding : MonoBehaviour
     }
     private List<Vector3> ModifyPathLateralOffset(List<Node> nodes)
     {
-        float maxLeftOffset = .2f;
-        float maxRightOffset = -.2f;
+        float maxLeftOffset = .16f;
+        float maxRightOffset = -.16f;
 
         int numNodesInPath = nodes.Count;
         const int nodesPerSegment = 50;

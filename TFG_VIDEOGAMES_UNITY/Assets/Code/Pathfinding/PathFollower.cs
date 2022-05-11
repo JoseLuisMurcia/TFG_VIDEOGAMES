@@ -247,17 +247,24 @@ public class PathFollower : MonoBehaviour
     {
         if (pathSuccessful)
         {
+            if(path == null)
+            {
+                nodeList = pathfindingResult.nodes;
+                waypointsList = pathfindingResult.pathPositions;
+            }
+            else
+            {
+                AdjustActualPathToReceivedPath(pathfindingResult);
+            }
+
             pathRequested = false;
             endNode = _endNode;
-            nodeList = pathfindingResult.nodes;
-            waypointsList.Clear();
-            waypointsList = pathfindingResult.pathPositions;
-
             if (followPathCoroutine != null)
                 StopCoroutine(followPathCoroutine);
             path = new Path(waypointsList, transform.position, turnDst);
             followPathCoroutine = FollowPath();
             StartCoroutine(followPathCoroutine);
+            
         }
         else
         {
@@ -265,6 +272,23 @@ public class PathFollower : MonoBehaviour
             SpawnSpheres(_startNode.worldPosition, _endNode.worldPosition);
             Debug.Log("Path not found for car: " + gameObject.name);
         }
+    }
+    private void AdjustActualPathToReceivedPath(PathfindingResult pathfindingResult)
+    {
+        // En lugar de hacer esto, hay que ajustarlo
+        // Si quedan 3 nodos del camino actual, no vamos a ir directamente al nodo final y empezar el nuevo path, añadimos al path recibido los nodos que quedan.
+        int maxNodes = nodeList.Count;
+        List<Node> lastNodesInCurrPath = new List<Node>();
+        List<Vector3> lastPosInCurrPath = new List<Vector3>();
+        for(int i=pathIndex; i<maxNodes-1; i++)
+        {
+            lastNodesInCurrPath.Add(nodeList[i]);
+            lastPosInCurrPath.Add(waypointsList[i]);
+        }
+        nodeList = lastNodesInCurrPath;
+        waypointsList = lastPosInCurrPath;
+        nodeList.AddRange(pathfindingResult.nodes);
+        waypointsList.AddRange(pathfindingResult.pathPositions);
     }
     public void OnLaneSwap(PathfindingResult pathfindingResult, bool pathSuccessful, Node _startNode, Node _endNode)
     {
@@ -303,23 +327,13 @@ public class PathFollower : MonoBehaviour
     }
     IEnumerator UpdatePath()
     {
-        //if (Time.timeSinceLevelLoad < .3f)
-        //{
-        //    yield return new WaitForSeconds(.3f);
-        //}
-        //if (target == Vector3.zero)
-        //{
-        //    target = WorldGrid.Instance.GetRandomNodeInRoads().worldPosition;
-        //}
-        //PathfinderRequestManager.RequestPath(transform.position, target, transform.forward, OnPathFound);
-
         while (true)
         {
             yield return new WaitForSeconds(minPathUpdateTime);
             if (path != null)
             {
                 int numNodesInPath = path.lookPoints.Count;
-                if (pathIndex >= numNodesInPath - 2)
+                if (pathIndex >= numNodesInPath - 6)
                 {
                     RequestNewPath();
                 }

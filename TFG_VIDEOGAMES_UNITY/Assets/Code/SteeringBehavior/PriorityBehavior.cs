@@ -81,18 +81,21 @@ public class PriorityBehavior
         if (carInSight.priorityLevel == PriorityLevel.Roundabout)
             return false;
 
-        Vector3 carInSightForward = carInSight.transform.forward;
-        Vector3 myForward = transform.forward;
-        float threshHold = 0.4f;
-        if (angleToCarInSight < 0 && (carInSightForward.x < -threshHold || carInSightForward.z < -threshHold))
+        float angleBetweenForwards = Vector3.SignedAngle(transform.forward, carInSight.transform.forward, Vector3.up);
+        if(angleToCarInSight > 0f)
         {
-            return true;
+            if (angleBetweenForwards > 0f)
+                return true;
+
+            return false;
         }
-        else if (angleToCarInSight > 0 && (carInSightForward.x > threshHold || carInSightForward.z > threshHold))
+        else
         {
-            return true;
+            if (angleBetweenForwards < 0f)
+                return true;
+
+            return false;
         }
-        return false;
     }
     private void ProcessRelevantPriorityCarsInSight()
     {
