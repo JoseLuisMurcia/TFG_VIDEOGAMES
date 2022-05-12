@@ -108,14 +108,15 @@ public class Road : MonoBehaviour
             newGameObject.transform.position = boxPos;
             newGameObject.transform.parent = gameObject.transform;
             // Create the boxCollider
-            BoxCollider box = newGameObject.AddComponent<BoxCollider>() as BoxCollider;
+            BoxCollider box = newGameObject.AddComponent<BoxCollider>();
             box.isTrigger = true;
             box.size = Vector3.one * 3;
-            IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>() as IntersectionTriggers;
+            IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>();
+            //trigger.DeleteIfTrafficLight(neighbour);
             num++;
         }
 
-        BoxCollider exitTrigger = gameObject.AddComponent<BoxCollider>() as BoxCollider;
+        BoxCollider exitTrigger = gameObject.AddComponent<BoxCollider>();
         exitTrigger.isTrigger = true;
         exitTrigger.size = exitTrigger.size * 0.8f;
 

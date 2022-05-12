@@ -15,7 +15,7 @@ public class CarSpawner : MonoBehaviour
     }
     public void SpawnOneCar()
     {
-        Node startNode = WorldGrid.Instance.GetRandomNodeInRoads();
+        
         float randomNumber = Random.value;
         string key = "sedan";
         if (randomNumber < 0.05f)
@@ -49,18 +49,19 @@ public class CarSpawner : MonoBehaviour
         GameObject prefab;
         carPrefabsDictionary.TryGetValue(key, out prefab);
 
-        GameObject instantiatedCar = Instantiate(prefab, startNode.worldPosition, Quaternion.identity);
+        Node startNode = WorldGrid.Instance.GetRandomNodeInRoads();
+        Vector3 directionToLookAt = (startNode.neighbours[0].worldPosition - startNode.worldPosition).normalized;
+        Quaternion rotation = Quaternion.LookRotation(directionToLookAt, Vector3.up);
+        GameObject instantiatedCar = Instantiate(prefab, startNode.worldPosition, rotation);
         RandomizeCarColor(instantiatedCar.transform, key);
 
         // Spawn with the correct rotation
-        instantiatedCar.transform.LookAt(startNode.neighbours[0].worldPosition);
         PathFollower pathFollower = instantiatedCar.GetComponent<PathFollower>();
         pathFollower.StartPathfindingOnSpawn(startNode);
     }
 
     private void RandomizeCarColor(Transform car, string key)
     {
-
         GameObject body = null;
         foreach (Transform child in car)
         {

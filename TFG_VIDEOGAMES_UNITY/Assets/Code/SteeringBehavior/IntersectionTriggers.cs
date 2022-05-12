@@ -14,7 +14,7 @@ public class IntersectionTriggers : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         WhiskersManager carManager = other.GetComponent<WhiskersManager>();
-        if(carManager != null && !carManager.intersectionInSight)
+        if (carManager != null && !carManager.intersectionInSight)
         {
             Vector3 carForward = carManager.transform.forward.normalized;
             Vector3 carPos = carManager.transform.position;
@@ -22,12 +22,24 @@ public class IntersectionTriggers : MonoBehaviour
             Vector3 dirFromCarToIntersection = (intersectionPos - carPos).normalized;
             float angleFromCarToIntersection = Vector3.Angle(carForward, dirFromCarToIntersection);
 
-            if(angleFromCarToIntersection < 45f)
+            if (angleFromCarToIntersection < 45f)
             {
                 carManager.intersectionInSight = true;
                 // Tell the pathfollower that it should activate the intersection sensor
             }
         }
 
+    }
+
+    public void DeleteIfTrafficLight(Road connection)
+    {
+        StartCoroutine(DeleteIfTrafficLightCoroutine(connection));
+    }
+
+    private IEnumerator DeleteIfTrafficLightCoroutine(Road connection)
+    {
+        yield return new WaitForSeconds(1f);
+        if (connection.trafficLight != null)
+            Destroy(gameObject);
     }
 }

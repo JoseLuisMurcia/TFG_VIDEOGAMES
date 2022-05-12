@@ -1563,7 +1563,7 @@ public class WorldGrid : MonoBehaviour
         int roadIndex = Random.Range(0, numRoads);
         Road selectedRoad = roads[roadIndex];
         // Do not select an intersection
-        while (selectedRoad.typeOfRoad == TypeOfRoad.Intersection)
+        while (selectedRoad.typeOfRoad == TypeOfRoad.Intersection || selectedRoad.typeOfRoad == TypeOfRoad.Roundabout)
         {
             roadIndex = Random.Range(0, numRoads);
             selectedRoad = roads[roadIndex];

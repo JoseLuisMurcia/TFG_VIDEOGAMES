@@ -237,12 +237,12 @@ public class PriorityBehavior
                 }
                 else
                 {
-                    pathFollower.shouldStopPriority = true;
+                    SetShouldStopPriority();
                 }
             }
             else
             {
-                pathFollower.shouldStopPriority = true;
+                SetShouldStopPriority();
             }
 
         }
@@ -253,6 +253,12 @@ public class PriorityBehavior
         }
 
 
+    }
+    private void SetShouldStopPriority()
+    {
+        if (pathFollower.stopPosition == Vector3.zero)
+            return;
+        pathFollower.shouldStopPriority = true;
     }
     public void ProcessSignalHit(Ray ray, RaycastHit hit)
     {
@@ -287,11 +293,6 @@ public class PriorityBehavior
         PriorityLevel carPriority = pathFollower.priorityLevel;
         PriorityLevel hitCarPriority = hitCarPathFollower.priorityLevel;
 
-        if(carPriority == PriorityLevel.Stop)
-        {
-            Debug.Log(" hehe aqui tamos");
-        }
-
         if (carPriority <= hitCarPriority)
         {
             Vector3 hitCarForward = hit.collider.gameObject.transform.forward;
@@ -313,11 +314,21 @@ public class PriorityBehavior
     }
     private bool TargetHasRelevantCars()
     {
+        if(pathFollower.targetPriorityBehavior == null)
+        {
+            Debug.Log("pathFollowerTarget: " + pathFollower.carTarget);
+            Debug.Log("pathFollowerTarget: " + pathFollower.targetPathFollower);
+            Debug.LogError("TARGET PRIORITY BEHAVIOR ES NULL DIOOOOOOO");
+            
+        }
         return pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0;
     }
     private Vector3 GetClosestStoppingPosInRoundabout()
     {
         Roundabout road = FindRoundaboutInPath(pathFollower.nodeList[pathFollower.pathIndex]);
+        if (road == null)
+            return Vector3.zero;
+
         float bestDistance = Mathf.Infinity;
         float distance;
         Vector3 bestPos = Vector3.zero;
@@ -342,6 +353,7 @@ public class PriorityBehavior
     {
         bool roundaboutFound = false;
         Roundabout roundabout = null;
+        Node startingNode = currentNode;
         int i = 0;
         while (!roundaboutFound && i < 10)
         {
@@ -354,6 +366,13 @@ public class PriorityBehavior
                 currentNode = currentNode.neighbours[0];
             }
             i++;
+        }
+        if(roundabout == null)
+        {
+            SpawnSpheres(startingNode.worldPosition, currentNode.worldPosition, Color.white, Color.red);
+            hasSignalInSight = true;
+            pathFollower.priorityLevel = PriorityLevel.Max;
+            Debug.LogError("HEMOS HECHO LA 13 14 HAHAHA");
         }
         return roundabout;
     }
@@ -392,17 +411,17 @@ public class PriorityBehavior
         startSphere.transform.position = pos + Vector3.up;
         startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
     }
-    private void SpawnSpheres(Vector3 pos, Vector3 pos2, Color color)
+    private void SpawnSpheres(Vector3 pos1, Vector3 pos2, Color color1, Color color2)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         startSphere.transform.parent = transform.parent;
-        startSphere.transform.position = pos + Vector3.up;
-        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+        startSphere.transform.position = pos1 + Vector3.up;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color1);
 
         GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         endSphere.transform.parent = transform.parent;
         endSphere.transform.position = pos2 + Vector3.up;
-        endSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+        endSphere.GetComponent<Renderer>().material.SetColor("_Color", color2);
     }
 }
 

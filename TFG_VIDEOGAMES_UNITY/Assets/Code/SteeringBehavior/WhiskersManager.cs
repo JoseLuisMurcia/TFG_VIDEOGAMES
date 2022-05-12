@@ -16,8 +16,8 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private const float centerReach = 5f;
-    private const float sideReach = 15f;
+    private const float centerReach = 7.5f;
+    private const float sideReach = 10f;
 
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
@@ -53,10 +53,11 @@ public class WhiskersManager : MonoBehaviour
         boxCollider = GetComponent<BoxCollider>();
 
         avoidanceBehavior = new AvoidanceBehavior(pathFollower, trafficLightCarController);
+        pathFollower.avoidanceBehavior = avoidanceBehavior;
         priorityBehavior = new PriorityBehavior(pathFollower, avoidanceBehavior);
+        pathFollower.priorityBehavior = priorityBehavior;
         overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior, this, priorityBehavior);
         pedestrianBehavior = new PedestrianAvoidanceBehavior(pathFollower);
-        pathFollower.avoidanceBehavior = avoidanceBehavior;
     }
 
     void CreateIncorporationWhiskers(Transform whiskersParent)
@@ -227,6 +228,8 @@ public class WhiskersManager : MonoBehaviour
             if (priorityBehavior.isInRoundabout)
                 reach = 4f;
             Ray ray = new Ray(rayOrigin, sensor.forward);
+            if (intersectionInSight && !priorityBehavior.isInRoundabout)
+                reach = reach * 2.5f;
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);

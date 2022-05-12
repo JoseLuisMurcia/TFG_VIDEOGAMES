@@ -63,9 +63,10 @@ public class AvoidanceBehavior
 
     private void EnableTarget(Transform hitCarTransform)
     {
-        if (hasTarget)
+        if (hitCarPathFollower.priorityBehavior == null)
             return;
-        pathFollower.EnableTarget(hitCarTransform, hitCarPathFollower.priorityBehavior, hitCarPathFollower);
+
+        pathFollower.EnableTarget(hitCarTransform, hitCarPathFollower);
         hasTarget = true;
         Debug.DrawLine(rayOrigin, hitCarTransform.position, Color.magenta);
     }
@@ -212,7 +213,6 @@ public class AvoidanceBehavior
             }
         }
     }
-
     public bool BothCarsInSameLane(PathFollower _pathFollower, PathFollower _hitPathFollower)
     {
         return _pathFollower.laneSide == _hitPathFollower.laneSide;
@@ -223,8 +223,6 @@ public class AvoidanceBehavior
         Vector3 carPos = transform.position;
         return Vector3.Distance(carPos, hitCarPos) < Vector3.Distance(carPos, pathFollower.carTarget.position);
     }
-
-
     public void AddCarToBlacklist(PathFollower targetPathFollower)
     {
         blackList.Add(targetPathFollower);

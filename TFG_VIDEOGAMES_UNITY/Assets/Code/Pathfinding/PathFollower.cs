@@ -185,9 +185,11 @@ public class PathFollower : MonoBehaviour
         if (path != null)
         {
             Road currentRoad = nodeList[pathIndex].road;
-            if (currentRoad.numberOfLanes >= 2 && currentRoad.numDirection == NumDirection.OneDirectional 
-                &&  currentRoad.typeOfRoad != TypeOfRoad.Roundabout && currentRoad.typeOfRoad != TypeOfRoad.Intersection && currentRoad.typeOfRoad == TypeOfRoad.Split)
+            LaneSide currentLane = nodeList[pathIndex].laneSide;
+            if (currentRoad.numberOfLanes >= 2 && currentLane != LaneSide.None
+                &&  currentRoad.typeOfRoad != TypeOfRoad.Roundabout && currentRoad.typeOfRoad != TypeOfRoad.Intersection && currentRoad.typeOfRoad != TypeOfRoad.Deviation)
             {
+                Debug.Log("OVERTAKIN");
                 roadValidForOvertaking = true;
                 if (nodeList[pathIndex].laneSide == LaneSide.Left)
                 {
@@ -348,57 +350,6 @@ public class PathFollower : MonoBehaviour
 
         return waypointsList[pathIndex + numNodes];
     }
-    public Node GetStoppingNodeFromCurrentNode()
-    {
-        Node currentNode = nodeList[pathIndex];
-        Road currentRoad = currentNode.road;
-        Node stoppingNode = null;
-        int i = 0;
-        bool roadChange = false;
-        while (stoppingNode == null && !roadChange)
-        {
-
-            // TO FIX - Path ends
-            // Hay que controlar que el indice no se pase de la capacidad maxima de la lista
-            if (currentRoad.exitNodes.Contains(nodeList[pathIndex + i]))
-            {
-                stoppingNode = nodeList[pathIndex + i];
-            }
-            i++;
-
-            if (PathEnds(i))
-            {
-                roadChange = true;
-            }
-            else
-            {
-                if (currentRoad != nodeList[pathIndex + i].road)
-                    roadChange = true;
-            }
-        }
-        // Hay que averiguar el stopping node de la carretera, tiene que ser del carril que esté en nuestra trayectoria. Bucle for de
-        if (stoppingNode == null)
-        {
-            // If it has not been found it is because we have gone over the road
-
-            Debug.LogWarning("NO STOPPING NODE HAS BEEN FOUND");
-            if (roadChange)
-            {
-                Debug.LogWarning("THE PATH WAS ABOUT TO END");
-            }
-        }
-        return stoppingNode;
-    }
-    public float GetAngleBetweenCurrentNodeAndNumNodes(int numNodes)
-    {
-        if (PathEnds(numNodes))
-            return Mathf.Infinity;
-
-        Vector3 dirFromCurrentNodeToTarget = (waypointsList[pathIndex + numNodes] - waypointsList[pathIndex]).normalized;
-        Vector3 currentNodeForward = (waypointsList[pathIndex + 1] - waypointsList[pathIndex]).normalized;
-        float angle = Vector3.Angle(currentNodeForward, dirFromCurrentNodeToTarget);
-        return angle;
-    }
     private bool PathEnds(int numNodes)
     {
         int numNodesInPath = waypointsList.Count;
@@ -549,7 +500,7 @@ public class PathFollower : MonoBehaviour
     {
         float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
-        _speedPercent = Mathf.Clamp01((distance - 1f) / carStartBreakingDistance);
+        _speedPercent = Mathf.Clamp01(distance / carStartBreakingDistance);
         if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
             _speedPercent = speedPercent + 0.005f;
 
@@ -681,11 +632,15 @@ public class PathFollower : MonoBehaviour
         targetPriorityBehavior = null;
         targetPathFollower = null;
     }
-    public void EnableTarget(Transform _target, PriorityBehavior _targetPriorityBehavior, PathFollower _targetPathFollower)
+    public void EnableTarget(Transform _target, PathFollower _targetPathFollower)
     {
         carTarget = _target;
         shouldBrakeBeforeCar = true;
-        targetPriorityBehavior = _targetPriorityBehavior;
+        targetPriorityBehavior = _targetPathFollower.priorityBehavior;
+        if(_targetPathFollower == null || targetPriorityBehavior == null)
+        {
+            Debug.LogError("ERROR EN ENABLETARGET");
+        }
         targetPathFollower = _targetPathFollower;
     }
     IEnumerator ResumeTheCar()
