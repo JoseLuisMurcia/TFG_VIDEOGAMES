@@ -42,6 +42,8 @@ public class PathFollower : MonoBehaviour
     [HideInInspector] public Vector3 stopPosition = Vector3.zero;
     [HideInInspector] public PriorityBehavior targetPriorityBehavior;
     [HideInInspector] public PriorityBehavior priorityBehavior;
+    [HideInInspector] private float carStartBreakingDistancePriority;
+
 
     // Pedestrian variables
     [Header("Pedestrian")]
@@ -112,6 +114,7 @@ public class PathFollower : MonoBehaviour
                 carStartBreakingDistance = Random.Range(2.5f, 4f);
                 //carStartBreakingDistance = 2.5f;
                 trafficLightStopDist = Random.Range(4.5f, 6.5f);
+                carStartBreakingDistancePriority = Random.Range(3, 5f);
                 carStopDistance = Random.Range(1.35f, 1.65f);
                 //carStopDistance = 1.5f;
                 speedMultiplier = Random.Range(0.7f, 1.1f);
@@ -121,6 +124,7 @@ public class PathFollower : MonoBehaviour
             case TypeOfCar.Sedan:
                 carStartBreakingDistance = Random.Range(1.5f, 4f);
                 trafficLightStopDist = Random.Range(4f, 6f);
+                carStartBreakingDistancePriority = Random.Range(3, 4f);
                 carStopDistance = Random.Range(1.35f, 1.65f);
                 speedMultiplier = Random.Range(0.9f, 1.6f);
                 speed *= speedMultiplier;
@@ -129,6 +133,8 @@ public class PathFollower : MonoBehaviour
             case TypeOfCar.SedanSport:
                 carStartBreakingDistance = Random.Range(1.5f, 4f);
                 trafficLightStopDist = Random.Range(4f, 6f);
+                carStartBreakingDistancePriority = Random.Range(3.5f, 5f);
+
                 carStopDistance = Random.Range(1.35f, 1.65f);
                 speedMultiplier = Random.Range(1.3f, 1.9f);
                 speed *= speedMultiplier;
@@ -137,6 +143,8 @@ public class PathFollower : MonoBehaviour
             case TypeOfCar.Suv:
                 carStartBreakingDistance = Random.Range(1.5f, 4f);
                 trafficLightStopDist = Random.Range(4f, 6f);
+                carStartBreakingDistancePriority = Random.Range(3, 4f);
+
                 carStopDistance = Random.Range(1.35f, 1.65f);
                 speedMultiplier = Random.Range(1f, 1.3f);
                 speed *= speedMultiplier;
@@ -145,14 +153,18 @@ public class PathFollower : MonoBehaviour
             case TypeOfCar.SuvLuxury:
                 carStartBreakingDistance = Random.Range(1.5f, 4f);
                 trafficLightStopDist = Random.Range(4f, 6f);
+                carStartBreakingDistancePriority = Random.Range(2.7f, 4f);
+
                 carStopDistance = Random.Range(1.35f, 1.65f);
                 speedMultiplier = Random.Range(1.2f, 1.6f);
                 speed *= speedMultiplier;
                 turnSpeed *= speedMultiplier;
                 break;
             case TypeOfCar.Truck:
-                carStartBreakingDistance = Random.Range(1.5f, 4f);
+                carStartBreakingDistance = Random.Range(2.5f, 5f);
                 trafficLightStopDist = Random.Range(4f, 6f);
+                carStartBreakingDistancePriority = Random.Range(3, 5.5f);
+
                 carStopDistance = Random.Range(1.3f, 1.7f);
                 speedMultiplier = Random.Range(0.8f, 1.1f);
                 speed *= speedMultiplier;
@@ -161,6 +173,8 @@ public class PathFollower : MonoBehaviour
             case TypeOfCar.Van:
                 carStartBreakingDistance = Random.Range(1.5f, 4f);
                 trafficLightStopDist = Random.Range(4f, 6f);
+                carStartBreakingDistancePriority = Random.Range(3, 4.5f);
+
                 carStopDistance = Random.Range(1.35f, 1.65f);
                 speedMultiplier = Random.Range(0.7f, 1.1f);
                 speed *= speedMultiplier;
@@ -388,7 +402,7 @@ public class PathFollower : MonoBehaviour
         pathIndex = 0;
         transform.LookAt(path.lookPoints[0]);
 
-        // Check all the time if the unity has passed the boundari
+        // Check all the time if the unity has passed the boundaries
         while (true)
         {
             Vector2 pos2D = new Vector2(transform.position.x, transform.position.z);
@@ -500,12 +514,12 @@ public class PathFollower : MonoBehaviour
     {
         float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
-        _speedPercent = Mathf.Clamp01(distance / carStartBreakingDistance);
-        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
-            _speedPercent = speedPercent + 0.005f;
+        _speedPercent = Mathf.Clamp01(distance - 2f/ 2f);
+        //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
+        //    _speedPercent = speedPercent + 0.005f;
 
         if (speedPercent - _speedPercent > 0.5f)
-            _speedPercent = speedPercent - 0.5f;
+            _speedPercent = speedPercent - 0.005f;
 
         if (_speedPercent < 0.03f)
         {

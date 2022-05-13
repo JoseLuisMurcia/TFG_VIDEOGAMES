@@ -46,7 +46,7 @@ public class PriorityBehavior
         float dot = Vector3.Dot(carForward, dirToSignal);
         if (priority != PriorityLevel.Roundabout)
         {
-            if (distance > 2f && dot < 0)
+            if (distance > 3f && dot < 0)
             {
                 RemoveSignalFromSight();
             }
