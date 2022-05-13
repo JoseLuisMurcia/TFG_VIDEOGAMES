@@ -77,9 +77,13 @@ public class PriorityBehavior
         if (dot < 0)
             return true;
 
-        if (carInSight.priorityLevel == PriorityLevel.Roundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout)
-            return false;
+        if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
+        {
+            if (angleToCarInSight > 0)
+                return true;
 
+            return false;
+        }
         string name = transform.gameObject.name;
         float angleBetweenForwards = Vector3.SignedAngle(transform.forward, carInSight.transform.forward, Vector3.up);
         if (angleBetweenForwards < 7.5f && angleBetweenForwards > -7.5f) // The car is going in the same direction as us
@@ -137,7 +141,7 @@ public class PriorityBehavior
                 if (futureCarPosition != Vector3.zero && !relevantCarsInSight.Contains(car))
                 {
                     // ROUNDABOUT CASE
-                    if (!isInRoundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout && distanceToCar <= 4f && angleToCarInSight < 0) // Hay que meter una comprobacion extra
+                    if (!isInRoundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout && distanceToCar <= 8f && angleToCarInSight < 0 && !car.priorityBehavior.isInRoundabout) // Hay que meter una comprobacion extra
                     {
                         relevantCarsInSight.Add(car);
                     }
@@ -182,7 +186,7 @@ public class PriorityBehavior
 
         foreach (PathFollower car in relevantCarsInSight)
         {
-            // Si está lejos o tu estas en una rotonda y él no, eliminar
+            // Si  estas en una rotonda y él no, eliminar
             if (isInRoundabout && !car.priorityBehavior.isInRoundabout)
                 carsToBeRemoved.Add(car);
 
@@ -213,10 +217,22 @@ public class PriorityBehavior
                     float distanceToStoppingNode = Vector3.Distance(pathFollower.stopPosition, transform.position);
                     float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
                     float division = distanceToStoppingNode / distanceToCar;
-                    if (division < 0.1f && distanceToCar > 6.5f && distanceToCar < 18f && pathFollower.speedPercent > 0.2f)
+
+                    if (pathFollower.priorityLevel != PriorityLevel.Roundabout)
                     {
-                        carsToBeRemoved.Add(car);
+                        if (division < 0.1f && distanceToCar > 6.5f && distanceToCar < 18f && pathFollower.speedPercent > 0.2f)
+                        {
+                            carsToBeRemoved.Add(car);
+                        }
                     }
+                    else
+                    {
+                        if (distanceToStoppingNode < 0.1f && distanceToCar > 7f && car.speedPercent < 0.1f)
+                        {
+                            carsToBeRemoved.Add(car);
+                        }
+                    }
+                   
                 }
             }
         }
@@ -242,7 +258,7 @@ public class PriorityBehavior
                     // LOS TIRONES QUE PEGAN LOS COCHES ESPERANDO POR PRIORITY ANTES DE ARRANCAR SE DEBEN A QUE UTILIZAN EL TARGET
                     // QUE TIENEN ASIGNADO Y SE VAN AL STOPPING POINT CUANDO SU TARGET YA NO TIENE RELEVANT CARS, PASA SIEMPRE EN ESE MOMENTO.
                     // PERO POR QUÉ SI EL NO TIENE, YO SI?
-                    if(pathFollower.targetPathFollower.speedPercent > 0.2f) 
+                    if(pathFollower.targetPathFollower.speedPercent > 0.25f) 
                         SetShouldStopPriority();
                 }
             }
@@ -346,13 +362,15 @@ public class PriorityBehavior
             {
                 bestPos = entry.worldPosition;
                 bestNode = entry;
+                bestDistance = distance;
             }
         }
         // Now multiply it a bit so that it is proportional to the distance to the center and it nails on the perfect spot
         Vector3 nodeForward = (bestNode.worldPosition - bestNode.previousNode.worldPosition).normalized;
         float distanceToTheCenter = Vector3.Distance(bestNode.worldPosition, road.transform.position);
-        bestPos = bestNode.worldPosition + nodeForward * distanceToTheCenter * .15f;
-        SpawnSphere(bestPos, Color.magenta);
+        bestPos = bestNode.worldPosition + nodeForward * distanceToTheCenter * .05f;
+       // bestPos = bestNode.worldPosition ;
+        //SpawnSpheres(transform.position, bestNode.worldPosition, Color.white, Color.black);
         return bestPos;
     }
     private Roundabout FindRoundaboutInPath(Node currentNode)

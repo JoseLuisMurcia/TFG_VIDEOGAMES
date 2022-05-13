@@ -204,7 +204,7 @@ public class PathFollower : MonoBehaviour
             Road currentRoad = nodeList[pathIndex].road;
             LaneSide currentLane = nodeList[pathIndex].laneSide;
             if (currentRoad.numberOfLanes >= 2 && currentLane != LaneSide.None
-                &&  currentRoad.typeOfRoad != TypeOfRoad.Roundabout && currentRoad.typeOfRoad != TypeOfRoad.Intersection && currentRoad.typeOfRoad != TypeOfRoad.Deviation)
+                && currentRoad.typeOfRoad != TypeOfRoad.Roundabout && currentRoad.typeOfRoad != TypeOfRoad.Intersection && currentRoad.typeOfRoad != TypeOfRoad.Deviation)
             {
                 Debug.Log("OVERTAKIN");
                 roadValidForOvertaking = true;
@@ -266,7 +266,7 @@ public class PathFollower : MonoBehaviour
     {
         if (pathSuccessful)
         {
-            if(path == null)
+            if (path == null)
             {
                 nodeList = pathfindingResult.nodes;
                 waypointsList = pathfindingResult.pathPositions;
@@ -283,7 +283,7 @@ public class PathFollower : MonoBehaviour
             path = new Path(waypointsList, transform.position, turnDst);
             followPathCoroutine = FollowPath();
             StartCoroutine(followPathCoroutine);
-            
+
         }
         else
         {
@@ -299,7 +299,7 @@ public class PathFollower : MonoBehaviour
         int maxNodes = nodeList.Count;
         List<Node> lastNodesInCurrPath = new List<Node>();
         List<Vector3> lastPosInCurrPath = new List<Vector3>();
-        for(int i=pathIndex; i<maxNodes-1; i++)
+        for (int i = pathIndex; i < maxNodes - 1; i++)
         {
             lastNodesInCurrPath.Add(nodeList[i]);
             lastPosInCurrPath.Add(waypointsList[i]);
@@ -517,7 +517,15 @@ public class PathFollower : MonoBehaviour
     {
         float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
-        _speedPercent = Mathf.Clamp01(distance / 8f);
+        if (priorityLevel == PriorityLevel.Roundabout)
+        {
+            _speedPercent = Mathf.Clamp01(distance / 5f);
+        }
+        else
+        {
+            _speedPercent = Mathf.Clamp01(distance / 8f);
+        }
+
         //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
         //    _speedPercent = speedPercent + 0.005f;
 
@@ -654,7 +662,7 @@ public class PathFollower : MonoBehaviour
         carTarget = _target;
         shouldBrakeBeforeCar = true;
         targetPriorityBehavior = _targetPathFollower.priorityBehavior;
-        if(_targetPathFollower == null || targetPriorityBehavior == null)
+        if (_targetPathFollower == null || targetPriorityBehavior == null)
         {
             Debug.LogError("ERROR EN ENABLETARGET");
         }

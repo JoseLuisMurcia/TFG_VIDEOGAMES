@@ -30,7 +30,7 @@ public class Roundabout : Road
 
 
         Vector3 boxSize = boxCollider.size;
-        boxCollider.size = new Vector3(boxSize.x * .8f, boxSize.y, boxSize.z * .8f);
+        boxCollider.size = new Vector3(boxSize.x * .7f, boxSize.y, boxSize.z * .7f);
         boxCollider.isTrigger = true;
 
         foreach (Transform child in transform)
