@@ -182,6 +182,9 @@ public class PathFollower : MonoBehaviour
                 break;
             default:
                 Debug.Log("haha wtf bro");
+                speed = 3f;
+                turnSpeed = 3.2f;
+                turnDst = 0.5f;
                 break;
         }
 
@@ -514,7 +517,7 @@ public class PathFollower : MonoBehaviour
     {
         float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
-        _speedPercent = Mathf.Clamp01(distance - 2f/ 2f);
+        _speedPercent = Mathf.Clamp01(distance / 8f);
         //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
         //    _speedPercent = speedPercent + 0.005f;
 

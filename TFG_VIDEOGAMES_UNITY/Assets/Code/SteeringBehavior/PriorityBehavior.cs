@@ -46,7 +46,7 @@ public class PriorityBehavior
         float dot = Vector3.Dot(carForward, dirToSignal);
         if (priority != PriorityLevel.Roundabout)
         {
-            if (distance > 3f && dot < 0)
+            if (distance > 3.5f && dot < 0)
             {
                 RemoveSignalFromSight();
             }
@@ -77,16 +77,17 @@ public class PriorityBehavior
         if (dot < 0)
             return true;
 
-        if (carInSight.priorityLevel == PriorityLevel.Roundabout)
+        if (carInSight.priorityLevel == PriorityLevel.Roundabout && pathFollower.priorityLevel == PriorityLevel.Roundabout)
             return false;
 
+        string name = transform.gameObject.name;
         float angleBetweenForwards = Vector3.SignedAngle(transform.forward, carInSight.transform.forward, Vector3.up);
         if (angleBetweenForwards < 7.5f && angleBetweenForwards > -7.5f) // The car is going in the same direction as us
             return true;
 
         if (angleToCarInSight > 0f) // The car is on your right
         {
-            if (angleBetweenForwards > 0f) // It is looking right
+            if (angleBetweenForwards > 50f && angleBetweenForwards < 160f) // It is looking right
                 return true;
 
             return false;
@@ -111,9 +112,9 @@ public class PriorityBehavior
     }
     private void ProcessRelevantPriorityCarsInSight()
     {
-        float maxDistance = 15f;
+        float maxDistance = 25f;
         List<PathFollower> carsToBeRemoved = new List<PathFollower>();
-        Vector3 futureCarPosition = pathFollower.GetPosInPathInNumNodes(5);
+        Vector3 futureCarPosition = pathFollower.GetPosInPathInNumNodes(6);
         Vector3 dirToFuturePos = (futureCarPosition - transform.position).normalized;
         Vector3 carForward = transform.forward.normalized;
         float angleToFuturePos = Vector3.SignedAngle(carForward, dirToFuturePos, Vector3.up);
@@ -177,6 +178,8 @@ public class PriorityBehavior
         }
         // TO FIX - If the car coming is too slow for our speed, dont event concern about it, ignore it
         // Improve this by speedPercent calculations and distance?¿
+
+
         foreach (PathFollower car in relevantCarsInSight)
         {
             // Si está lejos o tu estas en una rotonda y él no, eliminar
@@ -191,29 +194,28 @@ public class PriorityBehavior
                     {
                         pathFollower.stopPosition = GetClosestStoppingPosInRoundabout();
                     }
-                    else
+                    else // Cualquier caso que no sea una rotonda
                     {
-                        // Se está llamando cuando no se debe llamar, repasar la logica del metodo
                         Node nodeStop = GetStoppingNodeFromCurrentRoad();
                         if (nodeStop == null)
                         {
-                            // En la current road no hay un nodo, sería buena idea parar SÓLAMENTE en funcion de la distancia
-                            // SI LO QUIERO HACER AUN MEJOR, PONER UNA DISTANCIA EN FUNCION DE SI VOY A GIRAR A LA IZQUIERDA O DERECHA O RECTO :)
-                            float distance = Vector3.Distance(car.transform.position, transform.position);
-                            if (distance > 4.5f)
-                            {
-                                carsToBeRemoved.Add(car);
-                            }
-                            else
-                            {
-                                pathFollower.stopPosition = transform.position + transform.forward * .5f;
-                            }
+                            pathFollower.stopPosition = transform.position + transform.forward * .1f;
                         }
                         else
                         {
                             pathFollower.stopPosition = nodeStop.worldPosition;
 
                         }
+                    }
+                }
+                else
+                {
+                    float distanceToStoppingNode = Vector3.Distance(pathFollower.stopPosition, transform.position);
+                    float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
+                    float division = distanceToStoppingNode / distanceToCar;
+                    if (division < 0.1f && distanceToCar > 6.5f && distanceToCar < 18f && pathFollower.speedPercent > 0.2f)
+                    {
+                        carsToBeRemoved.Add(car);
                     }
                 }
             }
@@ -237,7 +239,11 @@ public class PriorityBehavior
                 }
                 else
                 {
-                    SetShouldStopPriority();
+                    // LOS TIRONES QUE PEGAN LOS COCHES ESPERANDO POR PRIORITY ANTES DE ARRANCAR SE DEBEN A QUE UTILIZAN EL TARGET
+                    // QUE TIENEN ASIGNADO Y SE VAN AL STOPPING POINT CUANDO SU TARGET YA NO TIENE RELEVANT CARS, PASA SIEMPRE EN ESE MOMENTO.
+                    // PERO POR QUÉ SI EL NO TIENE, YO SI?
+                    if(pathFollower.targetPathFollower.speedPercent > 0.2f) 
+                        SetShouldStopPriority();
                 }
             }
             else
@@ -314,12 +320,12 @@ public class PriorityBehavior
     }
     private bool TargetHasRelevantCars()
     {
-        if(pathFollower.targetPriorityBehavior == null)
+        if (pathFollower.targetPriorityBehavior == null)
         {
             Debug.Log("pathFollowerTarget: " + pathFollower.carTarget);
             Debug.Log("pathFollowerTarget: " + pathFollower.targetPathFollower);
             Debug.LogError("TARGET PRIORITY BEHAVIOR ES NULL DIOOOOOOO");
-            
+
         }
         return pathFollower.targetPriorityBehavior.relevantCarsInSight.Count > 0;
     }
@@ -367,7 +373,7 @@ public class PriorityBehavior
             }
             i++;
         }
-        if(roundabout == null)
+        if (roundabout == null)
         {
             SpawnSpheres(startingNode.worldPosition, currentNode.worldPosition, Color.white, Color.red);
             hasSignalInSight = true;
@@ -399,6 +405,10 @@ public class PriorityBehavior
         {
             //Debug.LogError("NO STOPPING NODE FOUND");
             //SpawnSpheres(startingNode.worldPosition, currentNode.worldPosition, Color.red);
+        }
+        else
+        {
+            //if (visualDebug) SpawnSpheres(startingNode.worldPosition, stoppingNode.worldPosition, Color.white, Color.black);
         }
 
         //SpawnSphere(stoppingNode.worldPosition, Color.magenta);

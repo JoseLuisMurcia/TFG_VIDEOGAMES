@@ -16,7 +16,7 @@ public class WhiskersManager : MonoBehaviour
     private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private const float centerReach = 7.5f;
+    private const float centerReach = 20f;
     private const float sideReach = 10f;
 
     [SerializeField] bool visualDebug = false;
@@ -40,16 +40,8 @@ public class WhiskersManager : MonoBehaviour
         pathFollower = GetComponent<PathFollower>();
         trafficLightCarController = GetComponent<TrafficLightCarController>();
 
-        Transform whiskersParent = transform.Find("Whiskers");
-        foreach (Transform sensor in whiskersParent.transform)
-        {
-            whiskers.Add(sensor);
-            if (sensor.localRotation.eulerAngles.y > 1 && sensor.localRotation.eulerAngles.y < 100)
-            {
-                trafficSignalWhiskers.Add(sensor);
-            }
-        }
-        CreateIncorporationWhiskers(whiskersParent);
+        CreateWhiskers();
+        CreateIncorporationWhiskers();
         boxCollider = GetComponent<BoxCollider>();
 
         avoidanceBehavior = new AvoidanceBehavior(pathFollower, trafficLightCarController);
@@ -59,9 +51,26 @@ public class WhiskersManager : MonoBehaviour
         overtakeBehavior = new OvertakeBehavior(pathFollower, avoidanceBehavior, this, priorityBehavior);
         pedestrianBehavior = new PedestrianAvoidanceBehavior(pathFollower);
     }
-
-    void CreateIncorporationWhiskers(Transform whiskersParent)
+    void CreateWhiskers()
     {
+        List<float> angles = new List<float>() {-30f, -15f, -5f, -2f, -0f, 2f, 5f, 15f, 30f };
+        Transform whiskersParent = transform.Find("Whiskers");
+        foreach (float angle in angles)
+        {
+            GameObject sensor = new GameObject("Sensor: " + angle);
+            sensor.transform.position = whiskersParent.position;
+            sensor.transform.parent = whiskersParent;
+            sensor.transform.localEulerAngles = new Vector3(0, angle, 0);
+            whiskers.Add(sensor.transform);
+            if (angle > 1 && angle < 100)
+            {
+                trafficSignalWhiskers.Add(sensor.transform);
+            }
+        }
+    }
+    void CreateIncorporationWhiskers()
+    {
+        Transform whiskersParent = transform.Find("Whiskers");
         int numWhiskers = 14;
         float minAngle = -85f;
         float maxAngle = 85f;
@@ -111,8 +120,8 @@ public class WhiskersManager : MonoBehaviour
             CheckSignals();
         }
 
-        if(intersectionInSight) CheckForIncorporation();
-        
+        if (intersectionInSight) CheckForIncorporation();
+
     }
     void CheckForIncorporation()
     {
