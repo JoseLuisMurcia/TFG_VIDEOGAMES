@@ -206,7 +206,6 @@ public class PathFollower : MonoBehaviour
             if (currentRoad.numberOfLanes >= 2 && currentLane != LaneSide.None
                 && currentRoad.typeOfRoad != TypeOfRoad.Roundabout && currentRoad.typeOfRoad != TypeOfRoad.Intersection && currentRoad.typeOfRoad != TypeOfRoad.Deviation)
             {
-                Debug.Log("OVERTAKIN");
                 roadValidForOvertaking = true;
                 if (nodeList[pathIndex].laneSide == LaneSide.Left)
                 {
@@ -552,7 +551,7 @@ public class PathFollower : MonoBehaviour
         if (laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
         {
             RequestLaneSwap();
-            SpawnSpheres(transform.position, targetPathFollower.transform.position);
+            //SpawnSpheres(transform.position, targetPathFollower.transform.position);
             overtaking = true;
             avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
             overtakeBehavior.overtakenCar = targetPathFollower;

@@ -11,8 +11,8 @@ public class PriorityBehavior
     private Transform transform;
     private Transform signalInSight;
 
-    List<PathFollower> carsInSight = new List<PathFollower>();
-    List<PathFollower> relevantCarsInSight = new List<PathFollower>();
+    public List<PathFollower> carsInSight = new List<PathFollower>();
+    public List<PathFollower> relevantCarsInSight = new List<PathFollower>();
     private bool visualDebug = false;
     public bool isInRoundabout = false;
     private AvoidanceBehavior avoidanceBehavior;
@@ -77,15 +77,29 @@ public class PriorityBehavior
         if (dot < 0)
             return true;
 
+        float angleBetweenForwards = Vector3.SignedAngle(transform.forward, carInSight.transform.forward, Vector3.up);
+
         if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
         {
-            if (angleToCarInSight > 0)
+            if (angleToCarInSight > 0) // The car is to our right
                 return true;
 
-            return false;
+            if (angleToCarInSight < 0 && angleToCarInSight > -10f) // Just in front or slightly to the left
+                return true;
+
+            if (angleToCarInSight < -10f)
+            {
+                if (angleBetweenForwards > 80f && angleBetweenForwards < 160f)
+                    return false;
+
+                if (angleBetweenForwards > -80f)
+                    return true;
+
+                if (angleBetweenForwards < -80f)
+                    return false;
+            }
         }
         string name = transform.gameObject.name;
-        float angleBetweenForwards = Vector3.SignedAngle(transform.forward, carInSight.transform.forward, Vector3.up);
         if (angleBetweenForwards < 7.5f && angleBetweenForwards > -7.5f) // The car is going in the same direction as us
             return true;
 
@@ -220,19 +234,37 @@ public class PriorityBehavior
 
                     if (pathFollower.priorityLevel != PriorityLevel.Roundabout)
                     {
-                        if (division < 0.1f && distanceToCar > 6.5f && distanceToCar < 18f && pathFollower.speedPercent > 0.2f)
+                        if (isInRoundabout)
                         {
                             carsToBeRemoved.Add(car);
                         }
+                        else
+                        {
+                            if (division < 0.1f && distanceToCar > 6.5f && distanceToCar < 18f && pathFollower.speedPercent > 0.2f)
+                            {
+                                carsToBeRemoved.Add(car);
+                            }
+                        }
+
                     }
-                    else
+                    else // You are waiting before a roundabout or about to enter it
                     {
-                        if (distanceToStoppingNode < 0.1f && distanceToCar > 7f && car.speedPercent < 0.1f)
+
+                        if (distanceToCar > 12f)
+                            carsToBeRemoved.Add(car);
+
+                        if (car.priorityLevel == PriorityLevel.Roundabout && car.speedPercent < 0.15f)
+                            carsToBeRemoved.Add(car);
+
+                        if (car.priorityLevel != PriorityLevel.Roundabout && !car.priorityBehavior.isInRoundabout)
+                            carsToBeRemoved.Add(car);
+
+                        if (distanceToStoppingNode < 0.3f && distanceToCar > 3f && car.speedPercent < 0.15f)
                         {
                             carsToBeRemoved.Add(car);
                         }
                     }
-                   
+
                 }
             }
         }
@@ -258,7 +290,7 @@ public class PriorityBehavior
                     // LOS TIRONES QUE PEGAN LOS COCHES ESPERANDO POR PRIORITY ANTES DE ARRANCAR SE DEBEN A QUE UTILIZAN EL TARGET
                     // QUE TIENEN ASIGNADO Y SE VAN AL STOPPING POINT CUANDO SU TARGET YA NO TIENE RELEVANT CARS, PASA SIEMPRE EN ESE MOMENTO.
                     // PERO POR QUÉ SI EL NO TIENE, YO SI?
-                    if(pathFollower.targetPathFollower.speedPercent > 0.25f) 
+                    if (pathFollower.targetPathFollower.speedPercent > 0.25f)
                         SetShouldStopPriority();
                 }
             }
@@ -369,7 +401,7 @@ public class PriorityBehavior
         Vector3 nodeForward = (bestNode.worldPosition - bestNode.previousNode.worldPosition).normalized;
         float distanceToTheCenter = Vector3.Distance(bestNode.worldPosition, road.transform.position);
         bestPos = bestNode.worldPosition + nodeForward * distanceToTheCenter * .05f;
-       // bestPos = bestNode.worldPosition ;
+        // bestPos = bestNode.worldPosition ;
         //SpawnSpheres(transform.position, bestNode.worldPosition, Color.white, Color.black);
         return bestPos;
     }
@@ -396,7 +428,7 @@ public class PriorityBehavior
             SpawnSpheres(startingNode.worldPosition, currentNode.worldPosition, Color.white, Color.red);
             hasSignalInSight = true;
             pathFollower.priorityLevel = PriorityLevel.Max;
-            Debug.LogError("HEMOS HECHO LA 13 14 HAHAHA");
+            //Debug.LogError("HEMOS HECHO LA 13 14 HAHAHA");
         }
         return roundabout;
     }
@@ -442,14 +474,15 @@ public class PriorityBehavior
     private void SpawnSpheres(Vector3 pos1, Vector3 pos2, Color color1, Color color2)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        startSphere.transform.parent = transform.parent;
+        startSphere.transform.parent = transform;
         startSphere.transform.position = pos1 + Vector3.up;
         startSphere.GetComponent<Renderer>().material.SetColor("_Color", color1);
 
         GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        endSphere.transform.parent = transform.parent;
+        endSphere.transform.parent = transform;
         endSphere.transform.position = pos2 + Vector3.up;
         endSphere.GetComponent<Renderer>().material.SetColor("_Color", color2);
     }
+
 }
 

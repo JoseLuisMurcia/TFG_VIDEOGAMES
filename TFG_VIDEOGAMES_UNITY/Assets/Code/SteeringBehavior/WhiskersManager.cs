@@ -348,7 +348,18 @@ public class WhiskersManager : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-
+        if (!visualDebug) return;
+        
+        if(priorityBehavior.relevantCarsInSight.Count > 0)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(transform.position + Vector3.up * 2f, .2f);
+            foreach (PathFollower car in priorityBehavior.relevantCarsInSight) 
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawCube(car.transform.position + Vector3.up, Vector3.one * .2f);
+            }
+        }
     }
 
 }

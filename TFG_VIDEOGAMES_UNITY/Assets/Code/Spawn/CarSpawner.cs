@@ -52,7 +52,8 @@ public class CarSpawner : MonoBehaviour
         Node startNode = WorldGrid.Instance.GetRandomNodeInRoads();
         Vector3 directionToLookAt = (startNode.neighbours[0].worldPosition - startNode.worldPosition).normalized;
         Quaternion rotation = Quaternion.LookRotation(directionToLookAt, Vector3.up);
-        GameObject instantiatedCar = Instantiate(prefab, startNode.worldPosition, rotation);
+        Vector3 spawnPos = startNode.worldPosition - directionToLookAt;
+        GameObject instantiatedCar = Instantiate(prefab, spawnPos, rotation);
         RandomizeCarColor(instantiatedCar.transform, key);
 
         // Spawn with the correct rotation
