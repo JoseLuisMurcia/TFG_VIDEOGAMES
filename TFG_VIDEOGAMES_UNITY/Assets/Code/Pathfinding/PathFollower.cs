@@ -12,7 +12,7 @@ public class PathFollower : MonoBehaviour
     [SerializeField] float turnSpeed;
     [SerializeField] float turnDst;
     [HideInInspector] public int pathIndex = 0;
-    Path path = null;
+    public Path path = null;
     [SerializeField] public float speedPercent = 0f;
     public float movementSpeed = 0f;
 

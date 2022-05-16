@@ -344,6 +344,10 @@ public class PriorityBehavior
         if (carsInSight.Contains(hitCarPathFollower))
             return;
 
+        if (BothCarsInSameRoad(hitCarPathFollower))
+            return;
+        
+
         PriorityLevel carPriority = pathFollower.priorityLevel;
         PriorityLevel hitCarPriority = hitCarPathFollower.priorityLevel;
 
@@ -485,5 +489,12 @@ public class PriorityBehavior
         endSphere.GetComponent<Renderer>().material.SetColor("_Color", color2);
     }
 
+    bool BothCarsInSameRoad(PathFollower _hitCar)
+    {
+        if (_hitCar.path == null || pathFollower.path == null)
+            return false;
+
+        return _hitCar.nodeList[_hitCar.pathIndex].road == pathFollower.nodeList[pathFollower.pathIndex].road;
+    }
 }
 

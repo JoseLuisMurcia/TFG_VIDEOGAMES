@@ -71,6 +71,9 @@ public class PedestrianAvoidanceBehavior
         Vector3 pedestrianForward = pedestrian.transform.forward;
         float threshold = .7f;
         // TO FIX -- REVISARLO
+
+        // ANGULOS ANGULOS FORWARD, LOS ABSOLUTOS NO FUNCIONAN
+
         if (carForward.x > threshold) // Car is going right
         {
             if(angleToPedestrian > 0) // Pedestrian to the right
