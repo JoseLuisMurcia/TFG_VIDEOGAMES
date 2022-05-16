@@ -429,7 +429,7 @@ public class PriorityBehavior
             SpawnSphere(transform.position, Color.cyan);
             hasSignalInSight = true;
             pathFollower.priorityLevel = PriorityLevel.Max;
-            //Debug.LogError("HEMOS HECHO LA 13 14 HAHAHA");
+            Debug.LogWarning("HEMOS HECHO LA 13 14 HAHAHA");
         }
         return roundabout;
     }
@@ -468,19 +468,19 @@ public class PriorityBehavior
     private void SpawnSphere(Vector3 pos, Color color)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        startSphere.transform.parent = transform.parent;
+        //startSphere.transform.parent = transform;
         startSphere.transform.position = pos + Vector3.up;
         startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
     }
     private void SpawnSpheres(Vector3 pos1, Vector3 pos2, Color color1, Color color2)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        startSphere.transform.parent = transform;
+        //startSphere.transform.parent = transform;
         startSphere.transform.position = pos1 + Vector3.up;
         startSphere.GetComponent<Renderer>().material.SetColor("_Color", color1);
 
         GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        endSphere.transform.parent = transform;
+        //endSphere.transform.parent = transform;
         endSphere.transform.position = pos2 + Vector3.up;
         endSphere.GetComponent<Renderer>().material.SetColor("_Color", color2);
     }

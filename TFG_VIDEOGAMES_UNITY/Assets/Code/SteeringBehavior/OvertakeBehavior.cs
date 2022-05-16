@@ -16,6 +16,7 @@ public class OvertakeBehavior
     public bool hasBeenNotified = false;
     private AvoidanceBehavior notificator = null;
     WhiskersManager whiskersManager;
+    List<PathFollower> notificatedCars = new List<PathFollower>();
 
     public OvertakeBehavior(PathFollower _pathFollower, AvoidanceBehavior _avoidanceBehavior, WhiskersManager _whiskersManager, PriorityBehavior _priorityBehavior)
     {
@@ -99,9 +100,13 @@ public class OvertakeBehavior
     public void ProcessFrontCarHit(RaycastHit hit)
     {
         PathFollower hitCar = hit.collider.gameObject.GetComponent<PathFollower>();
+        if (notificatedCars.Contains(hitCar))
+            return;
+
         if (avoidanceBehavior.BothCarsInSameLane(pathFollower, hitCar) && pathFollower.targetPathFollower == hitCar && pathFollower.speed > hitCar.speed)
         {
             hitCar.overtakeBehavior.OnNotification(this.avoidanceBehavior);
+            notificatedCars.Add(hitCar);
         }
     }
 

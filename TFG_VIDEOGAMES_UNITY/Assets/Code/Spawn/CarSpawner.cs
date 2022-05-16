@@ -96,4 +96,22 @@ public class CarSpawner : MonoBehaviour
         for (int i = 0; i < 5; i++)
             SpawnOneCar();
     }
+
+    public void Spawn25Cars()
+    {
+        for (int i = 0; i < 25; i++)
+            SpawnOneCar();
+    }
+
+    public void Spawn50Cars()
+    {
+        for (int i = 0; i < 50; i++)
+            SpawnOneCar();
+    }
+
+    public void Spawn100Cars()
+    {
+        for (int i = 0; i < 100; i++)
+            SpawnOneCar();
+    }
 }
