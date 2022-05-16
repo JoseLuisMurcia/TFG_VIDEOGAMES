@@ -426,6 +426,7 @@ public class PriorityBehavior
         if (roundabout == null)
         {
             SpawnSpheres(startingNode.worldPosition, currentNode.worldPosition, Color.white, Color.red);
+            SpawnSphere(transform.position, Color.cyan);
             hasSignalInSight = true;
             pathFollower.priorityLevel = PriorityLevel.Max;
             //Debug.LogError("HEMOS HECHO LA 13 14 HAHAHA");

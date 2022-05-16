@@ -340,7 +340,7 @@ public class WhiskersManager : MonoBehaviour
     }
     IEnumerator DelayFreeLane(AvoidanceBehavior _notificator)
     {
-        float randomTime = Random.Range(.6f, 1.3f);
+        float randomTime = Random.Range(1f, 2f);
         yield return new WaitForSeconds(randomTime);
         _notificator.AddCarToBlacklist(pathFollower);
         _notificator.UnableTarget();
