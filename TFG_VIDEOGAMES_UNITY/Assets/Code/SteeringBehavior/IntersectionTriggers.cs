@@ -60,7 +60,7 @@ public class IntersectionTriggers : MonoBehaviour
                 {
                     Vector3 trafficLightForward = belongingRoad.trafficLight.transform.forward;
                     float angleBetweenCarForwardAndTrafficLightForward = Vector3.Angle(carForward, trafficLightForward);
-                    if (angleBetweenCarForwardAndTrafficLightForward < 20)
+                    if (angleBetweenCarForwardAndTrafficLightForward > 140f)
                     {
                         carManager.intersectionInSight = true;
                     }

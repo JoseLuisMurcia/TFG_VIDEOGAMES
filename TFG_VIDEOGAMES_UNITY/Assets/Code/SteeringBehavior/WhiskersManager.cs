@@ -13,10 +13,9 @@ public class WhiskersManager : MonoBehaviour
     [SerializeField] LayerMask obstacleLayer, carLayer, signalLayer, pedestrianLayer;
 
     private List<Transform> whiskers = new List<Transform>();
-    private List<Transform> trafficSignalWhiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
-    private const float centerReach = 20f;
+    private const float centerReach = 15f;
     private const float sideReach = 10f;
 
     [SerializeField] bool visualDebug = false;
@@ -54,7 +53,7 @@ public class WhiskersManager : MonoBehaviour
     }
     void CreateWhiskers()
     {
-        List<float> angles = new List<float>() {-30f, -15f, -5f, -2f, -0f, 2f, 5f, 15f, 30f };
+        List<float> angles = new List<float>() { -30f, -15f, -5f, -0f, 5f, 15f, 30f };
         Transform whiskersParent = transform.Find("Whiskers");
         foreach (float angle in angles)
         {
@@ -63,35 +62,21 @@ public class WhiskersManager : MonoBehaviour
             sensor.transform.parent = whiskersParent;
             sensor.transform.localEulerAngles = new Vector3(0, angle, 0);
             whiskers.Add(sensor.transform);
-            if (angle > 1 && angle < 100)
-            {
-                trafficSignalWhiskers.Add(sensor.transform);
-            }
         }
     }
     void CreateIncorporationWhiskers()
     {
+        List<float> angles = new List<float>() { -85f, -70f, -55f, -40f, -25f, -10f, -6f, -3f, 0f,
+            3f, 6f, 10f, 25f, 40f, 55f, 70f, 85f};
         Transform whiskersParent = transform.Find("Whiskers");
-        int numWhiskers = 14;
-        float minAngle = -85f;
-        float maxAngle = 85f;
-        float increment = 0f;
-        float yRotThreshold = 20f;
-        float currentAngle = minAngle + increment;
-        increment = (Mathf.Abs(minAngle) + maxAngle) / numWhiskers;
-        for (int i = 0; i <= numWhiskers; i++)
+        for (int i = 0; i < angles.Count; i++)
         {
-            if (Mathf.Abs(currentAngle) > yRotThreshold)
-            {
-                Vector3 localRotation = new Vector3(0f, currentAngle, 0f);
-                GameObject _newWhisker = new GameObject();
-                _newWhisker.transform.parent = whiskersParent;
-                _newWhisker.transform.position = whiskers[0].position;
-                _newWhisker.transform.localEulerAngles = localRotation;
-                incorporationWhiskers.Add(_newWhisker.transform);
-            }
-            currentAngle += increment;
-
+            Vector3 localRotation = new Vector3(0f, angles[i], 0f);
+            GameObject _newWhisker = new GameObject();
+            _newWhisker.transform.parent = whiskersParent;
+            _newWhisker.transform.position = whiskers[0].position;
+            _newWhisker.transform.localEulerAngles = localRotation;
+            incorporationWhiskers.Add(_newWhisker.transform);
         }
 
     }
@@ -110,12 +95,8 @@ public class WhiskersManager : MonoBehaviour
         if (pathFollower.isFullyStopped) return;
 
         CheckCars();
-        if(pedestrianCrossingInSight) CheckPedestrians();
-        if (pathFollower.roadValidForOvertaking)
-        {
-            CheckLaneSwap(pathFollower.laneSide);
-        }
-
+        if (pedestrianCrossingInSight) CheckPedestrians();
+        if (pathFollower.roadValidForOvertaking) CheckLaneSwap(pathFollower.laneSide);
         if (intersectionInSight || pathFollower.priorityLevel == PriorityLevel.Roundabout) CheckForIncorporation();
 
     }
@@ -128,14 +109,19 @@ public class WhiskersManager : MonoBehaviour
         foreach (Transform sensor in incorporationWhiskers)
         {
             float reach = 15f;
-
+            float localAngle = sensor.localEulerAngles.y;
             if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
             {
                 reach = 9f;
-                if (sensor.localEulerAngles.y < 180f)
+                if (localAngle < 180f)
                 {
                     continue;
                 }
+            }
+            else
+            {
+                if (localAngle < 10f || localAngle > 351f)
+                    reach *= 1.5f;
             }
 
             Ray ray = new Ray(rayOrigin, sensor.forward);
@@ -220,32 +206,31 @@ public class WhiskersManager : MonoBehaviour
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
-                if (intersectionInSight && trafficLightCarController.currentRoad == null && pathFollower.priorityLevel != PriorityLevel.Roundabout) priorityBehavior.ProcessCarHit(ray, hit, sensor);
                 if (yRotation < 10 && pathFollower.roadValidForOvertaking && pathFollower.laneSide == LaneSide.Left)
                     overtakeBehavior.ProcessFrontCarHit(hit);
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
     void CheckPedestrians()
     {
         RaycastHit hit;
-        foreach (Transform sensor in whiskers)
+        foreach (Transform sensor in incorporationWhiskers)
         {
             float reach = 7.5f;
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, pedestrianLayer))
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 pedestrianBehavior.ProcessPedestrianHit(ray, hit, sensor);
             }
             else
             {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -326,18 +311,18 @@ public class WhiskersManager : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        if(pathFollower.priorityLevel == PriorityLevel.Roundabout)
+        if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(transform.position + Vector3.up * 4f, .4f);
         }
         if (!visualDebug) return;
-        
-        if(priorityBehavior.relevantCarsInSight.Count > 0)
+
+        if (priorityBehavior.relevantCarsInSight.Count > 0)
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawSphere(transform.position + Vector3.up * 2f, .2f);
-            foreach (PathFollower car in priorityBehavior.relevantCarsInSight) 
+            foreach (PathFollower car in priorityBehavior.relevantCarsInSight)
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawCube(car.transform.position + Vector3.up, Vector3.one * .2f);
