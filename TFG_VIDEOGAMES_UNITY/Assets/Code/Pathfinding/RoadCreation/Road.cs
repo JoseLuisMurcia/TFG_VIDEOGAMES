@@ -112,6 +112,7 @@ public class Road : MonoBehaviour
             box.isTrigger = true;
             box.size = Vector3.one * 3;
             IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>();
+            trigger.parentRoad = this;
             //trigger.DeleteIfTrafficLight(neighbour);
             num++;
         }
@@ -199,6 +200,9 @@ public class Road : MonoBehaviour
         {
             if (carManager.intersectionInSight)
                 carManager.intersectionInSight = false;
+
+            if(carManager.pedestrianCrossingInSight)
+                carManager.pedestrianCrossingInSight = false;
         }
     }
 

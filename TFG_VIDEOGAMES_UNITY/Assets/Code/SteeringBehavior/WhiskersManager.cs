@@ -5,7 +5,7 @@ using UnityEngine;
 public class WhiskersManager : MonoBehaviour
 {
     private AvoidanceBehavior avoidanceBehavior;
-    private PriorityBehavior priorityBehavior;
+    public PriorityBehavior priorityBehavior;
     private PedestrianAvoidanceBehavior pedestrianBehavior;
     private OvertakeBehavior overtakeBehavior;
     private PathFollower pathFollower;
@@ -21,6 +21,7 @@ public class WhiskersManager : MonoBehaviour
 
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
+    public bool pedestrianCrossingInSight = false;
 
     [Header("Overtake")]
     private Vector3 leftMirrorPos;
@@ -109,15 +110,10 @@ public class WhiskersManager : MonoBehaviour
         if (pathFollower.isFullyStopped) return;
 
         CheckCars();
-        CheckPedestrians();
+        if(pedestrianCrossingInSight) CheckPedestrians();
         if (pathFollower.roadValidForOvertaking)
         {
             CheckLaneSwap(pathFollower.laneSide);
-        }
-
-        if (!priorityBehavior.hasSignalInSight)
-        {
-            CheckSignals();
         }
 
         if (intersectionInSight || pathFollower.priorityLevel == PriorityLevel.Roundabout) CheckForIncorporation();
@@ -151,24 +147,6 @@ public class WhiskersManager : MonoBehaviour
             else
             {
                 if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.white);
-            }
-        }
-    }
-    void CheckSignals()
-    {
-        RaycastHit hit;
-        foreach (Transform sensor in trafficSignalWhiskers)
-        {
-            float reach = 10f;
-
-            Ray ray = new Ray(rayOrigin, sensor.forward);
-            if (Physics.Raycast(ray, out hit, reach, signalLayer))
-            {
-                priorityBehavior.ProcessSignalHit(ray, hit);
-            }
-            else
-            {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.red);
             }
         }
     }
@@ -348,6 +326,11 @@ public class WhiskersManager : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if(pathFollower.priorityLevel == PriorityLevel.Roundabout)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(transform.position + Vector3.up * 4f, .4f);
+        }
         if (!visualDebug) return;
         
         if(priorityBehavior.relevantCarsInSight.Count > 0)

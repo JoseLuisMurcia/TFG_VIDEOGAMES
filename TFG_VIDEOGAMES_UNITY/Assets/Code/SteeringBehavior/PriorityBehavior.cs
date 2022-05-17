@@ -58,20 +58,6 @@ public class PriorityBehavior
         hasSignalInSight = false;
         pathFollower.priorityLevel = PriorityLevel.Max;
     }
-    private PriorityLevel GetPriorityOfSignal(string signalTag)
-    {
-        switch (signalTag)
-        {
-            case "Stop":
-                return PriorityLevel.Stop;
-            case "YieldRoundabout":
-                return PriorityLevel.Roundabout;
-            case "Yield":
-                return PriorityLevel.Yield;
-            default:
-                return PriorityLevel.Max;
-        }
-    }
     private bool AngleNotRelevant(float angleToCarInSight, PathFollower carInSight, float dot)
     {
         if (dot < 0)
@@ -314,29 +300,11 @@ public class PriorityBehavior
             return;
         pathFollower.shouldStopPriority = true;
     }
-    public void ProcessSignalHit(Ray ray, RaycastHit hit)
+    public void ProcessSignalHit(Signal signal)
     {
-        Vector3 carForward = transform.forward.normalized;
-        // We know it is on the right side of the car
-        float angleBetweenCarAndSignal = Vector3.SignedAngle(carForward, ray.direction.normalized, Vector3.up);
-        if (angleBetweenCarAndSignal > 0)
-        {
-            // Now we need to know if it is in looking in front of us
-            Vector3 signalForward = hit.transform.forward;
-            float angleBetweenCarAndSignalForward = Vector3.Angle(carForward, signalForward);
-            if (angleBetweenCarAndSignalForward > 145)
-            {
-                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.green);
-                hasSignalInSight = true;
-                pathFollower.priorityLevel = GetPriorityOfSignal(hit.transform.gameObject.tag);
-                signalInSight = hit.transform;
-            }
-
-        }
-        else // In front but not in the same road
-        {
-            //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.yellow);
-        }
+        signalInSight = signal.transform;
+        hasSignalInSight = true;
+        pathFollower.priorityLevel = signal.priorityLevel;
     }
     public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
