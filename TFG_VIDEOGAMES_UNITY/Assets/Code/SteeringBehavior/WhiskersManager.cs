@@ -127,12 +127,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 priorityBehavior.ProcessCarHit(ray, hit, sensor);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.white);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward.normalized * reach, Color.white);
             }
         }
     }
@@ -208,11 +208,11 @@ public class WhiskersManager : MonoBehaviour
                 avoidanceBehavior.ProcessCarHit(ray, hit, sensor);
                 if (yRotation < 10 && pathFollower.roadValidForOvertaking && pathFollower.laneSide == LaneSide.Left)
                     overtakeBehavior.ProcessFrontCarHit(hit);
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+                //if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -225,12 +225,12 @@ public class WhiskersManager : MonoBehaviour
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, pedestrianLayer))
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
+               // if (visualDebug) Debug.DrawLine(rayOrigin, hit.point, Color.black);
                 pedestrianBehavior.ProcessPedestrianHit(ray, hit, sensor);
             }
             else
             {
-                if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
+               // if (visualDebug) Debug.DrawLine(rayOrigin, rayOrigin + sensor.forward * reach, Color.white);
             }
         }
     }
@@ -308,13 +308,23 @@ public class WhiskersManager : MonoBehaviour
         _notificator.AddCarToBlacklist(pathFollower);
         _notificator.UnableTarget();
     }
-
     private void OnDrawGizmos()
     {
         if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(transform.position + Vector3.up * 4f, .4f);
+        }
+        if (pathFollower.shouldStopPriority && pathFollower.priorityLevel == PriorityLevel.Max)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(transform.position + Vector3.up * 3f, .4f);
+            foreach (PathFollower car in priorityBehavior.relevantCarsInSight)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawCube(car.transform.position + Vector3.up * 2.5f, Vector3.one * .3f);
+            }
+
         }
         if (!visualDebug) return;
 
@@ -324,10 +334,12 @@ public class WhiskersManager : MonoBehaviour
             Gizmos.DrawSphere(transform.position + Vector3.up * 2f, .2f);
             foreach (PathFollower car in priorityBehavior.relevantCarsInSight)
             {
-                Gizmos.color = Color.green;
+                Gizmos.color = Color.blue;
                 Gizmos.DrawCube(car.transform.position + Vector3.up, Vector3.one * .2f);
             }
         }
+
+        
     }
 
 }

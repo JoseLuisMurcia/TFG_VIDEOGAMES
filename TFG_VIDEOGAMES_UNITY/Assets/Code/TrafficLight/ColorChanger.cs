@@ -17,7 +17,7 @@ public class ColorChanger : MonoBehaviour
         red = meshRenderer.materials[2];
         GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         sphere.transform.parent = transform.parent;
-        sphere.transform.position = transform.position + Vector3.up * 3f;
+        sphere.transform.position = transform.position + Vector3.up * 20f;
         debugSphereRenderer = sphere.GetComponent<Renderer>();
     }
 

@@ -33,7 +33,19 @@ public class IntersectionTriggers : MonoBehaviour
             }
         }
         if (belongingRoad.trafficLight != null)
+        {
             hasTrafficLight = true;
+            DestroyIfTrafficLight();
+        }
+    }
+
+    private void DestroyIfTrafficLight()
+    {
+        Vector3 triggerForward = transform.forward;
+        Vector3 trafficLightForward = belongingRoad.trafficLight.transform.forward;
+        float angle = Vector3.Angle(triggerForward, trafficLightForward);
+        if (angle > 145f)
+            Destroy(gameObject);
     }
 
     private void OnTriggerEnter(Collider other)

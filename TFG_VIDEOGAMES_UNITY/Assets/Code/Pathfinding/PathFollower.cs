@@ -230,8 +230,9 @@ public class PathFollower : MonoBehaviour
     IEnumerator StartPathfindingOnWorldCreation()
     {
         yield return new WaitForSeconds(1f);
-        if (path == null)
+        if (path == null && !pathRequested)
         {
+            //Debug.LogWarning("CAR WAS SPAWNED AND IT DID NOT HAVE A PATH WTF");
             Node targetNode = WorldGrid.Instance.GetRandomNodeInRoads();
             float newDistance = Vector3.Distance(targetNode.worldPosition, transform.position);
             while (newDistance < minDistanceToSpawnNewTarget)
@@ -275,6 +276,34 @@ public class PathFollower : MonoBehaviour
                 AdjustActualPathToReceivedPath(pathfindingResult);
             }
 
+            if(Vector3.Distance(_startNode.worldPosition, transform.position) > 27f)
+            {
+                Debug.LogWarning("ALGO SE HA ROTO");
+
+                GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                startSphere.name = "NewStartNode";
+                startSphere.transform.parent = transform.parent;
+                startSphere.transform.position = _startNode.worldPosition + Vector3.up * 2.5f;
+                startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
+
+                GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                endSphere.name = "NewEndNode";
+                endSphere.transform.parent = transform.parent;
+                endSphere.transform.position = _endNode.worldPosition + Vector3.up * 2.5f;
+                endSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
+
+                GameObject previousEndSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                previousEndSphere.name = "PreviousEndNode";
+                previousEndSphere.transform.parent = transform.parent;
+                previousEndSphere.transform.position = endNode.worldPosition + Vector3.up * 2.5f;
+                previousEndSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.yellow);
+
+                GameObject currentPosSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                currentPosSphere.name = "CurrentPosSphere";
+                currentPosSphere.transform.parent = transform.parent;
+                currentPosSphere.transform.position = transform.position + Vector3.up * 2.5f;
+                currentPosSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.green);
+            }
             pathRequested = false;
             endNode = _endNode;
             if (followPathCoroutine != null)
@@ -312,7 +341,6 @@ public class PathFollower : MonoBehaviour
     {
         if (pathSuccessful)
         {
-            pathRequested = false;
             endNode = _endNode;
             nodeList = pathfindingResult.nodes;
             waypointsList.Clear();
@@ -322,6 +350,7 @@ public class PathFollower : MonoBehaviour
                 StopCoroutine(followPathCoroutine);
             path = new Path(waypointsList, transform.position, turnDst);
             followPathCoroutine = FollowPath();
+            pathRequested = false;
             StartCoroutine(followPathCoroutine);
         }
         else
@@ -334,13 +363,15 @@ public class PathFollower : MonoBehaviour
     private void SpawnSpheres(Vector3 _startNode, Vector3 _endNode)
     {
         GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.name = "NewStartNode";
         startSphere.transform.parent = transform.parent;
-        startSphere.transform.position = _startNode + Vector3.up;
+        startSphere.transform.position = _startNode + Vector3.up * 2.5f;
         startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.magenta);
 
         GameObject endSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        endSphere.name = "NewEndNode";
         endSphere.transform.parent = transform.parent;
-        endSphere.transform.position = _endNode + Vector3.up;
+        endSphere.transform.position = _endNode + Vector3.up * 2.5f;
         endSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.blue);
     }
     IEnumerator UpdatePath()
@@ -351,7 +382,7 @@ public class PathFollower : MonoBehaviour
             if (path != null)
             {
                 int numNodesInPath = path.lookPoints.Count;
-                if (pathIndex >= numNodesInPath - 6)
+                if (pathIndex >= numNodesInPath - 6 && !pathRequested)
                 {
                     RequestNewPath();
                 }
@@ -378,7 +409,7 @@ public class PathFollower : MonoBehaviour
     }
     public void RequestNewPath()
     {
-        if (endNode == null)
+        if (endNode == null || pathRequested)
             return;
 
         float newDistance = 0f;
@@ -396,7 +427,11 @@ public class PathFollower : MonoBehaviour
     }
     public void RequestLaneSwap()
     {
+        if (pathRequested)
+            return;
+
         PathfinderRequestManager.RequestLaneSwap(nodeList[pathIndex], OnLaneSwap);
+        Debug.LogWarning("LANE SWAP REQUESTED");
         pathRequested = true;
     }
     IEnumerator FollowPath()
@@ -445,7 +480,7 @@ public class PathFollower : MonoBehaviour
             if (speedPercent > 0.001f) isFullyStopped = false;
 
             Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
-            if (speedPercent > 0.1f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
+            if (speedPercent > 0.03f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
             transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
             movementSpeed = speed * speedPercent;
             yield return null;
@@ -529,7 +564,7 @@ public class PathFollower : MonoBehaviour
         //    _speedPercent = speedPercent + 0.005f;
 
         if (speedPercent - _speedPercent > 0.5f)
-            _speedPercent = speedPercent - 0.005f;
+            _speedPercent = speedPercent - 0.01f;
 
         if (_speedPercent < 0.03f)
         {
@@ -578,7 +613,7 @@ public class PathFollower : MonoBehaviour
         }
 
 
-        if (_speedPercent - speedPercent > 0.1f)
+        if (_speedPercent - speedPercent > 0.2f)
         {
             _speedPercent = speedPercent + 0.005f;
         }
