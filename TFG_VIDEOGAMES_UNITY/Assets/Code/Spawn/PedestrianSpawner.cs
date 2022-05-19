@@ -6,7 +6,7 @@ public class PedestrianSpawner : MonoBehaviour
 {
     List<Transform> houses = new List<Transform>();
     public static PedestrianSpawner instance;
-    [SerializeField] Pedestrian pedestrianPrefab;
+    [SerializeField] Pedestrian[] pedestrianPrefabs;
     void Start()
     {
         instance = this;
@@ -38,13 +38,20 @@ public class PedestrianSpawner : MonoBehaviour
         } while(!destFound);
         Vector3 spawnPosition = houses[srcHouseId].position - houses[srcHouseId].forward * 3f;
         //Debug.DrawLine(spawnPosition + Vector3.up * 5, spawnPosition - Vector3.up * 5, Color.red, 60f);
-        Pedestrian pedestrian = Instantiate(pedestrianPrefab, spawnPosition, houses[srcHouseId].rotation);
+        int randomInt = Random.Range(0, pedestrianPrefabs.Length);
+        Pedestrian pedestrian = Instantiate(pedestrianPrefabs[randomInt], spawnPosition, houses[srcHouseId].rotation);
         pedestrian.SetTarget(houses[dstHouseId]);
     }
 
     public void SpawnFivePedestrians()
     {
         for (int i = 0; i < 5; i++)
+            Spawn();
+    }
+
+    public void Spawn50Pedestrians()
+    {
+        for (int i = 0; i < 50; i++)
             Spawn();
     }
 
