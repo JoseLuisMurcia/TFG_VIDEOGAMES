@@ -45,6 +45,7 @@ namespace Procedural
             roadHelper.Reset();
             structureHelper.Reset();
             var sequence = lsystem.GenerateSentence();
+            Debug.Log(sequence);
             StartCoroutine(VisualizeSequence(sequence));
         }
 
