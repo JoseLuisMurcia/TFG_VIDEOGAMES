@@ -19779,7 +19779,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2aa65448bb8e1a3498759a1668dc0816, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pedestrianPrefab: {fileID: 0}
+  pedestrianPrefabs: []
 --- !u!1001 &1006808396
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20365,7 +20365,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50a417f6c64a3be4cbea773fc3cd9190, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  carPrefab: {fileID: 355647666155603531, guid: 5af4de4e772513a41ac0a701d73fae6a, type: 3}
+  carPrefabs: []
+  carMaterials: []
 --- !u!1001 &1059002128
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39249,8 +39250,8 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 3
-  randomIgnoreRuleModifier: 1
+  iterationLimit: 2
+  randomIgnoreRuleModifier: 0
   chanceToIgnoreRule: 0.3
 --- !u!4 &1947042888
 Transform:
