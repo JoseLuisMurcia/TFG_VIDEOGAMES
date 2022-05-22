@@ -40,7 +40,8 @@ namespace Procedural
                 {
                     fixRoadCandidates.Add(position);
                 }
-                yield return new WaitForSeconds(animationTime);
+                yield return null;
+                //yield return new WaitForSeconds(animationTime);
             }
             finishedCoroutine?.Invoke();
         }

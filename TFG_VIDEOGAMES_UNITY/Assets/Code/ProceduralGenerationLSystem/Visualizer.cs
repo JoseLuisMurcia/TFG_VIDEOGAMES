@@ -1,18 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Procedural.SimpleVisualizer;
 
 namespace Procedural
 {
-    public class SimpleVisualizer : MonoBehaviour
+    public class Visualizer : MonoBehaviour
     {
         public LSystemGenerator lsystem;
-        List<Vector3> positions = new List<Vector3>();
-        public GameObject prefab;
-        public Material lineMaterial;
 
-        private int length = 12;
-        private float angle = 25f;
+        public RoadHelper roadHelper;
+        public StructureHelper structureHelper;
+        public int roadLength = 8;
+        private int length = 8;
+        private float angle = 90;
+        private bool waitingForTheRoad = false;
 
         public int Length
         {
@@ -32,22 +34,36 @@ namespace Procedural
 
         private void Start()
         {
-            var sequence = lsystem.GenerateSentence();
-            VisualizeSequence(sequence);
+            roadHelper.finishedCoroutine += () => waitingForTheRoad = false;
+            CreateTown();
         }
 
-        private void VisualizeSequence(string sequence)
+        public void CreateTown()
+        {
+            Debug.Log("CREATED");
+            length = roadLength;
+            roadHelper.Reset();
+            structureHelper.Reset();
+            var sequence = lsystem.GenerateSentence();
+            Debug.Log(sequence);
+            StartCoroutine(VisualizeSequence(sequence));
+        }
+
+        private IEnumerator VisualizeSequence(string sequence)
         {
             Stack<AgentParameters> savePoints = new Stack<AgentParameters>();
-            Vector3 currentPosition = Vector3.zero;
+            var currentPosition = Vector3.zero;
 
             Vector3 direction = Vector3.forward;
             Vector3 tempPosition = Vector3.zero;
 
-            positions.Add(currentPosition);
 
-            foreach (char letter in sequence)
+            foreach (var letter in sequence)
             {
+                if (waitingForTheRoad)
+                {
+                    yield return new WaitForEndOfFrame();
+                }
                 EncodingLetters encoding = (EncodingLetters)letter;
                 switch (encoding)
                 {
@@ -58,12 +74,11 @@ namespace Procedural
                             direction = direction,
                             length = Length
                         });
-
                         break;
                     case EncodingLetters.load:
                         if (savePoints.Count > 0)
                         {
-                            AgentParameters agentParameter = savePoints.Pop();
+                            var agentParameter = savePoints.Pop();
                             currentPosition = agentParameter.position;
                             direction = agentParameter.direction;
                             Length = agentParameter.length;
@@ -76,9 +91,12 @@ namespace Procedural
                     case EncodingLetters.draw:
                         tempPosition = currentPosition;
                         currentPosition += direction * length;
-                        DrawLine(tempPosition, currentPosition, Color.red);
-                        Length -= 2;
-                        positions.Add(currentPosition);
+                        StartCoroutine(roadHelper.PlaceStreetPositions(tempPosition, Vector3Int.RoundToInt(direction), length));
+                        waitingForTheRoad = true;
+                        yield return new WaitForEndOfFrame();
+
+                       // Length -= 2;
+                        //Length += Random.Range(-2, 3);
                         break;
                     case EncodingLetters.turnRight:
                         direction = Quaternion.AngleAxis(angle, Vector3.up) * direction;
@@ -90,36 +108,11 @@ namespace Procedural
                         break;
                 }
             }
+            yield return new WaitForSeconds(0.1f);
+            roadHelper.FixRoad();
+            yield return new WaitForSeconds(0.8f);
+            //StartCoroutine(structureHelper.PlaceStructuresAroundRoad(roadHelper.GetRoadPositions()));
 
-            foreach(Vector3 position in positions)
-            {
-                Instantiate(prefab, position, Quaternion.identity);
-            }
-        }
-
-        private void DrawLine(Vector3 start, Vector3 end, Color color)
-        {
-            GameObject line = new GameObject("line");
-            line.transform.position = start;
-            LineRenderer lineRenderer = line.AddComponent<LineRenderer>();
-            lineRenderer.material = lineMaterial;
-            lineRenderer.startColor = color;
-            lineRenderer.endColor = color;
-            lineRenderer.startWidth = .1f;
-            lineRenderer.endWidth = .1f;
-            lineRenderer.SetPosition(0, start);
-            lineRenderer.SetPosition(1, end);
-        }
-
-        public enum EncodingLetters
-        {
-            unknown = '1',
-            save = '[',
-            load = ']',
-            draw = 'F',
-            turnRight = '+',
-            turnLeft = '-'
         }
     }
 }
-

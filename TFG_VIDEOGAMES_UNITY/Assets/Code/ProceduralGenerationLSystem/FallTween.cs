@@ -12,8 +12,8 @@ namespace Procedural
 		private void Start()
 		{
 			destination = transform.position;
-			gameObject.transform.position += Vector3.up * 10;
-			StartCoroutine(Drop());
+			//gameObject.transform.position += Vector3.up * 10;
+			//StartCoroutine(Drop());
 		}
 
 		private IEnumerator Drop()

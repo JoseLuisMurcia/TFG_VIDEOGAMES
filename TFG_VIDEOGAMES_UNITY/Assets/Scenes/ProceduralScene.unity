@@ -721,7 +721,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &72691360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10335,7 +10335,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6699e13f5210df4a8abdc5cabd586b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lsystem: {fileID: 1947042887}
+  lsystem: {fileID: 1335700648}
   prefab: {fileID: 1284304205642556215, guid: cb2e1e8aa0d44489c8d332b91c9a4202, type: 3}
   lineMaterial: {fileID: 2100000, guid: bb7d728a009b38d46a0bb1b8503ac6d7, type: 2}
 --- !u!4 &541050300
@@ -25545,11 +25545,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rules:
-  - {fileID: 11400000, guid: cdc3a03744cc8ad459862ae706cb0990, type: 2}
   - {fileID: 11400000, guid: 7777363acb8c4df4daaee51bd9612410, type: 2}
+  - {fileID: 11400000, guid: cdc3a03744cc8ad459862ae706cb0990, type: 2}
   rootSentence: X
-  iterationLimit: 1
-  randomIgnoreRuleModifier: 1
+  iterationLimit: 6
+  randomIgnoreRuleModifier: 0
   chanceToIgnoreRule: 0
 --- !u!4 &1335700649
 Transform:
@@ -38782,7 +38782,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 5
+  iterationLimit: 3
   randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.3
 --- !u!4 &1947042888
