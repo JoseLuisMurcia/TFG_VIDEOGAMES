@@ -7621,6 +7621,55 @@ MonoBehaviour:
   m_Area: 1
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
+--- !u!1 &412704399
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 412704401}
+  - component: {fileID: 412704400}
+  m_Layer: 0
+  m_Name: Fractal LSystem (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &412704400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 412704399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbd4468cef6529446af2c62ff8c25265, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rules:
+  - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
+  rootSentence: '[F]--F'
+  iterationLimit: 1
+  randomIgnoreRuleModifier: 0
+  chanceToIgnoreRule: 0
+--- !u!4 &412704401
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 412704399}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 22
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &417123078
 GameObject:
   m_ObjectHideFlags: 0
@@ -31700,6 +31749,52 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1184625296354225167, guid: f23391c9859a6e741a65f9b6c0bed539, type: 3}
+--- !u!1 &1552327183
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1552327185}
+  - component: {fileID: 1552327184}
+  m_Layer: 0
+  m_Name: SimpleVisualizer (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1552327184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1552327183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6699e13f5210df4a8abdc5cabd586b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lsystem: {fileID: 412704400}
+  prefab: {fileID: 1284304205642556215, guid: cb2e1e8aa0d44489c8d332b91c9a4202, type: 3}
+  lineMaterial: {fileID: 2100000, guid: bb7d728a009b38d46a0bb1b8503ac6d7, type: 2}
+--- !u!4 &1552327185
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1552327183}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 21
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1554256450 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9023660943327097044, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
@@ -32346,6 +32441,8 @@ MonoBehaviour:
     m_Bits: 128
   gridWorldSize: {x: 100, y: 100}
   nodeRadius: 2
+  gridSizeX: 0
+  gridSizeY: 0
 --- !u!4 &1583066529 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
@@ -35705,8 +35802,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0ba04290e0cea843af2925ee809df0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lsystem: {fileID: 0}
-  grid: {fileID: 0}
+  grid: {fileID: 1575517317}
 --- !u!114 &1772971127
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35723,7 +35819,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
   iterationLimit: 3
-  randomIgnoreRuleModifier: 0
+  randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.3
 --- !u!4 &1772971128
 Transform:

@@ -9,10 +9,10 @@ namespace PG
 		public LayerMask unwalkableMask;
 		public Vector2 gridWorldSize;
 		public float nodeRadius;
-		Node[,] grid;
+		public Node[,] nodesGrid;
 
 		float nodeDiameter;
-		int gridSizeX, gridSizeY;
+		public int gridSizeX, gridSizeY;
 
 		void Start()
 		{
@@ -24,7 +24,7 @@ namespace PG
 
 		void CreateGrid()
 		{
-			grid = new Node[gridSizeX, gridSizeY];
+			nodesGrid = new Node[gridSizeX, gridSizeY];
 			Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
 
 			for (int x = 0; x < gridSizeX; x++)
@@ -32,7 +32,7 @@ namespace PG
 				for (int y = 0; y < gridSizeY; y++)
 				{
 					Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
-					grid[x, y] = new Node(worldPoint);
+					nodesGrid[x, y] = new Node(worldPoint);
 				}
 			}
 		}
@@ -42,9 +42,9 @@ namespace PG
 			Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, 1, gridWorldSize.y));
 
 
-			if (grid != null)
+			if (nodesGrid != null)
 			{
-				foreach (Node n in grid)
+				foreach (Node n in nodesGrid)
 				{
                     switch (n.usage)
                     {
@@ -52,7 +52,7 @@ namespace PG
 							Gizmos.color = Color.white;
 							break;
                         case Usage.road:
-							Gizmos.color = Color.black;
+							Gizmos.color = Color.magenta;
 							break;
                         case Usage.point:
 							Gizmos.color = Color.red;

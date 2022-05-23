@@ -11,8 +11,8 @@ namespace Procedural
         public GameObject prefab;
         public Material lineMaterial;
 
-        private int length = 4;
-        private float angle = 25f;
+        private int length = 9;
+        private float angle = 90f;
 
         public int Length
         {
