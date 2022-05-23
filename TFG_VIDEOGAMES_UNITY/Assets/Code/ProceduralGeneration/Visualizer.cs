@@ -6,8 +6,10 @@ namespace PG
 {
     public class Visualizer : MonoBehaviour
     {
+        private RoadPlacer roadPlacer;
         private Procedural.LSystemGenerator lsystem;
         List<Node> nodes = new List<Node>();
+        List<Node> surroundingNodes = new List<Node>();
         [SerializeField] public Grid grid;
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
@@ -31,6 +33,7 @@ namespace PG
         private void Awake()
         {
             lsystem = GetComponent<Procedural.LSystemGenerator>();
+            roadPlacer = GetComponent<RoadPlacer>();
         }
         void Start()
         {
@@ -74,7 +77,7 @@ namespace PG
                         {
                             AgentParameters agentParameter = savePoints.Pop();
                             currentPosX = agentParameter.posX;
-                            currentPosY= agentParameter.posY;
+                            currentPosY = agentParameter.posY;
                             direction = agentParameter.direction;
                             Length = agentParameter.length;
                         }
@@ -88,7 +91,7 @@ namespace PG
                         int dirX = Mathf.RoundToInt(direction.x); int dirZ = Mathf.RoundToInt(direction.z);
                         currentPosX += dirX * length;
                         currentPosY += dirZ * length;
-                        if(currentPosX < 0 || currentPosX >= gridTopX)
+                        if (currentPosX < 0 || currentPosX >= gridTopX)
                         {
                             if (currentPosX < 0)
                                 currentPosX = 0;
@@ -122,6 +125,14 @@ namespace PG
                 node.occupied = true;
                 node.usage = Usage.point;
             }
+            foreach (Node node in surroundingNodes)
+            {
+                if (node.occupied)
+                    continue;
+                node.occupied = true;
+                node.usage = Usage.decoration;
+            }
+            roadPlacer.PlaceRoadAssets(grid);
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY)
@@ -130,53 +141,67 @@ namespace PG
             //Debug.Log("end: " + PrintPos(start));
             int length = -1;
             int[] posIncrement = { 0, 0 };
+            int[] neighbourIncrement = { 0, 0 };
             if (startX - endX == 0) // Vertical Movement
             {
-                if (endY > startY)
+                if (endY > startY) // Subir
                 {
                     length = endY - startY;
                     posIncrement[1] = 1;
                 }
-                else
+                else // Bajar
                 {
                     length = startY - endY;
                     posIncrement[1] = -1;
                 }
+                neighbourIncrement[0] = 1;
             }
             else // HorizontalMovement
             {
-                if (endX > startX)
+                if (endX > startX) // Hacia derecha
                 {
                     length = endX - startX;
                     posIncrement[0] = 1;
                 }
-                else
+                else // Hacia izquierda
                 {
                     length = startX - endX;
                     posIncrement[0] = -1;
                 }
+                neighbourIncrement[1] = 1;
             }
             for (int i = 0; i < length; i++)
             {
-                int[] currentPos = { startX + posIncrement[0] * i, startY + posIncrement[1] * i };
+                int newX = startX + posIncrement[0] * i;
+                int newY = startY + posIncrement[1] * i;
+                AddNeighboursToList(surroundingNodes, newX + neighbourIncrement[0], newY + neighbourIncrement[1]);
+                AddNeighboursToList(surroundingNodes, newX - neighbourIncrement[0], newY - neighbourIncrement[1]);
+                int[] currentPos = { newX, newY };
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
                 currentNode.occupied = true;
                 currentNode.usage = Usage.road;
             }
         }
 
-        public enum EncodingLetters
-        {
-            unknown = 'X',
-            save = '[',
-            load = ']',
-            draw = 'F',
-            turnRight = '+',
-            turnLeft = '-'
-        }
+
         private string PrintPos(int[] position)
         {
             return "[" + position[0] + ", " + position[1] + "]";
+        }
+
+        private void AddNeighboursToList(List<Node> nodesList, int posX, int posY)
+        {
+            if (!OutOfGrid(posX, posY))
+                nodesList.Add(grid.nodesGrid[posX, posY]);
+        }
+        private bool OutOfGrid(int posX, int posY)
+        {
+            if (posX >= grid.gridSizeX || posY >= grid.gridSizeY)
+                return true;
+            if (posX < 0 || posY < 0)
+                return true;
+
+            return false;
         }
     }
 
@@ -187,6 +212,14 @@ namespace PG
         public int posX, posY;
     }
 
-    
+    public enum EncodingLetters
+    {
+        unknown = 'X',
+        save = '[',
+        load = ']',
+        draw = 'F',
+        turnRight = '+',
+        turnLeft = '-'
+    }
 }
 
