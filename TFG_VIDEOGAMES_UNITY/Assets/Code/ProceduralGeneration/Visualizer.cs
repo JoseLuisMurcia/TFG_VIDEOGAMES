@@ -14,6 +14,8 @@ namespace PG
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
         private float angle = 90f;
+        private int neighboursOffset = 1;
+        private int[] lengthValues = { 6, 8, 10, 12 };
         public int Length
         {
             get
@@ -106,7 +108,9 @@ namespace PG
                                 currentPosY = gridTopY - 1;
                         }
                         DrawLine(tempPosX, tempPosY, currentPosX, currentPosY);
-                        Length -= 2;
+                        int randomInt = Random.Range(0, lengthValues.Length);
+                        Length = lengthValues[randomInt];
+                        //Length -= 2;
                         nodes.Add(grid.nodesGrid[currentPosX, currentPosY]);
                         break;
                     case EncodingLetters.turnRight:
@@ -122,8 +126,12 @@ namespace PG
 
             foreach (Node node in nodes)
             {
-                node.occupied = true;
-                node.usage = Usage.point;
+                if (!node.occupied)
+                {
+                    node.occupied = true;
+                    node.usage = Usage.point;
+                }
+
             }
             foreach (Node node in surroundingNodes)
             {
@@ -134,7 +142,6 @@ namespace PG
             }
             roadPlacer.PlaceRoadAssets(grid);
         }
-
         private void DrawLine(int startX, int startY, int endX, int endY)
         {
             //Debug.Log("start: " + PrintPos(start));
@@ -174,25 +181,93 @@ namespace PG
             {
                 int newX = startX + posIncrement[0] * i;
                 int newY = startY + posIncrement[1] * i;
-                AddNeighboursToList(surroundingNodes, newX + neighbourIncrement[0], newY + neighbourIncrement[1]);
-                AddNeighboursToList(surroundingNodes, newX - neighbourIncrement[0], newY - neighbourIncrement[1]);
+                // Un check aqui para comprobar que no haya carretera en un radio de 3 nodos
+                bool valid = CheckSorroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
+                if (!valid)
+                    break;
+
                 int[] currentPos = { newX, newY };
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
-                currentNode.occupied = true;
-                currentNode.usage = Usage.road;
+                if (!currentNode.occupied)
+                {
+                    currentNode.occupied = true;
+                    currentNode.usage = Usage.road;
+
+                }
             }
         }
+        private bool CheckSorroundings(int posX, int posY, int xIncrement, int yIncrement)
+        {
+            bool valid = true;
+            int i = 1;
+            while (valid && i <= neighboursOffset)
+            {
+                int incrementedXPos = posX + xIncrement * i;
+                int decreasedXPos = posX - xIncrement * i;
+                int incrementedYPos = posY + yIncrement * i;
+                int decreasedYPos = posY - yIncrement * i;
+                if (OutOfGrid(incrementedXPos, incrementedYPos))
+                {
+                    valid = false;
+                }
+                else
+                {
+                    if (NearbyRoad(incrementedXPos, incrementedYPos))
+                        valid = false;
+                }
+                if (OutOfGrid(decreasedXPos, decreasedYPos))
+                {
+                    valid = false;
+                }
+                else
+                {
+                    if (NearbyRoad(decreasedXPos, decreasedYPos))
+                        valid = false;
+                }
+                i++;
+            }
+            if (valid)
+                MarkSorroundingNodes(posX, posY, xIncrement, yIncrement);
+            return valid;
+        }
+        private void MarkSorroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
+        {
+            for (int i = 1; i <= neighboursOffset; i++)
+            {
+                Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
+                Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
+                increasedNode.occupied = true;
+                decreasedNode.occupied = true;
+                increasedNode.usage = Usage.decoration;
+                decreasedNode.usage = Usage.decoration;
+                surroundingNodes.Add(increasedNode);
+                surroundingNodes.Add(decreasedNode);
+            }
+        }
+        private bool NearbyRoad(int xPos, int yPos)
+        {
+            Node node = grid.nodesGrid[xPos, yPos];
+            if (node.occupied && node.usage != Usage.decoration)
+                return true;
 
-
+            return false;
+        }
         private string PrintPos(int[] position)
         {
             return "[" + position[0] + ", " + position[1] + "]";
         }
 
-        private void AddNeighboursToList(List<Node> nodesList, int posX, int posY)
+        private void AddNeighboursToList(List<Node> nodesList, int posX, int posY, int xIncrement, int yIncrement)
         {
-            if (!OutOfGrid(posX, posY))
-                nodesList.Add(grid.nodesGrid[posX, posY]);
+            // Loop to allocate room to n = neighboursOffset
+            for (int i = 1; i <= neighboursOffset; i++)
+            {
+                if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
+                    nodesList.Add(grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i]);
+                if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
+                    nodesList.Add(grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i]);
+            }
+
         }
         private bool OutOfGrid(int posX, int posY)
         {
@@ -221,5 +296,6 @@ namespace PG
         turnRight = '+',
         turnLeft = '-'
     }
+
 }
 

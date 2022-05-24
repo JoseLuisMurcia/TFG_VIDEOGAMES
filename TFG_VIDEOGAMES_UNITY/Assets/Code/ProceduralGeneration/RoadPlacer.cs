@@ -80,13 +80,10 @@ namespace PG
                 }
             }
         }
-
         private NeighboursData GetNumNeighbours(int posX, int posY)
         {
             NeighboursData data = new NeighboursData();
             int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
-            if (posX == 18 && posY == limitY - 1)
-                Debug.Log("HEHE");
             if (posX + 1 < limitX)
             {
                 if (grid.nodesGrid[posX + 1, posY].occupied && grid.nodesGrid[posX + 1, posY].usage != Usage.decoration) // Right
@@ -115,7 +112,7 @@ namespace PG
         private void SpawnSphere(Vector3 pos)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            //startSphere.transform.parent = transform;
+            startSphere.transform.parent = transform;
             startSphere.transform.position = pos + Vector3.up * 3f;
             startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.cyan);
         }
