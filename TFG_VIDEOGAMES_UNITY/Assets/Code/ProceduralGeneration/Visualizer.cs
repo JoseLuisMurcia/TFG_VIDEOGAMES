@@ -56,7 +56,8 @@ namespace PG
 
             Vector3 direction = Vector3.forward;
 
-            nodes.Add(grid.nodesGrid[currentPosX, currentPosY]);
+            Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
+            AddToSavedPoints(firstNode);
 
             foreach (char letter in sequence)
             {
@@ -109,9 +110,7 @@ namespace PG
                         }
                         DrawLine(tempPosX, tempPosY, currentPosX, currentPosY);
                         int randomInt = Random.Range(0, lengthValues.Length);
-                        //nodes.Add(grid.nodesGrid[currentPosX, currentPosY]);
-                        //nodes.Add(grid.nodesGrid[tempPosX, tempPosY]);
-                        //Length = lengthValues[randomInt];
+                        Length = lengthValues[randomInt];
                         //Length -= 2;
                         break;
                     case EncodingLetters.turnRight:
@@ -124,20 +123,13 @@ namespace PG
                         break;
                 }
             }
-
-            foreach (Node node in nodes)
-            {
-                if (node.usage != Usage.road)
-                {
-                    node.occupied = true;
-                    node.usage = Usage.point;
-                }
-
-            }
             roadPlacer.PlaceRoadAssets(grid);
         }
         private void DrawLine(int startX, int startY, int endX, int endY)
         {
+            Node startNode = grid.nodesGrid[startX, startY];
+            if (startNode.usage != Usage.point)
+                return;
             //Debug.Log("start: " + PrintPos(start));
             //Debug.Log("end: " + PrintPos(start));
             int length = -1;
@@ -172,6 +164,7 @@ namespace PG
                 }
                 neighbourIncrement[1] = 1;
             }
+
             // Check if the grid is available for this advance
             for (int i = 1; i < length; i++)
             {
@@ -199,7 +192,8 @@ namespace PG
                     MarkSurroundingNodes(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
                 }
             }
-            nodes.Add(grid.nodesGrid[endX, endY]);
+            Node endNode = grid.nodesGrid[endX, endY];
+            AddToSavedPoints(endNode);
         }
         private bool CheckSurroundings(int posX, int posY, int xIncrement, int yIncrement)
         {
@@ -261,12 +255,18 @@ namespace PG
 
             }
         }
+        private void AddToSavedPoints(Node _node)
+        {
+            _node.occupied = true;
+            _node.usage = Usage.point;
+            nodes.Add(_node);
+        }
         private bool NearbyRoad(int xPos, int yPos)
         {
             Node node = grid.nodesGrid[xPos, yPos];
             if (node.occupied && node.usage != Usage.decoration)
             {
-                SpawnSphere(node.worldPosition);
+                //SpawnSphere(node.worldPosition);
                 return true;
             }
 
