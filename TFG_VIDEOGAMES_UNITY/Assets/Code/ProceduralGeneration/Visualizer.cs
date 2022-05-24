@@ -109,9 +109,10 @@ namespace PG
                         }
                         DrawLine(tempPosX, tempPosY, currentPosX, currentPosY);
                         int randomInt = Random.Range(0, lengthValues.Length);
-                        Length = lengthValues[randomInt];
+                        //nodes.Add(grid.nodesGrid[currentPosX, currentPosY]);
+                        //nodes.Add(grid.nodesGrid[tempPosX, tempPosY]);
+                        //Length = lengthValues[randomInt];
                         //Length -= 2;
-                        nodes.Add(grid.nodesGrid[currentPosX, currentPosY]);
                         break;
                     case EncodingLetters.turnRight:
                         direction = Quaternion.AngleAxis(angle, Vector3.up) * direction;
@@ -126,19 +127,12 @@ namespace PG
 
             foreach (Node node in nodes)
             {
-                if (!node.occupied)
+                if (node.usage != Usage.road)
                 {
                     node.occupied = true;
                     node.usage = Usage.point;
                 }
 
-            }
-            foreach (Node node in surroundingNodes)
-            {
-                if (node.occupied)
-                    continue;
-                node.occupied = true;
-                node.usage = Usage.decoration;
             }
             roadPlacer.PlaceRoadAssets(grid);
         }
@@ -149,6 +143,7 @@ namespace PG
             int length = -1;
             int[] posIncrement = { 0, 0 };
             int[] neighbourIncrement = { 0, 0 };
+            // Calculate the offset
             if (startX - endX == 0) // Vertical Movement
             {
                 if (endY > startY) // Subir
@@ -177,97 +172,105 @@ namespace PG
                 }
                 neighbourIncrement[1] = 1;
             }
+            // Check if the grid is available for this advance
+            for (int i = 1; i < length; i++)
+            {
+                int newX = startX + posIncrement[0] * i;
+                int newY = startY + posIncrement[1] * i;
+
+                if (!CheckSurroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
+                    return;
+            }
+
+            // Mark the road
             for (int i = 0; i < length; i++)
             {
                 int newX = startX + posIncrement[0] * i;
                 int newY = startY + posIncrement[1] * i;
                 // Un check aqui para comprobar que no haya carretera en un radio de 3 nodos
-                bool valid = CheckSorroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
-                if (!valid)
-                    break;
-
+                // Habria que hacer checksurroundings para toda la length en la que nos vayamos a extender o sea, las 2 dimensiones, porque si no, estamos marcando como
+                // ocupados y carreteras, nodos que son invalidos y luego no se puede revertir
                 int[] currentPos = { newX, newY };
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
-                if (!currentNode.occupied)
+                if (currentNode.usage != Usage.road && currentNode.usage != Usage.point)
                 {
                     currentNode.occupied = true;
                     currentNode.usage = Usage.road;
-
+                    MarkSurroundingNodes(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
                 }
             }
+            nodes.Add(grid.nodesGrid[endX, endY]);
         }
-        private bool CheckSorroundings(int posX, int posY, int xIncrement, int yIncrement)
+        private bool CheckSurroundings(int posX, int posY, int xIncrement, int yIncrement)
         {
-            bool valid = true;
             int i = 1;
-            while (valid && i <= neighboursOffset)
+            while (i <= neighboursOffset)
             {
                 int incrementedXPos = posX + xIncrement * i;
                 int decreasedXPos = posX - xIncrement * i;
                 int incrementedYPos = posY + yIncrement * i;
                 int decreasedYPos = posY - yIncrement * i;
+
                 if (OutOfGrid(incrementedXPos, incrementedYPos))
                 {
-                    valid = false;
+                    return false;
                 }
                 else
                 {
                     if (NearbyRoad(incrementedXPos, incrementedYPos))
-                        valid = false;
+                        return false;
                 }
                 if (OutOfGrid(decreasedXPos, decreasedYPos))
                 {
-                    valid = false;
+                    return false;
                 }
                 else
                 {
                     if (NearbyRoad(decreasedXPos, decreasedYPos))
-                        valid = false;
+                        return false;
                 }
                 i++;
             }
-            if (valid)
-                MarkSorroundingNodes(posX, posY, xIncrement, yIncrement);
-            return valid;
+            return true;
         }
-        private void MarkSorroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
+        private void MarkSurroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
         {
             for (int i = 1; i <= neighboursOffset; i++)
             {
-                Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
-                Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
-                increasedNode.occupied = true;
-                decreasedNode.occupied = true;
-                increasedNode.usage = Usage.decoration;
-                decreasedNode.usage = Usage.decoration;
-                surroundingNodes.Add(increasedNode);
-                surroundingNodes.Add(decreasedNode);
+                if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
+                {
+                    Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
+                    if (!increasedNode.occupied)
+                    {
+                        increasedNode.occupied = true;
+                        increasedNode.usage = Usage.decoration;
+                        surroundingNodes.Add(increasedNode);
+                    }
+                }
+
+                if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
+                {
+                    Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
+                    if (!decreasedNode.occupied)
+                    {
+                        decreasedNode.occupied = true;
+                        decreasedNode.usage = Usage.decoration;
+                        surroundingNodes.Add(decreasedNode);
+                    }
+                }
+
             }
         }
         private bool NearbyRoad(int xPos, int yPos)
         {
             Node node = grid.nodesGrid[xPos, yPos];
             if (node.occupied && node.usage != Usage.decoration)
-                return true;
-
-            return false;
-        }
-        private string PrintPos(int[] position)
-        {
-            return "[" + position[0] + ", " + position[1] + "]";
-        }
-
-        private void AddNeighboursToList(List<Node> nodesList, int posX, int posY, int xIncrement, int yIncrement)
-        {
-            // Loop to allocate room to n = neighboursOffset
-            for (int i = 1; i <= neighboursOffset; i++)
             {
-                if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
-                    nodesList.Add(grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i]);
-                if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
-                    nodesList.Add(grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i]);
+                SpawnSphere(node.worldPosition);
+                return true;
             }
 
+            return false;
         }
         private bool OutOfGrid(int posX, int posY)
         {
@@ -277,6 +280,13 @@ namespace PG
                 return true;
 
             return false;
+        }
+        private void SpawnSphere(Vector3 pos)
+        {
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.parent = transform;
+            startSphere.transform.position = pos + Vector3.up * 2f;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.cyan);
         }
     }
 
