@@ -32,7 +32,7 @@ namespace PG
                 for (int y = 0; y < gridSizeY; y++)
                 {
                     Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
-                    nodesGrid[x, y] = new Node(worldPoint);
+                    nodesGrid[x, y] = new Node(worldPoint, x, y);
                 }
             }
         }
@@ -65,6 +65,17 @@ namespace PG
                 }
             }
         }
+
+        public bool OutOfGrid(int posX, int posY)
+        {
+            if (posX >= gridSizeX || posY >= gridSizeY)
+                return true;
+            if (posX < 0 || posY < 0)
+                return true;
+
+            return false;
+        }
+
     }
 
     public class Node
@@ -72,9 +83,12 @@ namespace PG
         public Vector3 worldPosition;
         public bool occupied = false;
         public Usage usage = Usage.empty;
-        public Node(Vector3 _worldPos)
+        public int gridX, gridY;
+        public Node(Vector3 _worldPos, int _gridX, int _gridY)
         {
             worldPosition = _worldPos;
+            gridX = _gridX;
+            gridY = _gridY;
         }
     }
 

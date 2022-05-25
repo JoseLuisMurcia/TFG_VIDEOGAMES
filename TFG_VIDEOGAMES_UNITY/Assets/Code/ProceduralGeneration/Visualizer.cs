@@ -14,8 +14,9 @@ namespace PG
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
         private float angle = 90f;
-        private int neighboursOffset = 1;
-        private int[] lengthValues = { 6, 8, 10, 12 };
+        [SerializeField] private int neighboursOffset = 3;
+        //private int[] lengthValues = { 6, 8, 10, 12 };
+        private int[] lengthValues = {8, 12 };
         public int Length
         {
             get
@@ -274,12 +275,7 @@ namespace PG
         }
         private bool OutOfGrid(int posX, int posY)
         {
-            if (posX >= grid.gridSizeX || posY >= grid.gridSizeY)
-                return true;
-            if (posX < 0 || posY < 0)
-                return true;
-
-            return false;
+            return grid.OutOfGrid(posX, posY);
         }
         private void SpawnSphere(Vector3 pos)
         {

@@ -3539,7 +3539,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 523038905}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 25.9, y: -0.02, z: -13.5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 30.101147, y: 19.570026, z: 17.106895}
   m_Children: []
   m_Father: {fileID: 0}
@@ -11222,6 +11222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid: {fileID: 1575517317}
+  neighboursOffset: 5
 --- !u!114 &1772971127
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11237,7 +11238,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 5
+  iterationLimit: 7
   randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.3
 --- !u!4 &1772971128
