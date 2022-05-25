@@ -9752,7 +9752,7 @@ MonoBehaviour:
   unwalkableMask:
     serializedVersion: 2
     m_Bits: 128
-  gridWorldSize: {x: 200, y: 200}
+  gridWorldSize: {x: 400, y: 400}
   nodeRadius: 2
   gridSizeX: 0
   gridSizeY: 0
@@ -11222,7 +11222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   grid: {fileID: 1575517317}
-  neighboursOffset: 5
+  neighboursOffset: 3
 --- !u!114 &1772971127
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11238,7 +11238,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 7
+  iterationLimit: 10
   randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.3
 --- !u!4 &1772971128
@@ -11272,6 +11272,7 @@ MonoBehaviour:
   road3way: {fileID: 5612748288291522370, guid: b45187d68e895ae4abd03294857f88be, type: 3}
   road4way: {fileID: 6496437081037585619, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
   roadEnd: {fileID: 652692997}
+  visualDebug: 0
 --- !u!1001 &1774481214
 PrefabInstance:
   m_ObjectHideFlags: 0

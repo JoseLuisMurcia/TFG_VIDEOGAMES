@@ -15,8 +15,8 @@ namespace PG
         private int length = 8;
         private float angle = 90f;
         [SerializeField] private int neighboursOffset = 3;
-        //private int[] lengthValues = { 6, 8, 10, 12 };
-        private int[] lengthValues = {8, 12 };
+        private int[] lengthValues = { 6, 8, 10, 12 };
+        //private int[] lengthValues = {8, 12 };
         public int Length
         {
             get

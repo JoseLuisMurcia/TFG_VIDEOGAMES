@@ -10,6 +10,7 @@ namespace PG
         private PG.Visualizer visualizer;
         List<Node> updatedNodes = new List<Node>();
         Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
+        [SerializeField] bool visualDebug;
         public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
         {
             grid = _grid;
@@ -29,7 +30,7 @@ namespace PG
                         {
                             case 1:
                                 roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
-                                SpawnSphere(currentNode.worldPosition, Color.cyan);
+                                if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan);
                                 ConnectToOtherRoad(i, j, data);
                                 break;
                             case 2:
@@ -94,11 +95,12 @@ namespace PG
                 NeighboursData data = GetNumNeighbours(node.gridX, node.gridY);
                 List<Direction> neighbours = data.neighbours;
                 Vector2Int key = new Vector2Int(gridX, gridY);
-                if(roadDictionary.ContainsKey(key))
+                if (roadDictionary.ContainsKey(key))
                     Destroy(roadDictionary[key]);
                 switch (data.neighbours.Count)
                 {
                     case 1:
+                        Debug.LogError("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
                         Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         SpawnSphere(node.worldPosition, Color.cyan);
                         break;
@@ -187,7 +189,6 @@ namespace PG
             List<Direction> allDirections = GetAllDirections();
             allDirections.Remove(neighbourDirection);
             int i = 0;
-            CreateSpheresInFreeDirections(gridX, gridY, allDirections);
             List<Node> path;
             while (i < 3)
             {
@@ -199,16 +200,14 @@ namespace PG
                     foreach (Node node in path)
                     {
                         node.occupied = true;
+                        updatedNodes.Add(node);
                         if (node.usage != Usage.point)
                         {
                             node.usage = Usage.road;
                         }
-                        else if (node.usage == Usage.point)
-                        {
-                            updatedNodes.Add(node);
-                            //visualizer.AddToSavedPoints(node);
-                        }
+
                     }
+                    if(visualDebug) CreateSpheresInFreeDirections(gridX, gridY, allDirections);
                     return;
                 }
                 i++;
@@ -295,6 +294,8 @@ namespace PG
                         if (node.usage != Usage.point)
                             node.usage = Usage.road;
                     }
+                    if (visualDebug) CreateSpheresInPath(path);
+                    if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta);
                     return;
                 }
                 i++;
@@ -335,11 +336,25 @@ namespace PG
                 if (OutOfGrid(newX, newY))
                     return null;
 
-                path.Add(grid.nodesGrid[newX, newY]);
+                Node currentNode = grid.nodesGrid[newX, newY];
+                if (i < movementLength && currentNode.usage == Usage.road)
+                    return null;
+
+                path.Add(currentNode);
                 i++;
             }
 
             return path;
+        }
+        private void CreateSpheresInPath(List<Node> path)
+        {
+            foreach (Node node in path)
+            {
+                if(node.usage != Usage.point)
+                    SpawnSphere(node.worldPosition, Color.green);
+
+            }
+
         }
         private void CreateSpheresInFreeDirections(int x, int y, List<Direction> freeDirections)
         {

@@ -25,6 +25,11 @@ public class IntersectionTriggers : MonoBehaviour
         float bestDistance = Mathf.Infinity;
         foreach (Road neighbour in parentRoad.connections)
         {
+            if (neighbour == null || parentRoad == null || belongingRoad == null)
+            {
+                Destroy(gameObject);
+                break;
+            }
             float distance = Vector3.Distance(neighbour.transform.position, transform.position);
             if (distance < bestDistance)
             {
@@ -32,11 +37,15 @@ public class IntersectionTriggers : MonoBehaviour
                 bestDistance = distance;
             }
         }
-        if (belongingRoad.trafficLight != null)
+        if (parentRoad != null && belongingRoad != null)
         {
-            hasTrafficLight = true;
-            DestroyIfTrafficLight();
+            if (belongingRoad.trafficLight != null)
+            {
+                hasTrafficLight = true;
+                DestroyIfTrafficLight();
+            }
         }
+        
     }
 
     private void DestroyIfTrafficLight()
