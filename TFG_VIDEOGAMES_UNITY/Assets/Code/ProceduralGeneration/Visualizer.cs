@@ -8,8 +8,8 @@ namespace PG
     {
         private RoadPlacer roadPlacer;
         private Procedural.LSystemGenerator lsystem;
-        List<Node> nodes = new List<Node>();
-        List<Node> surroundingNodes = new List<Node>();
+        [HideInInspector] public List<Node> pointNodes = new List<Node>();
+        [HideInInspector] List<Node> surroundingNodes = new List<Node>();
         [SerializeField] public Grid grid;
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
@@ -124,7 +124,7 @@ namespace PG
                         break;
                 }
             }
-            roadPlacer.PlaceRoadAssets(grid);
+            roadPlacer.PlaceRoadAssets(grid, this);
         }
         private void DrawLine(int startX, int startY, int endX, int endY)
         {
@@ -256,11 +256,11 @@ namespace PG
 
             }
         }
-        private void AddToSavedPoints(Node _node)
+        public void AddToSavedPoints(Node _node)
         {
             _node.occupied = true;
             _node.usage = Usage.point;
-            nodes.Add(_node);
+            pointNodes.Add(_node);
         }
         private bool NearbyRoad(int xPos, int yPos)
         {
