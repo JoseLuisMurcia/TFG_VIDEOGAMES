@@ -6,8 +6,9 @@ namespace PG
 {
     public class Visualizer : MonoBehaviour
     {
-        private RoadPlacer roadPlacer;
+        [HideInInspector] public RoadPlacer roadPlacer;
         private Procedural.LSystemGenerator lsystem;
+        private GenerationUI generationUI;
         [HideInInspector] public List<Node> pointNodes = new List<Node>();
         [HideInInspector] List<Node> surroundingNodes = new List<Node>();
         [SerializeField] public Grid grid;
@@ -15,8 +16,9 @@ namespace PG
         private int length = 8;
         private float angle = 90f;
         [SerializeField] private int neighboursOffset = 3;
-        private int[] lengthValues = { 6, 8, 10, 12 };
-        //private int[] lengthValues = {8, 12 };
+        //private int[] lengthValues = { 6, 8, 10, 12 };
+        private int[] lengthValues = {8, 12, 14};
+
         public int Length
         {
             get
@@ -37,12 +39,19 @@ namespace PG
         {
             lsystem = GetComponent<Procedural.LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
+            generationUI = GetComponent<GenerationUI>();
         }
         void Start()
         {
-            var sequence = lsystem.GenerateSentence();
+            StartGeneration();
+            
+        }
+        public void StartGeneration()
+        {
+            surroundingNodes.Clear();
+            pointNodes.Clear();
+            string sequence = lsystem.GenerateSentence();
             VisualizeSequence(sequence);
-            Debug.Log(sequence);
         }
         // Hay que desplazarse en nodos, en cubitos del grid, luego ya mapeamos a carreteras, nada de posiciones, cubos
         private void VisualizeSequence(string sequence)
@@ -125,7 +134,9 @@ namespace PG
                 }
             }
             roadPlacer.PlaceRoadAssets(grid, this);
+            generationUI.OnCityCreated();
         }
+
         private void DrawLine(int startX, int startY, int endX, int endY)
         {
             Node startNode = grid.nodesGrid[startX, startY];

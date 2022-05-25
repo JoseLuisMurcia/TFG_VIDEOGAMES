@@ -101,7 +101,7 @@ namespace PG
                 {
                     case 1:
                         Debug.LogError("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
-                        Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
+                        roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         SpawnSphere(node.worldPosition, Color.cyan);
                         break;
                     case 2:
@@ -112,7 +112,7 @@ namespace PG
                             {
                                 rotation = Quaternion.Euler(0, 90, 0);
                             }
-                            Instantiate(roadStraight, node.worldPosition, rotation, transform);
+                            roadDictionary[key] = Instantiate(roadStraight, node.worldPosition, rotation, transform);
                         }
                         else
                         {
@@ -128,7 +128,7 @@ namespace PG
                             {
                                 rotation = Quaternion.Euler(0, 90, 0);
                             }
-                            Instantiate(roadCorner, node.worldPosition, rotation, transform);
+                            roadDictionary[key] = Instantiate(roadCorner, node.worldPosition, rotation, transform);
                         }
                         break;
                     case 3:
@@ -144,10 +144,10 @@ namespace PG
                         {
                             rotation = Quaternion.Euler(0, 90, 0);
                         }
-                        Instantiate(road3way, node.worldPosition, rotation, transform);
+                        roadDictionary[key] = Instantiate(road3way, node.worldPosition, rotation, transform);
                         break;
                     case 4:
-                        Instantiate(road4way, node.worldPosition, Quaternion.identity, transform);
+                        roadDictionary[key] = Instantiate(road4way, node.worldPosition, Quaternion.identity, transform);
                         break;
                     default:
                         break;
@@ -207,7 +207,7 @@ namespace PG
                         }
 
                     }
-                    if(visualDebug) CreateSpheresInFreeDirections(gridX, gridY, allDirections);
+                    if (visualDebug) CreateSpheresInFreeDirections(gridX, gridY, allDirections);
                     return;
                 }
                 i++;
@@ -350,7 +350,7 @@ namespace PG
         {
             foreach (Node node in path)
             {
-                if(node.usage != Usage.point)
+                if (node.usage != Usage.point)
                     SpawnSphere(node.worldPosition, Color.green);
 
             }
@@ -441,6 +441,19 @@ namespace PG
         private List<Direction> GetAllDirections()
         {
             return new List<Direction> { Direction.left, Direction.right, Direction.forward, Direction.back };
+        }
+        public void Reset()
+        {
+            updatedNodes.Clear();
+            //foreach(KeyValuePair<Vector2Int, GameObject> entry in roadDictionary)
+            //{
+            //    Destroy(roadDictionary[entry.Key]);
+            //}
+            foreach (Vector2Int key in roadDictionary.Keys)
+            {
+                Destroy(roadDictionary[key]);
+            }
+            roadDictionary.Clear();
         }
     }
 

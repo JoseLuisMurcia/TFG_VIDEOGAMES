@@ -76,6 +76,10 @@ namespace PG
             return false;
         }
 
+        public void Reset()
+        {
+            CreateGrid();
+        }
     }
 
     public class Node
