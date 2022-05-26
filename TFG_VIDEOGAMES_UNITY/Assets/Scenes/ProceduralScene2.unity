@@ -11738,6 +11738,7 @@ GameObject:
   - component: {fileID: 1772971126}
   - component: {fileID: 1772971129}
   - component: {fileID: 1772971130}
+  - component: {fileID: 1772971131}
   m_Layer: 0
   m_Name: LSystem
   m_TagString: Untagged
@@ -11759,7 +11760,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadPlacer: {fileID: 0}
   grid: {fileID: 1575517317}
-  neighboursOffset: 5
+  neighboursOffset: 3
 --- !u!114 &1772971127
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11775,7 +11776,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 5
+  iterationLimit: 7
   randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.3
 --- !u!4 &1772971128
@@ -11825,6 +11826,18 @@ MonoBehaviour:
   regenerateButton: {fileID: 386457811}
   carSpawner: {fileID: 720690113}
   pedestrianSpawner: {fileID: 1213979569}
+--- !u!114 &1772971131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772971125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adef2ca6f3ec1d4189f6be6e55d12de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1774481214
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -85,7 +85,6 @@ namespace PG
 
                 }
             }
-
             // Delete outdated prefabs and spawn the correct ones
             foreach (Node node in updatedNodes)
             {
@@ -100,7 +99,7 @@ namespace PG
                 switch (data.neighbours.Count)
                 {
                     case 1:
-                        Debug.LogError("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
+                        Debug.LogWarning("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
                         roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         SpawnSphere(node.worldPosition, Color.cyan);
                         break;
@@ -212,7 +211,7 @@ namespace PG
                 }
                 i++;
             }
-            // If going straight has not been successful, we must attempt a two direction movement, e.g: right and down, right and up, etc.
+            // If going straight has not been successful, we must call the pathfinder to find a path for us
             // We must have a list of candidates positions to do the movement
             i = 0;
             while (i < visualizer.pointNodes.Count)
@@ -226,64 +225,10 @@ namespace PG
                     continue;
                 }
 
-                // Decompose the movement
-                List<Direction> movementDirections = new List<Direction>();
-                if (targetX > gridX)
-                {
-                    movementDirections.Add(Direction.right);
-                }
-                else
-                {
-                    movementDirections.Add(Direction.left);
-                }
-
-                if (targetY > gridY)
-                {
-                    movementDirections.Add(Direction.forward);
-                }
-                else
-                {
-                    movementDirections.Add(Direction.back);
-                }
-
-                if (movementDirections[0] == neighbourDirection)
-                {
-                    movementDirections.Reverse();
-                }
-
-                int tempStartX = gridX;
-                int tempStartY = gridY;
-                path = new List<Node>();
-                path.Add(grid.nodesGrid[gridX, gridY]);
-                int subTargetX = tempStartX;
-                int subTargetY = tempStartY;
-                foreach (Direction direction in movementDirections)
-                {
-                    Vector3 dir = DirectionToVector(direction);
-                    int dirX = Mathf.RoundToInt(dir.x); int dirY = Mathf.RoundToInt(dir.z);
-
-                    if (direction == Direction.forward || direction == Direction.back)
-                    {
-                        subTargetY = targetY;
-                    }
-                    else
-                    {
-                        subTargetX = targetX;
-                    }
-
-                    List<Node> subPath = GoInDirection(dirX, dirY, tempStartX, tempStartY, subTargetX, subTargetY);
-                    if (subPath == null)
-                    {
-                        path = null;
-                        break;
-                    }
-
-                    tempStartX = subTargetX;
-                    tempStartY = subTargetY;
-                    subPath[subPath.Count - 1].usage = Usage.point;
-                    path.AddRange(subPath);
-
-                }
+                // Call the pathfinder
+                Node currentNode = grid.nodesGrid[gridX, gridY];
+                path = Pathfinder.instance.FindPath(currentNode, targetNode);
+                
                 // Path found, mark all those nodes as road.
                 if (path != null)
                 {
@@ -296,6 +241,7 @@ namespace PG
                     }
                     if (visualDebug) CreateSpheresInPath(path);
                     if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta);
+                    Debug.Log("PATH CREATED WITH PATHFINDING");
                     return;
                 }
                 i++;
@@ -316,7 +262,7 @@ namespace PG
                 if (OutOfGrid(newX, newY))
                     return null;
 
-                if (!visualizer.CheckSurroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
+                if (!visualizer.EnoughSpace(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
                     return null;
 
                 Node currentNode = grid.nodesGrid[newX, newY];
@@ -373,7 +319,7 @@ namespace PG
                 if (OutOfGrid(currentPosX, currentPosY))
                     return null;
 
-                //if (!visualizer.CheckSurroundings(currentPosX, currentPosY, neighbourIncrement[0], neighbourIncrement[1]))
+                //if (!visualizer.EnoughSpace(currentPosX, currentPosY, neighbourIncrement[0], neighbourIncrement[1]))
                 //    return null;
 
                 Node currentNode = grid.nodesGrid[currentPosX, currentPosY];

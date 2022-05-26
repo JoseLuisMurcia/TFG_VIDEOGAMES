@@ -15,10 +15,10 @@ namespace PG
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
         private float angle = 90f;
-        [SerializeField] private int neighboursOffset = 3;
+        [SerializeField] public int neighboursOffset;
         //private int[] lengthValues = { 6, 8, 10, 12 };
         private int[] lengthValues = { 8, 12 };
-
+        public static Visualizer instance;
         public int Length
         {
             get
@@ -37,6 +37,7 @@ namespace PG
 
         private void Awake()
         {
+            instance = this;
             lsystem = GetComponent<Procedural.LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
             generationUI = GetComponent<GenerationUI>();
@@ -152,7 +153,7 @@ namespace PG
                 int newX = startX + dirX * i;
                 int newY = startY + dirY * i;
 
-                if (!CheckSurroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
+                if (!EnoughSpace(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
                     return;
             }
 
@@ -178,7 +179,7 @@ namespace PG
         }
         // This method receives a startPosition and the increment with direction it has to perform to reach a target, it has to be called on a loop
         // The increment received is to advance laterally to the main road and check if there is a road.
-        public bool CheckSurroundings(int posX, int posY, int xIncrement, int yIncrement)
+        public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement)
         {
             int i = 1;
             while (i <= neighboursOffset)
@@ -238,7 +239,7 @@ namespace PG
             _node.usage = Usage.point;
             pointNodes.Add(_node);
         }
-        private bool NearbyRoad(int xPos, int yPos)
+        public bool NearbyRoad(int xPos, int yPos)
         {
             Node node = grid.nodesGrid[xPos, yPos];
             if (node.occupied && node.usage != Usage.decoration)

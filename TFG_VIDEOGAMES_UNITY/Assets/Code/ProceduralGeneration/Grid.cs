@@ -25,7 +25,13 @@ namespace PG
             gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
             CreateGrid();
         }
-
+        public int MaxSize
+        {
+            get
+            {
+                return gridSizeX * gridSizeY;
+            }
+        }
         void CreateGrid()
         {
             nodesGrid = new Node[gridSizeX, gridSizeY];
@@ -97,6 +103,31 @@ namespace PG
                     if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
                     {
                         neighbours.Add(nodesGrid[checkX, checkY]);
+                    }
+                }
+            }
+
+            return neighbours;
+        }
+
+        public List<Node> GetNeighboursInLine(Node node)
+        {
+            List<Node> neighbours = new List<Node>();
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    if (x == 0 && y == 0)
+                        continue;
+
+                    int checkX = node.gridX + x;
+                    int checkY = node.gridY + y;
+
+                    if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
+                    {
+                        if(x == 0 && y != 0 || x != 0 && y == 0)
+                            neighbours.Add(nodesGrid[checkX, checkY]);
                     }
                 }
             }
