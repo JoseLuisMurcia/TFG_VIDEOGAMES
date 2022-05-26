@@ -305,35 +305,18 @@ namespace PG
         private List<Node> GoInDirection(int dirX, int dirY, int startX, int startY, int targetX, int targetY)
         {
             List<Node> path = new List<Node>();
-            int movementLength;
-            if (dirX == 0) // Forward or back movement, calculate length based on startY - targetY
-            {
-                if (targetY > startY)
-                {
-                    movementLength = targetY - startY; // Forward movement
-                }
-                else
-                {
-                    movementLength = startY - targetY; // Back movement
-                }
-            }
-            else // Right or back left, calculate length based on startX - targetX
-            {
-                if (targetX > startX)
-                {
-                    movementLength = targetX - startX; // Right movement
-                }
-                else
-                {
-                    movementLength = startX - targetX; // Left movement
-                }
-            }
+            int movementLength = visualizer.GetMovementLength(startX, startY, targetX, targetY); 
+            int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(dirX, dirY);
+
             int i = 1;
             while (i <= movementLength)
             {
                 int newX = startX + dirX * i;
                 int newY = startY + dirY * i;
                 if (OutOfGrid(newX, newY))
+                    return null;
+
+                if (!visualizer.CheckSurroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
                     return null;
 
                 Node currentNode = grid.nodesGrid[newX, newY];
@@ -374,11 +357,14 @@ namespace PG
         }
         private List<Node> GoStraight(Direction direction, int startX, int startY)
         {
-            int i = 1;
+            
             List<Node> path = new List<Node>();
             path.Add(grid.nodesGrid[startX, startY]);
             Vector3 dir = DirectionToVector(direction);
+            int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
             int dirX = Mathf.RoundToInt(dir.x); int dirZ = Mathf.RoundToInt(dir.z);
+
+            int i = 1;
             while (true)
             {
                 int currentPosX = startX + dirX * i;
@@ -386,6 +372,9 @@ namespace PG
 
                 if (OutOfGrid(currentPosX, currentPosY))
                     return null;
+
+                //if (!visualizer.CheckSurroundings(currentPosX, currentPosY, neighbourIncrement[0], neighbourIncrement[1]))
+                //    return null;
 
                 Node currentNode = grid.nodesGrid[currentPosX, currentPosY];
                 path.Add(currentNode);
@@ -404,7 +393,7 @@ namespace PG
             startSphere.transform.position = pos + Vector3.up * 3f;
             startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
-        private Vector3 DirectionToVector(Direction direction)
+        public Vector3 DirectionToVector(Direction direction)
         {
             switch (direction)
             {
@@ -418,6 +407,21 @@ namespace PG
                     return Vector3.back;
             }
             return Vector3.zero;
+        }
+        public Direction VectorToDirection(Vector3 direction)
+        {
+            float dirX = direction.x;
+            float dirY = direction.z;
+            if (dirX > 0.5f)
+                return Direction.right;
+            if (dirX < 0.5f)
+                return Direction.left;
+            if (dirY > 0.5f)
+                return Direction.forward;
+            if (dirY < 0.5f)
+                return Direction.back;
+
+            return Direction.zero;
         }
         private Vector3 GetOppositeVectorToDir(Direction direction)
         {
@@ -466,6 +470,7 @@ namespace PG
         left,
         right,
         forward,
-        back
+        back,
+        zero = -1
     }
 }

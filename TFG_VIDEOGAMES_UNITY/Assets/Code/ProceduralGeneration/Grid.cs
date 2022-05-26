@@ -13,7 +13,11 @@ namespace PG
 
         float nodeDiameter;
         public int gridSizeX, gridSizeY;
-
+        public static Grid instance;
+        private void Awake()
+        {
+            instance = this;
+        }
         void Start()
         {
             nodeDiameter = nodeRadius * 2;
@@ -76,15 +80,43 @@ namespace PG
             return false;
         }
 
+        public List<Node> GetNeighbours(Node node)
+        {
+            List<Node> neighbours = new List<Node>();
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    if (x == 0 && y == 0)
+                        continue;
+
+                    int checkX = node.gridX + x;
+                    int checkY = node.gridY + y;
+
+                    if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
+                    {
+                        neighbours.Add(nodesGrid[checkX, checkY]);
+                    }
+                }
+            }
+
+            return neighbours;
+        }
+
         public void Reset()
         {
             CreateGrid();
         }
     }
 
-    public class Node
+    public class Node : IHeapItem<Node>
     {
         public Vector3 worldPosition;
+        public float gCost;
+        public float hCost;
+        public Node parent;
+        int heapIndex;
         public bool occupied = false;
         public Usage usage = Usage.empty;
         public int gridX, gridY;
@@ -93,6 +125,36 @@ namespace PG
             worldPosition = _worldPos;
             gridX = _gridX;
             gridY = _gridY;
+        }
+
+        public float fCost
+        {
+            get
+            {
+                return gCost + hCost;
+            }
+        }
+
+        public int HeapIndex
+        {
+            get
+            {
+                return heapIndex;
+            }
+            set
+            {
+                heapIndex = value;
+            }
+        }
+
+        public int CompareTo(Node nodeToCompare)
+        {
+            int compare = fCost.CompareTo(nodeToCompare.fCost);
+            if (compare == 0)
+            {
+                compare = hCost.CompareTo(nodeToCompare.hCost);
+            }
+            return -compare;
         }
     }
 

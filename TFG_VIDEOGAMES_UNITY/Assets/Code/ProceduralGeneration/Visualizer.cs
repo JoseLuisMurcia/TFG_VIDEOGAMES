@@ -17,7 +17,7 @@ namespace PG
         private float angle = 90f;
         [SerializeField] private int neighboursOffset = 3;
         //private int[] lengthValues = { 6, 8, 10, 12 };
-        private int[] lengthValues = {8, 12, 14};
+        private int[] lengthValues = { 8, 12 };
 
         public int Length
         {
@@ -44,7 +44,7 @@ namespace PG
         void Start()
         {
             StartGeneration();
-            
+
         }
         public void StartGeneration()
         {
@@ -118,7 +118,7 @@ namespace PG
                             else
                                 currentPosY = gridTopY - 1;
                         }
-                        DrawLine(tempPosX, tempPosY, currentPosX, currentPosY);
+                        DrawLine(tempPosX, tempPosY, currentPosX, currentPosY, dirX, dirZ);
                         int randomInt = Random.Range(0, lengthValues.Length);
                         Length = lengthValues[randomInt];
                         //Length -= 2;
@@ -137,51 +137,20 @@ namespace PG
             generationUI.OnCityCreated();
         }
 
-        private void DrawLine(int startX, int startY, int endX, int endY)
+        private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)
         {
             Node startNode = grid.nodesGrid[startX, startY];
             if (startNode.usage != Usage.point)
                 return;
-            //Debug.Log("start: " + PrintPos(start));
-            //Debug.Log("end: " + PrintPos(start));
-            int length = -1;
-            int[] posIncrement = { 0, 0 };
-            int[] neighbourIncrement = { 0, 0 };
-            // Calculate the offset
-            if (startX - endX == 0) // Vertical Movement
-            {
-                if (endY > startY) // Subir
-                {
-                    length = endY - startY;
-                    posIncrement[1] = 1;
-                }
-                else // Bajar
-                {
-                    length = startY - endY;
-                    posIncrement[1] = -1;
-                }
-                neighbourIncrement[0] = 1;
-            }
-            else // HorizontalMovement
-            {
-                if (endX > startX) // Hacia derecha
-                {
-                    length = endX - startX;
-                    posIncrement[0] = 1;
-                }
-                else // Hacia izquierda
-                {
-                    length = startX - endX;
-                    posIncrement[0] = -1;
-                }
-                neighbourIncrement[1] = 1;
-            }
+
+            int length = GetMovementLength(startX, startY, endX, endY);
+            int[] neighbourIncrement = GetLateralIncrementOnDirection(dirX, dirY);
 
             // Check if the grid is available for this advance
             for (int i = 1; i < length; i++)
             {
-                int newX = startX + posIncrement[0] * i;
-                int newY = startY + posIncrement[1] * i;
+                int newX = startX + dirX * i;
+                int newY = startY + dirY * i;
 
                 if (!CheckSurroundings(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
                     return;
@@ -190,8 +159,8 @@ namespace PG
             // Mark the road
             for (int i = 0; i < length; i++)
             {
-                int newX = startX + posIncrement[0] * i;
-                int newY = startY + posIncrement[1] * i;
+                int newX = startX + dirX * i;
+                int newY = startY + dirY * i;
                 // Un check aqui para comprobar que no haya carretera en un radio de 3 nodos
                 // Habria que hacer checksurroundings para toda la length en la que nos vayamos a extender o sea, las 2 dimensiones, porque si no, estamos marcando como
                 // ocupados y carreteras, nodos que son invalidos y luego no se puede revertir
@@ -207,7 +176,9 @@ namespace PG
             Node endNode = grid.nodesGrid[endX, endY];
             AddToSavedPoints(endNode);
         }
-        private bool CheckSurroundings(int posX, int posY, int xIncrement, int yIncrement)
+        // This method receives a startPosition and the increment with direction it has to perform to reach a target, it has to be called on a loop
+        // The increment received is to advance laterally to the main road and check if there is a road.
+        public bool CheckSurroundings(int posX, int posY, int xIncrement, int yIncrement)
         {
             int i = 1;
             while (i <= neighboursOffset)
@@ -217,20 +188,12 @@ namespace PG
                 int incrementedYPos = posY + yIncrement * i;
                 int decreasedYPos = posY - yIncrement * i;
 
-                if (OutOfGrid(incrementedXPos, incrementedYPos))
-                {
-                    return false;
-                }
-                else
+                if (!OutOfGrid(incrementedXPos, incrementedYPos))
                 {
                     if (NearbyRoad(incrementedXPos, incrementedYPos))
                         return false;
                 }
-                if (OutOfGrid(decreasedXPos, decreasedYPos))
-                {
-                    return false;
-                }
-                else
+                if (!OutOfGrid(decreasedXPos, decreasedYPos))
                 {
                     if (NearbyRoad(decreasedXPos, decreasedYPos))
                         return false;
@@ -248,9 +211,7 @@ namespace PG
                     Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
                     if (!increasedNode.occupied)
                     {
-                        increasedNode.occupied = true;
-                        increasedNode.usage = Usage.decoration;
-                        surroundingNodes.Add(increasedNode);
+                        MarkNodeAsDecoration(increasedNode);
                     }
                 }
 
@@ -259,13 +220,17 @@ namespace PG
                     Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
                     if (!decreasedNode.occupied)
                     {
-                        decreasedNode.occupied = true;
-                        decreasedNode.usage = Usage.decoration;
-                        surroundingNodes.Add(decreasedNode);
+                        MarkNodeAsDecoration(decreasedNode);
                     }
                 }
 
             }
+        }
+        private void MarkNodeAsDecoration(Node node)
+        {
+            node.occupied = true;
+            node.usage = Usage.decoration;
+            surroundingNodes.Add(node);
         }
         public void AddToSavedPoints(Node _node)
         {
@@ -287,6 +252,52 @@ namespace PG
         private bool OutOfGrid(int posX, int posY)
         {
             return grid.OutOfGrid(posX, posY);
+        }
+        public int[] GetLateralIncrementOnDirection(Direction direction)
+        {
+            int[] neighbourOffset = new int[] { 0, 0 };
+            if (direction == Direction.left || direction == Direction.right)
+            {
+                neighbourOffset[1] = 1;
+            }
+            else
+            {
+                neighbourOffset[0] = 1;
+            }
+            return neighbourOffset;
+        }
+        public int[] GetLateralIncrementOnDirection(int dirX, int dirY)
+        {
+            int[] neighbourOffset = new int[] { 0, 0 };
+            if (dirX != 0)
+            {
+                neighbourOffset[1] = 1;
+            }
+            else
+            {
+                neighbourOffset[0] = 1;
+            }
+            return neighbourOffset;
+        }
+        public int GetMovementLength(int startX, int startY, int endX, int endY)
+        {
+            if (startX - endX == 0) // Vertical Movement
+            {
+                if (endY > startY) // Subir
+                {
+                    return endY - startY;
+                }
+                return startY - endY;
+
+            }
+            else // HorizontalMovement
+            {
+                if (endX > startX) // Hacia derecha
+                {
+                    return endX - startX;
+                }
+                return startX - endX;
+            }
         }
         private void SpawnSphere(Vector3 pos)
         {
