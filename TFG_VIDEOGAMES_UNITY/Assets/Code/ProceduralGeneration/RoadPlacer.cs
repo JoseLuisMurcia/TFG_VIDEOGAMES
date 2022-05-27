@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,8 +14,38 @@ namespace PG
         [SerializeField] bool visualDebug;
         public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
         {
+
             grid = _grid;
             visualizer = _visualizer;
+            // Clear this data structure, from now on only the points who can go forward in a direction until they meet the end of the world will remain the pointNodesList
+
+            List<Node> _pointNodes = new List<Node>();
+            foreach (Node node in visualizer.pointNodes)
+            {
+                // FreeNeighbours is to check if it has any free neighbour
+                // Should be eliminated checks the case where you have 1 neighbour and it is an intersection, wrong generation basically
+                List<Node> freeNeighbours = GetFreeNeighbours(node);
+                if (freeNeighbours.Count == 0 || ShouldBeEliminated(node))
+                {
+                    node.usage = Usage.road;
+                    SpawnSphere(node.worldPosition, Color.black);
+                    continue;
+                }
+
+                // Advance with the right 
+                if (ReachesEndOfTheGrid(node, freeNeighbours))
+                {
+                    _pointNodes.Add(node);
+                }
+                else
+                {
+                    node.usage = Usage.road;
+                    SpawnSphere(node.worldPosition, Color.black);
+
+                }
+            }
+            visualizer.pointNodes = _pointNodes;
+
             for (int i = 0; i < grid.gridSizeX; i++)
             {
                 for (int j = 0; j < grid.gridSizeY; j++)
@@ -85,6 +116,7 @@ namespace PG
 
                 }
             }
+
             // Delete outdated prefabs and spawn the correct ones
             foreach (Node node in updatedNodes)
             {
@@ -153,6 +185,76 @@ namespace PG
                 }
             }
         }
+        private bool ShouldBeEliminated(Node node)
+        {
+            List<Direction> neighbours = GetNumNeighbours(node.gridX, node.gridY).neighbours;
+            if (neighbours.Count == 1)
+            {
+                // If your neighbour is an intersection, delete yourself, thank you.
+                Direction direction = neighbours[0];
+                int[] neighbourOffset = DirectionToInt(direction);
+                if (GetNumNeighbours(node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]).neighbours.Count > 2)
+                    return true;
+            }
+            return false;
+        }
+
+        private bool ReachesEndOfTheGrid(Node node, List<Node> freeNeighbours)
+        {
+            foreach (Node neighbour in freeNeighbours)
+            {
+                int[] direction = GetIntDirectionToNode(node, neighbour);
+                int i = 1;
+                int startX = neighbour.gridX;
+                int startY = neighbour.gridY;
+                while (true)
+                {
+                    int x = startX + direction[0] * i;
+                    int y = startY + direction[1] * i;
+                    if (OutOfGrid(x, y))
+                        return true;
+
+                    Node currentNode = grid.nodesGrid[x, y];
+                    if (currentNode.occupied)
+                        break;
+                    i++;
+                }
+            }
+            return false;
+        }
+        private Direction GetDirectionToNode(Node actualNode, Node newNode)
+        {
+            int x = actualNode.gridX; int y = actualNode.gridY;
+            int newX = newNode.gridX; int newY = newNode.gridY;
+            if (newX > x)
+                return Direction.right;
+            if (newY > y)
+                return Direction.forward;
+            if (x > newX)
+                return Direction.left;
+            if (y > newY)
+                return Direction.back;
+
+            return Direction.zero;
+        }
+        private int[] GetIntDirectionToNode(Node actualNode, Node newNode)
+        {
+            Direction direction = GetDirectionToNode(actualNode, newNode);
+            return DirectionToInt(direction);
+        }
+        // If a neighbour is not occupied, it is returned in the list
+        private List<Node> GetFreeNeighbours(Node node)
+        {
+            List<Node> neighbours = grid.GetNeighboursInLine(node);
+            List<Node> freeNeighbours = new List<Node>();
+            foreach (Node neighbour in neighbours)
+            {
+                if (!neighbour.occupied)
+                    freeNeighbours.Add(neighbour);
+            }
+            return freeNeighbours;
+        }
+
         private NeighboursData GetNumNeighbours(int posX, int posY)
         {
             NeighboursData data = new NeighboursData();
@@ -211,6 +313,7 @@ namespace PG
                 }
                 i++;
             }
+
             // If going straight has not been successful, we must call the pathfinder to find a path for us
             // We must have a list of candidates positions to do the movement
             i = 0;
@@ -228,7 +331,7 @@ namespace PG
                 // Call the pathfinder
                 Node currentNode = grid.nodesGrid[gridX, gridY];
                 path = Pathfinder.instance.FindPath(currentNode, targetNode);
-                
+
                 // Path found, mark all those nodes as road.
                 if (path != null)
                 {
@@ -244,6 +347,10 @@ namespace PG
                     Debug.Log("PATH CREATED WITH PATHFINDING");
                     return;
                 }
+                else
+                {
+                    Debug.LogWarning("Path failed to be created with pathfinding :(");
+                }
                 i++;
             }
 
@@ -251,7 +358,7 @@ namespace PG
         private List<Node> GoInDirection(int dirX, int dirY, int startX, int startY, int targetX, int targetY)
         {
             List<Node> path = new List<Node>();
-            int movementLength = visualizer.GetMovementLength(startX, startY, targetX, targetY); 
+            int movementLength = visualizer.GetMovementLength(startX, startY, targetX, targetY);
             int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(dirX, dirY);
 
             int i = 1;
@@ -303,7 +410,7 @@ namespace PG
         }
         private List<Node> GoStraight(Direction direction, int startX, int startY)
         {
-            
+
             List<Node> path = new List<Node>();
             path.Add(grid.nodesGrid[startX, startY]);
             Vector3 dir = DirectionToVector(direction);
@@ -368,6 +475,24 @@ namespace PG
                 return Direction.back;
 
             return Direction.zero;
+        }
+        public int[] DirectionToInt(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.left:
+                    return new int[] { -1, 0 };
+                case Direction.right:
+                    return new int[] { 1, 0 };
+                case Direction.forward:
+                    return new int[] { 0, 1 };
+                case Direction.back:
+                    return new int[] { 0, -1 };
+                case Direction.zero:
+                    return null;
+                default:
+                    return null;
+            }
         }
         private Vector3 GetOppositeVectorToDir(Direction direction)
         {
