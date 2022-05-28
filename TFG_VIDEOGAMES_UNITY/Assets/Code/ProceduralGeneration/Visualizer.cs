@@ -44,9 +44,9 @@ namespace PG
         }
         void Start()
         {
-            StartGeneration();
+            //StartGeneration();
 
-            //Manipulacion();
+            Manipulacion();
         }
         private void Manipulacion()
         {
@@ -57,13 +57,20 @@ namespace PG
                 new Vector2Int(0, 2), new Vector2Int(3, 2),
             new Vector2Int(0,3),new Vector2Int(1,3), new Vector2Int(2,3), new Vector2Int(3,3)};
 
-            List<Vector2Int> otherPos = new List<Vector2Int>()
-            {new Vector2Int(7,4), new Vector2Int(7,3),new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
-            new Vector2Int(8,3), new Vector2Int(9,3), new Vector2Int(10,3), new Vector2Int(11,3),
-            new Vector2Int(11,2), new Vector2Int(11,1), new Vector2Int(11,0),
-            new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0)};
+            //List<Vector2Int> otherPos = new List<Vector2Int>()
+            //{new Vector2Int(7,4), new Vector2Int(7,3),new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
+            //new Vector2Int(8,3), new Vector2Int(9,3), new Vector2Int(10,3), new Vector2Int(11,3),
+            //new Vector2Int(11,2), new Vector2Int(11,1), new Vector2Int(11,0),
+            //new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0)};
 
-            List<Vector2Int> redPositions = new List<Vector2Int>() { new Vector2Int(3, 3), new Vector2Int(7, 5) };
+            List<Vector2Int> otherPos = new List<Vector2Int>()
+            {new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
+            new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0),
+            new Vector2Int(11,0),new Vector2Int(12,0),
+            new Vector2Int(12,1), new Vector2Int(12,2), new Vector2Int(11,2), new Vector2Int(10,2),
+            new Vector2Int(10,1)};
+
+            List<Vector2Int> redPositions = new List<Vector2Int>() { new Vector2Int(3, 3), new Vector2Int(7, 3) };
 
             grid.nodesGrid[3, 3].occupied = true;
             grid.nodesGrid[3, 3].usage = Usage.point;

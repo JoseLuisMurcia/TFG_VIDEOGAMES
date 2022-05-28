@@ -41,8 +41,7 @@ namespace PG
                             continue;
                         }
                     }
-                    
-
+                   
 
                     float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + AddCostIfDirectionChanges(currentNode, neighbour);
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
