@@ -46,6 +46,50 @@ namespace PG
         {
             StartGeneration();
 
+            //Manipulacion();
+        }
+        private void Manipulacion()
+        {
+            // Aqui lo manipulo
+            List<Vector2Int> squarePositions = new List<Vector2Int>()
+            {new Vector2Int(0,0), new Vector2Int(1, 0), new Vector2Int(2, 0),  new Vector2Int(3,0),
+                new Vector2Int(0, 1), new Vector2Int(3, 1),
+                new Vector2Int(0, 2), new Vector2Int(3, 2),
+            new Vector2Int(0,3),new Vector2Int(1,3), new Vector2Int(2,3), new Vector2Int(3,3)};
+
+            List<Vector2Int> otherPos = new List<Vector2Int>()
+            {new Vector2Int(7,4), new Vector2Int(7,3),new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
+            new Vector2Int(8,3), new Vector2Int(9,3), new Vector2Int(10,3), new Vector2Int(11,3),
+            new Vector2Int(11,2), new Vector2Int(11,1), new Vector2Int(11,0),
+            new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0)};
+
+            List<Vector2Int> redPositions = new List<Vector2Int>() { new Vector2Int(3, 3), new Vector2Int(7, 5) };
+
+            grid.nodesGrid[3, 3].occupied = true;
+            grid.nodesGrid[3, 3].usage = Usage.point;
+
+            foreach (Vector2Int pos in squarePositions)
+            {
+                Node node = grid.nodesGrid[pos.x, pos.y];
+                node.usage = Usage.road;
+                node.occupied = true;
+            }
+            foreach (Vector2Int pos in otherPos)
+            {
+                Node node = grid.nodesGrid[pos.x, pos.y];
+                node.usage = Usage.road;
+                node.occupied = true;
+            }
+
+            foreach (Vector2Int pos in redPositions)
+            {
+                Node node = grid.nodesGrid[pos.x, pos.y];
+                node.usage = Usage.point;
+                node.occupied = true;
+                pointNodes.Add(node);
+            }
+
+            roadPlacer.PlaceRoadAssets(grid, this);
         }
         public void StartGeneration()
         {
@@ -179,6 +223,48 @@ namespace PG
         }
         // This method receives a startPosition and the increment with direction it has to perform to reach a target, it has to be called on a loop
         // The increment received is to advance laterally to the main road and check if there is a road.
+        public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement, Node targetNode)
+        {
+            int i = 1;
+            while (i <= neighboursOffset)
+            {
+                int incrementedXPos = posX + xIncrement * i;
+                int decreasedXPos = posX - xIncrement * i;
+                int incrementedYPos = posY + yIncrement * i;
+                int decreasedYPos = posY - yIncrement * i;
+
+                if (!OutOfGrid(incrementedXPos, incrementedYPos))
+                {
+                    // Hay que detectar el caso de que el nearbyRoad sea nuestro nodoTarget, en ese caso
+                    // La busqueda se ha acabado
+                    if (TargetReached(incrementedXPos, incrementedYPos, targetNode))
+                        return true;
+
+                    if (NearbyRoad(incrementedXPos, incrementedYPos))
+                        return false;
+                    
+                }
+                if (!OutOfGrid(decreasedXPos, decreasedYPos))
+                {
+                    if (TargetReached(decreasedXPos, decreasedYPos, targetNode))
+                        return true;
+
+                    if (NearbyRoad(decreasedXPos, decreasedYPos))
+                        return false;
+                    
+                }
+                i++;
+            }
+            return true;
+        }
+        private bool TargetReached(int x, int y, Node targetNode)
+        {
+            Node newNode = grid.nodesGrid[x, y];
+            if (newNode == targetNode)
+                return true;
+
+            return false;
+        }
         public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement)
         {
             int i = 1;
@@ -191,11 +277,14 @@ namespace PG
 
                 if (!OutOfGrid(incrementedXPos, incrementedYPos))
                 {
+                    // Hay que detectar el caso de que el nearbyRoad sea nuestro nodoTarget, en ese caso
+                    // Lo que hay que hacer
                     if (NearbyRoad(incrementedXPos, incrementedYPos))
                         return false;
                 }
                 if (!OutOfGrid(decreasedXPos, decreasedYPos))
                 {
+
                     if (NearbyRoad(decreasedXPos, decreasedYPos))
                         return false;
                 }
@@ -242,7 +331,7 @@ namespace PG
         public bool NearbyRoad(int xPos, int yPos)
         {
             Node node = grid.nodesGrid[xPos, yPos];
-            if (node.occupied && node.usage != Usage.decoration)
+            if (node.usage == Usage.road || node.usage == Usage.point)
             {
                 //SpawnSphere(node.worldPosition);
                 return true;
@@ -300,12 +389,13 @@ namespace PG
                 return startX - endX;
             }
         }
-        private void SpawnSphere(Vector3 pos)
+        private void SpawnSphere(Vector3 pos, Color color, float offset)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             startSphere.transform.parent = transform;
-            startSphere.transform.position = pos + Vector3.up * 2f;
-            startSphere.GetComponent<Renderer>().material.SetColor("_Color", Color.cyan);
+            startSphere.transform.position = pos + Vector3.up * offset;
+            startSphere.transform.localScale = Vector3.one * 5;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
     }
 

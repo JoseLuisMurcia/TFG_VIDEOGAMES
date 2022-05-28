@@ -12,6 +12,12 @@ namespace PG
         List<Node> updatedNodes = new List<Node>();
         Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
         [SerializeField] bool visualDebug;
+        public static RoadPlacer Instance;
+
+        private void Awake()
+        {
+            Instance = this;
+        }
         public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
         {
 
@@ -25,10 +31,17 @@ namespace PG
                 // FreeNeighbours is to check if it has any free neighbour
                 // Should be eliminated checks the case where you have 1 neighbour and it is an intersection, wrong generation basically
                 List<Node> freeNeighbours = GetFreeNeighbours(node);
-                if (freeNeighbours.Count == 0 || ShouldBeEliminated(node))
+                if (freeNeighbours.Count == 0)
                 {
                     node.usage = Usage.road;
-                    SpawnSphere(node.worldPosition, Color.black);
+                    continue;
+                }
+
+                if (ShouldBeEliminated(node))
+                {
+                    node.occupied = false;
+                    node.usage = Usage.empty;
+                    SpawnSphere(node.worldPosition, Color.black, 3f);
                     continue;
                 }
 
@@ -40,7 +53,7 @@ namespace PG
                 else
                 {
                     node.usage = Usage.road;
-                    SpawnSphere(node.worldPosition, Color.black);
+                    //SpawnSphere(node.worldPosition, Color.black);
 
                 }
             }
@@ -61,8 +74,8 @@ namespace PG
                         {
                             case 1:
                                 roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
-                                if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan);
                                 ConnectToOtherRoad(i, j, data);
+                                //if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 3f);
                                 break;
                             case 2:
 
@@ -133,7 +146,6 @@ namespace PG
                     case 1:
                         Debug.LogWarning("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
                         roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
-                        SpawnSphere(node.worldPosition, Color.cyan);
                         break;
                     case 2:
 
@@ -198,7 +210,6 @@ namespace PG
             }
             return false;
         }
-
         private bool ReachesEndOfTheGrid(Node node, List<Node> freeNeighbours)
         {
             foreach (Node neighbour in freeNeighbours)
@@ -308,15 +319,19 @@ namespace PG
                         }
 
                     }
-                    if (visualDebug) CreateSpheresInFreeDirections(gridX, gridY, allDirections);
+                    
                     return;
                 }
                 i++;
             }
+            Node currentNode = grid.nodesGrid[gridX, gridY];
+            SpawnSphere(currentNode.worldPosition, Color.cyan, 2.5f);
+            if (visualDebug) CreateSpheresInFreeDirections(gridX, gridY, allDirections);
 
             // If going straight has not been successful, we must call the pathfinder to find a path for us
             // We must have a list of candidates positions to do the movement
             i = 0;
+            List<Node> failedPoints = new List<Node>();
             while (i < visualizer.pointNodes.Count)
             {
                 Node targetNode = visualizer.pointNodes[i];
@@ -329,7 +344,7 @@ namespace PG
                 }
 
                 // Call the pathfinder
-                Node currentNode = grid.nodesGrid[gridX, gridY];
+                
                 path = Pathfinder.instance.FindPath(currentNode, targetNode);
 
                 // Path found, mark all those nodes as road.
@@ -343,51 +358,55 @@ namespace PG
                             node.usage = Usage.road;
                     }
                     if (visualDebug) CreateSpheresInPath(path);
-                    if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta);
+                    if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta, 5f);
                     Debug.Log("PATH CREATED WITH PATHFINDING");
                     return;
                 }
-                else
-                {
-                    Debug.LogWarning("Path failed to be created with pathfinding :(");
-                }
+                failedPoints.Add(targetNode);
                 i++;
             }
-
-        }
-        private List<Node> GoInDirection(int dirX, int dirY, int startX, int startY, int targetX, int targetY)
-        {
-            List<Node> path = new List<Node>();
-            int movementLength = visualizer.GetMovementLength(startX, startY, targetX, targetY);
-            int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(dirX, dirY);
-
-            int i = 1;
-            while (i <= movementLength)
+            
+            foreach(Node node in failedPoints)
             {
-                int newX = startX + dirX * i;
-                int newY = startY + dirY * i;
-                if (OutOfGrid(newX, newY))
-                    return null;
-
-                if (!visualizer.EnoughSpace(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
-                    return null;
-
-                Node currentNode = grid.nodesGrid[newX, newY];
-                if (i < movementLength && currentNode.usage == Usage.road)
-                    return null;
-
-                path.Add(currentNode);
-                i++;
+                SpawnSphere(node.worldPosition, Color.white, 4f);
             }
+            Debug.LogWarning("Path failed to be created with pathfinding :(");
 
-            return path;
+
         }
+        //private List<Node> GoInDirection(int dirX, int dirY, int startX, int startY, int targetX, int targetY)
+        //{
+        //    List<Node> path = new List<Node>();
+        //    int movementLength = visualizer.GetMovementLength(startX, startY, targetX, targetY);
+        //    int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(dirX, dirY);
+
+        //    int i = 1;
+        //    while (i <= movementLength)
+        //    {
+        //        int newX = startX + dirX * i;
+        //        int newY = startY + dirY * i;
+        //        if (OutOfGrid(newX, newY))
+        //            return null;
+
+        //        if (!visualizer.EnoughSpace(newX, newY, neighbourIncrement[0], neighbourIncrement[1]))
+        //            return null;
+
+        //        Node currentNode = grid.nodesGrid[newX, newY];
+        //        if (i < movementLength && currentNode.usage == Usage.road)
+        //            return null;
+
+        //        path.Add(currentNode);
+        //        i++;
+        //    }
+
+        //    return path;
+        //}
         private void CreateSpheresInPath(List<Node> path)
         {
             foreach (Node node in path)
             {
                 if (node.usage != Usage.point)
-                    SpawnSphere(node.worldPosition, Color.green);
+                    SpawnSphere(node.worldPosition, Color.green, 5f);
 
             }
 
@@ -403,25 +422,23 @@ namespace PG
                 if (!OutOfGrid(newX, newY))
                 {
                     Vector3 pos = grid.nodesGrid[newX, newY].worldPosition;
-                    SpawnSphere(pos, Color.yellow);
+                    SpawnSphere(pos, Color.yellow, 4f);
                 }
 
             }
         }
         private List<Node> GoStraight(Direction direction, int startX, int startY)
         {
-
             List<Node> path = new List<Node>();
             path.Add(grid.nodesGrid[startX, startY]);
-            Vector3 dir = DirectionToVector(direction);
+            int[] dir = DirectionToInt(direction);
             int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
-            int dirX = Mathf.RoundToInt(dir.x); int dirZ = Mathf.RoundToInt(dir.z);
 
             int i = 1;
             while (true)
             {
-                int currentPosX = startX + dirX * i;
-                int currentPosY = startY + dirZ * i;
+                int currentPosX = startX + dir[0] * i;
+                int currentPosY = startY + dir[1] * i;
 
                 if (OutOfGrid(currentPosX, currentPosY))
                     return null;
@@ -438,12 +455,12 @@ namespace PG
                 i++;
             }
         }
-        private void SpawnSphere(Vector3 pos, Color color)
+        private void SpawnSphere(Vector3 pos, Color color, float offset)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             startSphere.transform.parent = transform;
             startSphere.transform.localScale = Vector3.one * 3f;
-            startSphere.transform.position = pos + Vector3.up * 3f;
+            startSphere.transform.position = pos + Vector3.up * 3f * offset;
             startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
         public Vector3 DirectionToVector(Direction direction)
@@ -529,6 +546,26 @@ namespace PG
                 Destroy(roadDictionary[key]);
             }
             roadDictionary.Clear();
+        }
+
+        public Direction GetDirectionBasedOnPos(Node currentNode, Node newNode)
+        {
+            int x = currentNode.gridX; int y = currentNode.gridY;
+            int newX = newNode.gridX; int newY = newNode.gridY;
+
+            if (newX > x)
+                return Direction.right;
+
+            if (newY > y)
+                return Direction.forward;
+
+            if (newX < x)
+                return Direction.left;
+
+            if (newY < y)
+                return Direction.back;
+
+            return Direction.zero;
         }
     }
 

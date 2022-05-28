@@ -31,16 +31,20 @@ namespace PG
 
                 foreach (Node neighbour in Grid.instance.GetNeighboursInLine(currentNode))
                 {
-                    if (MovementInvalid(currentNode, neighbour, targetNode))
-                        continue;
-
-                    if (closedSet.Contains(neighbour) || !EnoughSpace(currentNode, neighbour))
+                    if(neighbour != targetNode)
                     {
-                        continue;
+                        if (MovementInvalid(currentNode, neighbour, targetNode))
+                            continue;
+
+                        if (closedSet.Contains(neighbour) || !EnoughSpace(currentNode, neighbour, targetNode))
+                        {
+                            continue;
+                        }
                     }
+                    
 
 
-                    float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour);
+                    float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + AddCostIfDirectionChanges(currentNode, neighbour);
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                     {
                         neighbour.gCost = newMovementCostToNeighbour;
@@ -67,17 +71,12 @@ namespace PG
         }
         private bool MovementInvalid(Node currentNode, Node neighbour, Node targetNode)
         {
-            int x = currentNode.gridX; int y = currentNode.gridY;
-            int newX = neighbour.gridX; int newY = neighbour.gridY;
-            if (x != newX && y != newY)
-                return true;
-
             if (neighbour != targetNode && (neighbour.usage == Usage.road || neighbour.usage == Usage.point))
                 return true;
 
             return false;
         }
-        private bool EnoughSpace(Node currentNode, Node neighbour)
+        private bool EnoughSpace(Node currentNode, Node neighbour, Node targetNode)
         {
             int startX = currentNode.gridX; int startY = currentNode.gridY;
             int endX = neighbour.gridX; int endY = neighbour.gridY;
@@ -110,7 +109,34 @@ namespace PG
             }
 
             int[] neighbourIncrement = Visualizer.instance.GetLateralIncrementOnDirection(dirX, dirY);
-            return Visualizer.instance.EnoughSpace(endX, endY, neighbourIncrement[0], neighbourIncrement[1]); 
+            return Visualizer.instance.EnoughSpace(endX, endY, neighbourIncrement[0], neighbourIncrement[1], targetNode); 
+        }
+        private int AddCostIfDirectionChanges(Node currentNode, Node neighbour)
+        {
+            // If direction changes, return an int, if not, 0
+            // Get direction from parent to current
+            Node parentNode = currentNode.parent;
+            if (parentNode == null)
+                return 0;
+
+            Direction dirFromParentToCurrent = RoadPlacer.Instance.GetDirectionBasedOnPos(parentNode, currentNode);
+            // Get direction from current to neighbour
+            Direction dirFromCurrentToNeighbour = RoadPlacer.Instance.GetDirectionBasedOnPos(currentNode, neighbour);
+            if(dirFromParentToCurrent == Direction.left || dirFromParentToCurrent == Direction.right) // Horizontal movement
+            {
+                if (dirFromCurrentToNeighbour == Direction.forward || dirFromCurrentToNeighbour == Direction.back) 
+                    return 30;
+
+                return 0;
+            }
+            else // Vertical movement
+            {
+                if (dirFromCurrentToNeighbour == Direction.left || dirFromCurrentToNeighbour == Direction.right)
+                    return 30;
+
+                return 0;
+            }
+                // If lateral changes to vertical, or viceversa, change
         }
         private List<Node> RetracePath(Node startNode, Node endNode)
         {
@@ -129,12 +155,12 @@ namespace PG
 
         float GetDistanceHeuristic(Node nodeA, Node nodeB)
         {
-            float dstX = Mathf.Abs(nodeA.worldPosition.x - nodeB.worldPosition.x);
-            float dstY = Mathf.Abs(nodeA.worldPosition.z - nodeB.worldPosition.z);
+            int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
+            int dstY = Mathf.Abs(nodeA.gridY - nodeB.gridY);
 
             if (dstX > dstY)
-                return 14f * dstY + 10f * (dstX - dstY);
-            return 14f * dstX + 10f * (dstY - dstX);
+                return 14 * dstY + 10 * (dstX - dstY);
+            return 14 * dstX + 10 * (dstY - dstX);
         }
 
     }
