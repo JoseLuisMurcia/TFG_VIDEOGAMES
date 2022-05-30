@@ -11,12 +11,12 @@ namespace PG
         public float nodeRadius;
         public Node[,] nodesGrid;
 
-        float nodeDiameter;
+        public float nodeDiameter;
         public int gridSizeX, gridSizeY;
-        public static Grid instance;
+        public static Grid Instance;
         private void Awake()
         {
-            instance = this;
+            Instance = this;
         }
         void Start()
         {

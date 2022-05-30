@@ -1,16 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System.Linq;
 namespace PG
 {
     public class Visualizer : MonoBehaviour
     {
         [HideInInspector] public RoadPlacer roadPlacer;
         private Procedural.LSystemGenerator lsystem;
+        private PG.DecorationPlacer decorationPlacer;
         private GenerationUI generationUI;
         [HideInInspector] public List<Node> pointNodes = new List<Node>();
-        [HideInInspector] List<Node> surroundingNodes = new List<Node>();
+        [HideInInspector] public List<Node> surroundingNodes = new List<Node>();
         [SerializeField] public Grid grid;
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
@@ -41,6 +42,7 @@ namespace PG
             instance = this;
             lsystem = GetComponent<Procedural.LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
+            decorationPlacer = GetComponent<DecorationPlacer>();
             generationUI = GetComponent<GenerationUI>();
         }
         void Start()
@@ -187,6 +189,7 @@ namespace PG
             }
             roadPlacer.PlaceRoadAssets(grid, this);
             generationUI.OnCityCreated();
+            decorationPlacer.PlaceStructuresAroundRoad();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

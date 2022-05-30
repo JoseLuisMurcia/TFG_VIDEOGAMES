@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
+
 namespace PG
 {
     public class RoadPlacer : MonoBehaviour
@@ -10,7 +12,7 @@ namespace PG
         private PG.Grid grid;
         private PG.Visualizer visualizer;
         List<Node> updatedNodes = new List<Node>();
-        Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
+        [HideInInspector] public Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
         [SerializeField] bool visualDebug;
         public static RoadPlacer Instance;
 
@@ -200,6 +202,8 @@ namespace PG
                         break;
                 }
             }
+
+
         }
         private bool ShouldEliminateRedPoint(Node node)
         {
@@ -591,7 +595,7 @@ namespace PG
         {
             return grid.OutOfGrid(posX, posY);
         }
-        private List<Direction> GetAllDirections()
+        public List<Direction> GetAllDirections()
         {
             return new List<Direction> { Direction.left, Direction.right, Direction.forward, Direction.back };
         }

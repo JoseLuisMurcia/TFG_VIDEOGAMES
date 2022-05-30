@@ -15,7 +15,7 @@ namespace PG
         {
             bool pathSuccess = false;
             startNode.gCost = 0;
-            Heap<Node> openSet = new Heap<Node>(Grid.instance.MaxSize);
+            Heap<Node> openSet = new Heap<Node>(Grid.Instance.MaxSize);
             HashSet<Node> closedSet = new HashSet<Node>();
             openSet.Add(startNode);
 
@@ -29,7 +29,7 @@ namespace PG
                     break;
                 }
 
-                foreach (Node neighbour in Grid.instance.GetNeighboursInLine(currentNode))
+                foreach (Node neighbour in Grid.Instance.GetNeighboursInLine(currentNode))
                 {
                     if(neighbour != targetNode)
                     {
