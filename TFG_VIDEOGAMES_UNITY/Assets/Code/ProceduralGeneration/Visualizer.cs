@@ -16,6 +16,7 @@ namespace PG
         private int length = 8;
         private float angle = 90f;
         [SerializeField] public int neighboursOffset;
+        [SerializeField] public int decorationOffset;
         //private int[] lengthValues = { 6, 8, 10, 12 };
         private int[] lengthValues = { 8, 12 };
         public static Visualizer instance;
@@ -44,9 +45,9 @@ namespace PG
         }
         void Start()
         {
-            //StartGeneration();
+            StartGeneration();
 
-            Manipulacion();
+            //Manipulacion();
         }
         private void Manipulacion()
         {
@@ -222,10 +223,14 @@ namespace PG
                 {
                     currentNode.occupied = true;
                     currentNode.usage = Usage.road;
-                    MarkSurroundingNodes(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
                 }
+                MarkSurroundingNodes(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
+
+
             }
             Node endNode = grid.nodesGrid[endX, endY];
+            MarkSurroundingNodes(endX, endY, neighbourIncrement[0], neighbourIncrement[1]);
+            MarkCornerDecorationNodes(endNode);
             AddToSavedPoints(endNode);
         }
         // This method receives a startPosition and the increment with direction it has to perform to reach a target, it has to be called on a loop
@@ -249,7 +254,7 @@ namespace PG
 
                     if (NearbyRoad(incrementedXPos, incrementedYPos))
                         return false;
-                    
+
                 }
                 if (!OutOfGrid(decreasedXPos, decreasedYPos))
                 {
@@ -258,7 +263,7 @@ namespace PG
 
                     if (NearbyRoad(decreasedXPos, decreasedYPos))
                         return false;
-                    
+
                 }
                 i++;
             }
@@ -299,9 +304,9 @@ namespace PG
             }
             return true;
         }
-        private void MarkSurroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
+        public void MarkSurroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
         {
-            for (int i = 1; i <= neighboursOffset; i++)
+            for (int i = 1; i <= decorationOffset; i++)
             {
                 if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
                 {
@@ -321,6 +326,24 @@ namespace PG
                     }
                 }
 
+            }
+        }
+        public void MarkCornerDecorationNodes(Node node)
+        {
+            List<Vector2Int> positions = new List<Vector2Int>() { new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1), new Vector2Int(1, 1),
+            new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(0, 1), new Vector2Int(1, 0)};
+            int x = node.gridX;
+            int y = node.gridY;
+            foreach (Vector2Int position in positions)
+            {
+                if (OutOfGrid(x + position.x, y + position.y))
+                    continue;
+
+                Node neighbour = grid.nodesGrid[x + position.x, y + position.y];
+                if (!neighbour.occupied)
+                {
+                    MarkNodeAsDecoration(neighbour);
+                }
             }
         }
         private void MarkNodeAsDecoration(Node node)

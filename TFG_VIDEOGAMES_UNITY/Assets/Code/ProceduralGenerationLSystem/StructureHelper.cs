@@ -89,7 +89,6 @@ namespace Procedural
 				yield return new WaitForSeconds(animationTime);
 			}
 		}
-
 		private bool VerifyIfBuildingFits(
 			int halfSize,
 			Dictionary<Vector3Int, Direction> freeEstateSpots,
