@@ -124,7 +124,6 @@ namespace PG
 
             foreach (char letter in sequence)
             {
-                //Debug.Log("Current Pos: [" + currentPos[0] + ", " + currentPos[1] + "]");
                 EncodingLetters encoding = (EncodingLetters)letter;
                 switch (encoding)
                 {
@@ -209,14 +208,12 @@ namespace PG
                     return;
             }
 
+            MarkCornerDecorationNodes(startNode);
             // Mark the road
             for (int i = 0; i < length; i++)
             {
                 int newX = startX + dirX * i;
                 int newY = startY + dirY * i;
-                // Un check aqui para comprobar que no haya carretera en un radio de 3 nodos
-                // Habria que hacer checksurroundings para toda la length en la que nos vayamos a extender o sea, las 2 dimensiones, porque si no, estamos marcando como
-                // ocupados y carreteras, nodos que son invalidos y luego no se puede revertir
                 int[] currentPos = { newX, newY };
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
                 if (currentNode.usage != Usage.road && currentNode.usage != Usage.point)
@@ -328,6 +325,25 @@ namespace PG
 
             }
         }
+
+        public void UnmarkSurroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
+        {
+            for (int i = 1; i <= decorationOffset; i++)
+            {
+                if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
+                {
+                    Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
+                    RemoveNodeFromDecoration(increasedNode);
+                }
+
+                if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
+                {
+                    Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
+                    RemoveNodeFromDecoration(decreasedNode);
+                }
+
+            }
+        }
         public void MarkCornerDecorationNodes(Node node)
         {
             List<Vector2Int> positions = new List<Vector2Int>() { new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1), new Vector2Int(1, 1),
@@ -346,11 +362,34 @@ namespace PG
                 }
             }
         }
+        public void UnmarkCornerDecorationNodes(Node node)
+        {
+            List<Vector2Int> positions = new List<Vector2Int>() { new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1), new Vector2Int(1, 1),
+            new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(0, 1), new Vector2Int(1, 0)};
+            int x = node.gridX;
+            int y = node.gridY;
+            foreach (Vector2Int position in positions)
+            {
+                if (OutOfGrid(x + position.x, y + position.y))
+                    continue;
+
+                Node neighbour = grid.nodesGrid[x + position.x, y + position.y];
+                RemoveNodeFromDecoration(neighbour);
+            }
+        }
         private void MarkNodeAsDecoration(Node node)
         {
-            node.occupied = true;
+            node.occupied = false;
             node.usage = Usage.decoration;
             surroundingNodes.Add(node);
+        }
+        private void RemoveNodeFromDecoration(Node node)
+        {
+            if (!node.occupied)
+            {
+                node.usage = Usage.empty;
+                surroundingNodes.Remove(node);
+            }         
         }
         public void AddToSavedPoints(Node _node)
         {

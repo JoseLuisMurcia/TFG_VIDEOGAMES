@@ -39,7 +39,7 @@ namespace PG
                 if (ShouldEliminateRedPoint(node))
                 {
                     node.occupied = false;
-                    node.usage = Usage.empty;
+                    node.usage = Usage.decoration;
                     if (visualDebug) SpawnSphere(node.worldPosition, Color.black, 3f);
                     continue;
                 }
@@ -65,7 +65,7 @@ namespace PG
                     Node currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNumNeighbours(i, j);
                     List<Direction> neighbours = data.neighbours;
-                    if (currentNode.occupied && currentNode.usage != Usage.decoration)
+                    if (currentNode.occupied)
                     {
                         Quaternion rotation = Quaternion.identity;
                         switch (data.neighbours.Count)
@@ -209,8 +209,12 @@ namespace PG
                 // If your neighbour is an intersection, delete yourself, thank you.
                 Direction direction = neighbours[0];
                 int[] neighbourOffset = DirectionToInt(direction);
+                Node neighbour = grid.nodesGrid[node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]];
                 if (GetNumNeighbours(node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]).neighbours.Count > 2)
+                {
+                    visualizer.MarkCornerDecorationNodes(neighbour);
                     return true;
+                }
             }
             return false;
         }
@@ -219,11 +223,10 @@ namespace PG
         {
             Node currentNode = startNode;
             Node previousNode = startNode;
-            bool intersectionFound = false;
             List<Node> pathToEliminate = new List<Node>();
             pathToEliminate.Add(currentNode);
             int i = 0;
-            while (!intersectionFound && i < maxIterations)
+            while (i < maxIterations)
             {
                 List<Node> roadNeighbours = GetRoadNeighbours(currentNode);
                 int numRoadNeighbours = roadNeighbours.Count;
@@ -240,14 +243,33 @@ namespace PG
                 }
                 else if (numRoadNeighbours >= 3)
                 {
-                    // We have reached the end, delete everything xd                   
-                    intersectionFound = true;
-                    foreach (Node node in pathToEliminate)
+                    // We have reached the end, delete everything xd
+                    pathToEliminate.Add(currentNode);
+
+                    Direction direction = Direction.zero;
+                    Node nextNode;
+                    for(i = 0; i < pathToEliminate.Count; i++)
                     {
-                        node.occupied = false;
-                        node.usage = Usage.empty;
-                        if (visualDebug) SpawnSphere(node.worldPosition, Color.black, 3f);
-                        updatedNodes.Add(node);
+                        currentNode = pathToEliminate[i];
+                        int x = currentNode.gridX; int y = currentNode.gridY;
+                        int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
+                        if (i+1 < pathToEliminate.Count)
+                        {
+                            nextNode = pathToEliminate[i + 1];
+                            Direction newDirection = GetDirectionBasedOnPos(currentNode, nextNode);
+                            if (direction != newDirection)
+                                visualizer.UnmarkCornerDecorationNodes(currentNode);
+                            visualizer.UnmarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
+                            currentNode.occupied = false;
+                            currentNode.usage = Usage.empty;
+                            if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f);
+                            updatedNodes.Add(currentNode);
+                        }
+                        else
+                        {
+                            visualizer.MarkCornerDecorationNodes(currentNode);
+                        }
+                        
                     }
                     return true;
                 }
@@ -314,7 +336,7 @@ namespace PG
             List<Node> roadNeighbours = new List<Node>();
             foreach (Node neighbour in neighbours)
             {
-                if (neighbour.occupied && (neighbour.usage == Usage.road || neighbour.usage == Usage.point))
+                if (neighbour.occupied)
                     roadNeighbours.Add(neighbour);
             }
             return roadNeighbours;
@@ -326,24 +348,24 @@ namespace PG
             int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
             if (posX + 1 < limitX)
             {
-                if (grid.nodesGrid[posX + 1, posY].occupied && grid.nodesGrid[posX + 1, posY].usage != Usage.decoration) // Right
+                if (grid.nodesGrid[posX + 1, posY].occupied) // Right
                     data.neighbours.Add(Direction.right);
             }
             if (posX - 1 >= 0)
             {
-                if (grid.nodesGrid[posX - 1, posY].occupied && grid.nodesGrid[posX - 1, posY].usage != Usage.decoration) // Left
+                if (grid.nodesGrid[posX - 1, posY].occupied) // Left
                     data.neighbours.Add(Direction.left);
             }
 
             if (posY + 1 < limitY)
             {
-                if (grid.nodesGrid[posX, posY + 1].occupied && grid.nodesGrid[posX, posY + 1].usage != Usage.decoration) // Up
+                if (grid.nodesGrid[posX, posY + 1].occupied) // Up
                     data.neighbours.Add(Direction.forward);
             }
 
             if (posY - 1 >= 0)
             {
-                if (grid.nodesGrid[posX, posY - 1].occupied && grid.nodesGrid[posX, posY - 1].usage != Usage.decoration) // Down
+                if (grid.nodesGrid[posX, posY - 1].occupied) // Down
                     data.neighbours.Add(Direction.back);
             }
             return data;
@@ -362,6 +384,7 @@ namespace PG
                 path = GoStraight(currentDirection, gridX, gridY);
                 if (path != null)
                 {
+                    visualizer.MarkCornerDecorationNodes(path[0]);
                     foreach (Node node in path)
                     {
                         int x = node.gridX; int y = node.gridY;
@@ -408,7 +431,9 @@ namespace PG
                         if (i + 1 < path.Count)
                         {
                             nextNode = path[i + 1];
-                            direction = GetDirectionBasedOnPos(node, nextNode);
+                            Direction newDirection = GetDirectionBasedOnPos(node, nextNode);
+                            if (direction != newDirection)
+                                visualizer.MarkCornerDecorationNodes(node);
                         }
                         updatedNodes.Add(node);
                         node.occupied = true;
@@ -430,6 +455,7 @@ namespace PG
 
             // If path has not been found
             // REMEMBER TO UNMARK THOSE!!
+            // AND THEIR NEIGHBOURS
             ShouldBeEliminated(currentNode, 30);
 
             Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
