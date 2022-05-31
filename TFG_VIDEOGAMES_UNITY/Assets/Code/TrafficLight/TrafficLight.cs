@@ -41,6 +41,16 @@ public class TrafficLight : MonoBehaviour
                 road.trafficLight = this;
                 road.CreateTrafficLightTriggers();
             }
+            else
+            {
+                gameObject.SetActive(false);
+                //Destroy(gameObject);
+            }
+        }
+        else
+        {
+            gameObject.SetActive(false);
+            //Destroy(gameObject);
         }
     }
 

@@ -8,7 +8,9 @@ namespace PG
 {
     public class RoadPlacer : MonoBehaviour
     {
-        public GameObject roadStraight, roadCorner, road3way, road4way, roadEnd;
+        public GameObject roadStraight, roadCorner, road3way, road4way;
+        public GameObject trafficLights;
+        public GameObject stopSignal, yieldSignal, pedestrianSignal;
         private PG.Grid grid;
         private PG.Visualizer visualizer;
         List<Node> updatedNodes = new List<Node>();
@@ -75,7 +77,7 @@ namespace PG
                             case 1:
                                 if (!ShouldBeEliminated(currentNode, 2))
                                 {
-                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
+                                    //roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
                                     ConnectToOtherRoad(i, j, data);
                                 }
                                 //if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 3f);
@@ -151,7 +153,7 @@ namespace PG
                 {
                     case 1:
                         Debug.LogWarning("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
-                        roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
+                        //roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         break;
                     case 2:
 
@@ -203,7 +205,80 @@ namespace PG
                 }
             }
 
+            for (int i = 0; i < grid.gridSizeX; i++)
+            {
+                for (int j = 0; j < grid.gridSizeY; j++)
+                {
+                    Node currentNode = grid.nodesGrid[i, j];
+                    NeighboursData data = GetNumNeighbours(i, j);
+                    List<Direction> neighbours = data.neighbours;
+                    if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
+                    {
+                        switch (data.neighbours.Count)
+                        {
+                            case 3:
+                                float random = UnityEngine.Random.Range(0f, 1f);
+                                if (random < 0.5f)
+                                {
+                                    // Instantiate 2 signals
+                                    Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
+                                    GameObject intersection = roadDictionary[key];
+                                    Direction d1 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+                                    neighbours.Remove(d1);
+                                    Direction d2 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+                                    neighbours.Remove(d2);
 
+                                    GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
+                                    GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
+
+                                }
+                                else
+                                {
+                                    Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
+                                }
+                                break;
+
+                            case 4:
+                                Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+        private Vector3 GetOffsetForSignal(Direction direction)
+        {
+            float multiplier = 2.5f;
+            Vector3 offset = RoadPlacer.Instance.DirectionToVector(direction) * 3f;
+            switch (direction)
+            {
+                case Direction.left:
+                    return offset + Vector3.back * multiplier;
+                case Direction.right:
+                    return offset + Vector3.forward * multiplier;
+                case Direction.forward:
+                    return offset + Vector3.left * multiplier;
+                case Direction.back:
+                    return offset + Vector3.right * multiplier;
+                default:
+                    return Vector3.zero;
+            }
+        }
+        private Quaternion GetRotationForSignal(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.left:
+                    return Quaternion.Euler(0f, -90f, 0f);
+                case Direction.right:
+                    return Quaternion.Euler(0f, 90f, 0f);
+                case Direction.forward:
+                    return Quaternion.Euler(0f, 0f, 0f);
+                case Direction.back:
+                    return Quaternion.Euler(0f, 180f, 0f);
+                default:
+                    return Quaternion.Euler(0f, 0f, 0f);
+            }
         }
         private bool ShouldEliminateRedPoint(Node node)
         {
@@ -252,12 +327,12 @@ namespace PG
 
                     Direction direction = Direction.zero;
                     Node nextNode;
-                    for(i = 0; i < pathToEliminate.Count; i++)
+                    for (i = 0; i < pathToEliminate.Count; i++)
                     {
                         currentNode = pathToEliminate[i];
                         int x = currentNode.gridX; int y = currentNode.gridY;
                         int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
-                        if (i+1 < pathToEliminate.Count)
+                        if (i + 1 < pathToEliminate.Count)
                         {
                             nextNode = pathToEliminate[i + 1];
                             Direction newDirection = GetDirectionBasedOnPos(currentNode, nextNode);
@@ -273,7 +348,7 @@ namespace PG
                         {
                             visualizer.MarkCornerDecorationNodes(currentNode);
                         }
-                        
+
                     }
                     return true;
                 }
@@ -401,7 +476,7 @@ namespace PG
                             node.usage = Usage.road;
 
                     }
-                    visualizer.MarkCornerDecorationNodes(path[path.Count-1]);
+                    visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
                     if (visualDebug) SpawnSphere(grid.nodesGrid[gridX, gridY].worldPosition, Color.cyan, 2.5f);
                     return;
                 }
@@ -447,11 +522,11 @@ namespace PG
                         if (node.usage != Usage.point)
                             node.usage = Usage.road;
                     }
-                    visualizer.MarkCornerDecorationNodes(path[path.Count-1]);
+                    visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
                     //visualizer.MarkCornerDecorationNodes(path[0]);
                     if (visualDebug) CreateSpheresInPath(path);
                     if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta, 3f);
-                    Debug.Log("PATH CREATED WITH PATHFINDING");
+                    //Debug.Log("PATH CREATED WITH PATHFINDING");
                     return;
                 }
                 i++;
@@ -462,7 +537,7 @@ namespace PG
             // AND THEIR NEIGHBOURS
             ShouldBeEliminated(currentNode, 30);
 
-            Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
+            //Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
         }
         private void CreateSpheresInPath(List<Node> path)
         {
@@ -576,7 +651,7 @@ namespace PG
                     return null;
             }
         }
-        private Vector3 GetOppositeVectorToDir(Direction direction)
+        public Vector3 GetOppositeVectorToDir(Direction direction)
         {
             switch (direction)
             {
