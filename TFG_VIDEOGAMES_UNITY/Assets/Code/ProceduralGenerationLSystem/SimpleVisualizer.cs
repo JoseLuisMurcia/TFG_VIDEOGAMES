@@ -6,7 +6,7 @@ namespace Procedural
 {
     public class SimpleVisualizer : MonoBehaviour
     {
-        public LSystemGenerator lsystem;
+        public PG.LSystemGenerator lsystem;
         List<Vector3> positions = new List<Vector3>();
         public GameObject prefab;
         public Material lineMaterial;

@@ -7,7 +7,7 @@ namespace Procedural
 {
     public class Visualizer : MonoBehaviour
     {
-        public LSystemGenerator lsystem;
+        public PG.LSystemGenerator lsystem;
 
         public RoadHelper roadHelper;
         public StructureHelper structureHelper;

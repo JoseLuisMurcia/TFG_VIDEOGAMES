@@ -7,7 +7,7 @@ namespace PG
     public class Visualizer : MonoBehaviour
     {
         [HideInInspector] public RoadPlacer roadPlacer;
-        private Procedural.LSystemGenerator lsystem;
+        private LSystemGenerator lsystem;
         private PG.DecorationPlacer decorationPlacer;
         private GenerationUI generationUI;
         [HideInInspector] public List<Node> pointNodes = new List<Node>();
@@ -40,7 +40,7 @@ namespace PG
         private void Awake()
         {
             instance = this;
-            lsystem = GetComponent<Procedural.LSystemGenerator>();
+            lsystem = GetComponent<LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
             decorationPlacer = GetComponent<DecorationPlacer>();
             generationUI = GetComponent<GenerationUI>();
