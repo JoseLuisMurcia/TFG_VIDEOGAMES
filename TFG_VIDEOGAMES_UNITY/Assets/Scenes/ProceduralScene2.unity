@@ -5070,7 +5070,7 @@ MonoBehaviour:
   unwalkableMask:
     serializedVersion: 2
     m_Bits: 128
-  gridWorldSize: {x: 600, y: 600}
+  gridWorldSize: {x: 400, y: 400}
   nodeRadius: 2
   nodeDiameter: 0
   gridSizeX: 0
@@ -5544,7 +5544,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadPlacer: {fileID: 0}
   grid: {fileID: 1575517317}
-  neighboursOffset: 3
+  neighboursOffset: 4
   decorationOffset: 1
 --- !u!114 &1772971127
 MonoBehaviour:
@@ -5561,7 +5561,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 8
+  iterationLimit: 6
   randomIgnoreRuleModifier: 0
   chanceToIgnoreRule: 0.3
 --- !u!4 &1772971128

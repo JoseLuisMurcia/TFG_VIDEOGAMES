@@ -43,12 +43,14 @@ public class TrafficLight : MonoBehaviour
             }
             else
             {
+                // Deactivate the traffic light if it does not find a road :)
                 gameObject.SetActive(false);
                 //Destroy(gameObject);
             }
         }
         else
         {
+            // Deactivate the traffic light if it does not find a road :)
             gameObject.SetActive(false);
             //Destroy(gameObject);
         }

@@ -11,6 +11,7 @@ namespace PG
         private PG.DecorationPlacer decorationPlacer;
         private GenerationUI generationUI;
         [HideInInspector] public List<Node> pointNodes = new List<Node>();
+        [HideInInspector] public Dictionary<Vector2Int, Node> roadNodes = new Dictionary<Vector2Int, Node>();
         [HideInInspector] public List<Node> surroundingNodes = new List<Node>();
         [SerializeField] public Grid grid;
         //List<Vector3> positions = new List<Vector3>();
@@ -99,7 +100,7 @@ namespace PG
                 pointNodes.Add(node);
             }
 
-            roadPlacer.PlaceRoadAssets(grid, this);
+            roadPlacer.PlaceRoadAssets(grid, this, roadNodes);
         }
         public void StartGeneration()
         {
@@ -123,6 +124,7 @@ namespace PG
 
             Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
             AddToSavedPoints(firstNode);
+            AddToRoadPoints(firstNode);
 
             foreach (char letter in sequence)
             {
@@ -187,9 +189,9 @@ namespace PG
                         break;
                 }
             }
-            roadPlacer.PlaceRoadAssets(grid, this);
-            generationUI.OnCityCreated();
-            decorationPlacer.PlaceStructuresAroundRoad();
+            roadPlacer.PlaceRoadAssets(grid, this, roadNodes);
+            //generationUI.OnCityCreated();
+            //decorationPlacer.PlaceStructuresAroundRoad();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)
@@ -221,8 +223,7 @@ namespace PG
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
                 if (currentNode.usage != Usage.road && currentNode.usage != Usage.point)
                 {
-                    currentNode.occupied = true;
-                    currentNode.usage = Usage.road;
+                    AddToRoadPoints(currentNode);
                 }
                 MarkSurroundingNodes(newX, newY, neighbourIncrement[0], neighbourIncrement[1]);
 
@@ -231,7 +232,10 @@ namespace PG
             Node endNode = grid.nodesGrid[endX, endY];
             MarkSurroundingNodes(endX, endY, neighbourIncrement[0], neighbourIncrement[1]);
             MarkCornerDecorationNodes(endNode);
-            AddToSavedPoints(endNode);
+            AddToSavedPoints(endNode); 
+            if(!roadNodes.ContainsKey(new Vector2Int(endNode.gridX, endNode.gridY)))
+                AddToRoadPoints(endNode);
+
         }
         // This method receives a startPosition and the increment with direction it has to perform to reach a target, it has to be called on a loop
         // The increment received is to advance laterally to the main road and check if there is a road.
@@ -392,13 +396,22 @@ namespace PG
             {
                 node.usage = Usage.empty;
                 surroundingNodes.Remove(node);
-            }         
+            }
         }
-        public void AddToSavedPoints(Node _node)
+        public void AddToSavedPoints(Node node)
         {
-            _node.occupied = true;
-            _node.usage = Usage.point;
-            pointNodes.Add(_node);
+            node.occupied = true;
+            node.usage = Usage.point;
+            pointNodes.Add(node);
+        }
+        public void AddToRoadPoints(Node node)
+        {
+            if (node.usage != Usage.point)
+            {
+                node.occupied = true;
+                node.usage = Usage.road;
+            }
+            roadNodes.Add(new Vector2Int(node.gridX, node.gridY), node);
         }
         public bool NearbyRoad(int xPos, int yPos)
         {

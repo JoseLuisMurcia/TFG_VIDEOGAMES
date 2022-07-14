@@ -22,13 +22,14 @@ namespace PG
         {
             Instance = this;
         }
-        public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
+        public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer, Dictionary<Vector2Int, Node> roadNodes)
         {
 
             grid = _grid;
             visualizer = _visualizer;
             // Clear this data structure, from now on only the points who can go forward in a direction until they meet the end of the world will remain the pointNodesList
             List<Node> _pointNodes = new List<Node>();
+            List<StraightNodes> straights = new List<StraightNodes>();
             foreach (Node node in visualizer.pointNodes)
             {
                 // FreeNeighbours is to check if it has any free neighbour
@@ -62,74 +63,70 @@ namespace PG
             }
             visualizer.pointNodes = _pointNodes;
 
-            for (int i = 0; i < grid.gridSizeX; i++)
+            foreach (Vector2Int position in roadNodes.Keys)
             {
-                for (int j = 0; j < grid.gridSizeY; j++)
+                Node currentNode = grid.nodesGrid[position.x, position.y];
+                NeighboursData data = GetNumNeighbours(position.x, position.y);
+                List<Direction> neighbours = data.neighbours;
+
+                Quaternion rotation = Quaternion.identity;
+                switch (data.neighbours.Count)
                 {
-                    Node currentNode = grid.nodesGrid[i, j];
-                    NeighboursData data = GetNumNeighbours(i, j);
-                    List<Direction> neighbours = data.neighbours;
-                    if (currentNode.occupied)
-                    {
-                        Quaternion rotation = Quaternion.identity;
-                        switch (data.neighbours.Count)
+                    case 1:
+                        if (!ShouldBeEliminated(currentNode, 2))
                         {
-                            case 1:
-                                if (!ShouldBeEliminated(currentNode, 2))
-                                {
-                                    //roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
-                                    ConnectToOtherRoad(i, j, data);
-                                }
-                                //if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 3f);
-                                break;
-                            case 2:
-                                if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
-                                {
-                                    if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
-                                    {
-                                        rotation = Quaternion.Euler(0, 90, 0);
-                                    }
-                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(roadStraight, currentNode.worldPosition, rotation, transform);
-                                }
-                                else
-                                {
-                                    if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.back))
-                                    {
-                                        rotation = Quaternion.Euler(0, 180, 0);
-                                    }
-                                    else if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward))
-                                    {
-                                        rotation = Quaternion.Euler(0, -90, 0);
-                                    }
-                                    else if (neighbours.Contains(Direction.back) && neighbours.Contains(Direction.right))
-                                    {
-                                        rotation = Quaternion.Euler(0, 90, 0);
-                                    }
-                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(roadCorner, currentNode.worldPosition, rotation, transform);
-                                }
-                                break;
-                            case 3:
-                                if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
-                                {
-                                    rotation = Quaternion.Euler(0, -90, 0);
-                                }
-                                else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.back) && neighbours.Contains(Direction.left))
-                                {
-                                    rotation = Quaternion.Euler(0, 180, 0);
-                                }
-                                else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
-                                {
-                                    rotation = Quaternion.Euler(0, 90, 0);
-                                }
-                                roadDictionary[new Vector2Int(i, j)] = Instantiate(road3way, currentNode.worldPosition, rotation, transform);
-                                break;
-                            case 4:
-                                roadDictionary[new Vector2Int(i, j)] = Instantiate(road4way, currentNode.worldPosition, Quaternion.identity, transform);
-                                break;
-                            default:
-                                break;
+                            //roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
+                            ConnectToOtherRoad(position.x, position.y, data);
                         }
-                    }
+                        //if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 3f);
+                        break;
+                    case 2:
+                        if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
+                        {
+                            if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            // Instead of instantiating the prefab, we create a Straight object if it has not been created already.
+                            roadDictionary[position] = Instantiate(roadStraight, currentNode.worldPosition, rotation, transform);
+                        }
+                        else
+                        {
+                            if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, 180, 0);
+                            }
+                            else if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward))
+                            {
+                                rotation = Quaternion.Euler(0, -90, 0);
+                            }
+                            else if (neighbours.Contains(Direction.back) && neighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            roadDictionary[position] = Instantiate(roadCorner, currentNode.worldPosition, rotation, transform);
+                        }
+                        break;
+                    case 3:
+                        if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
+                        {
+                            rotation = Quaternion.Euler(0, -90, 0);
+                        }
+                        else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.back) && neighbours.Contains(Direction.left))
+                        {
+                            rotation = Quaternion.Euler(0, 180, 0);
+                        }
+                        else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
+                        {
+                            rotation = Quaternion.Euler(0, 90, 0);
+                        }
+                        roadDictionary[position] = Instantiate(road3way, currentNode.worldPosition, rotation, transform);
+                        break;
+                    case 4:
+                        roadDictionary[position] = Instantiate(road4way, currentNode.worldPosition, Quaternion.identity, transform);
+                        break;
+                    default:
+                        break;
 
                 }
             }
@@ -152,7 +149,7 @@ namespace PG
                 switch (data.neighbours.Count)
                 {
                     case 1:
-                        Debug.LogWarning("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
+                        Debug.LogError("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
                         //roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         break;
                     case 2:
@@ -205,46 +202,45 @@ namespace PG
                 }
             }
 
-            for (int i = 0; i < grid.gridSizeX; i++)
-            {
-                for (int j = 0; j < grid.gridSizeY; j++)
-                {
-                    Node currentNode = grid.nodesGrid[i, j];
-                    NeighboursData data = GetNumNeighbours(i, j);
-                    List<Direction> neighbours = data.neighbours;
-                    if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
-                    {
-                        switch (data.neighbours.Count)
-                        {
-                            case 3:
-                                float random = UnityEngine.Random.Range(0f, 1f);
-                                if (random < 0.5f)
-                                {
-                                    // Instantiate 2 signals
-                                    Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
-                                    GameObject intersection = roadDictionary[key];
-                                    Direction d1 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
-                                    neighbours.Remove(d1);
-                                    Direction d2 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
-                                    neighbours.Remove(d2);
+            // Stupid foreach that iterates all over again just to spawn traffic lights or priority signs in intersections
+            //foreach (Vector2Int position in roadNodes.Keys)
+            //{
+            //    Node currentNode = grid.nodesGrid[position.x, position.y];
+            //    NeighboursData data = GetNumNeighbours(position.x, position.y);
+            //    List<Direction> neighbours = data.neighbours;
+            //    if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
+            //    {
+            //        switch (data.neighbours.Count)
+            //        {
+            //            case 3:
+            //                float random = UnityEngine.Random.Range(0f, 1f);
+            //                if (random < 0.5f)
+            //                {
+            //                    // Instantiate 2 signals
+            //                    Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
+            //                    GameObject intersection = roadDictionary[key];
+            //                    Direction d1 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+            //                    neighbours.Remove(d1);
+            //                    Direction d2 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+            //                    neighbours.Remove(d2);
 
-                                    GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
-                                    GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
+            //                    GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
+            //                    GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
 
-                                }
-                                else
-                                {
-                                    Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
-                                }
-                                break;
+            //                }
+            //                else
+            //                {
+            //                    Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
+            //                }
+            //                break;
 
-                            case 4:
-                                Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
-                                break;
-                        }
-                    }
-                }
-            }
+            //            case 4:
+            //                Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
+            //                break;
+            //        }
+
+            //    }
+            //}
         }
         private Vector3 GetOffsetForSignal(Direction direction)
         {
@@ -715,5 +711,58 @@ namespace PG
         forward,
         back,
         zero = -1
+    }
+
+    public class StraightNodesHelper
+    {
+        public List<StraightNodes> DivideStraightInTwo(StraightNodes straight, int splitIndex)
+        {
+            StraightNodes straight1 = new StraightNodes();
+            StraightNodes straight2 = new StraightNodes();
+            List<Node> firstHalf = new List<Node>();
+            List<Node> secondHalf = new List<Node>();
+            int i = 0;
+            while (i < splitIndex)
+            {
+                firstHalf.Add(straight.nodes[i]);
+                i++;
+            }
+            i = splitIndex + 1;
+            while (i < straight.nodes.Count)
+            {
+                secondHalf.Add(straight.nodes[i]);
+                i++;
+            }
+            straight1.SetNodes(firstHalf);
+            straight2.SetNodes(secondHalf);
+            return new List<StraightNodes> { straight1, straight2 };
+        }
+    }
+
+    public class StraightNodes
+    {
+        public List<Node> nodes = new List<Node>();
+        public Vector3 center = Vector3.zero;
+
+        public int GetIdFromNode(Node node)
+        {
+            return nodes.IndexOf(node);
+        }
+
+        public void SetNodes(List<Node> _nodes)
+        {
+            nodes = _nodes;
+            SetCenterPosition();
+        }
+        private void SetCenterPosition()
+        {
+            int numNodes = nodes.Count;
+            Vector3 pos = Vector3.zero;
+            foreach (Node node in nodes)
+            {
+                pos += node.worldPosition;
+            }
+            center = pos / numNodes;
+        }
     }
 }
