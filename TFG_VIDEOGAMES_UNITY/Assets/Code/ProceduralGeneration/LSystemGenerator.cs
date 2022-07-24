@@ -12,16 +12,10 @@ namespace PG
 		public string rootSentence;
 		[Range(0, 10)]
 		public int iterationLimit = 1;
-
 		public bool randomIgnoreRuleModifier = true;
 		[Range(0, 1)]
 		public float chanceToIgnoreRule = 0.3f;
 
-		//private void Start()
-		//{
-		//	Debug.Log(GenerateSentence());
-		//}
-		// Word = [F]--F
 		public string GenerateSentence(string word = null)
 		{
 			if (word == null)
