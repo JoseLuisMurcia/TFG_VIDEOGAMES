@@ -17,6 +17,7 @@ namespace PG
 
         public void PlaceStructuresAroundRoad()
         {
+            // Get all surrounding nodes (nodes available to put a house in)
             surroundingNodes = Visualizer.instance.surroundingNodes.Distinct().ToList();
 
             List<Node> updatedList = new List<Node>();
@@ -29,7 +30,7 @@ namespace PG
             }
             surroundingNodes = updatedList;
 
-
+            // Get the proper orientations for those hypothetical houses 
             Dictionary<Vector2Int, Direction> spots = GetDirectionsForAssetsAroundRoad();
 
             List<Node> blockedNodes = new List<Node>();
@@ -80,7 +81,7 @@ namespace PG
                 house.transform.position = housePosition/sizePerBuilding + RoadPlacer.Instance.GetOppositeVectorToDir(spots[key]);
             }
         }
-
+        // This method creates a random size for each house
         private int GetSizePerBuilding()
         {
             float random = UnityEngine.Random.Range(0f, 1f);
@@ -101,6 +102,7 @@ namespace PG
                 return 5;
             }
         }
+        // Get the available nodes for placing the house
         private List<Node> GetFittingNodes(Node referenceNode, Direction direction, int sizePerBuilding)
         {
             int[] startOffset = new int[] { 0, 0 };
