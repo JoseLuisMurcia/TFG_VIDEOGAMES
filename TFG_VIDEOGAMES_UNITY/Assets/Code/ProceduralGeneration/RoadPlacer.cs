@@ -204,51 +204,7 @@ namespace PG
                         break;
                 }
             }
-
-            // Stupid foreach
-            for (int i = 0; i < grid.gridSizeX; i++)
-            {
-                for (int j = 0; j < grid.gridSizeY; j++)
-                {
-                    Node currentNode = grid.nodesGrid[i, j];
-                    NeighboursData data = GetNumNeighbours(i, j);
-                    List<Direction> neighbours = data.neighbours;
-                    if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
-                    {
-                        switch (data.neighbours.Count)
-                        {
-                            case 3:
-                                float random = UnityEngine.Random.Range(0f, 1f);
-                                if (random < 0.5f)
-                                {
-                                    // Instantiate 2 signals
-                                    Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
-                                    GameObject intersection = roadDictionary[key];
-                                    Direction d1 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
-                                    neighbours.Remove(d1);
-                                    Direction d2 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
-                                    neighbours.Remove(d2);
-
-                                    GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
-                                    GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
-
-                                }
-                                else
-                                {
-                                    Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
-                                }
-                                break;
-
-                            case 4:
-                                Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
-                                break;
-                        }
-                    }
-                }
-            }
-
             // Straights recreation
-            List<Straight> straights = new List<Straight>();
             foreach (Vector2Int position in roadDictionary.Keys)
             {
                 Node currentNode = grid.nodesGrid[position.x, position.y];
@@ -278,10 +234,56 @@ namespace PG
                     // Advance horizontally until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
                     straight = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
                 }
-                straights.Add(straight);
             }
-            Debug.Log("HEHE");
-            Debug.Log("HEHE");
+
+            // Intersection creations
+            for (int i = 0; i < grid.gridSizeX; i++)
+            {
+                for (int j = 0; j < grid.gridSizeY; j++)
+                {
+                    Node currentNode = grid.nodesGrid[i, j];
+                    NeighboursData data = GetNumNeighbours(i, j);
+                    List<Direction> neighbours = data.neighbours;
+                    if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
+                    {
+                        switch (data.neighbours.Count)
+                        {
+                            case 3:
+                                float random = UnityEngine.Random.Range(0f, 1f);
+                                if (random < 0.5f)
+                                {
+                                    // Instantiate 2 signals
+                                    Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
+                                    GameObject intersection = roadDictionary[key];
+                                    Direction d1 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+                                    neighbours.Remove(d1);
+                                    Direction d2 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+                                    neighbours.Remove(d2);
+
+                                    GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
+                                    GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
+
+                                }
+                                else
+                                {
+                                    StartCoroutine(CreateTrafficLights(currentNode.worldPosition));
+                                }
+                                break;
+
+                            case 4:
+                                StartCoroutine(CreateTrafficLights(currentNode.worldPosition));
+                                break;
+                        }
+                    }
+                }
+            }
+
+           
+        }
+        private IEnumerator CreateTrafficLights(Vector3 worldPos)
+        {
+            yield return new WaitForSeconds(1.5f);
+            Instantiate(trafficLights, worldPos, Quaternion.identity, transform);
         }
         private Straight CreateStraight(int x, int y, List<Direction> directions)
         {

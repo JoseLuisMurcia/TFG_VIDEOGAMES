@@ -21,6 +21,8 @@ namespace PG
         //private int[] lengthValues = { 6, 8, 10, 12 };
         private int[] lengthValues = { 8, 12 };
         public static Visualizer instance;
+
+        private RegionHelper regionHelper;
         public int Length
         {
             get
@@ -119,6 +121,7 @@ namespace PG
             int tempPosX = currentPosX;
             int tempPosY = currentPosY;
 
+            regionHelper = new RegionHelper(currentPosX, currentPosY);
             Vector3 direction = Vector3.forward;
 
             Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
@@ -219,6 +222,7 @@ namespace PG
                 int newY = startY + dirY * i;
                 int[] currentPos = { newX, newY };
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
+                regionHelper.SetBoundaries(currentNode);
                 if (currentNode.usage != Usage.road && currentNode.usage != Usage.point)
                 {
                     currentNode.occupied = true;

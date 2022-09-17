@@ -68,6 +68,10 @@ public class Road : MonoBehaviour
         Vector3 entryPos;
         Vector3 exitPos;
 
+        if(laneReferencePoints.Count - 1 < 0)
+        {
+            Debug.LogWarning("NO TIENE LANEREFERENCEPOINTS WTF");
+        }
         if(Vector3.Distance(trafficLight.transform.position, laneReferencePoints[0]) < Vector3.Distance(trafficLight.transform.position, laneReferencePoints[laneReferencePoints.Count - 1]))
         {
             entryPos = laneReferencePoints[laneReferencePoints.Count - 1];

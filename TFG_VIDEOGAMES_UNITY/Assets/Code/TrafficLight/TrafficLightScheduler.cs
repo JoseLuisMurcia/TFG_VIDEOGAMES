@@ -77,18 +77,14 @@ public class TrafficLightScheduler : MonoBehaviour
         SetNewColor(currentColor);
     }
 
-    //private void SetNewActiveTrafficLight()
-    //{
-    //    waitingQueue.Enqueue(currentTrafficLight);
-    //    currentTrafficLight = waitingQueue.Dequeue();
-    //    currentColor = TrafficLightColor.Green;
-    //    SetNewColor(currentColor);
-    //}
-
     private void SetNewColor(TrafficLightColor color)
     {
         currentTrafficLight.currentColor = color;
         currentTrafficLight.colorChanger.SetColor(color);
+        if(currentTrafficLight.road.trafficLightEvents == null)
+        {
+            Debug.LogWarning("AMIGO NO HAY trafficLightEvents DETECTADA");
+        }
         currentTrafficLight.road.trafficLightEvents.LightChange(color, false);
     }
 }

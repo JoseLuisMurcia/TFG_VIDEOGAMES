@@ -15,6 +15,7 @@ namespace PG
         public Usage usage = Usage.empty;
         public int gridX, gridY;
         public Straight belongingStraight = null;
+        public Region region;
         public Node(Vector3 _worldPos, int _gridX, int _gridY)
         {
             worldPosition = _worldPos;
