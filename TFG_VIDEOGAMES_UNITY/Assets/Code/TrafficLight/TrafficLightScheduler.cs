@@ -81,9 +81,9 @@ public class TrafficLightScheduler : MonoBehaviour
     {
         currentTrafficLight.currentColor = color;
         currentTrafficLight.colorChanger.SetColor(color);
-        if(currentTrafficLight.road.trafficLightEvents == null)
+        if(currentTrafficLight.road == null)
         {
-            Debug.LogWarning("AMIGO NO HAY trafficLightEvents DETECTADA");
+            Debug.LogError("AMIGO NO HAY road DETECTADA");
         }
         currentTrafficLight.road.trafficLightEvents.LightChange(color, false);
     }

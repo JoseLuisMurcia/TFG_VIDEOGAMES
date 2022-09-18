@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -62,12 +60,13 @@ namespace PG
             }
             visualizer.pointNodes = _pointNodes;
 
+            // Spawn the road prefabs
             for (int i = 0; i < grid.gridSizeX; i++)
             {
                 for (int j = 0; j < grid.gridSizeY; j++)
                 {
                     Node currentNode = grid.nodesGrid[i, j];
-                    NeighboursData data = GetNumNeighbours(i, j);
+                    NeighboursData data = GetNeighboursData(i, j);
                     List<Direction> neighbours = data.neighbours;
                     if (currentNode.occupied)
                     {
@@ -140,7 +139,7 @@ namespace PG
                 Quaternion rotation = Quaternion.identity;
                 int gridX = node.gridX;
                 int gridY = node.gridY;
-                NeighboursData data = GetNumNeighbours(node.gridX, node.gridY);
+                NeighboursData data = GetNeighboursData(node.gridX, node.gridY);
                 List<Direction> neighbours = data.neighbours;
                 Vector2Int key = new Vector2Int(gridX, gridY);
                 if (roadDictionary.ContainsKey(key))
@@ -204,11 +203,12 @@ namespace PG
                         break;
                 }
             }
+
             // Straights recreation
             foreach (Vector2Int position in roadDictionary.Keys)
             {
                 Node currentNode = grid.nodesGrid[position.x, position.y];
-                NeighboursData data = GetNumNeighbours(position.x, position.y);
+                NeighboursData data = GetNeighboursData(position.x, position.y);
                 List<Direction> neighbours = data.neighbours;
                 if (neighbours.Count != 2)
                     continue;
@@ -236,13 +236,13 @@ namespace PG
                 }
             }
 
-            // Intersection creations
+            // Intersections creation
             for (int i = 0; i < grid.gridSizeX; i++)
             {
                 for (int j = 0; j < grid.gridSizeY; j++)
                 {
                     Node currentNode = grid.nodesGrid[i, j];
-                    NeighboursData data = GetNumNeighbours(i, j);
+                    NeighboursData data = GetNeighboursData(i, j);
                     List<Direction> neighbours = data.neighbours;
                     if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
                     {
@@ -266,24 +266,19 @@ namespace PG
                                 }
                                 else
                                 {
-                                    StartCoroutine(CreateTrafficLights(currentNode.worldPosition));
+                                    Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
                                 }
                                 break;
 
                             case 4:
-                                StartCoroutine(CreateTrafficLights(currentNode.worldPosition));
+                                Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
                                 break;
                         }
                     }
                 }
             }
 
-           
-        }
-        private IEnumerator CreateTrafficLights(Vector3 worldPos)
-        {
-            yield return new WaitForSeconds(1.5f);
-            Instantiate(trafficLights, worldPos, Quaternion.identity, transform);
+
         }
         private Straight CreateStraight(int x, int y, List<Direction> directions)
         {
@@ -345,7 +340,7 @@ namespace PG
                 return null;
 
             // If exists, check the node and neighbours, is it a straight too?
-            NeighboursData data = GetNumNeighbours(newX, newY);
+            NeighboursData data = GetNeighboursData(newX, newY);
             List<Direction> neighbours = data.neighbours;
             if (neighbours.Count != 2)
                 return null;
@@ -393,14 +388,14 @@ namespace PG
         }
         private bool ShouldEliminateRedPoint(Node node)
         {
-            List<Direction> neighbours = GetNumNeighbours(node.gridX, node.gridY).neighbours;
+            List<Direction> neighbours = GetNeighboursData(node.gridX, node.gridY).neighbours;
             if (neighbours.Count == 1)
             {
                 // If your neighbour is an intersection, delete yourself, thank you.
                 Direction direction = neighbours[0];
                 int[] neighbourOffset = DirectionToInt(direction);
                 Node neighbour = grid.nodesGrid[node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]];
-                if (GetNumNeighbours(node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]).neighbours.Count > 2)
+                if (GetNeighboursData(node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]).neighbours.Count > 2)
                 {
                     visualizer.MarkCornerDecorationNodes(neighbour);
                     return true;
@@ -408,7 +403,7 @@ namespace PG
             }
             return false;
         }
-        // This method is called when you only have one road neighbour
+        // This method is called when you only have one road neighbour and you cant be merged with another road.
         private bool ShouldBeEliminated(Node startNode, int maxIterations)
         {
             Node currentNode = startNode;
@@ -532,7 +527,7 @@ namespace PG
             return roadNeighbours;
         }
 
-        private NeighboursData GetNumNeighbours(int posX, int posY)
+        private NeighboursData GetNeighboursData(int posX, int posY)
         {
             NeighboursData data = new NeighboursData();
             int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
@@ -603,12 +598,15 @@ namespace PG
             while (i < visualizer.pointNodes.Count)
             {
                 Node targetNode = visualizer.pointNodes[i];
+                if (!CheckMergingNodeTerms(targetNode))
+                {
+                    i++; continue;
+                }
                 int targetX = targetNode.gridX;
                 int targetY = targetNode.gridY;
                 if (targetX == gridX || targetY == gridY)
                 {
-                    i++;
-                    continue;
+                    i++; continue;
                 }
                 path = Pathfinder.instance.FindPath(currentNode, targetNode);
                 if (path != null)
@@ -696,7 +694,12 @@ namespace PG
                 path.Add(currentNode);
                 if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
                 {
-                    return path;
+                    // Here check the last node, because there are some things to be respected before merging.
+                    // 1) The last node should be at least 2 nodes away from an intersection. Otherwise intersections are going to be created stupidly close to each other.
+                    // 2) If the last node is going to create an intersection, such intersection should not have a bending neighbour, otherwise that's going to be problematic for the triggers.
+                    if (CheckMergingNodeTerms(currentNode))
+                        return path;
+                    return null;
                 }
 
                 if (!visualizer.EnoughSpace(currentPosX, currentPosY, neighbourIncrement[0], neighbourIncrement[1]))
@@ -705,6 +708,56 @@ namespace PG
 
                 i++;
             }
+        }
+        private bool CheckMergingNodeTerms(Node mergingNode)
+        {
+            // Here check the last node, because there are some things to be respected before merging.
+            // 1) The last node should be at least 2 nodes away from an intersection. Otherwise intersections are going to be created stupidly close to each other.
+            // 2) If the last node is going to create an intersection, such intersection should not have a bending neighbour, otherwise that's going to be problematic for the triggers.
+            // Return false if it should not merge
+            int mergeX = mergingNode.gridX;
+            int mergeY = mergingNode.gridY;
+            NeighboursData nb = GetNeighboursData(mergeX, mergeY);
+            int mergingIntersectionDist = 2;
+            foreach (Direction dir in nb.neighbours)
+            {
+                int[] direction = DirectionToInt(dir);
+                for (int i = 1; i <= mergingIntersectionDist; i++)
+                {
+                    int newX = mergeX + direction[0] * i;
+                    int newY = mergeY + direction[1] * i;
+
+                    if (!OutOfGrid(newX, newY))
+                    {
+                        List<Direction> neighboursDir = GetNeighboursData(newX, newY).neighbours;
+
+                        // 1) Intersection found too close
+                        if (neighboursDir.Count == 3)
+                            return false;
+
+                        // 2) Bending found
+                        if (!(neighboursDir.Contains(Direction.left) && neighboursDir.Contains(Direction.right)) && !(neighboursDir.Contains(Direction.forward) && neighboursDir.Contains(Direction.back)))
+                            return false;
+                    }
+                }
+            }
+            return true;
+        }
+        private int GetNumNeighbours(int posX, int posY)
+        {
+            int count = 0;
+            if (grid.nodesGrid[posX + 1, posY].occupied) // Right
+                count++;
+
+            if (grid.nodesGrid[posX - 1, posY].occupied) // Left
+                count++;
+
+            if (grid.nodesGrid[posX, posY + 1].occupied) // Up
+                count++;
+
+            if (grid.nodesGrid[posX, posY - 1].occupied) // Down
+                count++;
+            return count;
         }
         private void SpawnSphere(Vector3 pos, Color color, float offset)
         {
