@@ -190,9 +190,9 @@ namespace PG
                         break;
                 }
             }
-            roadPlacer.PlaceRoadAssets(grid, this);
-            generationUI.OnCityCreated();
-            decorationPlacer.PlaceStructuresAroundRoad();
+            //roadPlacer.PlaceRoadAssets(grid, this);
+            //generationUI.OnCityCreated();
+            //decorationPlacer.PlaceStructuresAroundRoad();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

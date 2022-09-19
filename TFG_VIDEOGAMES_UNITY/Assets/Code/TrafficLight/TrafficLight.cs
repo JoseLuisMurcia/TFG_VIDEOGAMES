@@ -33,7 +33,7 @@ public class TrafficLight : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, 100, roadMask))
         {
-            Debug.DrawLine(ray.origin, hit.point);
+            //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
             GameObject roadGameObject = hit.collider.gameObject;
             road = roadGameObject.GetComponent<Road>();
             if(road != null)
@@ -43,12 +43,15 @@ public class TrafficLight : MonoBehaviour
             }
             else
             {
+                //Debug.LogWarning("Road found null by Traffic Light: " + gameObject.name);
                 gameObject.SetActive(false);
                 //Destroy(gameObject);
             }
         }
         else
         {
+            //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.magenta, 50f);
+            //Debug.LogWarning("Road not found by Traffic Light: " + gameObject.name);
             gameObject.SetActive(false);
             //Destroy(gameObject);
         }

@@ -16,7 +16,13 @@ public class TrafficLightScheduler : MonoBehaviour
 
     private void Start()
     {
-        foreach(Transform child in transform)
+        // By default this executes earlier than the TrafficLights so it needs to be delayed so that they can find their road first.
+        StartCoroutine(StartRoutine());
+    }
+    IEnumerator StartRoutine()
+    {
+        yield return new WaitForSeconds(1f);
+        foreach (Transform child in transform)
         {
             if (child.gameObject.activeSelf)
             {
@@ -26,18 +32,17 @@ public class TrafficLightScheduler : MonoBehaviour
                     trafficLights.Add(tf);
                     waitingQueue.Enqueue(tf);
                 }
-            }    
+            }
         }
 
-        if(trafficLights.Count > 0)
+        if (trafficLights.Count > 0)
         {
             currentTrafficLight = waitingQueue.Dequeue();
-            currentColor = TrafficLightColor.Green;
+            currentColor = Random.Range(0, 2) == 0 ? TrafficLightColor.Green : TrafficLightColor.Red;
             SetNewColor(currentColor);
+            StartCoroutine(HandleTrafficLights());
         }
-        StartCoroutine(HandleTrafficLights());
     }
-
     IEnumerator HandleTrafficLights()
     {
         while (true)
@@ -81,10 +86,6 @@ public class TrafficLightScheduler : MonoBehaviour
     {
         currentTrafficLight.currentColor = color;
         currentTrafficLight.colorChanger.SetColor(color);
-        if(currentTrafficLight.road == null)
-        {
-            Debug.LogError("AMIGO NO HAY road DETECTADA");
-        }
         currentTrafficLight.road.trafficLightEvents.LightChange(color, false);
     }
 }
