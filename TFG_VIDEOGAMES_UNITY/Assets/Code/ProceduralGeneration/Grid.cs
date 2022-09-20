@@ -14,6 +14,9 @@ namespace PG
         public float nodeDiameter;
         public int gridSizeX, gridSizeY;
         public static Grid Instance;
+
+        [SerializeField] DebugMode debugMode;
+
         private void Awake()
         {
             Instance = this;
@@ -52,26 +55,51 @@ namespace PG
             Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, 1, gridWorldSize.y));
             if (nodesGrid != null)
             {
-                foreach (Node n in nodesGrid)
+                if (debugMode == DebugMode.Allocation)
                 {
-                    switch (n.usage)
+                    foreach (Node n in nodesGrid)
                     {
-                        case Usage.empty:
-                            Gizmos.color = Color.white;
-                            break;
-                        case Usage.road:
-                            Gizmos.color = Color.magenta;
-                            break;
-                        case Usage.point:
-                            Gizmos.color = Color.red;
-                            break;
-                        case Usage.decoration:
-                            Gizmos.color = Color.gray;
-                            break;
-                        default:
-                            break;
+                        switch (n.usage)
+                        {
+                            case Usage.empty:
+                                Gizmos.color = Color.white;
+                                break;
+                            case Usage.road:
+                                Gizmos.color = Color.magenta;
+                                break;
+                            case Usage.point:
+                                Gizmos.color = Color.red;
+                                break;
+                            case Usage.decoration:
+                                Gizmos.color = Color.gray;
+                                break;
+                            default:
+                                break;
+                        }
+                        Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
                     }
-                    Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
+                }
+                else
+                {
+                    foreach (Node n in nodesGrid)
+                    {
+                        switch (n.region)
+                        {
+                            case Region.Center:
+                                Gizmos.color = Color.green;
+                                break;
+                            case Region.Residential:
+                                Gizmos.color = Color.cyan;
+                                break;
+                            case Region.Outskirts:
+                                Gizmos.color = Color.red;
+                                break;
+                            default:
+                                Gizmos.color = Color.black;
+                                break;
+                        }
+                        Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
+                    }
                 }
             }
         }
@@ -126,7 +154,7 @@ namespace PG
 
                     if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
                     {
-                        if(x == 0 && y != 0 || x != 0 && y == 0)
+                        if (x == 0 && y != 0 || x != 0 && y == 0)
                             neighbours.Add(nodesGrid[checkX, checkY]);
                     }
                 }
@@ -141,7 +169,7 @@ namespace PG
         }
     }
 
-    
+
 
     public enum Usage
     {
@@ -149,6 +177,12 @@ namespace PG
         road,
         point,
         decoration
+    }
+
+    enum DebugMode
+    {
+        Region,
+        Allocation
     }
 }
 

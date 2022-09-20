@@ -53,56 +53,56 @@ namespace PG
 
             //Manipulacion();
         }
-        private void Manipulacion()
-        {
-            // Aqui lo manipulo
-            List<Vector2Int> squarePositions = new List<Vector2Int>()
-            {new Vector2Int(0,0), new Vector2Int(1, 0), new Vector2Int(2, 0),  new Vector2Int(3,0),
-                new Vector2Int(0, 1), new Vector2Int(3, 1),
-                new Vector2Int(0, 2), new Vector2Int(3, 2),
-            new Vector2Int(0,3),new Vector2Int(1,3), new Vector2Int(2,3), new Vector2Int(3,3)};
+        //private void Manipulacion()
+        //{
+        //    // Aqui lo manipulo
+        //    List<Vector2Int> squarePositions = new List<Vector2Int>()
+        //    {new Vector2Int(0,0), new Vector2Int(1, 0), new Vector2Int(2, 0),  new Vector2Int(3,0),
+        //        new Vector2Int(0, 1), new Vector2Int(3, 1),
+        //        new Vector2Int(0, 2), new Vector2Int(3, 2),
+        //    new Vector2Int(0,3),new Vector2Int(1,3), new Vector2Int(2,3), new Vector2Int(3,3)};
 
-            //List<Vector2Int> otherPos = new List<Vector2Int>()
-            //{new Vector2Int(7,4), new Vector2Int(7,3),new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
-            //new Vector2Int(8,3), new Vector2Int(9,3), new Vector2Int(10,3), new Vector2Int(11,3),
-            //new Vector2Int(11,2), new Vector2Int(11,1), new Vector2Int(11,0),
-            //new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0)};
+        //    //List<Vector2Int> otherPos = new List<Vector2Int>()
+        //    //{new Vector2Int(7,4), new Vector2Int(7,3),new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
+        //    //new Vector2Int(8,3), new Vector2Int(9,3), new Vector2Int(10,3), new Vector2Int(11,3),
+        //    //new Vector2Int(11,2), new Vector2Int(11,1), new Vector2Int(11,0),
+        //    //new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0)};
 
-            List<Vector2Int> otherPos = new List<Vector2Int>()
-            {new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
-            new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0),
-            new Vector2Int(11,0),new Vector2Int(12,0),
-            new Vector2Int(12,1), new Vector2Int(12,2), new Vector2Int(11,2), new Vector2Int(10,2),
-            new Vector2Int(10,1)};
+        //    List<Vector2Int> otherPos = new List<Vector2Int>()
+        //    {new Vector2Int(7,2),new Vector2Int(7,1), new Vector2Int(7,0),
+        //    new Vector2Int(8,0),new Vector2Int(9,0), new Vector2Int(10,0),
+        //    new Vector2Int(11,0),new Vector2Int(12,0),
+        //    new Vector2Int(12,1), new Vector2Int(12,2), new Vector2Int(11,2), new Vector2Int(10,2),
+        //    new Vector2Int(10,1)};
 
-            List<Vector2Int> redPositions = new List<Vector2Int>() { new Vector2Int(3, 3), new Vector2Int(7, 3) };
+        //    List<Vector2Int> redPositions = new List<Vector2Int>() { new Vector2Int(3, 3), new Vector2Int(7, 3) };
 
-            grid.nodesGrid[3, 3].occupied = true;
-            grid.nodesGrid[3, 3].usage = Usage.point;
+        //    grid.nodesGrid[3, 3].occupied = true;
+        //    grid.nodesGrid[3, 3].usage = Usage.point;
 
-            foreach (Vector2Int pos in squarePositions)
-            {
-                Node node = grid.nodesGrid[pos.x, pos.y];
-                node.usage = Usage.road;
-                node.occupied = true;
-            }
-            foreach (Vector2Int pos in otherPos)
-            {
-                Node node = grid.nodesGrid[pos.x, pos.y];
-                node.usage = Usage.road;
-                node.occupied = true;
-            }
+        //    foreach (Vector2Int pos in squarePositions)
+        //    {
+        //        Node node = grid.nodesGrid[pos.x, pos.y];
+        //        node.usage = Usage.road;
+        //        node.occupied = true;
+        //    }
+        //    foreach (Vector2Int pos in otherPos)
+        //    {
+        //        Node node = grid.nodesGrid[pos.x, pos.y];
+        //        node.usage = Usage.road;
+        //        node.occupied = true;
+        //    }
 
-            foreach (Vector2Int pos in redPositions)
-            {
-                Node node = grid.nodesGrid[pos.x, pos.y];
-                node.usage = Usage.point;
-                node.occupied = true;
-                pointNodes.Add(node);
-            }
+        //    foreach (Vector2Int pos in redPositions)
+        //    {
+        //        Node node = grid.nodesGrid[pos.x, pos.y];
+        //        node.usage = Usage.point;
+        //        node.occupied = true;
+        //        pointNodes.Add(node);
+        //    }
 
-            roadPlacer.PlaceRoadAssets(grid, this);
-        }
+        //    //roadPlacer.PlaceRoadAssets(grid, this);
+        //}
         public void StartGeneration()
         {
             surroundingNodes.Clear();
@@ -121,7 +121,7 @@ namespace PG
             int tempPosX = currentPosX;
             int tempPosY = currentPosY;
 
-            regionHelper = new RegionHelper(currentPosX, currentPosY);
+            regionHelper = new RegionHelper(currentPosX, currentPosY, grid);
             Vector3 direction = Vector3.forward;
 
             Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
@@ -190,8 +190,8 @@ namespace PG
                         break;
                 }
             }
-            //roadPlacer.PlaceRoadAssets(grid, this);
-            //generationUI.OnCityCreated();
+            roadPlacer.PlaceRoadAssets(grid, this, regionHelper);
+            generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
         }
 

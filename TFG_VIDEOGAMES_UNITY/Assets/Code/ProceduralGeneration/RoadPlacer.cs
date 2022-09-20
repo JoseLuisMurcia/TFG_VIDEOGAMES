@@ -20,7 +20,7 @@ namespace PG
         {
             Instance = this;
         }
-        public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
+        public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer, RegionHelper regionHelper)
         {
 
             grid = _grid;
@@ -60,6 +60,7 @@ namespace PG
             }
             visualizer.pointNodes = _pointNodes;
 
+            
             // Spawn the road prefabs
             for (int i = 0; i < grid.gridSizeX; i++)
             {
@@ -67,6 +68,8 @@ namespace PG
                 {
                     Node currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNeighboursData(i, j);
+                    // As we are iterating through each node, we take profit and assign the region.
+                    regionHelper.SetRegionToNode(currentNode);
                     List<Direction> neighbours = data.neighbours;
                     if (currentNode.occupied)
                     {

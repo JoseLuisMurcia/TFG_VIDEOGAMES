@@ -12,10 +12,19 @@ namespace PG
         public Vector2Int UpRight = Vector2Int.zero;
 
         private int centerX, centerY;
-        public RegionHelper(int _centerX, int _centerY)
+        private float centreDistance;
+        private float residentialDistance;
+        private Vector3 centrePosition;
+        public RegionHelper(int _centerX, int _centerY, Grid grid)
         {
             centerX = _centerX;
             centerY = _centerY;
+
+            Vector3 startPosition = grid.nodesGrid[0, 0].worldPosition;
+            centrePosition = grid.nodesGrid[centerX, centerY].worldPosition;
+            centreDistance = Vector3.Distance(startPosition, centrePosition) / 3f; // Everything equal or lower than this distance will be the center of the city
+            residentialDistance = centreDistance * 1.5f; // Everything equal or lower than this distance will be a residential area
+            centreDistance *= 0.8f;
         }
         public void SetBoundaries(Node node)
         {
@@ -62,6 +71,22 @@ namespace PG
                         UpRight = new Vector2Int(nodeX, nodeY);
                     }
                 }
+            }
+        }
+        public void SetRegionToNode(Node node)
+        {
+            float distanceToCentre = Vector3.Distance(centrePosition, node.worldPosition);
+            if(distanceToCentre <= centreDistance)
+            {
+                node.region = Region.Center;
+            }
+            else if(distanceToCentre <= residentialDistance)
+            {
+                node.region = Region.Residential;
+            }
+            else
+            {
+                node.region = Region.Outskirts;
             }
         }
         public List<Vector2Int> GetBoundaries()
