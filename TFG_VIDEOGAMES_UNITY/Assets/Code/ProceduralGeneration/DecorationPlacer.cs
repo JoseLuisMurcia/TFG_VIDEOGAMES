@@ -8,6 +8,8 @@ namespace PG
     public class DecorationPlacer : MonoBehaviour
     {
         public GameObject[] housePrefabs;
+        public GameObject[] centreHousePrefabs;
+        public GameObject[] suburbsHousePrefabs;
         public GameObject[] naturePrefabs;
         public bool randomNaturePlacement = false;
         public float randomNaturePlacementThreshold = 0.3f;
