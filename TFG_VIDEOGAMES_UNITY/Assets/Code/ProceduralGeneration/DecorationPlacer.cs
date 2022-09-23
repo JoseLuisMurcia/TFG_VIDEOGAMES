@@ -67,10 +67,27 @@ namespace PG
                 if (fittingNodes == null)
                     continue;
 
-                int randomInt = UnityEngine.Random.Range(0, housePrefabs.Length);
-                
+                GameObject house;
 
-                GameObject house = Instantiate(housePrefabs[randomInt], node.worldPosition, rotation, transform);
+                int randomInt;
+                switch (node.region)
+                {
+                    case Region.Center:
+                        randomInt = UnityEngine.Random.Range(0, centreHousePrefabs.Length);
+                        house = Instantiate(centreHousePrefabs[randomInt], node.worldPosition, rotation, transform);
+                        break;
+                    case Region.Residential:
+                        randomInt = UnityEngine.Random.Range(0, housePrefabs.Length);
+                        house = Instantiate(housePrefabs[randomInt], node.worldPosition, rotation, transform);
+                        break;
+                    case Region.Outskirts:
+                        randomInt = UnityEngine.Random.Range(0, suburbsHousePrefabs.Length);
+                        house = Instantiate(suburbsHousePrefabs[randomInt], node.worldPosition, rotation, transform);
+                        break;
+                    default:
+                        house = Instantiate(housePrefabs[0], node.worldPosition, rotation, transform);
+                        break;
+                }
                 Vector3 housePosition = Vector3.zero;
                 foreach (Node fittingNode in fittingNodes)
                 {
