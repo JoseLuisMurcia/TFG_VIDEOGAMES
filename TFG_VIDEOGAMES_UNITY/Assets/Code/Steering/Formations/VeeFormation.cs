@@ -27,8 +27,23 @@ public class VeeFormation : FormationPattern
     }
 
     //get the relative position for this formation
-    public override Vector3 GetSlotLocation(int slotIndex)
+    public override Vector3 GetSlotVectorLocation(int slotIndex)
     {
         return formation[slotIndex];
+    }
+
+    public override Transform GetDriftOffset(List<FormationManager.SlotAssignment> slotAssignments)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override Transform GetSlotLocation(int slotNumber)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override bool SupportsSlots(int slotCount)
+    {
+        throw new System.NotImplementedException();
     }
 }

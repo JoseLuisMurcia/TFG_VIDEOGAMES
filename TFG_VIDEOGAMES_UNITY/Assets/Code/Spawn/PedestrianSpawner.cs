@@ -18,8 +18,8 @@ public class PedestrianSpawner : MonoBehaviour
             }
         }
     }
-
-    public void Spawn()
+    // 0 for src, 1 for dst
+    private int[] GetSourceAndDestHouse()
     {
         float minDistance = 8f;
         float distance = Mathf.NegativeInfinity;
@@ -35,12 +35,17 @@ public class PedestrianSpawner : MonoBehaviour
                 if (distance > minDistance)
                     destFound = true;
             }
-        } while(!destFound);
-        Vector3 spawnPosition = houses[srcHouseId].position - houses[srcHouseId].forward * 3f;
+        } while (!destFound);
+        return new int[] {srcHouseId, dstHouseId };
+    }
+    public void Spawn()
+    {
+        int[] housesIds = GetSourceAndDestHouse();
+        Vector3 spawnPosition = houses[housesIds[0]].position - houses[housesIds[0]].forward * 3f;
         //Debug.DrawLine(spawnPosition + Vector3.up * 5, spawnPosition - Vector3.up * 5, Color.red, 60f);
         int randomInt = Random.Range(0, pedestrianPrefabs.Length);
-        Pedestrian pedestrian = Instantiate(pedestrianPrefabs[randomInt], spawnPosition, houses[srcHouseId].rotation);
-        pedestrian.SetTarget(houses[dstHouseId]);
+        Pedestrian pedestrian = Instantiate(pedestrianPrefabs[randomInt], spawnPosition, houses[housesIds[0]].rotation);
+        pedestrian.SetTarget(houses[housesIds[1]]);
     }
 
     public void SpawnFivePedestrians()
@@ -53,6 +58,33 @@ public class PedestrianSpawner : MonoBehaviour
     {
         for (int i = 0; i < 50; i++)
             Spawn();
+    }
+
+
+    public void Spawn3Formation()
+    {
+        FormationManager formationManager = new FormationManager();
+        List<Pedestrian> pedestrians= new List<Pedestrian>();
+        int[] housesIds = GetSourceAndDestHouse();
+        Vector3 spawnPosition = houses[housesIds[0]].position - houses[housesIds[0]].forward * 3f;
+        List<int> pedestrianIds = GenerateFormation(3);
+        foreach (int id in pedestrianIds)
+            pedestrians.Add(Instantiate(pedestrianPrefabs[id], spawnPosition, houses[housesIds[0]].rotation));
+
+    }
+
+    private List<int> GenerateFormation(int n)
+    {
+        HashSet<int> candidates = new HashSet<int>();
+        System.Random r = new System.Random();
+        while (candidates.Count < pedestrianPrefabs.Length)
+        {
+            candidates.Add(r.Next(0, pedestrianPrefabs.Length - 1));
+        }
+
+        List<int> result = new List<int>();
+        result.AddRange(candidates);
+        return result;
     }
 
 }
