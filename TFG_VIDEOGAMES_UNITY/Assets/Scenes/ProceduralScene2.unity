@@ -4938,6 +4938,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1575517316}
   - component: {fileID: 1575517317}
+  - component: {fileID: 1575517318}
   m_Layer: 0
   m_Name: ProceduralGrid
   m_TagString: Untagged
@@ -4979,7 +4980,23 @@ MonoBehaviour:
   nodeDiameter: 0
   gridSizeX: 0
   gridSizeY: 0
-  debugMode: 0
+  debugMode: 2
+--- !u!114 &1575517318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1575517315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57c8e52c0ee560e4291789d33ba84bce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  size: 600
+  regionAmount: 64
+  regionColorAmount: 64
+  myRegionColors: []
 --- !u!1 &1576369137 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b4576b0e46cd8314988da2b2b204c4d7, type: 3}
@@ -5434,7 +5451,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1772971126
 MonoBehaviour:
   m_ObjectHideFlags: 0

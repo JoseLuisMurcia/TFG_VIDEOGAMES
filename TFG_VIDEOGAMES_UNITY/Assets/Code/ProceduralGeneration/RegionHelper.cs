@@ -15,6 +15,8 @@ namespace PG
         private float centreDistance;
         private float residentialDistance;
         private Vector3 centrePosition;
+
+        // AHORA SE VA A HACER UTILIZANDO LOS POLÍGONOS DE VORONOI HEHEHEHEH
         public RegionHelper(int _centerX, int _centerY, Grid grid)
         {
             centerX = _centerX;

@@ -16,16 +16,18 @@ namespace PG
         public static Grid Instance;
 
         [SerializeField] DebugMode debugMode;
-
+        VoronoiGeneration voronoiGenerator;
         private void Awake()
         {
             Instance = this;
+            voronoiGenerator = GetComponent<VoronoiGeneration>();
         }
         void Start()
         {
             nodeDiameter = nodeRadius * 2;
             gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
             gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
+            voronoiGenerator.SetupVoronoi(gridSizeX);
             CreateGrid();
         }
         public int MaxSize
@@ -46,15 +48,21 @@ namespace PG
                 {
                     Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
                     nodesGrid[x, y] = new Node(worldPoint, x, y);
+
+                    voronoiGenerator.SetRegions(x, y, nodesGrid[x,y]);
                 }
             }
+
         }
 
         void OnDrawGizmos()
         {
-            Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, 1, gridWorldSize.y));
+            if (debugMode == DebugMode.Disabled)
+                return;
             if (nodesGrid != null)
             {
+                Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, 1, gridWorldSize.y));
+
                 if (debugMode == DebugMode.Allocation)
                 {
                     foreach (Node n in nodesGrid)
@@ -171,6 +179,7 @@ namespace PG
 
 
 
+
     public enum Usage
     {
         empty,
@@ -182,7 +191,8 @@ namespace PG
     enum DebugMode
     {
         Region,
-        Allocation
+        Allocation,
+        Disabled
     }
 }
 

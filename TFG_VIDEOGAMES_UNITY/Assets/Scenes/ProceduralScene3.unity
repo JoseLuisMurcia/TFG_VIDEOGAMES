@@ -997,9 +997,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57c8e52c0ee560e4291789d33ba84bce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  size: 256
-  regionAmount: 5
-  regionColorAmount: 5
+  size: 512
+  regionAmount: 64
+  regionColorAmount: 64
+  myRegionColors:
+  - {r: 0, g: 0.6638222, b: 1, a: 0}
+  - {r: 0.0037379938, g: 0.7924528, b: 0.0440387, a: 0}
+  - {r: 0.9637365, g: 1, b: 0.4764151, a: 0}
+  - {r: 0.38679248, g: 0.14379784, b: 0, a: 0}
 --- !u!64 &326762303
 MeshCollider:
   m_ObjectHideFlags: 0
