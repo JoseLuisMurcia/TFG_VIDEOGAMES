@@ -17,6 +17,15 @@ namespace PG
         private Vector3 centrePosition;
 
         // AHORA SE VA A HACER UTILIZANDO LOS POLÍGONOS DE VORONOI HEHEHEHEH
+        /* ALGORITHM 
+         * 1 - Define parameters:
+         * Range for districts size (min 100 nodes, max 200)
+         * 2 - Select a random polygon that is in the road structure
+         * Select one of his neighbours and add him to a list of selected polygons for city district
+         * Do the process until the requirements are met, and then, make all those nodes belong to the main city district
+         * 3 - Repeat 2 for the suburbs, keep in mind that it should not be conected to the main city district
+         * 4 - Every other node should be residential
+         */
         public RegionHelper(int _centerX, int _centerY, Grid grid)
         {
             centerX = _centerX;
@@ -27,6 +36,12 @@ namespace PG
             centreDistance = Vector3.Distance(startPosition, centrePosition) / 3f; // Everything equal or lower than this distance will be the center of the city
             residentialDistance = centreDistance * 1.5f; // Everything equal or lower than this distance will be a residential area
             centreDistance *= 0.8f;
+        }
+        public void SetRegions(List<VoronoiRegion> regions)
+        {
+            // Define the main city district
+
+            // Define the suburbs
         }
         public void SetBoundaries(Node node)
         {

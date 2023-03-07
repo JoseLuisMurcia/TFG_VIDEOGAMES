@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
 using Color = UnityEngine.Color;
+using Random = UnityEngine.Random;
 
 namespace PG
 {
@@ -64,6 +66,14 @@ namespace PG
             int regionId = value % regionColorAmount;
             pixelColors[x + y * size] = regionColors[regionId];
             voronoiRegions[regionId].nodes.Add(node);
+            node.voronoiRegion = voronoiRegions[regionId];
+
+            List<Node> neighbours = Grid.Instance.GetNeighboursForVoronoi(node);
+            foreach(Node neighbour in neighbours)
+            {
+                // Find colour for that region and compare it with current node region
+                // IF != then add neighbour region for both voronoiRegions
+            }
         }
         private void OnDrawGizmos()
         {
@@ -160,6 +170,7 @@ namespace PG
     {
         public Color color { set; get; }
         public List<Node> nodes = new List<Node>();
+        public List<VoronoiRegion> neighbourRegions = new List<VoronoiRegion>();
 
         public VoronoiRegion(Color _color)
         {

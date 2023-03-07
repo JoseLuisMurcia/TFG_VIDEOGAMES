@@ -49,7 +49,7 @@ namespace PG
                     Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
                     nodesGrid[x, y] = new Node(worldPoint, x, y);
 
-                    voronoiGenerator.SetRegions(x, y, nodesGrid[x,y]);
+                    voronoiGenerator.SetRegions(x, y, nodesGrid[x, y]);
                 }
             }
 
@@ -122,6 +122,27 @@ namespace PG
             return false;
         }
 
+        public List<Node> GetNeighboursForVoronoi(Node node)
+        {
+            List<Vector2Int> offsets = new List<Vector2Int> { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) };
+            List<Node> neighbours = new List<Node>();
+
+            foreach(Vector2Int offset in offsets)
+            {
+                int checkX = node.gridX + offset.x;
+                int checkY = node.gridY + offset.y;
+                if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
+                {
+                    if (nodesGrid[checkX, checkY] != null)
+                    {
+                        neighbours.Add(nodesGrid[checkX, checkY]);
+                    }
+                }
+            }
+
+            return neighbours;
+        }
+
         public List<Node> GetNeighbours(Node node)
         {
             List<Node> neighbours = new List<Node>();
@@ -138,7 +159,10 @@ namespace PG
 
                     if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
                     {
-                        neighbours.Add(nodesGrid[checkX, checkY]);
+                        if (nodesGrid[checkX, checkY] != null)
+                        {
+                            neighbours.Add(nodesGrid[checkX, checkY]);
+                        }
                     }
                 }
             }

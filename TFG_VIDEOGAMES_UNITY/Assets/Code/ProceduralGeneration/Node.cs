@@ -16,6 +16,7 @@ namespace PG
         public int gridX, gridY;
         public Straight belongingStraight = null;
         public Region region;
+        public VoronoiRegion voronoiRegion = null;
         public Node(Vector3 _worldPos, int _gridX, int _gridY)
         {
             worldPosition = _worldPos;
