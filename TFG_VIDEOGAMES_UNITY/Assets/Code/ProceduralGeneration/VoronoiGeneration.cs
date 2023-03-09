@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Color = UnityEngine.Color;
 using Random = UnityEngine.Random;
@@ -64,16 +65,40 @@ namespace PG
                 }
             }
             int regionId = value % regionColorAmount;
-            pixelColors[x + y * size] = regionColors[regionId];
+            Color currentColor = regionColors[regionId];
+            pixelColors[x + y * size] = currentColor;
             voronoiRegions[regionId].nodes.Add(node);
             node.voronoiRegion = voronoiRegions[regionId];
+        }
 
-            List<Node> neighbours = Grid.Instance.GetNeighboursForVoronoi(node);
-            foreach(Node neighbour in neighbours)
+        public void SetNeighbourRegions()
+        {
+            for (int x = 0; x < size; x++)
             {
-                // Find colour for that region and compare it with current node region
-                // IF != then add neighbour region for both voronoiRegions
+                for (int y = 0; y < size; y++)
+                {
+                    Node currentNode = Grid.Instance.nodesGrid[x, y];
+                    List<Node> neighbours = Grid.Instance.GetNeighboursForVoronoi(currentNode);
+                    Color currentColor = currentNode.voronoiRegion.color;
+                    foreach (Node neighbour in neighbours)
+                    {
+                        Color neighbourColor = neighbour.voronoiRegion.color;
+                        // Find colour for that region and compare it with current node region
+                        // IF != then add neighbour region for both voronoiRegions
+                        // CHECK IF IT IS NOT ADDED ALREADY?¿
+                        // MAYBE USE A SET INSTEAD OF A LIST
+                        if (currentColor != neighbourColor)
+                        {
+                            VoronoiRegion currentRegion = currentNode.voronoiRegion;
+                            VoronoiRegion neighbourRegion = neighbour.voronoiRegion;
+                            currentRegion.neighbourRegions.Add(neighbourRegion);
+                            neighbourRegion.neighbourRegions.Add(currentRegion);
+                        }
+                    }
+            
+                }
             }
+
         }
         private void OnDrawGizmos()
         {
@@ -83,7 +108,7 @@ namespace PG
             foreach (VoronoiRegion region in voronoiRegions)
             {
                 Gizmos.color = region.color;
-                foreach (Node node in region.nodes) 
+                foreach (Node node in region.nodes)
                 {
                     Gizmos.DrawCube(node.worldPosition, Vector3.one * (4f - .1f));
                 }
@@ -163,7 +188,7 @@ namespace PG
             myTexture.Apply();
 
             GetComponent<Renderer>().material.mainTexture = myTexture;
-        }      
+        }
     }
 
     public class VoronoiRegion
