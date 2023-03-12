@@ -24,6 +24,12 @@ namespace PG
         Vector2[] points;
         Color[] regionColors;
         Color[] pixelColors;
+        [HideInInspector]
+        public Vector3 worldBottomLeft;
+
+
+        [SerializeField]
+        private bool debug;
 
         public void Start()
         {
@@ -46,7 +52,7 @@ namespace PG
             for (int i = 0; i < regionColorAmount; i++)
             {
                 regionColors[i] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1);
-                voronoiRegions.Add(new VoronoiRegion(regionColors[i]));
+                voronoiRegions.Add(new VoronoiRegion(regionColors[i], points[i]));
             }
 
         }
@@ -85,8 +91,6 @@ namespace PG
                         Color neighbourColor = neighbour.voronoiRegion.color;
                         // Find colour for that region and compare it with current node region
                         // IF != then add neighbour region for both voronoiRegions
-                        // CHECK IF IT IS NOT ADDED ALREADY?¿
-                        // MAYBE USE A SET INSTEAD OF A LIST
                         if (currentColor != neighbourColor)
                         {
                             VoronoiRegion currentRegion = currentNode.voronoiRegion;
@@ -102,23 +106,54 @@ namespace PG
         }
         private void OnDrawGizmos()
         {
-            if (voronoiRegions == null)
+            if (voronoiRegions == null || !debug)
                 return;
 
+            int i = 0;
             foreach (VoronoiRegion region in voronoiRegions)
             {
+                
                 Gizmos.color = region.color;
                 foreach (Node node in region.nodes)
                 {
                     Gizmos.DrawCube(node.worldPosition, Vector3.one * (4f - .1f));
                 }
+                
+                Vector3 point = TransformToWorldPos(points[i]);
+                Gizmos.color = Color.black;
+                Gizmos.DrawSphere(point, 2.5f);
+                
+                foreach(VoronoiRegion neighbour in region.neighbourRegions)
+                {
+                    Vector2 neighbourPoint = neighbour.point;
+                    Gizmos.color = Color.white;
+                    Gizmos.DrawLine(point, TransformToWorldPos(neighbourPoint));
+                }
+                
+                i++;
             }
+        }
+        
+        private Vector3 TransformToWorldPos(Vector2 voronoiPos)
+        {
+            Vector3 worldPoint = worldBottomLeft + Vector3.right * (voronoiPos.x * 4 + 2) + Vector3.forward * (voronoiPos.y * 4 + 2);
+            return worldPoint;
+        }
+        public List<VoronoiRegion> GetVoronoiRegions()
+        {
+            return voronoiRegions;
         }
         public void CreateVoronoiDiagram()
         {
-            Vector2[] points = new Vector2[regionAmount];
-            Color[] regionColors = new Color[regionColorAmount];
+            size = 512;
+            regionAmount = 64;
+            regionColorAmount = 64;
 
+            pixelColors = new Color[size * size];
+            points = new Vector2[regionAmount];
+            regionColors = new Color[regionColorAmount];
+
+            voronoiRegions = new List<VoronoiRegion>(size);
             for (int i = 0; i < regionAmount; i++)
             {
                 points[i] = new Vector2(Random.Range(0, size), Random.Range(0, size));
@@ -127,10 +162,8 @@ namespace PG
             for (int i = 0; i < regionColorAmount; i++)
             {
                 regionColors[i] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1);
-                voronoiRegions[i].color = regionColors[i];
+                voronoiRegions.Add(new VoronoiRegion(regionColors[i], points[i]));
             }
-
-            Color[] pixelColors = new Color[size * size];
 
             for (int y = 0; y < size; y++)
             {
@@ -190,16 +223,17 @@ namespace PG
             GetComponent<Renderer>().material.mainTexture = myTexture;
         }
     }
-
     public class VoronoiRegion
     {
         public Color color { set; get; }
         public List<Node> nodes = new List<Node>();
-        public List<VoronoiRegion> neighbourRegions = new List<VoronoiRegion>();
+        public HashSet<VoronoiRegion> neighbourRegions = new HashSet<VoronoiRegion>();
+        public Vector2 point;
 
-        public VoronoiRegion(Color _color)
+        public VoronoiRegion(Color _color, Vector2 _point)
         {
             color = _color;
+            point = _point;
         }
     }
 

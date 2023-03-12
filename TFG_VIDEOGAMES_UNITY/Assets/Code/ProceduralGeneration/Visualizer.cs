@@ -191,6 +191,7 @@ namespace PG
                 }
             }
             roadPlacer.PlaceRoadAssets(grid, this, regionHelper);
+            regionHelper.SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             generationUI.OnCityCreated();
             decorationPlacer.PlaceStructuresAroundRoad();
         }
@@ -222,7 +223,7 @@ namespace PG
                 int newY = startY + dirY * i;
                 int[] currentPos = { newX, newY };
                 Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
-                regionHelper.SetBoundaries(currentNode);
+                //regionHelper.SetBoundaries(currentNode);
                 if (currentNode.usage != Usage.road && currentNode.usage != Usage.point)
                 {
                     currentNode.occupied = true;

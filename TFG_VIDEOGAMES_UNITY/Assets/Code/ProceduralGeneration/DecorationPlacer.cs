@@ -72,7 +72,7 @@ namespace PG
                 int randomInt;
                 switch (node.region)
                 {
-                    case Region.Center:
+                    case Region.Main:
                         randomInt = UnityEngine.Random.Range(0, centreHousePrefabs.Length);
                         house = Instantiate(centreHousePrefabs[randomInt], node.worldPosition, rotation, transform);
                         break;
@@ -80,7 +80,7 @@ namespace PG
                         randomInt = UnityEngine.Random.Range(0, housePrefabs.Length);
                         house = Instantiate(housePrefabs[randomInt], node.worldPosition, rotation, transform);
                         break;
-                    case Region.Outskirts:
+                    case Region.Suburbs:
                         randomInt = UnityEngine.Random.Range(0, suburbsHousePrefabs.Length);
                         house = Instantiate(suburbsHousePrefabs[randomInt], node.worldPosition, rotation, transform);
                         break;

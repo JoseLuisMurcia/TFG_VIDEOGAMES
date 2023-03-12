@@ -4981,6 +4981,7 @@ MonoBehaviour:
   gridSizeX: 0
   gridSizeY: 0
   debugMode: 2
+  voronoiGenerator: {fileID: 0}
 --- !u!114 &1575517318
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4997,6 +4998,8 @@ MonoBehaviour:
   regionAmount: 64
   regionColorAmount: 64
   myRegionColors: []
+  worldBottomLeft: {x: 0, y: 0, z: 0}
+  debug: 0
 --- !u!1 &1576369137 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b4576b0e46cd8314988da2b2b204c4d7, type: 3}
@@ -5451,7 +5454,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1772971126
 MonoBehaviour:
   m_ObjectHideFlags: 0

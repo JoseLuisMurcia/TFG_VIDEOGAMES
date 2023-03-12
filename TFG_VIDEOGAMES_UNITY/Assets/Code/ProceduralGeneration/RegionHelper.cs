@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace PG
@@ -39,9 +40,45 @@ namespace PG
         }
         public void SetRegions(List<VoronoiRegion> regions)
         {
-            // Define the main city district
+            /* Define the main city district */
+            // Create params
+            int mainDistrictMinNodes = 10000;
+            int mainDistrictMaxNodes = 15000;
+            int nodeCount;
+
+            // Select the first polygon
+            int firstId = Random.Range(0, regions.Count);
+
+            // Add adjacent polygons to the main district 
+            List<VoronoiRegion> mainDistrictRegions = new List<VoronoiRegion>
+            {
+                regions[firstId]
+            };
+            nodeCount = regions[firstId].nodes.Count;
+            bool conditionsMet = false;
+            while (!conditionsMet)
+            {
+                // REVISAR FALLO, LOS VECINOS NO SE AGREGAN BIEN? SI YO SOY TU VECINO, TU DEBES SER MI VECINO, TIENE QUE SER BIDIRECCIONAL.
+                // COMPROBAR NO REPETIR COMO CANDIDATO SI YA ESTÁ EN MAINDISTRICTREGIONS
+                List<VoronoiRegion> neighbourRegions = mainDistrictRegions[mainDistrictRegions.Count-1].neighbourRegions.ToList();
+                int neighbourId = Random.Range(0, neighbourRegions.Count);
+                VoronoiRegion candidateRegion = regions[neighbourId];
+                while (!CanBeAdded(mainDistrictMaxNodes, nodeCount, candidateRegion))
+                {
+                    candidateRegion = regions[Random.Range(0, neighbourRegions.Count)];
+                }
+                mainDistrictRegions.Add(candidateRegion);
+                nodeCount += candidateRegion.nodes.Count;
+                conditionsMet = nodeCount >= mainDistrictMinNodes ? true : false; 
+            }
 
             // Define the suburbs
+        }
+        private bool CanBeAdded(int maxNodes,int nodeCount, VoronoiRegion region)
+        {
+            if (nodeCount + region.nodes.Count > maxNodes)
+                return false;
+            return true;
         }
         public void SetBoundaries(Node node)
         {
@@ -95,7 +132,7 @@ namespace PG
             float distanceToCentre = Vector3.Distance(centrePosition, node.worldPosition);
             if(distanceToCentre <= centreDistance)
             {
-                node.region = Region.Center;
+                node.region = Region.Main;
             }
             else if(distanceToCentre <= residentialDistance)
             {
@@ -103,7 +140,7 @@ namespace PG
             }
             else
             {
-                node.region = Region.Outskirts;
+                node.region = Region.Suburbs;
             }
         }
         public List<Vector2Int> GetBoundaries()
@@ -114,9 +151,9 @@ namespace PG
 
     public enum Region
     {
-        Center,
+        Main,
         Residential,
-        Outskirts
+        Suburbs
     }
 }
 

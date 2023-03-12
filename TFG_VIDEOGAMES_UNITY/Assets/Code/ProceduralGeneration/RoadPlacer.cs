@@ -69,7 +69,7 @@ namespace PG
                     Node currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNeighboursData(i, j);
                     // As we are iterating through each node, we take profit and assign the region.
-                    regionHelper.SetRegionToNode(currentNode);
+                    //regionHelper.SetRegionToNode(currentNode);
                     List<Direction> neighbours = data.neighbours;
                     if (currentNode.occupied)
                     {

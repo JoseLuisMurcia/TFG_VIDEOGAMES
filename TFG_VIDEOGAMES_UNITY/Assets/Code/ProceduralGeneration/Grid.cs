@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace PG
         public static Grid Instance;
 
         [SerializeField] DebugMode debugMode;
-        VoronoiGeneration voronoiGenerator;
+        [HideInInspector] public VoronoiGeneration voronoiGenerator;
         private void Awake()
         {
             Instance = this;
@@ -41,7 +42,7 @@ namespace PG
         {
             nodesGrid = new Node[gridSizeX, gridSizeY];
             Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
-
+            voronoiGenerator.worldBottomLeft = worldBottomLeft;
             for (int x = 0; x < gridSizeX; x++)
             {
                 for (int y = 0; y < gridSizeY; y++)
@@ -52,7 +53,7 @@ namespace PG
                     voronoiGenerator.SetRegions(x, y, nodesGrid[x, y]);
                 }
             }
-
+            voronoiGenerator.SetNeighbourRegions();
         }
 
         void OnDrawGizmos()
@@ -93,13 +94,13 @@ namespace PG
                     {
                         switch (n.region)
                         {
-                            case Region.Center:
+                            case Region.Main:
                                 Gizmos.color = Color.green;
                                 break;
                             case Region.Residential:
                                 Gizmos.color = Color.cyan;
                                 break;
-                            case Region.Outskirts:
+                            case Region.Suburbs:
                                 Gizmos.color = Color.red;
                                 break;
                             default:
