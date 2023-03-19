@@ -29,7 +29,7 @@ namespace PG
 
 
         [SerializeField]
-        private bool debug;
+        private DebugType debugType;
 
         public void Start()
         {
@@ -52,7 +52,7 @@ namespace PG
             for (int i = 0; i < regionColorAmount; i++)
             {
                 regionColors[i] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1);
-                voronoiRegions.Add(new VoronoiRegion(regionColors[i], points[i]));
+                voronoiRegions.Add(new VoronoiRegion(regionColors[i], points[i], i));
             }
 
         }
@@ -106,29 +106,31 @@ namespace PG
         }
         private void OnDrawGizmos()
         {
-            if (voronoiRegions == null || !debug)
+            if (voronoiRegions == null || debugType == DebugType.None)
                 return;
 
             int i = 0;
             foreach (VoronoiRegion region in voronoiRegions)
             {
-                
-                Gizmos.color = region.color;
+                Gizmos.color = debugType == DebugType.Fragments ? region.color : GetColorFromRegionType(region.regionType);
                 foreach (Node node in region.nodes)
                 {
                     Gizmos.DrawCube(node.worldPosition, Vector3.one * (4f - .1f));
                 }
                 
-                Vector3 point = TransformToWorldPos(points[i]);
-                Gizmos.color = Color.black;
-                Gizmos.DrawSphere(point, 2.5f);
-                
-                foreach(VoronoiRegion neighbour in region.neighbourRegions)
+                if(debugType == DebugType.Fragments)
                 {
-                    Vector2 neighbourPoint = neighbour.point;
-                    Gizmos.color = Color.white;
-                    Gizmos.DrawLine(point, TransformToWorldPos(neighbourPoint));
-                }
+                    Vector3 point = TransformToWorldPos(points[i]);
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawSphere(point, 2.5f);
+
+                    foreach (VoronoiRegion neighbour in region.neighbourRegions)
+                    {
+                        Vector2 neighbourPoint = neighbour.point;
+                        Gizmos.color = Color.white;
+                        Gizmos.DrawLine(point, TransformToWorldPos(neighbourPoint));
+                    }
+                }               
                 
                 i++;
             }
@@ -142,6 +144,21 @@ namespace PG
         public List<VoronoiRegion> GetVoronoiRegions()
         {
             return voronoiRegions;
+        }
+
+        private Color GetColorFromRegionType(Region regionType)
+        {
+            switch (regionType)
+            {
+                case Region.Residential:
+                    return Color.yellow;
+                case Region.Suburbs:
+                    return Color.red;
+                case Region.Main:
+                    return Color.green;
+                default:
+                    return Color.black;
+            }
         }
         public void CreateVoronoiDiagram()
         {
@@ -162,7 +179,7 @@ namespace PG
             for (int i = 0; i < regionColorAmount; i++)
             {
                 regionColors[i] = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1);
-                voronoiRegions.Add(new VoronoiRegion(regionColors[i], points[i]));
+                voronoiRegions.Add(new VoronoiRegion(regionColors[i], points[i], i));
             }
 
             for (int y = 0; y < size; y++)
@@ -229,11 +246,14 @@ namespace PG
         public List<Node> nodes = new List<Node>();
         public HashSet<VoronoiRegion> neighbourRegions = new HashSet<VoronoiRegion>();
         public Vector2 point;
+        public Region regionType = Region.Residential;
+        public int id;
 
-        public VoronoiRegion(Color _color, Vector2 _point)
+        public VoronoiRegion(Color _color, Vector2 _point, int _id)
         {
             color = _color;
             point = _point;
+            id = _id;
         }
     }
 
@@ -349,6 +369,13 @@ namespace PG
 
             return pixelColors;
         }
+    }
+
+    enum DebugType
+    {
+        None,
+        Fragments,
+        Region
     }
 }
 

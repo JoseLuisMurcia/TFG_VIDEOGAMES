@@ -42,8 +42,8 @@ namespace PG
         {
             /* Define the main city district */
             // Create params
-            int mainDistrictMinNodes = 10000;
-            int mainDistrictMaxNodes = 15000;
+            int mainDistrictMinNodes = 5000;
+            int mainDistrictMaxNodes = 10000;
             int nodeCount;
 
             // Select the first polygon
@@ -56,23 +56,57 @@ namespace PG
             };
             nodeCount = regions[firstId].nodes.Count;
             bool conditionsMet = false;
+            HashSet<int> candidatesIds = new HashSet<int>
+            {
+                firstId
+            };
             while (!conditionsMet)
             {
                 // REVISAR FALLO, LOS VECINOS NO SE AGREGAN BIEN? SI YO SOY TU VECINO, TU DEBES SER MI VECINO, TIENE QUE SER BIDIRECCIONAL.
                 // COMPROBAR NO REPETIR COMO CANDIDATO SI YA ESTÁ EN MAINDISTRICTREGIONS
                 List<VoronoiRegion> neighbourRegions = mainDistrictRegions[mainDistrictRegions.Count-1].neighbourRegions.ToList();
-                int neighbourId = Random.Range(0, neighbourRegions.Count);
-                VoronoiRegion candidateRegion = regions[neighbourId];
-                while (!CanBeAdded(mainDistrictMaxNodes, nodeCount, candidateRegion))
+
+                // Get the best candidate from the current neighbour
+                // Compare the matches with all the mainDistrictRegions
+                VoronoiRegion bestCandidate = null;
+                int bestHits = -1;
+                foreach (VoronoiRegion candidate in neighbourRegions)
                 {
-                    candidateRegion = regions[Random.Range(0, neighbourRegions.Count)];
+                    int currentHits = 0;
+                    foreach(VoronoiRegion addedRegions in mainDistrictRegions)
+                    {
+                        if(addedRegions.neighbourRegions.Contains(candidate))
+                        {
+                            currentHits++;
+                        }
+                    }
+                    if(currentHits > bestHits && CanBeAdded(mainDistrictMaxNodes, nodeCount, candidate) && !candidatesIds.Contains(candidate.id))
+                    {
+                        bestCandidate = candidate;
+                        bestHits = currentHits;
+                    }
                 }
-                mainDistrictRegions.Add(candidateRegion);
-                nodeCount += candidateRegion.nodes.Count;
+
+                candidatesIds.Add(bestCandidate.id);
+
+                mainDistrictRegions.Add(bestCandidate);
+                nodeCount += bestCandidate.nodes.Count;
                 conditionsMet = nodeCount >= mainDistrictMinNodes ? true : false; 
+            }
+            foreach (VoronoiRegion region in mainDistrictRegions)
+            {
+                region.regionType = Region.Main;
+                AddRegionToDistrict(region, Region.Main);
             }
 
             // Define the suburbs
+        }
+        private void AddRegionToDistrict(VoronoiRegion region, Region regionType)
+        {
+            foreach(Node node in region.nodes)
+            {
+                node.region = regionType;
+            }
         }
         private bool CanBeAdded(int maxNodes,int nodeCount, VoronoiRegion region)
         {
