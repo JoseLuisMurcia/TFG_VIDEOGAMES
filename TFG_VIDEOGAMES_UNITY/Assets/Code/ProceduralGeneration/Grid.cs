@@ -49,11 +49,12 @@ namespace PG
                 {
                     Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
                     nodesGrid[x, y] = new Node(worldPoint, x, y);
-
                     voronoiGenerator.SetRegions(x, y, nodesGrid[x, y]);
                 }
             }
+            voronoiGenerator.Cleanup();
             voronoiGenerator.SetNeighbourRegions();
+            voronoiGenerator.SetCentres();
         }
 
         void OnDrawGizmos()
@@ -125,7 +126,7 @@ namespace PG
 
         public List<Node> GetNeighboursForVoronoi(Node node)
         {
-            List<Vector2Int> offsets = new List<Vector2Int> { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) };
+            List<Vector2Int> offsets = new List<Vector2Int> { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(-1, 1) };
             List<Node> neighbours = new List<Node>();
 
             foreach(Vector2Int offset in offsets)

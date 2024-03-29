@@ -121,7 +121,7 @@ namespace PG
             int tempPosX = currentPosX;
             int tempPosY = currentPosY;
 
-            regionHelper = new RegionHelper(currentPosX, currentPosY, grid);
+            regionHelper = new RegionHelper();
             Vector3 direction = Vector3.forward;
 
             Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
@@ -190,10 +190,10 @@ namespace PG
                         break;
                 }
             }
-            roadPlacer.PlaceRoadAssets(grid, this, regionHelper);
+            //roadPlacer.PlaceRoadAssets(grid, this, regionHelper);
             regionHelper.SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
-            generationUI.OnCityCreated();
-            decorationPlacer.PlaceStructuresAroundRoad();
+            //generationUI.OnCityCreated();
+            //decorationPlacer.PlaceStructuresAroundRoad();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)
