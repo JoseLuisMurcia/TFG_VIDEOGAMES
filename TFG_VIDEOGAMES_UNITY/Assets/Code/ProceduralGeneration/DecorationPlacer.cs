@@ -70,7 +70,7 @@ namespace PG
                 GameObject house;
 
                 int randomInt;
-                switch (node.region)
+                switch (node.regionType)
                 {
                     case Region.Main:
                         randomInt = UnityEngine.Random.Range(0, centreHousePrefabs.Length);

@@ -93,7 +93,7 @@ namespace PG
                 {
                     foreach (Node n in nodesGrid)
                     {
-                        switch (n.region)
+                        switch (n.regionType)
                         {
                             case Region.Main:
                                 Gizmos.color = Color.green;
