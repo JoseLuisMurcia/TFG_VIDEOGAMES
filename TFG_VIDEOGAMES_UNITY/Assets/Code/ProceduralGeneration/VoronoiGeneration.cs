@@ -37,8 +37,6 @@ namespace PG
                 voronoiRegions.Add(new VoronoiRegion(nodeColor, points[i], i));
             }
         }
-        // TODO: FIXBUG: REGION WITHOUT NEIGHBOURS, HAY ALGO MAL AQUÍ
-        // En el video se itera primero y y luego la X
         public void SetRegions(int x, int y, Node node)
         {
             float distance = float.MaxValue;
@@ -112,7 +110,7 @@ namespace PG
         }
         private void OnDrawGizmos()
         {
-            if (voronoiRegions == null || debugType == DebugType.None)
+            if (voronoiRegions == null || debugType == DebugType.Disabled)
                 return;
 
             foreach (VoronoiRegion region in voronoiRegions)
@@ -185,7 +183,7 @@ namespace PG
 
     enum DebugType
     {
-        None,
+        Disabled,
         Fragments,
         Region
     }

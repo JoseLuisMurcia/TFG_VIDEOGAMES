@@ -10,7 +10,7 @@ namespace PG
 	{
 		public Rule[] rules;
 		public string rootSentence;
-		[Range(0, 10)]
+		[Range(0, 12)]
 		public int iterationLimit = 1;
 		public bool randomIgnoreRuleModifier = true;
 		[Range(0, 1)]

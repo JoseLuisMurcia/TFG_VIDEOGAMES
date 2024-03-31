@@ -89,28 +89,6 @@ namespace PG
                         Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
                     }
                 }
-                else
-                {
-                    foreach (Node n in nodesGrid)
-                    {
-                        switch (n.regionType)
-                        {
-                            case Region.Main:
-                                Gizmos.color = Color.green;
-                                break;
-                            case Region.Residential:
-                                Gizmos.color = Color.cyan;
-                                break;
-                            case Region.Suburbs:
-                                Gizmos.color = Color.red;
-                                break;
-                            default:
-                                Gizmos.color = Color.black;
-                                break;
-                        }
-                        Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
-                    }
-                }
             }
         }
 
@@ -216,7 +194,6 @@ namespace PG
 
     enum DebugMode
     {
-        Region,
         Allocation,
         Disabled
     }

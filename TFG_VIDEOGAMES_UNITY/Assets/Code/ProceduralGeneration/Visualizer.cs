@@ -21,8 +21,6 @@ namespace PG
         //private int[] lengthValues = { 6, 8, 10, 12 };
         private int[] lengthValues = { 8, 12 };
         public static Visualizer instance;
-
-        private RegionHelper regionHelper;
         public int Length
         {
             get
@@ -50,7 +48,6 @@ namespace PG
         void Start()
         {
             StartGeneration();
-
             //Manipulacion();
         }
         //private void Manipulacion()
@@ -121,7 +118,6 @@ namespace PG
             int tempPosX = currentPosX;
             int tempPosY = currentPosY;
 
-            regionHelper = new RegionHelper();
             Vector3 direction = Vector3.forward;
 
             Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
@@ -190,8 +186,8 @@ namespace PG
                         break;
                 }
             }
-            //roadPlacer.PlaceRoadAssets(grid, this, regionHelper);
-            regionHelper.SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
+            //roadPlacer.PlaceRoadAssets(grid, this);
+            new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             //generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
         }

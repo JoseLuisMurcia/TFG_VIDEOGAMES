@@ -20,7 +20,7 @@ namespace PG
         {
             Instance = this;
         }
-        public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer, RegionHelper regionHelper)
+        public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
         {
 
             grid = _grid;

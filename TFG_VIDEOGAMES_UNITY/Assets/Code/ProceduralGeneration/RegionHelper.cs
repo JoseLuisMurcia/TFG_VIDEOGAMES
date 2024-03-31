@@ -31,8 +31,8 @@ namespace PG
         {
             /* Define the main city district */
             // Create params
-            int mainDistrictMinNodes = 5000;
-            int mainDistrictMaxNodes = 9000;
+            int mainDistrictMinNodes = 4000;
+            int mainDistrictMaxNodes = 8000;
 
             // Select the first polygon
             int firstId = Random.Range(0, regions.Count);
@@ -45,6 +45,8 @@ namespace PG
             mainDistrictRegions[0].addedToDistrict = true;
             int nodeCount = regions[firstId].nodes.Count;
             bool conditionsMet = false;
+
+            Debug.Log("CreateMainDistrict");
 
             while (!conditionsMet)
             {
@@ -80,37 +82,54 @@ namespace PG
                 }
 
             }
-            foreach (VoronoiRegion region in mainDistrictRegions)
+            AssignTypeToRegions(mainDistrictRegions, Region.Main);
+            CheckForIsolatedRegions(regions, Region.Main);
+        }
+        private void AssignTypeToRegions(List<VoronoiRegion> regions, Region regionType)
+        {
+            foreach (VoronoiRegion region in regions)
             {
-                region.regionType = Region.Main;
-                region.nodes.Select(node => node.regionType = Region.Main);
+                AssignTypeToRegion(region, regionType);
             }
-
+        }
+        private void AssignTypeToRegion(VoronoiRegion region, Region regionType)
+        {
+            region.regionType = regionType;
+            region.nodes = region.nodes.Select(node =>
+            {
+                node.regionType = regionType;
+                return node;
+            }).ToList();
+        }        
+        private void CheckForIsolatedRegions(List<VoronoiRegion> regions, Region regionType)
+        {
+            // This method could be improved as currently it only solves one scenario, when a region is surrounded completely.
+            // But there could be a group of 2 that's completely surrounded, for example
             List<VoronoiRegion> unselectedRegions = regions.ToList();
             unselectedRegions.RemoveAll(region => region.addedToDistrict);
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 1; i++)
             {
                 var addedRegions = new List<VoronoiRegion>();
                 foreach (var region in unselectedRegions)
                 {
-                    if (AllNeighboursAreInTheSameDistrict(region, Region.Main))
+                    if (AllNeighboursAreInTheSameDistrict(region, regionType))
                     {
                         Debug.Log("Fixed in " + i + " iteration");
-                        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        cube.transform.position = new Vector3(region.centre.x, 2f, region.centre.z);
-                        cube.transform.localScale *= 7f;
+                        //var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        //cube.transform.position = new Vector3(region.centre.x, 2f, region.centre.z);
+                        //cube.transform.localScale *= 7f;
 
-                        foreach (var neighbour in region.neighbourRegions)
-                        {
-                            var neighbourSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                            neighbourSphere.transform.position = new Vector3(neighbour.centre.x, 2f, neighbour.centre.z);
-                            neighbourSphere.transform.localScale *= 4f;
-                        }
+                        //foreach (var neighbour in region.neighbourRegions)
+                        //{
+                        //    var neighbourSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                        //    neighbourSphere.transform.position = new Vector3(neighbour.centre.x, 2f, neighbour.centre.z);
+                        //    neighbourSphere.transform.localScale *= 4f;
+                        //}
                         region.addedToDistrict = true;
-                        region.regionType = Region.Main;
+                        AssignTypeToRegion(region, regionType);
+
                         addedRegions.Add(region);
-                        region.nodes.Select(node => node.regionType = Region.Main);
                     }
                 }
                 foreach (var addedRegion in addedRegions)
@@ -212,6 +231,7 @@ namespace PG
 
             bool found = false;
             VoronoiRegion firstRegion = null;
+            Debug.Log("CreateSuburbs");
             while (!found)
             {
                 int firstId = Random.Range(0, freeRegions.Count);
@@ -255,11 +275,8 @@ namespace PG
                 }
 
             }
-            foreach (VoronoiRegion region in firstSuburbsDistrictRegions)
-            {
-                region.regionType = Region.Suburbs;
-                region.nodes.Select(node => node.regionType = Region.Suburbs);
-            }
+            AssignTypeToRegions(firstSuburbsDistrictRegions, Region.Suburbs);
+            CheckForIsolatedRegions(regions, Region.Suburbs);
         }
         private bool IsTwoRegionsApartFromType(VoronoiRegion region, Region regionType)
         {
