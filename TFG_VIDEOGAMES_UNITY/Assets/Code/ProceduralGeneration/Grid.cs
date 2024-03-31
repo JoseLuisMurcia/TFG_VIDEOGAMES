@@ -53,8 +53,10 @@ namespace PG
                 }
             }
             voronoiGenerator.Cleanup();
+            voronoiGenerator.SetNodesGrid(nodesGrid);
             voronoiGenerator.SetNeighbourRegions();
             voronoiGenerator.SetCentres();
+            voronoiGenerator.LloydRelaxation();
         }
 
         void OnDrawGizmos()

@@ -4995,9 +4995,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: 600
-  regionAmount: 128
+  regionAmount: 64
   worldBottomLeft: {x: 0, y: 0, z: 0}
-  debugType: 2
+  debugType: 1
+  lloydRelaxation: 1
+  relaxationIterations: 10
 --- !u!1 &1576369137 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b4576b0e46cd8314988da2b2b204c4d7, type: 3}
@@ -5467,7 +5469,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roadPlacer: {fileID: 0}
   grid: {fileID: 1575517317}
-  neighboursOffset: 3
+  neighboursOffset: 1
   decorationOffset: 1
 --- !u!114 &1772971127
 MonoBehaviour:

@@ -186,10 +186,10 @@ namespace PG
                         break;
                 }
             }
-            //roadPlacer.PlaceRoadAssets(grid, this);
+            roadPlacer.PlaceRoadAssets(grid, this);
             new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             //generationUI.OnCityCreated();
-            //decorationPlacer.PlaceStructuresAroundRoad();
+            decorationPlacer.PlaceStructuresAroundRoad();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

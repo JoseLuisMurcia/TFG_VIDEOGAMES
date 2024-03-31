@@ -26,7 +26,6 @@ namespace PG
             CreateMainDistrict(regions);
             CreateSuburbs(regions);
         }
-
         private void CreateMainDistrict(List<VoronoiRegion> regions)
         {
             /* Define the main city district */
@@ -84,6 +83,67 @@ namespace PG
             }
             AssignTypeToRegions(mainDistrictRegions, Region.Main);
             CheckForIsolatedRegions(regions, Region.Main);
+        }
+        private void CreateSuburbs(List<VoronoiRegion> regions)
+        {
+            // Define the suburbs
+            int suburbsMinNodes = 1000;
+            int suburbsMaxNodes = 2000;
+            List<VoronoiRegion> freeRegions = new List<VoronoiRegion>();
+            foreach (VoronoiRegion region in regions)
+            {
+                if (!region.addedToDistrict)
+                    freeRegions.Add(region);
+            }
+
+            bool found = false;
+            VoronoiRegion firstRegion = null;
+            Debug.Log("CreateSuburbs");
+            while (!found)
+            {
+                int firstId = Random.Range(0, freeRegions.Count);
+                firstRegion = freeRegions[firstId];
+                if (IsRegionAwayFromType(firstRegion, 2, Region.Main))
+                    found = true;
+            }
+            bool conditionsMet = false;
+            List<VoronoiRegion> firstSuburbsDistrictRegions = new List<VoronoiRegion>
+            {
+                firstRegion
+            };
+
+            int nodeCount = 0;
+            while (!conditionsMet)
+            {
+                VoronoiRegion selectedRegion = firstSuburbsDistrictRegions.Last();
+
+                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, firstSuburbsDistrictRegions, suburbsMaxNodes, nodeCount, Region.Suburbs);
+
+                if (bestNeighbour == null)
+                {
+                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(firstSuburbsDistrictRegions);
+
+                    Debug.LogWarning("Retrying to assign a new region");
+                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, firstSuburbsDistrictRegions, suburbsMaxNodes, nodeCount, Region.Main);
+
+                    if (bestNeighbour == null)
+                    {
+                        Debug.LogError("NO BEST CANDIDATE FOUND, ABORTING EXECUTION");
+                        break;
+                    }
+                    else
+                    {
+                        conditionsMet = AddRegionToDistrict(bestNeighbour, firstSuburbsDistrictRegions, ref nodeCount, suburbsMinNodes);
+                    }
+                }
+                else
+                {
+                    conditionsMet = AddRegionToDistrict(bestNeighbour, firstSuburbsDistrictRegions, ref nodeCount, suburbsMinNodes);
+                }
+
+            }
+            AssignTypeToRegions(firstSuburbsDistrictRegions, Region.Suburbs);
+            CheckForIsolatedRegions(regions, Region.Suburbs);
         }
         private void AssignTypeToRegions(List<VoronoiRegion> regions, Region regionType)
         {
@@ -216,67 +276,6 @@ namespace PG
         private List<VoronoiRegion> GetValidSuburbsNeighbours(VoronoiRegion selectedRegion)
         {
             return selectedRegion.neighbourRegions.Where(neighbour => !neighbour.addedToDistrict && IsTwoRegionsApartFromType(neighbour, Region.Main)).ToList();
-        }
-        private void CreateSuburbs(List<VoronoiRegion> regions)
-        {
-            // Define the suburbs
-            int suburbsMinNodes = 1000;
-            int suburbsMaxNodes = 2000;
-            List<VoronoiRegion> freeRegions = new List<VoronoiRegion>();
-            foreach (VoronoiRegion region in regions)
-            {
-                if (!region.addedToDistrict)
-                    freeRegions.Add(region);
-            }
-
-            bool found = false;
-            VoronoiRegion firstRegion = null;
-            Debug.Log("CreateSuburbs");
-            while (!found)
-            {
-                int firstId = Random.Range(0, freeRegions.Count);
-                firstRegion = freeRegions[firstId];
-                if (IsRegionAwayFromType(firstRegion, 2, Region.Main))
-                    found = true;
-            }
-            bool conditionsMet = false;
-            List<VoronoiRegion> firstSuburbsDistrictRegions = new List<VoronoiRegion>
-            {
-                firstRegion
-            };
-
-            int nodeCount = 0;
-            while (!conditionsMet)
-            {
-                VoronoiRegion selectedRegion = firstSuburbsDistrictRegions.Last();
-
-                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, firstSuburbsDistrictRegions, suburbsMaxNodes, nodeCount, Region.Suburbs);
-
-                if (bestNeighbour == null)
-                {
-                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(firstSuburbsDistrictRegions);
-
-                    Debug.LogWarning("Retrying to assign a new region");
-                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, firstSuburbsDistrictRegions, suburbsMaxNodes, nodeCount, Region.Main);
-
-                    if (bestNeighbour == null)
-                    {
-                        Debug.LogError("NO BEST CANDIDATE FOUND, ABORTING EXECUTION");
-                        break;
-                    }
-                    else
-                    {
-                        conditionsMet = AddRegionToDistrict(bestNeighbour, firstSuburbsDistrictRegions, ref nodeCount, suburbsMinNodes);
-                    }
-                }
-                else
-                {
-                    conditionsMet = AddRegionToDistrict(bestNeighbour, firstSuburbsDistrictRegions, ref nodeCount, suburbsMinNodes);
-                }
-
-            }
-            AssignTypeToRegions(firstSuburbsDistrictRegions, Region.Suburbs);
-            CheckForIsolatedRegions(regions, Region.Suburbs);
         }
         private bool IsTwoRegionsApartFromType(VoronoiRegion region, Region regionType)
         {

@@ -17,13 +17,77 @@ namespace PG
         public int regionAmount;
 
         List<VoronoiRegion> voronoiRegions;
+        private bool firstTime = true;
         Vector2[] points;
+        Vector2[] centres;
         [HideInInspector]
         public Vector3 worldBottomLeft;
 
         [SerializeField]
         private DebugType debugType;
 
+        [SerializeField]
+        private bool lloydRelaxation;
+        [SerializeField]
+        private int relaxationIterations;
+
+        private int numRelaxationIterations = 0;
+        private Node[,] nodesGrid;
+        public void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.I))
+            {
+                Debug.Log("Relaxation Iteration: " + numRelaxationIterations);
+                IterativeVoronoi();
+                numRelaxationIterations++;
+            }
+        }
+        public void LloydRelaxation()
+        {
+            if (!lloydRelaxation) return;
+
+            for (int k = 0; k < relaxationIterations; k++)
+            {
+                IterativeVoronoi();
+            }
+        }
+        private void IterativeVoronoi()
+        {      
+            points = new Vector2[voronoiRegions.Count];
+            int regionsCount = voronoiRegions.Count;
+            for (int i = 0; i < regionsCount; i++)
+            {
+                points[i] = centres[i];
+                voronoiRegions[i].point = points[i];
+                voronoiRegions[i].nodes = new List<Node>();
+            }
+
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    float distance = float.MaxValue;
+                    int value = 0;
+
+                    Vector2 currentPos = new Vector2(x, y);
+                    for (int i = 0; i < regionsCount; i++)
+                    {
+                        if (Vector2.Distance(currentPos, points[i]) < distance)
+                        {
+                            distance = Vector2.Distance(currentPos, points[i]);
+                            value = i;
+                        }
+                    }
+                    int regionId = value % regionsCount;
+                    Node node = nodesGrid[x, y];
+                    voronoiRegions[regionId].nodes.Add(node);
+                    node.voronoiRegion = voronoiRegions[regionId];
+                }
+            }
+
+            SetNeighbourRegions();
+            SetCentres();     
+        }
         public void SetupVoronoi(int gridSize)
         {
             size = gridSize;
@@ -68,6 +132,10 @@ namespace PG
             voronoiRegions.RemoveAll(r => regionsToRemove.Contains(r));
             regionAmount = voronoiRegions.Count;
         }
+        public void SetNodesGrid(Node[,] _nodesGrid)
+        {
+            nodesGrid = _nodesGrid;
+        }
         public void SetNeighbourRegions()
         {
             for (int x = 0; x < size; x++)
@@ -96,16 +164,28 @@ namespace PG
         }
         public void SetCentres()
         {
-            foreach (var region in voronoiRegions)
+            centres = new Vector2[voronoiRegions.Count];
+            for(int i=0; i < voronoiRegions.Count; i++)
             {
-                float nodesCount = (float) region.nodes.Count;
+                var region = voronoiRegions[i];
                 Vector2 centre = Vector2.zero;
-                for (int i = 0; i < region.nodes.Count; i++)
+                for (int j = 0; j < region.nodes.Count; j++)
                 {
-                    centre += new Vector2(region.nodes[i].gridX, region.nodes[i].gridY);
+                    centre += new Vector2(region.nodes[j].gridX, region.nodes[j].gridY);
                 }
+                float nodesCount = (float)region.nodes.Count;
                 centre = new Vector2 (centre.x / nodesCount, centre.y / nodesCount);
-                region.centre = TransformToWorldPos(centre);
+                centres[i] = centre;
+                Vector3 centre3D = TransformToWorldPos(centre);
+                region.centre = centre3D;
+                if (firstTime)
+                {
+                    region.originalCentre = centre3D;
+                }
+            }
+            if (firstTime)
+            {
+                firstTime = false;
             }
         }
         private void OnDrawGizmos()
@@ -118,7 +198,7 @@ namespace PG
                 Gizmos.color = (debugType == DebugType.Fragments) ? region.color : GetColorFromRegionType(region.regionType);
                 foreach (Node node in region.nodes)
                 {
-                    Gizmos.DrawCube(node.worldPosition, Vector3.one * (4f - .1f));
+                    Gizmos.DrawCube(node.worldPosition, Vector3.one * 4f);
                 }
 
                 if (debugType == DebugType.Fragments)
@@ -126,11 +206,15 @@ namespace PG
                     Gizmos.color = Color.black;
                     Gizmos.DrawSphere(region.centre, 2.5f);
 
-                    foreach (VoronoiRegion neighbour in region.neighbourRegions)
-                    {
-                        Gizmos.color = Color.white;
-                        Gizmos.DrawLine(region.centre, neighbour.centre);
-                    }
+                    Gizmos.color = Color.white;
+                    Gizmos.DrawSphere(region.originalCentre, 2.5f);
+                    Gizmos.color = Color.gray;
+                    Gizmos.DrawLine(region.centre, region.originalCentre);
+                    //foreach (VoronoiRegion neighbour in region.neighbourRegions)
+                    //{
+                    //    Gizmos.color = Color.white;
+                    //    Gizmos.DrawLine(region.centre, neighbour.centre);
+                    //}
                 }
             }
         }
@@ -171,6 +255,7 @@ namespace PG
         public Region regionType = Region.Residential;
         public bool addedToDistrict { set; get; }
         public Vector3 centre = Vector3.zero;
+        public Vector3 originalCentre = Vector3.zero;
         public int id;
 
         public VoronoiRegion(Color _color, Vector2 _point, int _id)
