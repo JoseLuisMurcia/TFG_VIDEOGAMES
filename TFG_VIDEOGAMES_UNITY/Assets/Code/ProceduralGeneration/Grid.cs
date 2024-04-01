@@ -48,12 +48,12 @@ namespace PG
                 for (int y = 0; y < gridSizeY; y++)
                 {
                     Vector3 worldPoint = worldBottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.forward * (y * nodeDiameter + nodeRadius);
-                    nodesGrid[x, y] = new Node(worldPoint, x, y);
-                    voronoiGenerator.SetRegions(x, y, nodesGrid[x, y]);
+                    Node currentNode = new Node(worldPoint, x, y);
+                    nodesGrid[x, y] = currentNode;
+                    voronoiGenerator.SetRegions(x, y, currentNode);
                 }
             }
             voronoiGenerator.Cleanup();
-            voronoiGenerator.SetNodesGrid(nodesGrid);
             voronoiGenerator.SetNeighbourRegions();
             voronoiGenerator.SetCentres();
             voronoiGenerator.LloydRelaxation();
@@ -179,6 +179,7 @@ namespace PG
 
         public void Reset()
         {
+            voronoiGenerator.SetupVoronoi(gridSizeX);
             CreateGrid();
         }
     }

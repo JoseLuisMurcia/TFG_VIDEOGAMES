@@ -13,6 +13,7 @@ namespace PG
         private PG.Visualizer visualizer;
         List<Node> updatedNodes = new List<Node>();
         [HideInInspector] public Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
+        [HideInInspector] private List<GameObject> trafficSignsAndLights = new List<GameObject>();
         [SerializeField] bool visualDebug;
         public static RoadPlacer Instance;
 
@@ -146,7 +147,10 @@ namespace PG
                 List<Direction> neighbours = data.neighbours;
                 Vector2Int key = new Vector2Int(gridX, gridY);
                 if (roadDictionary.ContainsKey(key))
+                {
                     Destroy(roadDictionary[key]);
+                    roadDictionary.Remove(key);
+                }
 
                 if (!node.occupied)
                     continue;
@@ -208,6 +212,7 @@ namespace PG
             }
 
             // Straights recreation
+            Dictionary<Vector2Int, GameObject> addedStraights = new Dictionary<Vector2Int, GameObject>();
             foreach (Vector2Int position in roadDictionary.Keys)
             {
                 Node currentNode = grid.nodesGrid[position.x, position.y];
@@ -224,19 +229,24 @@ namespace PG
                 if (currentNode.belongingStraight != null)
                     continue;
 
-                Straight straight;
+                GameObject straightGO;
                 if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
                 {
                     // Vertical 
                     // Advance vertically until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
-                    straight = CreateStraight(position.x, position.y, new List<Direction> { Direction.forward, Direction.back });
+                    straightGO = CreateStraight(position.x, position.y, new List<Direction> { Direction.forward, Direction.back });
                 }
                 else
                 {
                     // Horizontal
                     // Advance horizontally until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
-                    straight = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
+                    straightGO = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
                 }
+                addedStraights[position] = straightGO;
+            }
+            foreach(Vector2Int position in addedStraights.Keys)
+            {
+                roadDictionary[position] = addedStraights[position];
             }
 
             // Intersections creation
@@ -252,29 +262,30 @@ namespace PG
                         switch (data.neighbours.Count)
                         {
                             case 3:
-                                float random = UnityEngine.Random.Range(0f, 1f);
+                                float random = Random.Range(0f, 1f);
                                 if (random < 0.5f)
                                 {
                                     // Instantiate 2 signals
                                     Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
                                     GameObject intersection = roadDictionary[key];
-                                    Direction d1 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+                                    Direction d1 = neighbours[Random.Range(0, neighbours.Count)];
                                     neighbours.Remove(d1);
-                                    Direction d2 = neighbours[UnityEngine.Random.Range(0, neighbours.Count)];
+                                    Direction d2 = neighbours[Random.Range(0, neighbours.Count)];
                                     neighbours.Remove(d2);
 
                                     GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
                                     GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
-
+                                    trafficSignsAndLights.Add(stop);
+                                    trafficSignsAndLights.Add(yield);
                                 }
                                 else
                                 {
-                                    Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
+                                    trafficSignsAndLights.Add(Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform));
                                 }
                                 break;
 
                             case 4:
-                                Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform);
+                                trafficSignsAndLights.Add(Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform));
                                 break;
                         }
                     }
@@ -283,7 +294,7 @@ namespace PG
 
 
         }
-        private Straight CreateStraight(int x, int y, List<Direction> directions)
+        private GameObject CreateStraight(int x, int y, List<Direction> directions)
         {
             Straight straight = new Straight();
             Node currentNode = grid.nodesGrid[x, y];
@@ -323,10 +334,10 @@ namespace PG
             {
                 rotation = Quaternion.Euler(0, 90, 0);
             }
-            GameObject straightAsset = Instantiate(roadStraight, straight.center, rotation, transform);
+            GameObject straightGO = Instantiate(roadStraight, straight.center, rotation, transform);
             Vector3 newScale = new Vector3(4f * straight.nodes.Count, 4f, 4f);
-            straightAsset.transform.localScale = newScale;
-            return straight;
+            straightGO.transform.localScale = newScale;
+            return straightGO;
         }
         private void DestroyRoadOnPosition(int x, int y)
         {
@@ -849,6 +860,25 @@ namespace PG
                 Destroy(roadDictionary[key]);
             }
             roadDictionary.Clear();
+            foreach (var obj in trafficSignsAndLights)
+            {
+                Destroy(obj);
+            }
+            trafficSignsAndLights.Clear();
+        }
+        public void DestroyAssets()
+        {
+            updatedNodes.Clear();
+            foreach (Vector2Int key in roadDictionary.Keys)
+            {
+                Destroy(roadDictionary[key]);
+            }
+            roadDictionary.Clear();
+            foreach (var obj in trafficSignsAndLights)
+            {
+                Destroy(obj);
+            }
+            trafficSignsAndLights.Clear();
         }
         public Direction GetDirectionBasedOnPos(Node currentNode, Node newNode)
         {

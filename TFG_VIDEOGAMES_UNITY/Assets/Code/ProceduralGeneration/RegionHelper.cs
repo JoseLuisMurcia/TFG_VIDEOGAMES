@@ -81,6 +81,7 @@ namespace PG
                 }
 
             }
+            Debug.Log("Node count: " + nodeCount);
             AssignTypeToRegions(mainDistrictRegions, Region.Main);
             CheckForIsolatedRegions(regions, Region.Main);
         }
@@ -142,6 +143,7 @@ namespace PG
                 }
 
             }
+            Debug.Log("Node count: " + nodeCount);
             AssignTypeToRegions(firstSuburbsDistrictRegions, Region.Suburbs);
             CheckForIsolatedRegions(regions, Region.Suburbs);
         }

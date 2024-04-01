@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Color = UnityEngine.Color;
@@ -32,13 +33,12 @@ namespace PG
         private int relaxationIterations;
 
         private int numRelaxationIterations = 0;
-        private Node[,] nodesGrid;
         public void Update()
         {
             if (Input.GetKeyDown(KeyCode.I))
             {
                 Debug.Log("Relaxation Iteration: " + numRelaxationIterations);
-                IterativeVoronoi();
+                IterativeVoronoi(numRelaxationIterations);
                 numRelaxationIterations++;
             }
         }
@@ -48,20 +48,20 @@ namespace PG
 
             for (int k = 0; k < relaxationIterations; k++)
             {
-                IterativeVoronoi();
+                IterativeVoronoi(k);
             }
         }
-        private void IterativeVoronoi()
-        {      
-            points = new Vector2[voronoiRegions.Count];
+        private void IterativeVoronoi(int currentIteration)
+        {
             int regionsCount = voronoiRegions.Count;
+            points = new Vector2[regionsCount];
             for (int i = 0; i < regionsCount; i++)
             {
                 points[i] = centres[i];
                 voronoiRegions[i].point = points[i];
                 voronoiRegions[i].nodes = new List<Node>();
+                voronoiRegions[i].neighbourRegions = new HashSet<VoronoiRegion>();
             }
-
             for (int x = 0; x < size; x++)
             {
                 for (int y = 0; y < size; y++)
@@ -79,17 +79,26 @@ namespace PG
                         }
                     }
                     int regionId = value % regionsCount;
-                    Node node = nodesGrid[x, y];
+                    Node node = Grid.Instance.nodesGrid[x, y];
                     voronoiRegions[regionId].nodes.Add(node);
                     node.voronoiRegion = voronoiRegions[regionId];
                 }
             }
-
-            SetNeighbourRegions();
+            Cleanup();
+            if (!lloydRelaxation)
+            {
+                SetNeighbourRegions();
+            }
+            else
+            {
+                // Avoid setting neighbours until last iteration
+                if (currentIteration == relaxationIterations - 1) SetNeighbourRegions();
+            }
             SetCentres();     
         }
         public void SetupVoronoi(int gridSize)
         {
+            firstTime = true;
             size = gridSize;
             points = new Vector2[regionAmount];
 
@@ -132,10 +141,6 @@ namespace PG
             voronoiRegions.RemoveAll(r => regionsToRemove.Contains(r));
             regionAmount = voronoiRegions.Count;
         }
-        public void SetNodesGrid(Node[,] _nodesGrid)
-        {
-            nodesGrid = _nodesGrid;
-        }
         public void SetNeighbourRegions()
         {
             for (int x = 0; x < size; x++)
@@ -144,13 +149,9 @@ namespace PG
                 {
                     Node currentNode = Grid.Instance.nodesGrid[x, y];
                     List<Node> neighbours = Grid.Instance.GetNeighboursForVoronoi(currentNode);
-                    Color currentColor = currentNode.voronoiRegion.color;
                     foreach (Node neighbour in neighbours)
                     {
-                        Color neighbourColor = neighbour.voronoiRegion.color;
-                        // Find colour for that region and compare it with current node region
-                        // IF != then add neighbour region for both voronoiRegions
-                        if (currentColor != neighbourColor)
+                        if (currentNode.voronoiRegion.id != neighbour.voronoiRegion.id)
                         {
                             VoronoiRegion currentRegion = currentNode.voronoiRegion;
                             VoronoiRegion neighbourRegion = neighbour.voronoiRegion;
@@ -176,7 +177,7 @@ namespace PG
                 float nodesCount = (float)region.nodes.Count;
                 centre = new Vector2 (centre.x / nodesCount, centre.y / nodesCount);
                 centres[i] = centre;
-                Vector3 centre3D = TransformToWorldPos(centre);
+                Vector3 centre3D = TransformToWorldPos(centre) + Vector3.up * 10f;
                 region.centre = centre3D;
                 if (firstTime)
                 {
@@ -206,22 +207,24 @@ namespace PG
                     Gizmos.color = Color.black;
                     Gizmos.DrawSphere(region.centre, 2.5f);
 
+                    /* Old centre debug */
+                    //Gizmos.color = Color.white;
+                    //Gizmos.DrawSphere(region.originalCentre, 2.5f);
+                    //Gizmos.color = Color.gray;
+                    //Gizmos.DrawLine(region.centre, region.originalCentre);
+
                     Gizmos.color = Color.white;
-                    Gizmos.DrawSphere(region.originalCentre, 2.5f);
-                    Gizmos.color = Color.gray;
-                    Gizmos.DrawLine(region.centre, region.originalCentre);
-                    //foreach (VoronoiRegion neighbour in region.neighbourRegions)
-                    //{
-                    //    Gizmos.color = Color.white;
-                    //    Gizmos.DrawLine(region.centre, neighbour.centre);
-                    //}
+                    foreach (VoronoiRegion neighbour in region.neighbourRegions)
+                    {
+                        Gizmos.DrawLine(region.centre, neighbour.centre);
+                    }
                 }
             }
         }
         
         private Vector3 TransformToWorldPos(Vector2 voronoiPos)
         {
-            Vector3 worldPoint = worldBottomLeft + Vector3.right * (voronoiPos.x * 4 + 2) + Vector3.forward * (voronoiPos.y * 4 + 2);
+            Vector3 worldPoint = worldBottomLeft + Vector3.right * (voronoiPos.x * Grid.Instance.nodeDiameter + Grid.Instance.nodeRadius) + Vector3.forward * (voronoiPos.y * Grid.Instance.nodeDiameter + Grid.Instance.nodeRadius);
             return worldPoint;
         }
         public List<VoronoiRegion> GetVoronoiRegions()

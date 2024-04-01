@@ -34,7 +34,13 @@ namespace PG
             visualizer.roadPlacer.Reset();
             visualizer.StartGeneration();
         }
-
+        public void DestroyCityButton()
+        {
+            regenerateButton.enabled = false;
+            ToggleChildren(carSpawner);
+            ToggleChildren(pedestrianSpawner);
+            visualizer.roadPlacer.DestroyAssets();
+        }
         void ToggleChildren(GameObject _gameObject)
         {
             foreach(Transform child in _gameObject.transform)
