@@ -1,19 +1,24 @@
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 
 namespace PG
 {
     public class RoadPlacer : MonoBehaviour
     {
-        public GameObject roadStraight, roadCorner, road3way, road4way;
-        public GameObject trafficLights;
-        public GameObject stopSignal, yieldSignal, pedestrianSignal;
+        [SerializeField]
+        private GameObject roadStraight, roadCorner, road3way, road4way;
+        [SerializeField]
+        private GameObject trafficLights;
+        [SerializeField]
+        private GameObject stopSignal, yieldSignal, pedestrianSignal, sidewalk;
         private PG.Grid grid;
         private PG.Visualizer visualizer;
-        List<Node> updatedNodes = new List<Node>();
-        [HideInInspector] public Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
-        [HideInInspector] private List<GameObject> trafficSignsAndLights = new List<GameObject>();
+        private List<Node> updatedNodes = new List<Node>();
+        private Dictionary<Vector2Int, GameObject> roadDictionary = new Dictionary<Vector2Int, GameObject>();
+        private List<GameObject> trafficSignsAndLights = new List<GameObject>();
         [SerializeField] bool visualDebug;
         public static RoadPlacer Instance;
 
@@ -23,7 +28,6 @@ namespace PG
         }
         public void PlaceRoadAssets(PG.Grid _grid, Visualizer _visualizer)
         {
-
             grid = _grid;
             visualizer = _visualizer;
             // Clear this data structure, from now on only the points who can go forward in a direction until they meet the end of the world will remain the pointNodesList
@@ -55,13 +59,12 @@ namespace PG
                 else
                 {
                     node.usage = Usage.road;
-                    // if(visualDebug) SpawnSphere(node.worldPosition, Color.black);
+                    if(visualDebug) SpawnSphere(node.worldPosition, Color.black, 1f);
 
                 }
             }
             visualizer.pointNodes = _pointNodes;
-
-            
+           
             // Spawn the road prefabs
             for (int i = 0; i < grid.gridSizeX; i++)
             {
@@ -69,8 +72,6 @@ namespace PG
                 {
                     Node currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNeighboursData(i, j);
-                    // As we are iterating through each node, we take profit and assign the region.
-                    //regionHelper.SetRegionToNode(currentNode);
                     List<Direction> neighbours = data.neighbours;
                     if (currentNode.occupied)
                     {
@@ -80,10 +81,8 @@ namespace PG
                             case 1:
                                 if (!ShouldBeEliminated(currentNode, 2))
                                 {
-                                    //roadDictionary[new Vector2Int(i, j)] = Instantiate(roadEnd, currentNode.worldPosition, Quaternion.identity, transform);
                                     ConnectToOtherRoad(i, j, data);
                                 }
-                                //if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 3f);
                                 break;
                             case 2:
                                 if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
@@ -292,7 +291,15 @@ namespace PG
                 }
             }
 
-
+            // Instantiate sidewalk
+            for (int i = 0; i < grid.gridSizeX; i++)
+            {
+                for (int j = 0; j < grid.gridSizeY; j++)
+                {
+                    Node node = grid.nodesGrid[i, j];
+                    if (node.usage == Usage.decoration) Instantiate(sidewalk, node.worldPosition, Quaternion.identity, transform);
+                }
+            }
         }
         private GameObject CreateStraight(int x, int y, List<Direction> directions)
         {
@@ -422,8 +429,10 @@ namespace PG
         {
             Node currentNode = startNode;
             Node previousNode = startNode;
-            List<Node> pathToEliminate = new List<Node>();
-            pathToEliminate.Add(currentNode);
+            List<Node> pathToEliminate = new List<Node>
+            {
+                currentNode
+            };
             int i = 0;
             while (i < maxIterations)
             {

@@ -18,6 +18,7 @@ namespace PG
         private float angle = 90f;
         [SerializeField] public int neighboursOffset;
         [SerializeField] public int decorationOffset;
+        [SerializeField] private NavMeshGenerator navMeshGenerator;
         //private int[] lengthValues = { 6, 8, 10, 12 };
         private int[] lengthValues = { 8, 12 };
         public static Visualizer instance;
@@ -186,10 +187,11 @@ namespace PG
                         break;
                 }
             }
-            //roadPlacer.PlaceRoadAssets(grid, this);
+            roadPlacer.PlaceRoadAssets(grid, this);
             new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             //generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
+            navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)
@@ -329,7 +331,6 @@ namespace PG
 
             }
         }
-
         public void UnmarkSurroundingNodes(int posX, int posY, int xIncrement, int yIncrement)
         {
             for (int i = 1; i <= decorationOffset; i++)
@@ -406,7 +407,6 @@ namespace PG
             Node node = grid.nodesGrid[xPos, yPos];
             if (node.usage == Usage.road || node.usage == Usage.point)
             {
-                //SpawnSphere(node.worldPosition);
                 return true;
             }
 
@@ -461,14 +461,6 @@ namespace PG
                 }
                 return startX - endX;
             }
-        }
-        private void SpawnSphere(Vector3 pos, Color color, float offset)
-        {
-            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            startSphere.transform.parent = transform;
-            startSphere.transform.position = pos + Vector3.up * offset;
-            startSphere.transform.localScale = Vector3.one * 5;
-            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
     }
 
