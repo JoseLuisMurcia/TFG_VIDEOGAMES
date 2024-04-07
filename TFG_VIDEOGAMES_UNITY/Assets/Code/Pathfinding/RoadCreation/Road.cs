@@ -9,7 +9,7 @@ public class Road : MonoBehaviour
     [SerializeField] LayerMask roadMask;
     public TypeOfRoad typeOfRoad;
     [SerializeField] public NumDirection numDirection;
-    [HideInInspector] public TrafficLight trafficLight;
+    [HideInInspector] public CarTrafficLight trafficLight;
     [HideInInspector] public TrafficLightEvents trafficLightEvents;
     [HideInInspector] public List<Road> connections = new List<Road>();
     [HideInInspector] public List<Lane> lanes;

@@ -46,6 +46,9 @@ public class PedestrianSpawner : MonoBehaviour
         int randomInt = Random.Range(0, pedestrianPrefabs.Length);
         Pedestrian pedestrian = Instantiate(pedestrianPrefabs[randomInt], spawnPosition, houses[housesIds[0]].rotation);
         pedestrian.SetTarget(houses[housesIds[1]]);
+        var dest = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        dest.transform.position = houses[housesIds[1]].position + Vector3.up * 5f;
+        dest.transform.localScale = Vector3.one * 5f;
     }
 
     public void SpawnFivePedestrians()

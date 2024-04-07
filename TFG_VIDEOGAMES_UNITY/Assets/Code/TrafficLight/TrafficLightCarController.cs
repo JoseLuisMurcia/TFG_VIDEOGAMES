@@ -9,14 +9,14 @@ public class TrafficLightCarController : MonoBehaviour
     PathFollower pathFollower;
 
     [SerializeField] public Road currentRoad;
-    [SerializeField] public TrafficLight trafficLight;
+    [SerializeField] public CarTrafficLight trafficLight;
     float distanceToStopInAmberLight = 3.5f;
     private void Start()
     {
         pathFollower = GetComponent<PathFollower>();
     }
 
-    private void OnTrafficLightChange(TrafficLightColor newColor, bool subscription)
+    private void OnTrafficLightChange(TrafficLightState newColor, bool subscription)
     {
         if (currentRoad == null)
             return;
@@ -24,17 +24,17 @@ public class TrafficLightCarController : MonoBehaviour
         float distance;
         switch (newColor)
         {
-            case TrafficLightColor.Green:
+            case TrafficLightState.Green:
                 pathFollower.ContinueAtTrafficLight(subscription);
                 break;
-            case TrafficLightColor.Amber:
+            case TrafficLightState.Amber:
                 distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
                 if (distance > distanceToStopInAmberLight)
                 {
                     pathFollower.StopAtTrafficLight(subscription);
                 }
                 break;
-            case TrafficLightColor.Red:
+            case TrafficLightState.Red:
                 distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
                 if (distance > 1f)
                 {

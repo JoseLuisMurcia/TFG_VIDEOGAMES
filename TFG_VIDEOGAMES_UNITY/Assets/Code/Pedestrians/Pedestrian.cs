@@ -4,11 +4,12 @@ using UnityEngine;
 using UnityEngine.AI;
 public class Pedestrian : MonoBehaviour
 {
-    public Camera cam;
     public NavMeshAgent agent;
 	private Animator animator;
 
+    private LineRenderer line;
     private Vector3 destination = Vector3.zero;
+    public Transform target;
     float checkUpdateTime = 1f;
 
     [Header("Crossing")]
@@ -17,19 +18,24 @@ public class Pedestrian : MonoBehaviour
   
 	void Start()
     {
-        cam = Camera.main;
+        line = GetComponent<LineRenderer>();
         agent = GetComponent<NavMeshAgent>();
 		animator = GetComponent<Animator>();
 
         if (destination != Vector3.zero)
             agent.SetDestination(destination);
 
+        if (target != null)
+        {
+            agent.SetDestination(target.transform.position);
+        }
+        DrawPath(agent.path);
         StartCoroutine(CheckArrivalToDestination());
     }
-
     // Update is called once per frame
     void Update()
     {
+
         if (agent.remainingDistance > agent.stoppingDistance)
         {
             animator.SetBool("IsMoving", true);
@@ -41,11 +47,19 @@ public class Pedestrian : MonoBehaviour
 
     }
 
-    public void SetTarget(Transform target)
+    public void SetTarget(Transform _target)
     {
-        destination = target.position;
+        destination = _target.position;
+        target = _target;
+
     }
 
+    private void DrawPath(NavMeshPath path)
+    {
+        line.positionCount = path.corners.Length;
+        line.SetPositions(path.corners);
+        line.enabled = true;
+    }
     IEnumerator CheckArrivalToDestination()
     {
         while (true)

@@ -21,21 +21,21 @@ public class ColorChanger : MonoBehaviour
         debugSphereRenderer = sphere.GetComponent<Renderer>();
     }
 
-    public void SetColor(TrafficLightColor newColor)
+    public void SetColor(TrafficLightState newColor)
     {
         switch (newColor)
         {
-            case TrafficLightColor.Green:
+            case TrafficLightState.Green:
                 Material[] greenMats = { black, green, black};
                 meshRenderer.materials = greenMats;
                 debugSphereRenderer.material = green;
                 break;
-            case TrafficLightColor.Amber:
+            case TrafficLightState.Amber:
                 Material[] amberMats = { amber, black, black };
                 meshRenderer.materials = amberMats;
                 debugSphereRenderer.material = amber;
                 break;
-            case TrafficLightColor.Red:
+            case TrafficLightState.Red:
                 Material[] redMats = { black, black, red };
                 meshRenderer.materials = redMats;
                 debugSphereRenderer.material = red;
