@@ -7,30 +7,37 @@ public class Pedestrian : MonoBehaviour
     public NavMeshAgent agent;
 	private Animator animator;
 
-    private LineRenderer line;
     private Vector3 destination = Vector3.zero;
     public Transform target;
-    float checkUpdateTime = 1f;
+    float checkUpdateTime = 1.5f;
 
     [Header("Crossing")]
     public bool isCrossing = false;
     public Vector3 crossingPos;
-  
-	void Start()
+    private InvisiblePedestrian invisiblePedestrian;
+    [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
+
+    private List<TrafficLightScheduler> schedulers = new List<TrafficLightScheduler>();
+
+    void Start()
     {
-        line = GetComponent<LineRenderer>();
         agent = GetComponent<NavMeshAgent>();
 		animator = GetComponent<Animator>();
 
         if (destination != Vector3.zero)
+        {
             agent.SetDestination(destination);
+            StartCoroutine(CheckArrivalToDestination());
+        }
 
         if (target != null)
         {
+            invisiblePedestrian = Instantiate(invisiblePedestrianPrefab, transform.position, transform.rotation);
+            invisiblePedestrian.SetDestination(target.transform.position);
+            invisiblePedestrian.SetPedestrian(this);
             agent.SetDestination(target.transform.position);
+            StartCoroutine(CheckArrivalToDestination());
         }
-        DrawPath(agent.path);
-        StartCoroutine(CheckArrivalToDestination());
     }
     // Update is called once per frame
     void Update()
@@ -51,15 +58,8 @@ public class Pedestrian : MonoBehaviour
     {
         destination = _target.position;
         target = _target;
-
     }
 
-    private void DrawPath(NavMeshPath path)
-    {
-        line.positionCount = path.corners.Length;
-        line.SetPositions(path.corners);
-        line.enabled = true;
-    }
     IEnumerator CheckArrivalToDestination()
     {
         while (true)
@@ -71,5 +71,43 @@ public class Pedestrian : MonoBehaviour
                 Destroy(gameObject);
             }
         }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
+        {
+            var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
+            if (trigger != null)
+            {
+                var scheduler = trigger.GetScheduler();
+                if (schedulers.Contains(scheduler))
+                {
+                    // Mirar si hay que parar o no
+                    if (scheduler.GetState() == TrafficLightState.Pedestrian)
+                    {
+                        // Cruzar
+                    }
+                    else
+                    {
+                        // Detenerse
+                    }
+                }
+            }
+            Debug.Log("trigger entry");
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
+        {
+        }
+
+    }
+
+    public void SetCrossings(List<TrafficLightScheduler> _schedulers)
+    {
+        schedulers = _schedulers;
     }
 }

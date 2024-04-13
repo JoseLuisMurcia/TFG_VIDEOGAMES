@@ -55,12 +55,6 @@ public class Road : MonoBehaviour
         {
             CreateIntersectionPriorityTriggers();
         }
-
-
-        //foreach (Transform child in transform)
-        //{
-        //    child.gameObject.SetActive(true);
-        //}
     }
 
     public void CreateTrafficLightTriggers()
@@ -173,11 +167,6 @@ public class Road : MonoBehaviour
         rayPositions.Add(ray10newPos);
         rayPositions.Add(ray11newPos);
         rayPositions.Add(ray12newPos);
-
-        //rayPositions.Add(ray1Pos);
-        //rayPositions.Add(ray2Pos);
-        //rayPositions.Add(ray3Pos);
-        //rayPositions.Add(ray4Pos);
 
         foreach (Vector3 rayPos in rayPositions)
         {

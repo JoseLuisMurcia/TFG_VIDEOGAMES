@@ -36,6 +36,11 @@ public class PedestrianColorChanger : MonoBehaviour
                 meshRenderer.materials = redMats;
                 debugSphereRenderer.material = red;
                 break;
+            case TrafficLightState.Black:
+                Material[] blackMats = { black, metallicBlack, black, black };
+                meshRenderer.materials = blackMats;
+                debugSphereRenderer.material = black;
+                break;
         }
     }
 

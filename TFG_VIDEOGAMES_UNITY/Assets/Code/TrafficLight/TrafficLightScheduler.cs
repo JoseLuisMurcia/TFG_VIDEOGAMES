@@ -11,10 +11,10 @@ public class TrafficLightScheduler : MonoBehaviour
     private TrafficLight currentTrafficLight;
     private TrafficLightState currentState;
 
-    [SerializeField] float greenTime = 2f;
+    [SerializeField] float greenTime = 1f;
     [SerializeField] float amberTime = 1f;
-    [SerializeField] float redTime = 3f;
-    [SerializeField] float pedestrianTime = 5f;
+    [SerializeField] float redTime = 1f;
+    [SerializeField] float pedestrianTime = 1f;
     [SerializeField] float transitionTime = 1f;
 
     private void Start()
@@ -31,6 +31,7 @@ public class TrafficLightScheduler : MonoBehaviour
             {
                 CarTrafficLight tf = child.gameObject.GetComponent<CarTrafficLight>();
                 PedestrianTrafficLight ptf = child.gameObject.GetComponent<PedestrianTrafficLight>();
+                PedestrianTrafficLightTrigger ptft = child.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
                 if (tf != null)
                 {
                     trafficLights.Add(tf);
@@ -39,6 +40,10 @@ public class TrafficLightScheduler : MonoBehaviour
                 if (ptf != null)
                 {
                     pedestrianTrafficLights.Add(ptf);
+                }
+                if (ptft != null)
+                {
+                    ptft.SetScheduler(this);
                 }
             }
         }
@@ -55,9 +60,7 @@ public class TrafficLightScheduler : MonoBehaviour
             StartCoroutine(HandleTrafficLights());
         }
     }
-    // Rehacer este metodo para que de amber no se meta en red y se ponga a esperar
-    // El problema es que al pasar de amber a red, se llama dos veces a yield return, una en setNewActive y otra al entrar por el case Red.
-    // Deshacer metodo SetNewActiveTrafficLight y meterlo dentro de amber de forma que el yield esté dentro.
+
     IEnumerator HandleTrafficLights()
     {
         while (true)
@@ -100,6 +103,31 @@ public class TrafficLightScheduler : MonoBehaviour
 
                 case TrafficLightState.Pedestrian:
                     yield return new WaitForSeconds(pedestrianTime);
+                    // Start animation
+                    float totalTime = 10f;
+                    float firstBlinkInterval = 1f;
+                    float secondBlinkInterval = .6f;
+                    float blinkInterval = firstBlinkInterval;
+                    float secondIntervalStartTime = 5f;
+                    float currentTime = 0f;
+                    bool isBlack = false;
+                    while (currentTime < totalTime)
+                    {
+                        // Update time
+                        currentTime += blinkInterval;
+                        // Check if we are in the last 5 seconds
+                        if (currentTime >= totalTime - secondIntervalStartTime)
+                        {
+                            // Accelerate blinking
+                            blinkInterval = secondBlinkInterval;
+                        }
+                        // Blink green light
+                        SetColorPedestrians(isBlack ? TrafficLightState.Pedestrian : TrafficLightState.Black);
+                        isBlack = !isBlack;
+                        // Wait for blink interval
+                        yield return new WaitForSeconds(blinkInterval);
+                    }
+                    // End animation
                     SetNewColorPedestrians(TrafficLightState.Red);
 
                     waitingQueue.Enqueue(currentTrafficLight);
@@ -110,24 +138,6 @@ public class TrafficLightScheduler : MonoBehaviour
                     break;
 
             }
-        }
-    }
-
-    IEnumerator SetNewActiveTrafficLight()
-    {
-        waitingQueue.Enqueue(currentTrafficLight);
-        currentTrafficLight = waitingQueue.Dequeue();
-        yield return new WaitForSeconds(transitionTime);
-        if (currentTrafficLight is PedestrianTrafficLight)
-        {
-            // Turn for pedestrians
-            currentState = TrafficLightState.Pedestrian;
-            SetNewColorPedestrians(TrafficLightState.Pedestrian);
-        }
-        else
-        {
-            currentState = TrafficLightState.Green;
-            SetNewColor(currentState);
         }
     }
 
@@ -146,5 +156,18 @@ public class TrafficLightScheduler : MonoBehaviour
             pedestrianTrafficLight.currentColor = color;
             pedestrianTrafficLight.colorChanger.SetColor(color);
         }
+    }
+    
+    private void SetColorPedestrians(TrafficLightState color)
+    {
+        foreach (PedestrianTrafficLight pedestrianTrafficLight in pedestrianTrafficLights)
+        {
+            pedestrianTrafficLight.colorChanger.SetColor(color);
+        }
+    }
+
+    public TrafficLightState GetState()
+    {
+        return currentState;
     }
 }

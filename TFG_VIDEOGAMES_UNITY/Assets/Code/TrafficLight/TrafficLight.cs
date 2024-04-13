@@ -14,6 +14,5 @@ public enum TrafficLightState
     Amber,
     Red,
     Pedestrian,
-    AmberToRed,
-    PedestrianToGreen
+    Black
 }

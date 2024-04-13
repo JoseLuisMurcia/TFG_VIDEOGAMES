@@ -32,7 +32,7 @@ public class CarTrafficLight : TrafficLight
 
         if (Physics.Raycast(ray, out hit, 100, roadMask))
         {
-            Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
+            //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
             GameObject roadGameObject = hit.collider.gameObject;
             road = roadGameObject.GetComponent<Road>();
             if (road != null)
