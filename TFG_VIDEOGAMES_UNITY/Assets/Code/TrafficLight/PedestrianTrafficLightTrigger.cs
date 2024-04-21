@@ -4,17 +4,17 @@ using UnityEngine;
 
 public class PedestrianTrafficLightTrigger : MonoBehaviour
 {
-    private TrafficLightScheduler scheduler;
+    private PedestrianIntersectionController intersectionController;
 
-    public TrafficLightScheduler GetScheduler()
+    public PedestrianIntersectionController GetIntersectionController()
     {
-        return scheduler;
+        return intersectionController;
     }
 
 
-    public void SetScheduler(TrafficLightScheduler _scheduler)
+    public void SetIntersectionController(PedestrianIntersectionController _intersectionController)
     {
-        scheduler = _scheduler;
+        intersectionController = _intersectionController;
     }
 
 }

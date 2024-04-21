@@ -8,6 +8,7 @@ public class PedestrianTrafficLight : TrafficLight
     public PedestrianColorChanger colorChanger;
     private void Awake()
     {
+        currentColor = TrafficLightState.Red;
         colorChanger = GetComponentInChildren<PedestrianColorChanger>();
     }
 

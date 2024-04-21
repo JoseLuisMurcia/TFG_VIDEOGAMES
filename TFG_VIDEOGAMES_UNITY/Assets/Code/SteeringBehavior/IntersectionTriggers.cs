@@ -8,13 +8,10 @@ public class IntersectionTriggers : MonoBehaviour
     bool hasTrafficLight = false;
     public Road parentRoad;
     Road belongingRoad = null;
-    bool isPedestrianCrossing = false;
 
     void Start()
     {
         transform.LookAt(transform.parent, Vector3.up);
-        if (parentRoad.connections.Count < 3)
-            isPedestrianCrossing = true;
         StartCoroutine(FindBelongingRoad());
     }
 
@@ -68,34 +65,23 @@ public class IntersectionTriggers : MonoBehaviour
             Vector3 dirFromCarToIntersection = (intersectionPos - carPos).normalized;
             float angleFromCarToIntersection = Vector3.Angle(carForward, dirFromCarToIntersection);
 
-            if (isPedestrianCrossing)
+            if (hasTrafficLight) // SI TIENE TRAFFIC LIGHT SI O SI HAY QUE NO ACEPTARLA? CREO QUE TENGO QUE HACER EL CASO INVERSO
             {
-                if (angleFromCarToIntersection < 45f)
+                Vector3 trafficLightForward = belongingRoad.trafficLight.transform.forward;
+                float angleBetweenCarForwardAndTrafficLightForward = Vector3.Angle(carForward, trafficLightForward);
+                if (angleBetweenCarForwardAndTrafficLightForward > 140f)
                 {
-                    carManager.pedestrianCrossingInSight = true;
+                    carManager.intersectionInSight = true;
                 }
             }
             else
             {
-                if (hasTrafficLight) // SI TIENE TRAFFIC LIGHT SI O SI HAY QUE NO ACEPTARLA? CREO QUE TENGO QUE HACER EL CASO INVERSO
+                if (angleFromCarToIntersection < 45f)
                 {
-                    Vector3 trafficLightForward = belongingRoad.trafficLight.transform.forward;
-                    float angleBetweenCarForwardAndTrafficLightForward = Vector3.Angle(carForward, trafficLightForward);
-                    if (angleBetweenCarForwardAndTrafficLightForward > 140f)
-                    {
-                        carManager.intersectionInSight = true;
-                    }
-                }
-                else
-                {
-                    if (angleFromCarToIntersection < 45f)
-                    {
-                        // Tell the pathfollower that it should activate the intersection sensor
-                        carManager.intersectionInSight = true;
-                    }
+                    // Tell the pathfollower that it should activate the intersection sensor
+                    carManager.intersectionInSight = true;
                 }
             }
-                
         }
 
     }

@@ -18,6 +18,7 @@ public class CarTrafficLight : TrafficLight
 
     void Start()
     {
+        currentColor = TrafficLightState.Red;
         colorChanger.SetColor(currentColor);
     }
 

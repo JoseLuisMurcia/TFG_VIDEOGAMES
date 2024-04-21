@@ -117,7 +117,15 @@ public class Road : MonoBehaviour
 
         BoxCollider exitTrigger = gameObject.AddComponent<BoxCollider>();
         exitTrigger.isTrigger = true;
-        exitTrigger.size = exitTrigger.size * 0.8f;
+        
+        if(connections.Count > 2)
+        {
+            exitTrigger.size = exitTrigger.size * 0.8f;
+        }
+        else
+        {
+            exitTrigger.size = Vector3.Scale(exitTrigger.size, new Vector3(0.3f, 1f, 0.6f));
+        }
 
     }
     private void SortReferencePoints()
@@ -195,7 +203,9 @@ public class Road : MonoBehaviour
                 carManager.intersectionInSight = false;
 
             if(carManager.pedestrianCrossingInSight)
-                carManager.pedestrianCrossingInSight = false;
+            {
+                carManager.ExitPedestriansPriority();
+            }
         }
     }
 

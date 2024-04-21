@@ -7,7 +7,7 @@ public class PathFollower : MonoBehaviour
     const float minPathUpdateTime = .2f;
 
     [Header("Specs")]
-    private TypeOfCar typeOfCar;
+    [SerializeField] private TypeOfCar typeOfCar;
     [SerializeField] public float speed;
     [SerializeField] float turnSpeed;
     [SerializeField] float turnDst;
@@ -48,6 +48,8 @@ public class PathFollower : MonoBehaviour
     // Pedestrian variables
     [Header("Pedestrian")]
     public bool shouldStopPedestrian = false;
+    float pCarStartBreakingDistance = 3f;
+    float pCarStopDistance = 2f;
     public Vector3 pedestrianStopPos;
 
     [Header("Others")]
@@ -74,37 +76,6 @@ public class PathFollower : MonoBehaviour
     private IEnumerator reactionTimeCoroutine;
     private static float minDistanceToSpawnNewTarget = 18f;
 
-    private void Awake()
-    {
-
-        switch (gameObject.name)
-        {
-            case "delivery" + "(Clone)":
-                typeOfCar = TypeOfCar.Delivery;
-                break;
-            case "sedan" + "(Clone)":
-                typeOfCar = TypeOfCar.Sedan;
-                break;
-            case "sedanSport" + "(Clone)":
-                typeOfCar = TypeOfCar.SedanSport;
-                break;
-            case "suv" + "(Clone)":
-                typeOfCar = TypeOfCar.Suv;
-                break;
-            case "suvLuxury" + "(Clone)":
-                typeOfCar = TypeOfCar.SuvLuxury;
-                break;
-            case "truck" + "(Clone)":
-                typeOfCar = TypeOfCar.Truck;
-                break;
-            case "van" + "(Clone)":
-                typeOfCar = TypeOfCar.Van;
-                break;
-            default:
-                Debug.LogWarning("haha wtf bro: " + gameObject.name);
-                break;
-        }
-    }
     private void SetSpecsForTypeCar()
     {
         float speedMultiplier;
@@ -534,10 +505,8 @@ public class PathFollower : MonoBehaviour
     }
     float SlowSpeedPedestrian()
     {
-        float _speedPercent;
-        // Maybe its better to calculate a stop position before the crossing and not the targetPos
         float distance = Vector3.Distance(transform.position, pedestrianStopPos);
-        _speedPercent = Mathf.Clamp01((distance - 1.5f) / carStartBreakingDistance);
+        float _speedPercent = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
         if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
             _speedPercent = speedPercent += 0.005f;
 
@@ -559,9 +528,6 @@ public class PathFollower : MonoBehaviour
         {
             _speedPercent = Mathf.Clamp01(distance / 8f);
         }
-
-        //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f) // The car was fully stopped
-        //    _speedPercent = speedPercent + 0.005f;
 
         if (speedPercent - _speedPercent > 0.5f)
             _speedPercent = speedPercent - 0.01f;

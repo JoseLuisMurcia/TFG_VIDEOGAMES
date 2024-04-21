@@ -1,5 +1,7 @@
+using PathCreation.Examples;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 public class Pedestrian : MonoBehaviour
@@ -13,11 +15,12 @@ public class Pedestrian : MonoBehaviour
 
     [Header("Crossing")]
     public bool isCrossing = false;
+    public bool isStoppedAtTrafficLight = false;
     public Vector3 crossingPos;
     private InvisiblePedestrian invisiblePedestrian;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
 
-    private List<TrafficLightScheduler> schedulers = new List<TrafficLightScheduler>();
+    private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
 
     void Start()
     {
@@ -35,23 +38,24 @@ public class Pedestrian : MonoBehaviour
             invisiblePedestrian = Instantiate(invisiblePedestrianPrefab, transform.position, transform.rotation);
             invisiblePedestrian.SetDestination(target.transform.position);
             invisiblePedestrian.SetPedestrian(this);
+            destination = target.position;
             agent.SetDestination(target.transform.position);
             StartCoroutine(CheckArrivalToDestination());
         }
     }
-    // Update is called once per frame
     void Update()
     {
-
-        if (agent.remainingDistance > agent.stoppingDistance)
+        if (!isStoppedAtTrafficLight)
         {
-            animator.SetBool("IsMoving", true);
+            if (agent.remainingDistance > agent.stoppingDistance)
+            {
+                animator.SetBool("IsMoving", true);
+            }
+            else
+            {
+                animator.SetBool("IsMoving", false);
+            }
         }
-        else
-        {
-            animator.SetBool("IsMoving", false);
-        }
-
     }
 
     public void SetTarget(Transform _target)
@@ -80,17 +84,20 @@ public class Pedestrian : MonoBehaviour
             var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
             if (trigger != null)
             {
-                var scheduler = trigger.GetScheduler();
-                if (schedulers.Contains(scheduler))
+                var controller = trigger.GetIntersectionController();
+                if (intersectionControllers.Contains(controller))
                 {
+                    // Suscribirse
+                    controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
                     // Mirar si hay que parar o no
-                    if (scheduler.GetState() == TrafficLightState.Pedestrian)
+                    if (controller.GetState() == TrafficLightState.Pedestrian)
                     {
                         // Cruzar
                     }
                     else
                     {
                         // Detenerse
+                        StopMoving();
                     }
                 }
             }
@@ -106,8 +113,40 @@ public class Pedestrian : MonoBehaviour
 
     }
 
-    public void SetCrossings(List<TrafficLightScheduler> _schedulers)
+    public void SetCrossings(List<PedestrianIntersectionController> _controllers)
     {
-        schedulers = _schedulers;
+        intersectionControllers = _controllers;
+    }
+
+    private void OnTrafficLightChange(TrafficLightState newColor, bool subscription)
+    {
+        switch (newColor)
+        {
+            case TrafficLightState.Pedestrian:
+                if (agent.isStopped)
+                {
+                    StartMoving();
+                }
+                break;
+
+            default:
+
+                break;
+
+        }
+    }
+
+    private void StartMoving()
+    {
+        isStoppedAtTrafficLight = false;
+        agent.isStopped = false;
+        animator.SetBool("IsMoving", true);
+    }
+
+    private void StopMoving()
+    {
+        isStoppedAtTrafficLight = true;
+        agent.isStopped = true;
+        animator.SetBool("IsMoving", false);
     }
 }

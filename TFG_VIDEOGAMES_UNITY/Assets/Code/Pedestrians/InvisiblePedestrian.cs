@@ -10,7 +10,7 @@ public class InvisiblePedestrian : MonoBehaviour
 
     private Vector3 destination = Vector3.zero;
     float checkUpdateTime = 1.5f;
-    private HashSet<TrafficLightScheduler> schedulers = new HashSet<TrafficLightScheduler>();
+    private HashSet<PedestrianIntersectionController> controllers = new HashSet<PedestrianIntersectionController>();
     private Pedestrian pedestrian = null;
     void Start()
     {
@@ -44,7 +44,7 @@ public class InvisiblePedestrian : MonoBehaviour
             float distance = Vector3.Distance(transform.position, destination);
             if (distance < 3.5f  && agent.velocity.magnitude < .05f)
             {
-                pedestrian.SetCrossings(schedulers.ToList());
+                pedestrian.SetCrossings(controllers.ToList());
                 Destroy(gameObject);
             }
         }
@@ -57,7 +57,7 @@ public class InvisiblePedestrian : MonoBehaviour
             var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
             if (trigger != null)
             {
-                schedulers.Add(trigger.GetScheduler());
+                controllers.Add(trigger.GetIntersectionController());
             }
             Debug.Log("exited crossing");
         }

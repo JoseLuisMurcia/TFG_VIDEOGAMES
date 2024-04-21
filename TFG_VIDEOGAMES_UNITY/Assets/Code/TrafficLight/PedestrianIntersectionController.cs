@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,10 +6,12 @@ using UnityEngine;
 public class PedestrianIntersectionController : MonoBehaviour
 {
     [SerializeField] List<GameObject> triggers;
-    TrafficLightScheduler scheduler;
+    private PedestrianTrafficLightEvents trafficLightEvents;
+    private TrafficLightScheduler trafficLightScheduler;
     void Start()
     {
-        scheduler = GetComponent<TrafficLightScheduler>();
+        trafficLightEvents = GetComponent<PedestrianTrafficLightEvents>();
+        trafficLightScheduler = GetComponent<TrafficLightScheduler>();
         foreach (Transform child in transform)
         {
             if (child.gameObject.activeSelf)
@@ -16,10 +19,24 @@ public class PedestrianIntersectionController : MonoBehaviour
                 PedestrianTrafficLightTrigger trigger = child.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
                 if (trigger != null)
                 {
-                    trigger.SetScheduler(scheduler);
+                    trigger.SetIntersectionController(this);
                 }
             }
         }
     }
 
+    public void ThrowLightChangeEvent(TrafficLightState state, bool subscription)
+    {
+        trafficLightEvents.LightChange(state, subscription);
+    }
+
+    public void SubscribeToLightChangeEvent(Action<TrafficLightState, bool> func)
+    {
+        trafficLightEvents.onLightChange += func;
+    }
+
+    public TrafficLightState GetState()
+    {
+        return trafficLightScheduler.GetState();
+    }
 }

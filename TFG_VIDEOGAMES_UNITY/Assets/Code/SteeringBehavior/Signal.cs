@@ -14,7 +14,7 @@ public class Signal : MonoBehaviour
         FindRoad();
         CreateIntersectionPriorityTrigger();
     }
-    public void FindRoad()
+    private void FindRoad()
     {
         float forwardDistance = 2f;
         float rightDistance = 1.5f;
@@ -36,7 +36,6 @@ public class Signal : MonoBehaviour
         // Create the object
         GameObject newGameObject = new GameObject("Middle Signal Priority Trigger");
         newGameObject.transform.position = boxPos;
-        //newGameObject.transform.parent = gameObject.transform;
         // Create the boxCollider
         BoxCollider box = newGameObject.AddComponent<BoxCollider>();
         box.isTrigger = true;
@@ -45,12 +44,11 @@ public class Signal : MonoBehaviour
         SignalTrigger trigger = newGameObject.AddComponent<SignalTrigger>();
         trigger.signal = this;
 
-        // Create anothe box at the beggining of the road
+        // Create another box at the beggining of the road
         Vector3 startBoxPos = FindStartEntryNode() - transform.forward * 2f;
         // Create the object
         GameObject startTrigger = new GameObject("Start Signal Priority Trigger");
         startTrigger.transform.position = startBoxPos;
-        //newGameObject.transform.parent = gameObject.transform;
         // Create the boxCollider
         BoxCollider startBox = startTrigger.AddComponent<BoxCollider>();
         startBox.isTrigger = true;

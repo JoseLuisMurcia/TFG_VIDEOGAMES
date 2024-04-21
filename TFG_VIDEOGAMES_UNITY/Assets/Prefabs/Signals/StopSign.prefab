@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5037993374611921992}
   - component: {fileID: 358922814584949662}
-  - component: {fileID: 8192572254953900306}
+  - component: {fileID: 5670092322019212790}
   m_Layer: 8
   m_Name: StopSign
   m_TagString: Stop
@@ -58,19 +58,23 @@ LODGroup:
     renderers:
     - renderer: {fileID: 5585823109757113933}
   m_Enabled: 1
---- !u!65 &8192572254953900306
-BoxCollider:
+--- !u!114 &5670092322019212790
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1253122239478463067}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 2.1916296, y: 8.696025, z: 1.360098}
-  m_Center: {x: -0.05239377, y: 3.8480048, z: -0.0013236661}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24f55480279dc4e40a331d92afd3a890, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  priorityLevel: 0
+  roadMask:
+    serializedVersion: 2
+    m_Bits: 128
+  road: {fileID: 0}
 --- !u!1 &3468050707038880090
 GameObject:
   m_ObjectHideFlags: 0
