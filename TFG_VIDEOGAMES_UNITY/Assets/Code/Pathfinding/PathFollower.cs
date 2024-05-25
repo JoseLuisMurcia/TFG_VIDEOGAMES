@@ -1,3 +1,4 @@
+using PathCreation.Examples;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -48,16 +49,15 @@ public class PathFollower : MonoBehaviour
     // Pedestrian variables
     [Header("Pedestrian")]
     public bool shouldStopPedestrian = false;
-    float pCarStartBreakingDistance = 3f;
+    float pCarStartBreakingDistance = 4f;
     float pCarStopDistance = 2f;
     public Vector3 pedestrianStopPos;
 
     [Header("Others")]
     [SerializeField] bool pathDebug;
-    public bool isFullyStopped = false;
+    public bool isFullyStopped = true;
     [HideInInspector] List<Vector3> waypointsList = new List<Vector3>();
     [HideInInspector] public List<Node> nodeList = new List<Node>();
-    [SerializeField] bool codeDebug;
 
     [Header("Reactions")]
     public bool reactionDelay = false;
@@ -75,7 +75,8 @@ public class PathFollower : MonoBehaviour
     private IEnumerator followPathCoroutine;
     private IEnumerator reactionTimeCoroutine;
     private static float minDistanceToSpawnNewTarget = 18f;
-
+    float accelerationRate = 0.2f;
+    float decelerationRate = 100f;
     private void SetSpecsForTypeCar()
     {
         float speedMultiplier;
@@ -409,12 +410,12 @@ public class PathFollower : MonoBehaviour
     {
         pathIndex = 0;
         transform.LookAt(path.lookPoints[0]);
-
+        float previousSpeedPercent = 0f;
         // Check all the time if the unity has passed the boundaries
+
         while (true)
         {
             Vector2 pos2D = new Vector2(transform.position.x, transform.position.z);
-
             while (path.turnBoundaries[pathIndex].HasCrossedLine(pos2D))
             {
                 // Go to next point
@@ -427,7 +428,7 @@ public class PathFollower : MonoBehaviour
                 pathIndex++;
             }
 
-            if (shouldStopPedestrian)
+            if (shouldStopPedestrian && !TargetIsStoppingBeforePedestrians())
             {
                 speedPercent = SlowSpeedPedestrian();
             }
@@ -445,11 +446,17 @@ public class PathFollower : MonoBehaviour
             }
             else
             {
-                speedPercent += 0.002f;
-                speedPercent = Mathf.Clamp(speedPercent, 0f, 1f);
+                speedPercent = Mathf.Min(1f, speedPercent + accelerationRate * Time.deltaTime);
+                speedPercent = Mathf.Clamp01(speedPercent);
             }
-            if (speedPercent > 0.001f) isFullyStopped = false;
+            if (speedPercent > 0.003f) isFullyStopped = false;
 
+            if(speedPercent - previousSpeedPercent > 0.1f)
+            {
+                speedPercent = previousSpeedPercent += 0.001f;
+                speedPercent = Mathf.Clamp01(speedPercent);
+            }
+            previousSpeedPercent = speedPercent;
             Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
             if (speedPercent > 0.03f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
             transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
@@ -503,16 +510,20 @@ public class PathFollower : MonoBehaviour
         recentAddedAvoidancePosIndex = pathIndex;
         path = new Path(waypointsList, transform.position, turnDst);
     }
+    #region SlowCarMethods
     float SlowSpeedPedestrian()
     {
         float distance = Vector3.Distance(transform.position, pedestrianStopPos);
-        float _speedPercent = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
-        if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
-            _speedPercent = speedPercent += 0.005f;
+        //float _speedPercent = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
+        //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
+        //    _speedPercent = speedPercent += 0.005f;
 
+        distanceToTarget = distance;
+        float brakingDistance = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
+        float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
         if (_speedPercent < 0.03f)
         {
-            _speedPercent = 0f;
+            StopTheCar();
         }
         return _speedPercent;
     }
@@ -534,8 +545,7 @@ public class PathFollower : MonoBehaviour
 
         if (_speedPercent < 0.03f)
         {
-            isFullyStopped = true;
-            _speedPercent = 0f;
+            StopTheCar();
         }
         return _speedPercent;
     }
@@ -544,59 +554,55 @@ public class PathFollower : MonoBehaviour
         if (reactionDelay)
             return speedPercent;
 
-        float _speedPercent;
         float distance = Vector3.Distance(transform.position, carTarget.position);
         distanceToTarget = distance;
-        _speedPercent = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        float brakingDistance = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
 
-        if (laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
-        {
-            RequestLaneSwap();
-            //SpawnSpheres(transform.position, targetPathFollower.transform.position);
-            overtaking = true;
-            avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
-            overtakeBehavior.overtakenCar = targetPathFollower;
-            avoidanceBehavior.UnableTarget();
-            return speedPercent;
-        }
+        //if (laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
+        //{
+        //    RequestLaneSwap();
+        //    //SpawnSpheres(transform.position, targetPathFollower.transform.position);
+        //    overtaking = true;
+        //    avoidanceBehavior.AddCarToBlacklist(targetPathFollower);
+        //    overtakeBehavior.overtakenCar = targetPathFollower;
+        //    avoidanceBehavior.UnableTarget();
+        //    return speedPercent;
+        //}
 
-        if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.05f && !isFullyStopped && !cooldown && !targetPathFollower.isFullyStopped)
-        {
-            StartCoroutine(AdjustDistance());
-        }
+        //if (!adjustingDistance && targetPathFollower.movementSpeed - movementSpeed < 0.05f && !isFullyStopped && !cooldown && !targetPathFollower.isFullyStopped)
+        //{
+        //    StartCoroutine(AdjustDistance());
+        //}
 
-
-        if (isFullyStopped && _speedPercent > 0.01f) // The car is fully stopped and the car in front is resuming the car
-        {
-            if (!reactingToCarInFront)
-            {
-                StartCoroutine(ResumeTheCar());
-            }
-            else
-            {
-                return 0f;
-            }
-        }
-
-
-        if (_speedPercent - speedPercent > 0.2f)
-        {
-            _speedPercent = speedPercent + 0.005f;
-        }
-        else if (speedPercent - _speedPercent >= 0.2f)
-        {
-            _speedPercent = speedPercent - 0.01f;
-        }
-
+        //if (isFullyStopped && _speedPercent > 0.01f) // The car is fully stopped and the car in front is resuming the car
+        //{
+        //    if (!reactingToCarInFront)
+        //    {
+        //        StartCoroutine(ResumeTheCar());
+        //    }
+        //    return 0f;
+        //}
 
         if (_speedPercent < 0.05f && !reactingToCarInFront) // Set the car to fully stopped
         {
-            _speedPercent = 0f;
-            isFullyStopped = true;
+            StopTheCar();
         }
 
         return _speedPercent;
     }
+    float SlowSpeedAtTrafficLight()
+    {
+        float distance = trafficLightCarController.GiveDistanceToPathFollower();
+        speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
+        if (speedPercent < 0.04f)
+        {
+            StopTheCar();
+        }
+        return speedPercent;
+    }
+    #endregion
+
     IEnumerator AdjustDistance()
     {
         adjustingDistance = true;
@@ -676,19 +682,24 @@ public class PathFollower : MonoBehaviour
         isFullyStopped = false;
         reactingToCarInFront = false;
     }
-    float SlowSpeedAtTrafficLight()
+    private void StopTheCar()
     {
-        float distance = trafficLightCarController.GiveDistanceToPathFollower();
-        speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
-        if (speedPercent < 0.04f)
-        {
-            speedPercent = 0f;
-            isFullyStopped = true;
-        }
-        return speedPercent;
+        speedPercent = 0f;
+        isFullyStopped = true;
+    }
+    public bool TargetIsStoppingBeforePedestrians()
+    {
+        if (carTarget == null || !targetPathFollower.shouldStopPedestrian) return false;
+
+        return true;
     }
     public void OnDrawGizmos()
     {
+        if (isFullyStopped)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(transform.position + Vector3.up * 4f, .4f);
+        }
         if (pathDebug && path != null)
         {
             path.DrawWithGizmos();

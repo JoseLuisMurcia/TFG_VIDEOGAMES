@@ -9,7 +9,9 @@ public class PedestrianAvoidanceBehavior
     private bool visualDebug;
     Vector3 rayOrigin;
     private List<Pedestrian> relevantPedestrians = new List<Pedestrian>();
-    private HashSet<Pedestrian> blackList = new HashSet<Pedestrian>();
+    private List<Pedestrian> notCrossingPedestrians = new List<Pedestrian>();
+    private bool shouldStopCrossingPedestrians = false;
+    private bool shouldStopNotCrossingPedestrians = false;
 
     public PedestrianAvoidanceBehavior(PathFollower _pathFollower)
     {
@@ -19,7 +21,7 @@ public class PedestrianAvoidanceBehavior
     public void ResetStructures()
     {
         relevantPedestrians.Clear();
-        blackList.Clear();
+        notCrossingPedestrians.Clear();
     }
     // Update is called once per frame
     public void Update(Transform _transform, bool _visualDebug, Vector3 _rayOrigin)
@@ -30,6 +32,19 @@ public class PedestrianAvoidanceBehavior
         rayOrigin = _rayOrigin;
 
         if(relevantPedestrians.Count > 0) ProcessRelevantPedestrians();
+        if(notCrossingPedestrians.Count > 0) ProcessNotCrossingPedestrians();
+
+        if(shouldStopCrossingPedestrians || shouldStopNotCrossingPedestrians)
+        {
+            // STOP THE CAR
+            pathFollower.shouldStopPedestrian = true;
+            pathFollower.pedestrianStopPos = relevantPedestrians.Count > 0 ? relevantPedestrians[0].crossingPos : notCrossingPedestrians[0].crossingPos;
+        }
+        else
+        {
+            pathFollower.shouldStopPedestrian = false;
+            pathFollower.pedestrianStopPos = Vector3.zero;
+        }
     }
     public void ProcessPedestrianHit(Ray ray, RaycastHit hit, Transform sensor)
     {
@@ -37,12 +52,13 @@ public class PedestrianAvoidanceBehavior
         if (pedestrian == null)
             return;
 
-        if (blackList.Contains(pedestrian))
-            return;
-
         if (pedestrian.isCrossing && !relevantPedestrians.Contains(pedestrian))
         {
             relevantPedestrians.Add(pedestrian);
+        }
+        if (!pedestrian.isCrossing && !notCrossingPedestrians.Contains(pedestrian))
+        {
+            notCrossingPedestrians.Add(pedestrian);
         }
     }
     void ProcessRelevantPedestrians()
@@ -57,18 +73,36 @@ public class PedestrianAvoidanceBehavior
         foreach (Pedestrian pedestrian in pedestriansToRemove)
             relevantPedestrians.Remove(pedestrian);
 
-        if(relevantPedestrians.Count > 0)
+        if (relevantPedestrians.Count > 0)
         {
-            // STOP THE CAR
-            pathFollower.shouldStopPedestrian = true;
-            pathFollower.pedestrianStopPos = relevantPedestrians[0].crossingPos;
+            shouldStopCrossingPedestrians = true;
         }
         else
         {
-            // RESUME THE CAR
-            pathFollower.shouldStopPedestrian = false;
-            pathFollower.pedestrianStopPos = Vector3.zero;
+            shouldStopCrossingPedestrians = false;
+        }
+    }
+    void ProcessNotCrossingPedestrians()
+    {
+        List<Pedestrian> pedestriansToRemove = new List<Pedestrian>();
+        foreach (Pedestrian pedestrian in notCrossingPedestrians)
+        {
+            float distance = Vector3.Distance(transform.position, pedestrian.transform.position);
+            Debug.Log("distance: " + distance + ", speed: " + pathFollower.movementSpeed);
+            if (distance > 2f || pedestrian.isCrossing)
+                pedestriansToRemove.Add(pedestrian);
+        }
 
+        foreach (Pedestrian pedestrian in pedestriansToRemove)
+            notCrossingPedestrians.Remove(pedestrian);
+
+        if (notCrossingPedestrians.Count > 0)
+        {
+            shouldStopNotCrossingPedestrians = true;
+        }
+        else
+        {
+            shouldStopNotCrossingPedestrians = false;
         }
     }
     private bool AngleRelevant(Pedestrian pedestrian)

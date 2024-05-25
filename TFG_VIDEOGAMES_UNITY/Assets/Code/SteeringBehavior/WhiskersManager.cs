@@ -96,7 +96,7 @@ public class WhiskersManager : MonoBehaviour
         if (pathFollower.isFullyStopped) return;
 
         CheckCars();
-        if (pedestrianCrossingInSight) CheckPedestrians();
+        if (pedestrianCrossingInSight && !pathFollower.TargetIsStoppingBeforePedestrians()) CheckPedestrians();
         if (pathFollower.roadValidForOvertaking) CheckLaneSwap(pathFollower.laneSide);
         if (intersectionInSight || pathFollower.priorityLevel == PriorityLevel.Roundabout) CheckForIncorporation();
 

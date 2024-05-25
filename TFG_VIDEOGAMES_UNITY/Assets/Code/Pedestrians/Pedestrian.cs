@@ -9,9 +9,9 @@ public class Pedestrian : MonoBehaviour
     public NavMeshAgent agent;
 	private Animator animator;
 
-    private Vector3 destination = Vector3.zero;
     public Transform target;
     float checkUpdateTime = 1.5f;
+    public bool isIndependent = true;
 
     [Header("Crossing")]
     public bool isCrossing = false;
@@ -27,20 +27,17 @@ public class Pedestrian : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
 		animator = GetComponent<Animator>();
 
-        if (destination != Vector3.zero)
-        {
-            agent.SetDestination(destination);
-            StartCoroutine(CheckArrivalToDestination());
-        }
-
-        if (target != null)
+        if (target != null && isIndependent)
         {
             invisiblePedestrian = Instantiate(invisiblePedestrianPrefab, transform.position, transform.rotation);
             invisiblePedestrian.SetDestination(target.transform.position);
             invisiblePedestrian.SetPedestrian(this);
-            destination = target.position;
-            agent.SetDestination(target.transform.position);
+            //agent.SetDestination(target.transform.position);
             StartCoroutine(CheckArrivalToDestination());
+        }
+        else if (!isIndependent)
+        {
+
         }
     }
     void Update()
@@ -60,16 +57,17 @@ public class Pedestrian : MonoBehaviour
 
     public void SetTarget(Transform _target)
     {
-        destination = _target.position;
         target = _target;
     }
-
     IEnumerator CheckArrivalToDestination()
     {
+        yield return new WaitForSeconds(1);
+        agent.SetDestination(target.transform.position);
+
         while (true)
         {
             yield return new WaitForSeconds(checkUpdateTime);
-            float distance = Vector3.Distance(transform.position, destination);
+            float distance = Vector3.Distance(transform.position, target.transform.position);
             if(distance < 5f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f) 
             {
                 Destroy(gameObject);
@@ -110,7 +108,6 @@ public class Pedestrian : MonoBehaviour
         if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
         {
         }
-
     }
 
     public void SetCrossings(List<PedestrianIntersectionController> _controllers)
