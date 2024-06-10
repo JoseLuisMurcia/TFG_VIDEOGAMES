@@ -12,6 +12,8 @@ public class InvisiblePedestrian : MonoBehaviour
     float checkUpdateTime = 1.5f;
     private HashSet<PedestrianIntersectionController> controllers = new HashSet<PedestrianIntersectionController>();
     private Pedestrian pedestrian = null;
+    private InvisibleLeader invisibleLeader = null;
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -30,6 +32,10 @@ public class InvisiblePedestrian : MonoBehaviour
     {
         pedestrian = _pedestrian;
     }
+    public void SetLeader(InvisibleLeader _leader)
+    {
+        invisibleLeader = _leader;
+    }
     IEnumerator GoToTarget()
     {
         yield return new WaitForSeconds(1f);
@@ -42,9 +48,16 @@ public class InvisiblePedestrian : MonoBehaviour
         {
             yield return new WaitForSeconds(checkUpdateTime);
             float distance = Vector3.Distance(transform.position, destination);
-            if (distance < 3.5f  && agent.velocity.magnitude < .05f)
+            if (distance < 3.5f && agent.velocity.magnitude < .05f)
             {
-                pedestrian.SetCrossings(controllers.ToList());
+                if (pedestrian)
+                {
+                    pedestrian.SetCrossings(controllers.ToList());
+                }
+                else
+                {
+                    invisibleLeader.SetCrossings(controllers.ToList());
+                }
                 Destroy(gameObject);
             }
         }
@@ -59,7 +72,6 @@ public class InvisiblePedestrian : MonoBehaviour
             {
                 controllers.Add(trigger.GetIntersectionController());
             }
-            Debug.Log("exited crossing");
         }
 
     }

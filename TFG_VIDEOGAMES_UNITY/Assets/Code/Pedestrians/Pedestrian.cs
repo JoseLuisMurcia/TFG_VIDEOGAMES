@@ -16,9 +16,11 @@ public class Pedestrian : MonoBehaviour
     [Header("Crossing")]
     public bool isCrossing = false;
     public bool isStoppedAtTrafficLight = false;
-    public Vector3 crossingPos;
-    private InvisiblePedestrian invisiblePedestrian;
+    public Vector3 crossingPos = Vector3.zero;
+    private InvisiblePedestrian invisiblePedestrian = null;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
+    private Quaternion crossingRotation = Quaternion.identity;
+    private Vector3 stoppingCrossPos = Vector3.zero;
 
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
 
@@ -53,6 +55,10 @@ public class Pedestrian : MonoBehaviour
                 animator.SetBool("IsMoving", false);
             }
         }
+        else
+        {
+            MatchTrafficLightStopRotation();
+        }
     }
 
     public void SetTarget(Transform _target)
@@ -77,6 +83,8 @@ public class Pedestrian : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!isIndependent) return;
+
         if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
         {
             var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
@@ -85,6 +93,7 @@ public class Pedestrian : MonoBehaviour
                 var controller = trigger.GetIntersectionController();
                 if (intersectionControllers.Contains(controller))
                 {
+                    crossingRotation = trigger.transform.rotation;
                     // Suscribirse
                     controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
                     // Mirar si hay que parar o no
@@ -105,6 +114,8 @@ public class Pedestrian : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        if (!isIndependent) return;
+
         if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
         {
         }
@@ -145,5 +156,10 @@ public class Pedestrian : MonoBehaviour
         isStoppedAtTrafficLight = true;
         agent.isStopped = true;
         animator.SetBool("IsMoving", false);
+    }
+
+    private void MatchTrafficLightStopRotation()
+    {
+        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
     }
 }

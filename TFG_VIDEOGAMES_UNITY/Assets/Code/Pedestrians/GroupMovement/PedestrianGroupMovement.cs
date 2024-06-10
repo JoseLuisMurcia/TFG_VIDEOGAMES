@@ -9,18 +9,20 @@ public class PedestrianGroupMovement : MonoBehaviour
 {
     [SerializeField] List<Pedestrian> pedestrianPrefabs;
     [SerializeField] GameObject target;
-    int groupSize = 4;
-    float spacing = .4f;
-    float spawnSpacing = 1f;
+    [SerializeField] int groupSize;
+    float spacing = .55f;
+    float closeSpacing = .3f;
 
     private List<Pedestrian> pedestrians = new List<Pedestrian>();
     private List<NavMeshAgent> pedestriansAgents = new List<NavMeshAgent>();
     [SerializeField] private InvisibleLeader leaderPrefab;
     private InvisibleLeader leader = null;
-    private Formation formation = Formation.Abreast;
+    [SerializeField] private Formation formation = Formation.Lane;
+    private DistanceHandler distanceHandler;
 
     void Start()
     {
+        distanceHandler = new DistanceHandler();
         // Create the invisible leader
         leader = Instantiate(leaderPrefab, transform.position, Quaternion.identity, transform);
         leader.SetDestination(target.transform.position);
@@ -46,12 +48,15 @@ public class PedestrianGroupMovement : MonoBehaviour
     {
         List<Vector3> positions = new List<Vector3>();
 
-        if (formation == Formation.Abreast)
+        switch (formation)
         {
-            return GetAbreastPositions();
+            case Formation.Abreast: return GetAbreastPositions();
+            case Formation.CloseAbreast: return GetCloseAbreastPositions();
+            case Formation.Lane: return GetLanePositions();
+            case Formation.Wedge: return GetWedgePositions();
+            case Formation.InverseWedge: return GetInverseWedgePositions();
         }
-
-
+       
         return positions;
     }
     private List<Vector3> GetAbreastPositions()
@@ -70,6 +75,79 @@ public class PedestrianGroupMovement : MonoBehaviour
 
         return positions;
     }
+    private List<Vector3> GetCloseAbreastPositions()
+    {
+        List<Vector3> positions = new List<Vector3>();
+
+        float totalWidth = (groupSize - 1) * spacing;
+        float startX = leader.transform.position.x - totalWidth / 2;
+
+        for (int i = 0; i < groupSize; i++)
+        {
+            float xOffset = startX + i * closeSpacing;
+            Vector3 position = new Vector3(xOffset, leader.transform.position.y, leader.transform.position.z);
+            positions.Add(position);
+        }
+
+        return positions;
+    }
+    private List<Vector3> GetLanePositions()
+    {
+        List<Vector3> positions = new List<Vector3>();
+
+        float totalWidth = (groupSize - 1) * spacing;
+        float startZ = leader.transform.position.z - totalWidth / 2;
+
+        for (int i = 0; i < groupSize; i++)
+        {
+            float zOffset = startZ + i * spacing;
+            Vector3 position = new Vector3(leader.transform.position.x, leader.transform.position.y, zOffset);
+            positions.Add(position);
+        }
+
+        return positions;
+    }
+    private List<Vector3> GetWedgePositions()
+    {
+        List<Vector3> positions = new List<Vector3>();
+
+        // Two pedestrians behind and to the sides
+        Vector3 leftPosition = new Vector3(leader.transform.position.x - spacing, leader.transform.position.y, leader.transform.position.z - spacing);
+        Vector3 rightPosition = new Vector3(leader.transform.position.x + spacing, leader.transform.position.y, leader.transform.position.z - spacing);
+
+        positions.Add(leftPosition);
+        positions.Add(rightPosition);
+
+        // Leader at the front
+        positions.Add(leader.transform.position);
+
+        return positions;
+    }
+    private List<Vector3> GetInverseWedgePositions()
+    {
+        List<Vector3> positions = new List<Vector3>();
+
+        // Two pedestrians behind and to the sides
+        Vector3 leftPosition = new Vector3(leader.transform.position.x - spacing, leader.transform.position.y, leader.transform.position.z + spacing);
+        Vector3 rightPosition = new Vector3(leader.transform.position.x + spacing, leader.transform.position.y, leader.transform.position.z + spacing);
+
+        positions.Add(leftPosition);
+        positions.Add(rightPosition);
+
+        // Leader at the front
+        positions.Add(leader.transform.position);
+
+        return positions;
+    }
+    void RemoveRandomPedestrianFromFormation()
+    {
+
+
+    }
+    void RemovePedestrianFromFormation(Pedestrian pedestrian)
+    {
+
+    }
     void Update()
     {
         // Move followers to maintain formation
@@ -78,6 +156,7 @@ public class PedestrianGroupMovement : MonoBehaviour
         {
             Vector3 targetPosition = positions[i];
             pedestriansAgents[i].SetDestination(targetPosition);
+            distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
         }
     }
 
@@ -100,7 +179,9 @@ public class PedestrianGroupMovement : MonoBehaviour
     public enum Formation
     {
         Abreast,
+        CloseAbreast,
         Wedge,
+        InverseWedge,
         Lane
     }
 }
