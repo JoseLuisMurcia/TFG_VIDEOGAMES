@@ -5,7 +5,7 @@ using UnityEngine;
 public class PedestrianTrafficLightTrigger : MonoBehaviour
 {
     private PedestrianIntersectionController intersectionController;
-    private TrafficLightWaitingSlots waitingSlots;
+    private TrafficLightWaitingSlotsManager slotsManager;
     private BoxCollider boxCollider;
     private void Start()
     {
@@ -23,7 +23,7 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
             center.y - (extents.y * transform.up.y),
             center.z + (extents.z * transform.forward.z)
             );
-        waitingSlots = new TrafficLightWaitingSlots(bottomLeft, bottomRight, transform.forward, transform.right);
+        slotsManager = new TrafficLightWaitingSlotsManager(bottomLeft, bottomRight, transform.forward, transform.right);
     }
     public PedestrianIntersectionController GetIntersectionController()
     {
@@ -36,16 +36,26 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
         intersectionController = _intersectionController;
     }
 
+    public List<Slot> GetSlotsForGroup(int numPedestrians)
+    {
+        return slotsManager.GetSlotsForGroup(numPedestrians);
+    }
+
+    public Slot GetSlotForPedestrian()
+    {
+        return slotsManager.GetSlotForPedestrian();
+    }
+
     private void OnDrawGizmos()
     {
-        if (waitingSlots != null)
+        if (slotsManager != null)
         {
             Gizmos.color = Color.cyan;
-            foreach (var lane in waitingSlots.GetSlots())
+            foreach (var lane in slotsManager.GetSlots())
             {
                 foreach(var slot in lane)
                 {
-                    Gizmos.DrawSphere(slot.position, .2f);
+                    Gizmos.DrawSphere(slot.position, .16f);
                 }
             }
         }

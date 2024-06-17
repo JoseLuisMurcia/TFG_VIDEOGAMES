@@ -9,7 +9,7 @@ public class PedestrianGroupMovement : MonoBehaviour
 {
     [SerializeField] List<Pedestrian> pedestrianPrefabs;
     [SerializeField] GameObject target;
-    [SerializeField] int groupSize;
+    [SerializeField] public int groupSize;
     float horizontalSpacing = .50f;
     float closeHorizontalSpacing = .3f;
     float verticalSpacing = .4f;
@@ -28,6 +28,7 @@ public class PedestrianGroupMovement : MonoBehaviour
         // Create the invisible leader
         leader = Instantiate(leaderPrefab, transform.position, Quaternion.identity, transform);
         leader.SetDestination(target.transform.position);
+
         leader.transform.LookAt(target.transform.position);
 
         // Spawn pedestrians according to the leader

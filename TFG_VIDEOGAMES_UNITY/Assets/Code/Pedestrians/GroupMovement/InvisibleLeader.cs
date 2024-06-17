@@ -6,6 +6,7 @@ using UnityEngine.AI;
 
 public class InvisibleLeader : MonoBehaviour
 {
+    private PedestrianGroupMovement groupMovement;
     private NavMeshAgent agent;
 
     private Vector3 destination = Vector3.zero;
@@ -18,8 +19,8 @@ public class InvisibleLeader : MonoBehaviour
     public bool isStoppedAtTrafficLight = false;
     private InvisiblePedestrian invisiblePedestrian = null;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
-
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
+    private List<Slot> assignedSlots = null;
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -51,6 +52,10 @@ public class InvisibleLeader : MonoBehaviour
             }
         }
     }
+    public void SetGroupMovement(PedestrianGroupMovement _groupMovement)
+    {
+        groupMovement = _groupMovement;
+    }
     public void SetDestination(Vector3 _destination)
     {
         destination = _destination;
@@ -76,6 +81,7 @@ public class InvisibleLeader : MonoBehaviour
                     else
                     {
                         // Detenerse
+                        assignedSlots = trigger.GetSlotsForGroup(groupMovement.groupSize);
                         StopMoving();
                     }
                 }
@@ -114,12 +120,15 @@ public class InvisibleLeader : MonoBehaviour
 
     private void StartMoving()
     {
+        assignedSlots.ForEach(assignedSlot => assignedSlot.isLocked = false);
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
+        assignedSlots = null;
     }
 
     private void StopMoving()
     {
+        assignedSlots.ForEach(assignedSlot => assignedSlot.isLocked = true);
         isStoppedAtTrafficLight = true;
         agent.isStopped = true;
     }

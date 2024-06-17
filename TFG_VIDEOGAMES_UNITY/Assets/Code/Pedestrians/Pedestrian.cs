@@ -21,6 +21,7 @@ public class Pedestrian : MonoBehaviour
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
     private Quaternion crossingRotation = Quaternion.identity;
     private Vector3 stoppingCrossPos = Vector3.zero;
+    private Slot assignedSlot = null;
 
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
 
@@ -104,6 +105,9 @@ public class Pedestrian : MonoBehaviour
                     else
                     {
                         // Detenerse
+                        // TODO: DAR POSICION, SET NEW DESTINATION, COMPROBAR CON CORUTINA QUE HA LLEGADO AL SLOT,
+                        // UNA VEZ LLEGA AL SLOT, LLAMAR A STOPMOVING
+                        assignedSlot = trigger.GetSlotForPedestrian();
                         StopMoving();
                     }
                 }
@@ -146,9 +150,11 @@ public class Pedestrian : MonoBehaviour
 
     private void StartMoving()
     {
+        assignedSlot.isLocked = false;
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         animator.SetBool("IsMoving", true);
+        assignedSlot = null;
     }
 
     private void StopMoving()
@@ -156,6 +162,15 @@ public class Pedestrian : MonoBehaviour
         isStoppedAtTrafficLight = true;
         agent.isStopped = true;
         animator.SetBool("IsMoving", false);
+    }
+
+    private void AssignSlot(Slot slot)
+    {
+        assignedSlot.isLocked = true;
+    }
+    private void ResumeDestination()
+    {
+
     }
 
     private void MatchTrafficLightStopRotation()
