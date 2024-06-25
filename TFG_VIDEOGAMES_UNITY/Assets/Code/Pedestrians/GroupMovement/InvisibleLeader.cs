@@ -12,8 +12,6 @@ public class InvisibleLeader : MonoBehaviour
     private Vector3 destination = Vector3.zero;
     float checkUpdateTime = 1.5f;
 
-    private PedestrianGroupMovement pedestrianGroup = null;
-
     [Header("Crossing")]
     public bool isCrossing = false;
     public bool isStoppedAtTrafficLight = false;
@@ -38,20 +36,8 @@ public class InvisibleLeader : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
         agent.SetDestination(destination);
-        //StartCoroutine(CheckArrivalToDestination());
     }
-    IEnumerator CheckArrivalToDestination()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(checkUpdateTime);
-            float distance = Vector3.Distance(transform.position, destination);
-            if (distance < 3.5f && agent.velocity.magnitude < .05f)
-            {
-                Destroy(gameObject);
-            }
-        }
-    }
+
     public void SetGroupMovement(PedestrianGroupMovement _groupMovement)
     {
         groupMovement = _groupMovement;
@@ -74,15 +60,13 @@ public class InvisibleLeader : MonoBehaviour
                     // Suscribirse
                     controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
                     // Mirar si hay que parar o no
-                    if (controller.GetState() == TrafficLightState.Pedestrian)
-                    {
-                        // Cruzar
-                    }
-                    else
+                    if (controller.GetState() != TrafficLightState.Pedestrian)
                     {
                         // Detenerse
                         assignedSlots = trigger.GetSlotsForGroup(groupMovement.groupSize);
-                        StopMoving();
+                        OnSlotsAssigned();
+                        //StartCoroutine(OnSlotAssigned());
+                        //StopMoving();
                     }
                 }
             }
@@ -113,6 +97,35 @@ public class InvisibleLeader : MonoBehaviour
 
         }
     }
+    private void OnSlotsAssigned()
+    {
+        //pedestrianGroup.SetWaitingSlots(assignedSlots);
+        Vector3 slotPosition = groupMovement.GetLeaderPositionFromSlots(assignedSlots);
+        agent.SetDestination(slotPosition);
+        StartCoroutine(OnSlotAssigned(slotPosition));
+    }
+    private IEnumerator OnSlotAssigned(Vector3 slotPosition)
+    {
+        // Probar a hacer el movimiento del grupo desde el lider y no individual...
+        // Calcular la posicion del lider en funcion de los slots debería hacer que mantengan la formación y sea natural
+        // Ingenieria inversa, sacar la posicion del lider a partir de la posicion de los slots.
+
+        bool slotReached = false;
+        while (!slotReached)
+        {
+            yield return new WaitForSeconds(0.1f);
+            float distance = Vector3.Distance(transform.position, slotPosition);
+            if (distance < 1f && agent.velocity.magnitude < .05f)
+            {
+                slotReached = true;
+            }
+        }
+        StopMoving();
+    }
+    public void OnSlotsReached()
+    {
+
+    }
     public void SetCrossings(List<PedestrianIntersectionController> _controllers)
     {
         intersectionControllers = _controllers;
@@ -124,11 +137,11 @@ public class InvisibleLeader : MonoBehaviour
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         assignedSlots = null;
+        agent.SetDestination(destination);
     }
 
     private void StopMoving()
     {
-        assignedSlots.ForEach(assignedSlot => assignedSlot.isLocked = true);
         isStoppedAtTrafficLight = true;
         agent.isStopped = true;
     }

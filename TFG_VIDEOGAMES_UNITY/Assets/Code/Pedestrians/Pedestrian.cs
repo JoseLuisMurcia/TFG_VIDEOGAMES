@@ -108,11 +108,10 @@ public class Pedestrian : MonoBehaviour
                         // TODO: DAR POSICION, SET NEW DESTINATION, COMPROBAR CON CORUTINA QUE HA LLEGADO AL SLOT,
                         // UNA VEZ LLEGA AL SLOT, LLAMAR A STOPMOVING
                         assignedSlot = trigger.GetSlotForPedestrian();
-                        StopMoving();
+                        StartCoroutine(OnSlotAssigned());
                     }
                 }
             }
-            Debug.Log("trigger entry");
         }
     }
 
@@ -148,12 +147,29 @@ public class Pedestrian : MonoBehaviour
         }
     }
 
+    private IEnumerator OnSlotAssigned()
+    {
+        assignedSlot.isLocked = true;
+        agent.SetDestination(assignedSlot.position);
+        bool slotReached = false;
+        while (!slotReached)
+        {
+            yield return new WaitForSeconds(0.1f);
+            float distance = Vector3.Distance(transform.position, assignedSlot.position);
+            if (distance < 1f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f)
+            {
+                slotReached = true;
+            }
+        }
+        StopMoving();
+    }
     private void StartMoving()
     {
         assignedSlot.isLocked = false;
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         animator.SetBool("IsMoving", true);
+        agent.SetDestination(target.position);
         assignedSlot = null;
     }
 
@@ -162,15 +178,6 @@ public class Pedestrian : MonoBehaviour
         isStoppedAtTrafficLight = true;
         agent.isStopped = true;
         animator.SetBool("IsMoving", false);
-    }
-
-    private void AssignSlot(Slot slot)
-    {
-        assignedSlot.isLocked = true;
-    }
-    private void ResumeDestination()
-    {
-
     }
 
     private void MatchTrafficLightStopRotation()

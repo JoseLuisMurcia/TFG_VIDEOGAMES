@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.AI;
@@ -22,13 +23,17 @@ public class PedestrianGroupMovement : MonoBehaviour
     [SerializeField] private Formation formation = Formation.Lane;
     private DistanceHandler distanceHandler;
 
+    // Crossing
+    private bool isWaitingInSlot = false;
+    private List<SlotAsignation> slotAsignations;
+
     void Start()
     {
         distanceHandler = new DistanceHandler();
         // Create the invisible leader
         leader = Instantiate(leaderPrefab, transform.position, Quaternion.identity, transform);
         leader.SetDestination(target.transform.position);
-
+        leader.SetGroupMovement(this);
         leader.transform.LookAt(target.transform.position);
 
         // Spawn pedestrians according to the leader
@@ -62,44 +67,58 @@ public class PedestrianGroupMovement : MonoBehaviour
             case Formation.Wedge: return GetAbreastPositions();
             case Formation.InverseWedge: return GetAbreastPositions();
         }
-       
+
         return positions;
     }
     private List<Vector3> GetAbreastPositions()
     {
+        float offset = formation == Formation.Abreast ? horizontalSpacing : closeHorizontalSpacing;
+        return CalculatePositions(offset, leader.transform.right);
+    }
+    private List<Vector3> GetLanePositions()
+    {
+        float offset = formation == Formation.Lane ? verticalSpacing : closeVerticalSpacing;
+        return CalculatePositions(offset, leader.transform.forward);
+    }
+    private List<Vector3> CalculatePositions(float offset, Vector3 direction)
+    {
         List<Vector3> positions = new List<Vector3>();
-
         Vector3 startPos = leader.transform.position;
 
-        float offset = formation == Formation.Abreast ? horizontalSpacing : closeHorizontalSpacing;
-        // Determine the start offset to center the group around the leader
-        int halfGroupSize = (groupSize - 1) / 2;
+        // Calculate half group size and an offset for centering
+        int halfGroupSize = groupSize / 2;
 
         for (int i = -halfGroupSize; i <= halfGroupSize; i++)
         {
-            Vector3 position = startPos + leader.transform.right * i * offset;
+            Vector3 position;
+            // For even group sizes, shift positions to the right to avoid gaps
+            if (groupSize % 2 == 0)
+            {
+                position = startPos + (direction * ((i + 0.5f) * offset));
+            }
+            else
+            {
+                position = startPos + (direction * (i * offset));
+            }
             positions.Add(position);
+        }
+
+        // If the group size is even, we need to remove the additional position at the end
+        if (groupSize % 2 == 0)
+        {
+            positions.RemoveAt(positions.Count - 1);
         }
 
         return positions;
     }
-    private List<Vector3> GetLanePositions()
+    public Vector3 GetLeaderPositionFromSlots(List<Slot> slots)
     {
-        List<Vector3> positions = new List<Vector3>();
-
-        Vector3 startPos = leader.transform.position;
-
-        float offset = formation == Formation.Abreast ? verticalSpacing : closeVerticalSpacing;
-        // Determine the start offset to center the group around the leader
-        int halfGroupSize = (groupSize - 1) / 2;
-
-        for (int i = -halfGroupSize; i <= halfGroupSize; i++)
+        if(formation != Formation.Lane && formation != Formation.CloseLane)
         {
-            Vector3 position = startPos + leader.transform.forward * i * offset;
-            positions.Add(position);
+            Vector3 sum = slots.Aggregate(Vector3.zero, (acc, slot) => acc + slot.position);
+            return (sum / slots.Count);
         }
-
-        return positions;
+        return Vector3.zero;
     }
     void RemoveRandomPedestrianFromFormation()
     {
@@ -112,6 +131,8 @@ public class PedestrianGroupMovement : MonoBehaviour
     }
     void Update()
     {
+        if (isWaitingInSlot) return;
+
         // Move followers to maintain formation
         var positions = GetPositions();
         for (int i = 0; i < positions.Count; i++)
@@ -121,7 +142,50 @@ public class PedestrianGroupMovement : MonoBehaviour
             distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
         }
     }
+    public void SetWaitingSlots(List<Slot> slots)
+    {
+        // Crear asignaciones por posiciones
+        slotAsignations = new List<SlotAsignation>();
+        // Hay que tener en cuenta la formación, si están abroad (que es lo normal)
+        // hay que asignar las posiciones de forma que sigan al lado...
+        if(formation == Formation.Lane || formation == Formation.CloseLane)
+        {
+            // Asignar según distancia, al que está más cerca se le manda más lejos
+        }
+        else
+        {
+            // Asignar para mantener formacion
+            for (int i = 0; i < groupSize; i++)
+            {
+                Slot slotWithLowestId = slots.OrderBy(slot => slot.id).FirstOrDefault();
+                slotAsignations.Add(new SlotAsignation(pedestriansAgents[i], slotWithLowestId));
+                slots.Remove(slotWithLowestId);
+            }
+        }
+        
+        StartCoroutine(ReachSlots());
+    }
+    private IEnumerator ReachSlots()
+    {
+        List<NavMeshAgent> pedestriansNotPositioned = new List<NavMeshAgent>(pedestriansAgents);
+        List<SlotAsignation> assignations = new List<SlotAsignation>(slotAsignations);
+        while (true)
+        {
+            yield return new WaitForSeconds(0.3f);
+            int numSlotsOccupied = 0;
+            for (int i = 0; i < slotAsignations.Count; i++)
+            {
+                float distance = Vector3.Distance(pedestriansAgents[i].transform.position, slotAsignations[i].slot.position);
+                if (distance < 0.3f)
+                {
+                    numSlotsOccupied++;
+                }
+            }
+            if (numSlotsOccupied == assignations.Count)
+                break;
+        }
 
+    }
     private void OnDrawGizmos()
     {
         if (!leader) return;

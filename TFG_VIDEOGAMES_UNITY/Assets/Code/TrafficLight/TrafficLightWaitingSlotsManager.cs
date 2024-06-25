@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class TrafficLightWaitingSlotsManager
 {
@@ -36,7 +37,7 @@ public class TrafficLightWaitingSlotsManager
                     upperLeft.x + right.x * j * horizontalOffset,
                     upperLeft.y,
                     upperLeft.z - forward.z * verticalInitialOffset - forward.z * i * verticalOffset);
-                slots[i].Add(new Slot(slotPosition));
+                slots[i].Add(new Slot(slotPosition, i*numLanes + j ));
             }
         }
     }
@@ -53,7 +54,7 @@ public class TrafficLightWaitingSlotsManager
                     upperLeft.x + right.x * i * horizontalOffset,
                     upperLeft.y,
                     upperLeft.z - forward.z * verticalInitialOffset - forward.z * (slots.Count-1) * verticalOffset);
-            slots[slots.Count-1].Add(new Slot(slotPosition));
+            slots[slots.Count-1].Add(new Slot(slotPosition, -1));
         }
         numLanes++;
     }
@@ -118,9 +119,23 @@ public class Slot
 {
     public Vector3 position = Vector3.zero;
     public bool isLocked = false;
+    public int id;
 
-    public Slot(Vector3 _position)
+    public Slot(Vector3 _position, int id)
     {
         this.position = _position;
+        this.id = id;
+    }
+}
+
+public class SlotAsignation
+{
+    public NavMeshAgent agent = null;
+    public Slot slot = null;
+
+    public SlotAsignation(NavMeshAgent agent, Slot slot)
+    {
+        this.agent = agent;
+        this.slot = slot;
     }
 }
