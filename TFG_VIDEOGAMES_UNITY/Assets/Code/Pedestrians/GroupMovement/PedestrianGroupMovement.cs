@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UIElements;
 
 public class PedestrianGroupMovement : MonoBehaviour
 {
@@ -22,10 +20,11 @@ public class PedestrianGroupMovement : MonoBehaviour
     private InvisibleLeader leader = null;
     [SerializeField] private Formation formation = Formation.Lane;
     private DistanceHandler distanceHandler;
-
     // Crossing
+    private bool reachingSlots = false;
     private bool isWaitingInSlot = false;
-    private List<SlotAsignation> slotAsignations;
+    private List<Vector3> waitingPositions;
+    Quaternion crossingRotation = Quaternion.identity;
 
     void Start()
     {
@@ -73,17 +72,17 @@ public class PedestrianGroupMovement : MonoBehaviour
     private List<Vector3> GetAbreastPositions()
     {
         float offset = formation == Formation.Abreast ? horizontalSpacing : closeHorizontalSpacing;
-        return CalculatePositions(offset, leader.transform.right);
+        return CalculatePositions(offset, leader.transform.right, leader.transform.position);
     }
     private List<Vector3> GetLanePositions()
     {
         float offset = formation == Formation.Lane ? verticalSpacing : closeVerticalSpacing;
-        return CalculatePositions(offset, leader.transform.forward);
+        return CalculatePositions(offset, leader.transform.forward, leader.transform.position);
     }
-    private List<Vector3> CalculatePositions(float offset, Vector3 direction)
+    private List<Vector3> CalculatePositions(float offset, Vector3 direction, Vector3 referencePos)
     {
         List<Vector3> positions = new List<Vector3>();
-        Vector3 startPos = leader.transform.position;
+        Vector3 startPos = referencePos;
 
         // Calculate half group size and an offset for centering
         int halfGroupSize = groupSize / 2;
@@ -111,9 +110,9 @@ public class PedestrianGroupMovement : MonoBehaviour
 
         return positions;
     }
-    public Vector3 GetLeaderPositionFromSlots(List<Slot> slots)
+    public Vector3 GetAveragePositionFromSlots(List<Slot> slots)
     {
-        if(formation != Formation.Lane && formation != Formation.CloseLane)
+        if (formation != Formation.Lane && formation != Formation.CloseLane)
         {
             Vector3 sum = slots.Aggregate(Vector3.zero, (acc, slot) => acc + slot.position);
             return (sum / slots.Count);
@@ -131,7 +130,7 @@ public class PedestrianGroupMovement : MonoBehaviour
     }
     void Update()
     {
-        if (isWaitingInSlot) return;
+        if (isWaitingInSlot || reachingSlots) return;
 
         // Move followers to maintain formation
         var positions = GetPositions();
@@ -142,49 +141,50 @@ public class PedestrianGroupMovement : MonoBehaviour
             distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
         }
     }
-    public void SetWaitingSlots(List<Slot> slots)
+    public void SetWaitingSlots(List<Slot> slots, Quaternion rotation)
     {
-        // Crear asignaciones por posiciones
-        slotAsignations = new List<SlotAsignation>();
-        // Hay que tener en cuenta la formación, si están abroad (que es lo normal)
-        // hay que asignar las posiciones de forma que sigan al lado...
-        if(formation == Formation.Lane || formation == Formation.CloseLane)
-        {
-            // Asignar según distancia, al que está más cerca se le manda más lejos
-        }
-        else
-        {
-            // Asignar para mantener formacion
-            for (int i = 0; i < groupSize; i++)
-            {
-                Slot slotWithLowestId = slots.OrderBy(slot => slot.id).FirstOrDefault();
-                slotAsignations.Add(new SlotAsignation(pedestriansAgents[i], slotWithLowestId));
-                slots.Remove(slotWithLowestId);
-            }
-        }
-        
+        crossingRotation = rotation;
+        reachingSlots = true;
+        // Asignar para mantener formacion
+        // Más facil, y si calculo el punto medio de los slots y asigno esa posicion al lider y en funcion del lider calculo la del resto?
+        Vector3 leaderWaitingPos = GetAveragePositionFromSlots(slots);
+        leader.MatchTrafficLightStopRotation();
+        Vector3 leaderRight = new Vector3(leader.transform.right.x, leader.transform.right.y, leader.transform.right.z);
+        waitingPositions = CalculatePositions(closeHorizontalSpacing, leaderRight, leaderWaitingPos);
         StartCoroutine(ReachSlots());
     }
     private IEnumerator ReachSlots()
     {
-        List<NavMeshAgent> pedestriansNotPositioned = new List<NavMeshAgent>(pedestriansAgents);
-        List<SlotAsignation> assignations = new List<SlotAsignation>(slotAsignations);
-        while (true)
+        for (int i = 0; i < waitingPositions.Count; i++)
+        {
+            pedestriansAgents[i].SetDestination(waitingPositions[i]);
+        }
+        while (reachingSlots)
         {
             yield return new WaitForSeconds(0.3f);
             int numSlotsOccupied = 0;
-            for (int i = 0; i < slotAsignations.Count; i++)
+            for (int i = 0; i < waitingPositions.Count; i++)
             {
-                float distance = Vector3.Distance(pedestriansAgents[i].transform.position, slotAsignations[i].slot.position);
-                if (distance < 0.3f)
+                float distance = Vector3.Distance(pedestriansAgents[i].transform.position, waitingPositions[i]);
+                if (distance < 0.2f)
                 {
+                    pedestriansAgents[i].isStopped = true;
                     numSlotsOccupied++;
+                    MatchTrafficLightStopRotation(pedestriansAgents[i]);
                 }
             }
-            if (numSlotsOccupied == assignations.Count)
-                break;
+            if (numSlotsOccupied == waitingPositions.Count)
+                reachingSlots = false;
         }
+        isWaitingInSlot = true;
+    }
 
+    public void Cross()
+    {
+        isWaitingInSlot = false;
+        reachingSlots = false;
+        pedestriansAgents.ForEach(agent => agent.isStopped = false);
+        waitingPositions = null;
     }
     private void OnDrawGizmos()
     {
@@ -200,6 +200,19 @@ public class PedestrianGroupMovement : MonoBehaviour
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(position, .1f);
         }
+
+        if(waitingPositions != null)
+        {
+            foreach (var position in waitingPositions)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawSphere(position, .1f);
+            }
+        }
+    }
+    private void MatchTrafficLightStopRotation(NavMeshAgent agent)
+    {
+        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
     }
 
     public enum Formation

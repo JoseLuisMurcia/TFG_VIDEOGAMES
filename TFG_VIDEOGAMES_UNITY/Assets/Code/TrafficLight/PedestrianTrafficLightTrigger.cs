@@ -9,6 +9,7 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
     private BoxCollider boxCollider;
     private void Start()
     {
+        if (!gameObject.CompareTag("IntersectionPedestrianTrigger")) return;
         boxCollider = GetComponent<BoxCollider>();
         Vector3 extents = boxCollider.bounds.extents;
         Vector3 center = boxCollider.bounds.center;

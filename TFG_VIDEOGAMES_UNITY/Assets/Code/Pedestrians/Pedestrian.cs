@@ -98,15 +98,9 @@ public class Pedestrian : MonoBehaviour
                     // Suscribirse
                     controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
                     // Mirar si hay que parar o no
-                    if (controller.GetState() == TrafficLightState.Pedestrian)
-                    {
-                        // Cruzar
-                    }
-                    else
+                    if (controller.GetState() != TrafficLightState.Pedestrian)
                     {
                         // Detenerse
-                        // TODO: DAR POSICION, SET NEW DESTINATION, COMPROBAR CON CORUTINA QUE HA LLEGADO AL SLOT,
-                        // UNA VEZ LLEGA AL SLOT, LLAMAR A STOPMOVING
                         assignedSlot = trigger.GetSlotForPedestrian();
                         StartCoroutine(OnSlotAssigned());
                     }
@@ -183,5 +177,10 @@ public class Pedestrian : MonoBehaviour
     private void MatchTrafficLightStopRotation()
     {
         transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
+    }
+
+    public void MatchRotation(Quaternion rotation)
+    {
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * agent.angularSpeed * 0.02f);
     }
 }

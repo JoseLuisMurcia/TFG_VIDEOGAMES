@@ -17,6 +17,7 @@ public class InvisibleLeader : MonoBehaviour
     public bool isStoppedAtTrafficLight = false;
     private InvisiblePedestrian invisiblePedestrian = null;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
+    private Quaternion crossingRotation = Quaternion.identity;
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
     private List<Slot> assignedSlots = null;
     void Start()
@@ -57,6 +58,7 @@ public class InvisibleLeader : MonoBehaviour
                 var controller = trigger.GetIntersectionController();
                 if (intersectionControllers.Contains(controller))
                 {
+                    crossingRotation = trigger.transform.rotation;
                     // Suscribirse
                     controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
                     // Mirar si hay que parar o no
@@ -65,8 +67,6 @@ public class InvisibleLeader : MonoBehaviour
                         // Detenerse
                         assignedSlots = trigger.GetSlotsForGroup(groupMovement.groupSize);
                         OnSlotsAssigned();
-                        //StartCoroutine(OnSlotAssigned());
-                        //StopMoving();
                     }
                 }
             }
@@ -99,10 +99,10 @@ public class InvisibleLeader : MonoBehaviour
     }
     private void OnSlotsAssigned()
     {
-        //pedestrianGroup.SetWaitingSlots(assignedSlots);
-        Vector3 slotPosition = groupMovement.GetLeaderPositionFromSlots(assignedSlots);
+        Vector3 slotPosition = groupMovement.GetAveragePositionFromSlots(assignedSlots);
         agent.SetDestination(slotPosition);
         StartCoroutine(OnSlotAssigned(slotPosition));
+        groupMovement.SetWaitingSlots(assignedSlots, crossingRotation);
     }
     private IEnumerator OnSlotAssigned(Vector3 slotPosition)
     {
@@ -122,10 +122,6 @@ public class InvisibleLeader : MonoBehaviour
         }
         StopMoving();
     }
-    public void OnSlotsReached()
-    {
-
-    }
     public void SetCrossings(List<PedestrianIntersectionController> _controllers)
     {
         intersectionControllers = _controllers;
@@ -138,11 +134,18 @@ public class InvisibleLeader : MonoBehaviour
         agent.isStopped = false;
         assignedSlots = null;
         agent.SetDestination(destination);
+        groupMovement.Cross();
     }
 
     private void StopMoving()
     {
         isStoppedAtTrafficLight = true;
+        MatchTrafficLightStopRotation();
         agent.isStopped = true;
+    }
+
+    public void MatchTrafficLightStopRotation()
+    {
+        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 5f);
     }
 }
