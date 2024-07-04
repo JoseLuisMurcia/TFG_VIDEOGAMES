@@ -101,7 +101,7 @@ public class Pedestrian : MonoBehaviour
                     if (controller.GetState() != TrafficLightState.Pedestrian)
                     {
                         // Detenerse
-                        assignedSlot = trigger.GetSlotForPedestrian();
+                        assignedSlot = trigger.GetSlotForPedestrian(transform.position);
                         StartCoroutine(OnSlotAssigned());
                     }
                 }

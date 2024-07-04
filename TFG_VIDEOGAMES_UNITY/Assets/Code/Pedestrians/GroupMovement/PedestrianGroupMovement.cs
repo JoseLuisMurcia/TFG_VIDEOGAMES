@@ -166,7 +166,7 @@ public class PedestrianGroupMovement : MonoBehaviour
             for (int i = 0; i < waitingPositions.Count; i++)
             {
                 float distance = Vector3.Distance(pedestriansAgents[i].transform.position, waitingPositions[i]);
-                if (distance < 0.2f)
+                if (distance < 0.2f && !pedestriansAgents[i].isStopped)
                 {
                     pedestriansAgents[i].isStopped = true;
                     numSlotsOccupied++;
@@ -212,7 +212,7 @@ public class PedestrianGroupMovement : MonoBehaviour
     }
     private void MatchTrafficLightStopRotation(NavMeshAgent agent)
     {
-        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
+        agent.transform.rotation = Quaternion.Slerp(agent.transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
     }
 
     public enum Formation

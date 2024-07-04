@@ -7,6 +7,7 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
     private PedestrianIntersectionController intersectionController;
     private TrafficLightWaitingSlotsManager slotsManager;
     private BoxCollider boxCollider;
+    private bool debugTiers = true;
     private void Start()
     {
         if (!gameObject.CompareTag("IntersectionPedestrianTrigger")) return;
@@ -24,7 +25,8 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
             center.y - (extents.y * transform.up.y),
             center.z + (extents.z * transform.forward.z)
             );
-        slotsManager = new TrafficLightWaitingSlotsManager(bottomLeft, bottomRight, transform.forward, transform.right);
+
+        slotsManager = new TrafficLightWaitingSlotsManager(bottomLeft, bottomRight, transform.forward, transform.right, transform.parent.position);
     }
     public PedestrianIntersectionController GetIntersectionController()
     {
@@ -42,15 +44,27 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
         return slotsManager.GetSlotsForGroup(numPedestrians);
     }
 
-    public Slot GetSlotForPedestrian()
+    public Slot GetSlotForPedestrian(Vector3 pedestrianPos)
     {
-        return slotsManager.GetSlotForPedestrian();
+        return slotsManager.GetSlotForPedestrian(pedestrianPos);
     }
 
     private void OnDrawGizmos()
     {
         if (slotsManager != null)
         {
+            if (debugTiers)
+            {
+                Gizmos.color = Color.cyan;
+                foreach (var lane in slotsManager.GetSlots())
+                {
+                    foreach (var slot in lane)
+                    {
+                        Gizmos.DrawSphere(slot.position, .15f + slot.tier * .04f);
+                    }
+                }
+            }
+            return;
             Gizmos.color = Color.cyan;
             foreach (var lane in slotsManager.GetSlots())
             {
