@@ -65,7 +65,8 @@ public class InvisibleLeader : MonoBehaviour
                     if (controller.GetState() != TrafficLightState.Pedestrian)
                     {
                         // Detenerse
-                        assignedSlots = trigger.GetSlotsForGroup(groupMovement.groupSize);
+                        assignedSlots = trigger.GetSlotsForGroup(transform.position, groupMovement.groupSize);
+                        assignedSlots.ForEach(slot => slot.isLocked = true);
                         OnSlotsAssigned();
                     }
                 }

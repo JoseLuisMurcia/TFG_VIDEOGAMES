@@ -159,6 +159,7 @@ public class PedestrianGroupMovement : MonoBehaviour
         {
             pedestriansAgents[i].SetDestination(waitingPositions[i]);
         }
+        // TODO: Fallo null exception linea 167, las waitingPositions se han eliminado y peta al volver de la corutina
         while (reachingSlots)
         {
             yield return new WaitForSeconds(0.3f);

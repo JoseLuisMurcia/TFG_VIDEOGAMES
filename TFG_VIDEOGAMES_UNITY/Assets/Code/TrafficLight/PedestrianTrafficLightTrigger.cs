@@ -7,7 +7,7 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
     private PedestrianIntersectionController intersectionController;
     private TrafficLightWaitingSlotsManager slotsManager;
     private BoxCollider boxCollider;
-    private bool debugTiers = true;
+    private bool debugTiers = false;
     private void Start()
     {
         if (!gameObject.CompareTag("IntersectionPedestrianTrigger")) return;
@@ -39,9 +39,9 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
         intersectionController = _intersectionController;
     }
 
-    public List<Slot> GetSlotsForGroup(int numPedestrians)
+    public List<Slot> GetSlotsForGroup(Vector3 groupPos, int numPedestrians)
     {
-        return slotsManager.GetSlotsForGroup(numPedestrians);
+        return slotsManager.GetSlotsForGroup(groupPos, numPedestrians);
     }
 
     public Slot GetSlotForPedestrian(Vector3 pedestrianPos)
@@ -64,15 +64,17 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
                     }
                 }
             }
-            return;
-            Gizmos.color = Color.cyan;
-            foreach (var lane in slotsManager.GetSlots())
+            else
             {
-                foreach(var slot in lane)
+                foreach (var lane in slotsManager.GetSlots())
                 {
-                    Gizmos.DrawSphere(slot.position, .16f);
+                    foreach (var slot in lane)
+                    {
+                        Gizmos.color = slot.isLocked ? Color.red : Color.cyan;
+                        Gizmos.DrawSphere(slot.position, .16f);
+                    }
                 }
-            }
+            }           
         }
     }
 }

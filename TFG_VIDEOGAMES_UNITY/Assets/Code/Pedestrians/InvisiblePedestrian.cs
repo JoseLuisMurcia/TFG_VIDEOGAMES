@@ -9,7 +9,7 @@ public class InvisiblePedestrian : MonoBehaviour
     public NavMeshAgent agent;
 
     private Vector3 destination = Vector3.zero;
-    float checkUpdateTime = 1.5f;
+    float checkUpdateTime = 1f;
     private HashSet<PedestrianIntersectionController> controllers = new HashSet<PedestrianIntersectionController>();
     private Pedestrian pedestrian = null;
     private InvisibleLeader invisibleLeader = null;
@@ -48,7 +48,7 @@ public class InvisiblePedestrian : MonoBehaviour
         {
             yield return new WaitForSeconds(checkUpdateTime);
             float distance = Vector3.Distance(transform.position, destination);
-            if (distance < 3.5f && agent.velocity.magnitude < .05f)
+            if (distance < 1.5f)
             {
                 if (pedestrian)
                 {
