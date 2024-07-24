@@ -10,7 +10,7 @@ public class PedestrianGroupMovement : MonoBehaviour
     [SerializeField] GameObject target;
     [SerializeField] public int groupSize;
     float horizontalSpacing = .50f;
-    float closeHorizontalSpacing = .3f;
+    float closeHorizontalSpacing = .35f;
     float verticalSpacing = .4f;
     float closeVerticalSpacing = .25f;
 
@@ -130,7 +130,12 @@ public class PedestrianGroupMovement : MonoBehaviour
     }
     void Update()
     {
-        if (isWaitingInSlot || reachingSlots) return;
+        if (isWaitingInSlot || reachingSlots)
+        {
+            // Match rotation
+            //leader.MatchTrafficLightStopRotation();
+            return;
+        }
 
         // Move followers to maintain formation
         var positions = GetPositions();
@@ -159,19 +164,19 @@ public class PedestrianGroupMovement : MonoBehaviour
         {
             pedestriansAgents[i].SetDestination(waitingPositions[i]);
         }
-        // TODO: Fallo null exception linea 167, las waitingPositions se han eliminado y peta al volver de la corutina
         while (reachingSlots)
         {
             yield return new WaitForSeconds(0.3f);
+            if (!reachingSlots) yield break;
             int numSlotsOccupied = 0;
             for (int i = 0; i < waitingPositions.Count; i++)
             {
                 float distance = Vector3.Distance(pedestriansAgents[i].transform.position, waitingPositions[i]);
-                if (distance < 0.2f && !pedestriansAgents[i].isStopped)
+                if (distance < 0.3f && !pedestriansAgents[i].isStopped)
                 {
                     pedestriansAgents[i].isStopped = true;
                     numSlotsOccupied++;
-                    MatchTrafficLightStopRotation(pedestriansAgents[i]);
+                    StartCoroutine(RotatePedestrian(pedestriansAgents[i]));
                 }
             }
             if (numSlotsOccupied == waitingPositions.Count)
@@ -180,6 +185,11 @@ public class PedestrianGroupMovement : MonoBehaviour
         isWaitingInSlot = true;
     }
 
+    private IEnumerator RotatePedestrian(NavMeshAgent agent)
+    {
+        yield return new WaitForSeconds(.2f);
+        MatchTrafficLightStopRotation(agent);
+    }
     public void Cross()
     {
         isWaitingInSlot = false;
@@ -191,11 +201,11 @@ public class PedestrianGroupMovement : MonoBehaviour
     {
         if (!leader) return;
 
-        Gizmos.color = Color.blue;
-        Gizmos.DrawSphere(target.transform.position, .35f);
+        //Gizmos.color = Color.blue;
+        //Gizmos.DrawSphere(target.transform.position, .3f);
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(leader.transform.position, .25f);
+        Gizmos.color = Color.black;
+        Gizmos.DrawSphere(leader.transform.position, .2f);
         foreach (var position in GetPositions())
         {
             Gizmos.color = Color.yellow;
@@ -213,7 +223,9 @@ public class PedestrianGroupMovement : MonoBehaviour
     }
     private void MatchTrafficLightStopRotation(NavMeshAgent agent)
     {
-        agent.transform.rotation = Quaternion.Slerp(agent.transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
+        //agent.transform.rotation = Quaternion.Slerp(agent.transform.rotation, crossingRotation, 1f);
+        agent.transform.rotation = crossingRotation;
+        Debug.Log("rotation: " + agent.transform.rotation);
     }
 
     public enum Formation

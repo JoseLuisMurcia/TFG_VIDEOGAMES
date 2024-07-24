@@ -6,25 +6,24 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
 {
     private PedestrianIntersectionController intersectionController;
     private TrafficLightWaitingSlotsManager slotsManager;
-    private BoxCollider boxCollider;
     private bool debugTiers = false;
     private void Start()
     {
         if (!gameObject.CompareTag("IntersectionPedestrianTrigger")) return;
-        boxCollider = GetComponent<BoxCollider>();
-        Vector3 extents = boxCollider.bounds.extents;
-        Vector3 center = boxCollider.bounds.center;
-        Vector3 bottomLeft = new Vector3(
-            center.x - (extents.x * transform.right.x),
-            center.y - (extents.y * transform.up.y),
-            center.z + (extents.z * transform.forward.z)
-            );
+        Vector3 bottomLeft = Vector3.zero;
+        Vector3 bottomRight = Vector3.zero;
 
-        Vector3 bottomRight = new Vector3(
-            center.x + (extents.x * transform.right.x),
-            center.y - (extents.y * transform.up.y),
-            center.z + (extents.z * transform.forward.z)
-            );
+        foreach (Transform child in transform)
+        {
+            if(child.gameObject.name == "UR")
+            {
+                bottomRight = child.transform.position;
+            }
+            else
+            {
+                bottomLeft = child.transform.position;
+            }
+        }
 
         slotsManager = new TrafficLightWaitingSlotsManager(bottomLeft, bottomRight, transform.forward, transform.right, transform.parent.position);
     }

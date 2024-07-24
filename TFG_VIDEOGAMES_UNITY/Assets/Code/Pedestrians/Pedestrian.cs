@@ -144,12 +144,17 @@ public class Pedestrian : MonoBehaviour
     private IEnumerator OnSlotAssigned()
     {
         assignedSlot.isLocked = true;
-        agent.SetDestination(assignedSlot.position);
+        Vector3 alteredPos = new Vector3(
+            assignedSlot.position.x + Random.Range(-0.15f, 0.15f),
+            assignedSlot.position.y,
+            assignedSlot.position.z + Random.Range(-0.15f, 0.15f)
+        );
+        agent.SetDestination(alteredPos);
         bool slotReached = false;
         while (!slotReached)
         {
             yield return new WaitForSeconds(0.1f);
-            float distance = Vector3.Distance(transform.position, assignedSlot.position);
+            float distance = Vector3.Distance(transform.position, alteredPos);
             if (distance < 1f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f)
             {
                 slotReached = true;

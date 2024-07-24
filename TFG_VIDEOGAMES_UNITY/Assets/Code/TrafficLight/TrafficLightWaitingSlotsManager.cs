@@ -8,8 +8,8 @@ using UnityEngine.AI;
 public class TrafficLightWaitingSlotsManager
 {
     private int numLanes = 2;
-    private float verticalOffset = .8f;
-    private int slotsPerLane = 5;
+    private float verticalOffset = 1f;
+    private int slotsPerLane = 7;
 
     private List<List<Slot>> slots;
     private Vector3 upperLeft;
@@ -109,10 +109,46 @@ public class TrafficLightWaitingSlotsManager
         {
             Debug.LogWarning("An extra row for a group has to be created, there are no free slots");
             AddLane();
-            return GetBestSlotsForGroup(groupPos, numPedestrians);
+            waitingSlots = GetBestSlotsForGroup(groupPos, numPedestrians);
+        }
+
+        if (waitingSlots.Count > numPedestrians)
+        {
+            //Select the best slots
+            waitingSlots = ChooseBestSlotsForGroup(waitingSlots, groupPos, numPedestrians);
         }
 
         return waitingSlots;
+    }
+    private List<Slot> ChooseBestSlotsForGroup(List<Slot> waitingSlots, Vector3 groupPos, int numPedestrians)
+    {
+        List<Slot> bestSlots = new List<Slot>();
+
+        int lowestTierSum = int.MaxValue;
+
+        for (int i = 0; i < waitingSlots.Count; i += numPedestrians)
+        {
+            List<Slot> candidates = waitingSlots.Skip(i).Take(numPedestrians).ToList();
+            int totalTier = candidates.Sum(slot => slot.tier);
+
+            if (totalTier < lowestTierSum)
+            {
+                lowestTierSum = totalTier;
+                bestSlots = candidates;
+            }
+            else if (totalTier == lowestTierSum)
+            {
+                //Take distance into account
+                Vector3 avgCanPos = candidates.Aggregate(Vector3.zero, (acc, slot) => acc + slot.position) / (float)numPedestrians;
+                Vector3 avgBestPos = bestSlots.Aggregate(Vector3.zero, (acc, slot) => acc + slot.position) / (float)numPedestrians;
+                if (Vector3.Distance(groupPos, avgCanPos) < Vector3.Distance(groupPos, avgBestPos))
+                {
+                    lowestTierSum = totalTier;
+                    bestSlots = candidates;
+                }
+            }
+        }
+        return bestSlots;
     }
 
     public Slot GetSlotForPedestrian(Vector3 pedestrianPos)
@@ -250,12 +286,9 @@ public class TrafficLightWaitingSlotsManager
             int numFreeSlots = freeSlots.Count;
             if (numFreeSlots >= numPedestrians)
             {
-                List<Slot> selectedSlots = null;
-                float bestDistance = Mathf.Infinity;
-
                 // Look for adjacent slots
                 // Store all the available combinations and then get the best one based on TIER
-                for (int j = 0; j<= numFreeSlots - numPedestrians; j++)
+                for (int j = 0; j <= numFreeSlots - numPedestrians; j++)
                 {
                     List<Slot> candidateSlots = freeSlots.Skip(j).Take(numPedestrians).ToList();
                     // Check if they are adjacent
@@ -271,20 +304,14 @@ public class TrafficLightWaitingSlotsManager
 
                     if (areAdjacent)
                     {
-                        selectedSlots = candidateSlots;
+                        bestSlots.AddRange(candidateSlots);
                     }
                 }
-                // If we found a valid set of adjacent slots, add them to the bestSlots list
-                if (selectedSlots != null)
-                {
-                    bestSlots.AddRange(selectedSlots);
-                }
             }
-            if(bestSlots.Count > 0)
+            if (bestSlots.Count > 0)
             {
                 return bestSlots;
             }
-
         }
         return bestSlots;
     }
