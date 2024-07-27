@@ -22,6 +22,7 @@ public class Pedestrian : MonoBehaviour
     private Quaternion crossingRotation = Quaternion.identity;
     private Vector3 stoppingCrossPos = Vector3.zero;
     private Slot assignedSlot = null;
+    private Vector3 mirrorSlot = Vector3.zero;
 
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
 
@@ -75,7 +76,7 @@ public class Pedestrian : MonoBehaviour
         {
             yield return new WaitForSeconds(checkUpdateTime);
             float distance = Vector3.Distance(transform.position, target.transform.position);
-            if(distance < 5f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f) 
+            if(distance < 3f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f) 
             {
                 Destroy(gameObject);
             }
@@ -94,7 +95,7 @@ public class Pedestrian : MonoBehaviour
                 var controller = trigger.GetIntersectionController();
                 if (intersectionControllers.Contains(controller))
                 {
-                    crossingRotation = trigger.transform.rotation;
+                    crossingRotation = trigger.transform.rotation;    
                     // Suscribirse
                     controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
                     // Mirar si hay que parar o no
@@ -102,8 +103,17 @@ public class Pedestrian : MonoBehaviour
                     {
                         // Detenerse
                         assignedSlot = trigger.GetSlotForPedestrian(transform.position);
+                        mirrorSlot = assignedSlot.position + trigger.transform.forward * Vector3.Distance(trigger.transform.position, controller.transform.position) * 1.5f;
                         StartCoroutine(OnSlotAssigned());
                     }
+
+                    // TODO
+                    /* Aquí habria que mirar cuanto tiempo queda para que se ponga en rojo
+                       Al suscribirte, quieres comprobar si == Pedestrian y cuanto tiempo le queda, porque en el caso de estar ya parpadeando
+                       sería inteligente no cruzar. 
+                       En TrafficLightScheduler o bien creo un nuevo estado para el parpadeo o hago publico el tiempo que queda hasta que se ponga rojo (lo mismo pero con numeros)
+                        
+                    */
                 }
             }
         }
@@ -128,12 +138,14 @@ public class Pedestrian : MonoBehaviour
         switch (newColor)
         {
             case TrafficLightState.Pedestrian:
-                if (agent.isStopped)
-                {
-                    StartMoving();
-                }
+                StartMoving();
                 break;
 
+            // TODO
+            /* Casuística: Pedestrian se suscribe cuando estado == Pedestrian, pero justo se pone rojo, no recibe notificación
+             * Debe saber pararse, tambien debo poder controlar si está cruzando ya o no. Si está cruzando mientras se pone rojo, 100% debe ir más rapido
+             * El pedestrian tiene que saber que está corriendo o andando, esto en el GTA V lo hacían (aunque mal).
+             */
             default:
 
                 break;
@@ -168,24 +180,54 @@ public class Pedestrian : MonoBehaviour
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         animator.SetBool("IsMoving", true);
-        agent.SetDestination(target.position);
         assignedSlot = null;
+        StartCoroutine(OnCrossingEnabled());
     }
-
+    private IEnumerator OnCrossingEnabled()
+    {
+        agent.SetDestination(mirrorSlot);
+        bool slotReached = false;
+        while (!slotReached)
+        {
+            yield return new WaitForSeconds(0.2f);
+            float distance = Vector3.Distance(transform.position, mirrorSlot);
+            if (distance < 1.5f)
+            {
+                slotReached = true;
+            }
+        }
+        mirrorSlot = Vector3.zero;
+        agent.SetDestination(target.position);
+    }
+    public void StartMovingDependent()
+    {
+        isStoppedAtTrafficLight = false;
+        agent.isStopped = false;
+    }
     private void StopMoving()
     {
         isStoppedAtTrafficLight = true;
         agent.isStopped = true;
         animator.SetBool("IsMoving", false);
     }
-
+    public void StopMovingDependent(Quaternion _crossingRotation)
+    {
+        crossingRotation = _crossingRotation;
+        isStoppedAtTrafficLight = true;
+        agent.isStopped = true;
+        animator.SetBool("IsMoving", false);
+    }
     private void MatchTrafficLightStopRotation()
     {
-        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 0.02f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, 5f * Time.deltaTime);
     }
 
-    public void MatchRotation(Quaternion rotation)
-    {
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * agent.angularSpeed * 0.02f);
-    }
+    //private void OnDrawGizmos()
+    //{
+    //    if(mirrorSlot != Vector3.zero)
+    //    {
+    //        Gizmos.color = Color.yellow;
+    //        Gizmos.DrawCube(mirrorSlot, new Vector3(.1f, .1f, .1f));
+    //    }
+    //}
 }

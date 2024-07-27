@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem.XR;
 
 public class InvisibleLeader : MonoBehaviour
 {
@@ -20,6 +21,7 @@ public class InvisibleLeader : MonoBehaviour
     private Quaternion crossingRotation = Quaternion.identity;
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
     private List<Slot> assignedSlots = null;
+    private Vector3 mirrorSlot = Vector3.zero;
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -66,6 +68,7 @@ public class InvisibleLeader : MonoBehaviour
                     {
                         // Detenerse
                         assignedSlots = trigger.GetSlotsForGroup(transform.position, groupMovement.groupSize);
+                        mirrorSlot = groupMovement.GetAveragePositionFromSlots(assignedSlots) + trigger.transform.forward * Vector3.Distance(trigger.transform.position, controller.transform.position) * 1.5f;
                         assignedSlots.ForEach(slot => slot.isLocked = true);
                         OnSlotsAssigned();
                     }
@@ -107,10 +110,6 @@ public class InvisibleLeader : MonoBehaviour
     }
     private IEnumerator OnSlotAssigned(Vector3 slotPosition)
     {
-        // Probar a hacer el movimiento del grupo desde el lider y no individual...
-        // Calcular la posicion del lider en funcion de los slots debería hacer que mantengan la formación y sea natural
-        // Ingenieria inversa, sacar la posicion del lider a partir de la posicion de los slots.
-
         bool slotReached = false;
         while (!slotReached)
         {
@@ -134,19 +133,45 @@ public class InvisibleLeader : MonoBehaviour
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         assignedSlots = null;
-        agent.SetDestination(destination);
+        //agent.SetDestination(destination);
         groupMovement.Cross();
-    }
+        StartCoroutine(OnCrossingEnabled());
 
+    }
+    private IEnumerator OnCrossingEnabled()
+    {
+        agent.SetDestination(mirrorSlot);
+        bool slotReached = false;
+        while (!slotReached)
+        {
+            yield return new WaitForSeconds(0.2f);
+            float distance = Vector3.Distance(transform.position, mirrorSlot);
+            if (distance < 1.5f)
+            {
+                slotReached = true;
+            }
+        }
+        mirrorSlot = Vector3.zero;
+        agent.SetDestination(destination);
+    }
     private void StopMoving()
     {
         isStoppedAtTrafficLight = true;
-        MatchTrafficLightStopRotation();
         agent.isStopped = true;
+        MatchTrafficLightStopRotation();
     }
 
     public void MatchTrafficLightStopRotation()
     {
-        transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, Time.deltaTime * agent.angularSpeed * 5f);
+        transform.rotation = crossingRotation;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (mirrorSlot != Vector3.zero)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawCube(mirrorSlot, new Vector3(.1f, .1f, .1f));
+        }
     }
 }

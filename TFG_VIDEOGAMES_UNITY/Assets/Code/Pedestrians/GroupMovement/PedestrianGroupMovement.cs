@@ -24,7 +24,6 @@ public class PedestrianGroupMovement : MonoBehaviour
     private bool reachingSlots = false;
     private bool isWaitingInSlot = false;
     private List<Vector3> waitingPositions;
-    Quaternion crossingRotation = Quaternion.identity;
 
     void Start()
     {
@@ -146,19 +145,19 @@ public class PedestrianGroupMovement : MonoBehaviour
             distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
         }
     }
-    public void SetWaitingSlots(List<Slot> slots, Quaternion rotation)
+    public void SetWaitingSlots(List<Slot> slots, Quaternion _crossingRotation)
     {
-        crossingRotation = rotation;
         reachingSlots = true;
-        // Asignar para mantener formacion
-        // Más facil, y si calculo el punto medio de los slots y asigno esa posicion al lider y en funcion del lider calculo la del resto?
         Vector3 leaderWaitingPos = GetAveragePositionFromSlots(slots);
+        // Llamada necesaria para que se calculen bien las posiciones de espera
+        Quaternion previousRotation = new Quaternion(leader.transform.rotation.x, leader.transform.rotation.y, leader.transform.rotation.z, leader.transform.rotation.w);
         leader.MatchTrafficLightStopRotation();
         Vector3 leaderRight = new Vector3(leader.transform.right.x, leader.transform.right.y, leader.transform.right.z);
         waitingPositions = CalculatePositions(closeHorizontalSpacing, leaderRight, leaderWaitingPos);
-        StartCoroutine(ReachSlots());
+        leader.transform.rotation = previousRotation;
+        StartCoroutine(ReachSlots(_crossingRotation));
     }
-    private IEnumerator ReachSlots()
+    private IEnumerator ReachSlots(Quaternion _crossingRotation)
     {
         for (int i = 0; i < waitingPositions.Count; i++)
         {
@@ -172,11 +171,10 @@ public class PedestrianGroupMovement : MonoBehaviour
             for (int i = 0; i < waitingPositions.Count; i++)
             {
                 float distance = Vector3.Distance(pedestriansAgents[i].transform.position, waitingPositions[i]);
-                if (distance < 0.3f && !pedestriansAgents[i].isStopped)
+                if (distance < 0.2f && !pedestriansAgents[i].isStopped)
                 {
-                    pedestriansAgents[i].isStopped = true;
+                    pedestrians[i].StopMovingDependent(_crossingRotation);
                     numSlotsOccupied++;
-                    StartCoroutine(RotatePedestrian(pedestriansAgents[i]));
                 }
             }
             if (numSlotsOccupied == waitingPositions.Count)
@@ -184,17 +182,11 @@ public class PedestrianGroupMovement : MonoBehaviour
         }
         isWaitingInSlot = true;
     }
-
-    private IEnumerator RotatePedestrian(NavMeshAgent agent)
-    {
-        yield return new WaitForSeconds(.2f);
-        MatchTrafficLightStopRotation(agent);
-    }
     public void Cross()
     {
         isWaitingInSlot = false;
         reachingSlots = false;
-        pedestriansAgents.ForEach(agent => agent.isStopped = false);
+        pedestrians.ForEach(pedestrian => pedestrian.StartMovingDependent());
         waitingPositions = null;
     }
     private void OnDrawGizmos()
@@ -220,12 +212,6 @@ public class PedestrianGroupMovement : MonoBehaviour
                 Gizmos.DrawSphere(position, .1f);
             }
         }
-    }
-    private void MatchTrafficLightStopRotation(NavMeshAgent agent)
-    {
-        //agent.transform.rotation = Quaternion.Slerp(agent.transform.rotation, crossingRotation, 1f);
-        agent.transform.rotation = crossingRotation;
-        Debug.Log("rotation: " + agent.transform.rotation);
     }
 
     public enum Formation

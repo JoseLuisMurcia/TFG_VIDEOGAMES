@@ -118,11 +118,11 @@ public class TrafficLightScheduler : MonoBehaviour
                 case TrafficLightState.Pedestrian:
                     yield return new WaitForSeconds(pedestrianTime);
                     // Start animation
-                    float totalTime = 10f;
+                    float totalTime = pedestrianTime;
                     float firstBlinkInterval = 1f;
                     float secondBlinkInterval = .6f;
                     float blinkInterval = firstBlinkInterval;
-                    float secondIntervalStartTime = 5f;
+                    float secondIntervalStartTime = pedestrianTime * .5f;
                     float currentTime = 0f;
                     bool isBlack = false;
                     while (currentTime < totalTime)
