@@ -15,5 +15,6 @@ public enum TrafficLightState
     Red,
     Cars,
     Pedestrian,
+    PedestrianRush,
     Black
 }

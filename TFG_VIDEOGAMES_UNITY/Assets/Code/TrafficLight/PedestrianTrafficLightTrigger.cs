@@ -48,6 +48,10 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
         return slotsManager.GetSlotForPedestrian(pedestrianPos);
     }
 
+    public Slot GetBestSlot()
+    {
+        return slotsManager.GetBestSlot();
+    }
     private void OnDrawGizmos()
     {
         if (slotsManager != null)

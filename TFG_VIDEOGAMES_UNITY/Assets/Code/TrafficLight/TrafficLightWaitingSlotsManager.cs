@@ -101,7 +101,10 @@ public class TrafficLightWaitingSlotsManager
     {
         return slots;
     }
-
+    public Slot GetBestSlot()
+    {
+        return slots[0].Find((x) => x.tier == 0);
+    }
     public List<Slot> GetSlotsForGroup(Vector3 groupPos, int numPedestrians)
     {
         List<Slot> waitingSlots = GetBestSlotsForGroup(groupPos, numPedestrians);

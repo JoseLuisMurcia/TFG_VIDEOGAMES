@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem.XR;
 public class Pedestrian : MonoBehaviour
 {
     public NavMeshAgent agent;
@@ -20,12 +21,16 @@ public class Pedestrian : MonoBehaviour
     private InvisiblePedestrian invisiblePedestrian = null;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
     private Quaternion crossingRotation = Quaternion.identity;
-    private Vector3 stoppingCrossPos = Vector3.zero;
     private Slot assignedSlot = null;
     private Vector3 mirrorSlot = Vector3.zero;
 
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
+    private HashSet<PedestrianIntersectionController> subscribedControllers = new HashSet<PedestrianIntersectionController>();
+    private PedestrianTrafficLightTrigger tlTrigger = null;
+    private PedestrianIntersectionController tlController = null;
 
+    private float baseAgentSpeed = 1f;
+    private float sprintAgentSpeed = 1.7f;
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -43,6 +48,8 @@ public class Pedestrian : MonoBehaviour
         {
 
         }
+        baseAgentSpeed = agent.speed + Random.Range(-.2f, .2f);
+        sprintAgentSpeed += Random.Range(-.2f, .2f);
     }
     void Update()
     {
@@ -89,45 +96,88 @@ public class Pedestrian : MonoBehaviour
 
         if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
         {
-            var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
-            if (trigger != null)
+            tlTrigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
+            if (tlTrigger != null)
             {
-                var controller = trigger.GetIntersectionController();
-                if (intersectionControllers.Contains(controller))
+                tlController = tlTrigger.GetIntersectionController();
+                if (intersectionControllers.Contains(tlController))
                 {
-                    crossingRotation = trigger.transform.rotation;    
-                    // Suscribirse
-                    controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
-                    // Mirar si hay que parar o no
-                    if (controller.GetState() != TrafficLightState.Pedestrian)
+                    if (!subscribedControllers.Contains(tlController))
                     {
-                        // Detenerse
-                        assignedSlot = trigger.GetSlotForPedestrian(transform.position);
-                        mirrorSlot = assignedSlot.position + trigger.transform.forward * Vector3.Distance(trigger.transform.position, controller.transform.position) * 1.5f;
-                        StartCoroutine(OnSlotAssigned());
+                        crossingRotation = tlTrigger.transform.rotation;
+                        // Suscribirse
+                        tlController.SubscribeToLightChangeEvent(OnTrafficLightChange);
+                        subscribedControllers.Add(tlController);
+                        // Mirar si hay que parar o no
+                        if (!tlController.IsPedestrianState())
+                        {
+                            // Detenerse
+                            AssignSlot();
+                        }
+                        else
+                        {
+                            TrafficLightState state = tlController.GetState();
+                            if (state == TrafficLightState.PedestrianRush)
+                            {               
+                                // Randomize the probability of rushing
+                                if(Random.value > 0.6f)
+                                {
+                                    // Rush
+                                    float timeLeft = tlController.GetPedestrianTurnTimeLeft();
+                                    if (timeLeft < 5f && timeLeft > 3f)
+                                    {
+                                        agent.speed = sprintAgentSpeed;
+                                        mirrorSlot = CalculateOffsetFromBestSlot();
+                                        StartCoroutine(OnCrossingEnabled());
+                                    }
+                                    else if (timeLeft <= 3f)
+                                    {
+                                        AssignSlot();
+                                    }
+                                }
+                                else
+                                {
+                                    AssignSlot();
+                                }
+                            }
+                            else
+                            {
+                                mirrorSlot = CalculateOffsetFromBestSlot();
+                                StartCoroutine(OnCrossingEnabled());
+                            }
+                        }
+                    }                 
+                    else
+                    {
+                        tlController.UnsubscribeToLightChangeEvent(OnTrafficLightChange);
+                        subscribedControllers.Remove(tlController);
+                        agent.speed = baseAgentSpeed;
                     }
-
-                    // TODO
-                    /* Aquí habria que mirar cuanto tiempo queda para que se ponga en rojo
-                       Al suscribirte, quieres comprobar si == Pedestrian y cuanto tiempo le queda, porque en el caso de estar ya parpadeando
-                       sería inteligente no cruzar. 
-                       En TrafficLightScheduler o bien creo un nuevo estado para el parpadeo o hago publico el tiempo que queda hasta que se ponga rojo (lo mismo pero con numeros)
-                        
-                    */
                 }
             }
         }
     }
-
-    private void OnTriggerExit(Collider other)
+    private Vector3 CalculateOffsetFromBestSlot()
     {
-        if (!isIndependent) return;
+        var centeredPos = tlTrigger.GetBestSlot().position + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
 
-        if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
-        {
-        }
+        Quaternion previousRotation = new Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w);
+        transform.rotation = crossingRotation;
+
+        Vector3 dir = (centeredPos - transform.position).normalized;
+        Vector3 forward = transform.forward.normalized;
+
+        float angle = Vector3.SignedAngle(forward, dir, Vector3.up);
+        Vector3 offsetPos = new Vector3(centeredPos.x, centeredPos.y, centeredPos.z) - transform.right * angle * .05f;
+        transform.rotation = previousRotation;
+        return offsetPos;
     }
-
+    private void AssignSlot()
+    {
+        assignedSlot = tlTrigger.GetSlotForPedestrian(transform.position);
+        mirrorSlot = assignedSlot.position + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
+        StartCoroutine(OnSlotAssigned());
+    }
     public void SetCrossings(List<PedestrianIntersectionController> _controllers)
     {
         intersectionControllers = _controllers;
@@ -141,18 +191,47 @@ public class Pedestrian : MonoBehaviour
                 StartMoving();
                 break;
 
-            // TODO
-            /* Casuística: Pedestrian se suscribe cuando estado == Pedestrian, pero justo se pone rojo, no recibe notificación
-             * Debe saber pararse, tambien debo poder controlar si está cruzando ya o no. Si está cruzando mientras se pone rojo, 100% debe ir más rapido
-             * El pedestrian tiene que saber que está corriendo o andando, esto en el GTA V lo hacían (aunque mal).
-             */
+            case TrafficLightState.PedestrianRush:
+                Debug.Log(GetDistanceToMirrorSlot());
+                if(Random.value > 0.6f && GetDistanceToMirrorSlot() > 5f)
+                {
+                    agent.speed = sprintAgentSpeed;
+                }
+                break;
+
+            case TrafficLightState.Red:
+                if (isCrossing)
+                {
+                    agent.speed = sprintAgentSpeed;
+                }
+                else
+                {
+                    // Hay que ver si ya tenía slot asignadooo
+                    if (assignedSlot == null)
+                    {
+                        AssignSlot();
+                    }
+                }
+                break;
             default:
 
                 break;
 
         }
     }
-
+    private float GetDistanceToMirrorSlot()
+    {
+        if(mirrorSlot == Vector3.zero)
+        {
+            var bestSlot = tlTrigger.GetBestSlot().position;
+            mirrorSlot = bestSlot + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
+            return Vector3.Distance(transform.position, mirrorSlot);
+        }
+        else
+        {
+            return Vector3.Distance(transform.position, mirrorSlot);
+        }
+    }
     private IEnumerator OnSlotAssigned()
     {
         assignedSlot.isLocked = true;
@@ -222,12 +301,23 @@ public class Pedestrian : MonoBehaviour
         transform.rotation = Quaternion.Slerp(transform.rotation, crossingRotation, 5f * Time.deltaTime);
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    if(mirrorSlot != Vector3.zero)
-    //    {
-    //        Gizmos.color = Color.yellow;
-    //        Gizmos.DrawCube(mirrorSlot, new Vector3(.1f, .1f, .1f));
-    //    }
-    //}
+    private void OnDrawGizmos()
+    {
+        if (mirrorSlot != Vector3.zero)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawCube(mirrorSlot, new Vector3(.5f, .5f, .5f));
+        }
+    }
+
+    public void OnEnterPedestrianCrossing(Vector3 crossingCentre)
+    {
+        isCrossing = true;
+    }
+
+    public void OnExitPedestrianCrossing()
+    {
+        isCrossing = false;
+        crossingPos = Vector3.zero;
+    }
 }

@@ -34,7 +34,19 @@ public class PedestrianIntersectionController : MonoBehaviour
     {
         trafficLightEvents.onLightChange += func;
     }
-
+    public void UnsubscribeToLightChangeEvent(Action<TrafficLightState, bool> func)
+    {
+        trafficLightEvents.onLightChange -= func;
+    }
+    public float GetPedestrianTurnTimeLeft()
+    {
+        return trafficLightScheduler.GetPedestrianTurnTimeLeft();
+    }
+    public bool IsPedestrianState()
+    {
+        TrafficLightState state = trafficLightScheduler.GetState();
+        return state == TrafficLightState.Pedestrian || state == TrafficLightState.PedestrianRush;
+    }
     public TrafficLightState GetState()
     {
         return trafficLightScheduler.GetState();

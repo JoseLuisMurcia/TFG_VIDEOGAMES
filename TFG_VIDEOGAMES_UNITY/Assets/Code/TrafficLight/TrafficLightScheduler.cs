@@ -17,9 +17,9 @@ public class TrafficLightScheduler : MonoBehaviour
     [SerializeField] float redTime = 1f;
     [SerializeField] float pedestrianTime = 1f;
     [SerializeField] float redToGreenTime = 1f;
-    [SerializeField] float carsToPedestrianTime = 1f;
 
     [SerializeField] bool takeTurnsBetweenTrafficLights = false;
+    private float pedestrianTurnTimeLeft = 0f;
 
     private void Start()
     {
@@ -117,6 +117,8 @@ public class TrafficLightScheduler : MonoBehaviour
 
                 case TrafficLightState.Pedestrian:
                     yield return new WaitForSeconds(pedestrianTime);
+                    currentState = TrafficLightState.PedestrianRush;
+                    EmitColorEvent(TrafficLightState.PedestrianRush);
                     // Start animation
                     float totalTime = pedestrianTime;
                     float firstBlinkInterval = 1f;
@@ -128,6 +130,7 @@ public class TrafficLightScheduler : MonoBehaviour
                     while (currentTime < totalTime)
                     {
                         // Update time
+                        pedestrianTurnTimeLeft = totalTime - currentTime;
                         currentTime += blinkInterval;
                         // Check if we are in the last 5 seconds
                         if (currentTime >= totalTime - secondIntervalStartTime)
@@ -141,6 +144,7 @@ public class TrafficLightScheduler : MonoBehaviour
                         // Wait for blink interval
                         yield return new WaitForSeconds(blinkInterval);
                     }
+                    pedestrianTurnTimeLeft = 0f;
                     // End animation
                     SetNewColorPedestrians(TrafficLightState.Red);
 
@@ -150,7 +154,9 @@ public class TrafficLightScheduler : MonoBehaviour
                     currentState = TrafficLightState.Green;
                     SetNewColor(TrafficLightState.Green);
                     break;
+                case TrafficLightState.PedestrianRush:
 
+                    break;
             }
         }
     }
@@ -184,17 +190,20 @@ public class TrafficLightScheduler : MonoBehaviour
 
                 case TrafficLightState.Pedestrian:
                     yield return new WaitForSeconds(pedestrianTime);
+                    currentState = TrafficLightState.PedestrianRush;
+                    EmitColorEvent(TrafficLightState.PedestrianRush);
                     // Start animation
-                    float totalTime = 10f;
+                    float totalTime = pedestrianTime;
                     float firstBlinkInterval = 1f;
                     float secondBlinkInterval = .6f;
                     float blinkInterval = firstBlinkInterval;
-                    float secondIntervalStartTime = 5f;
+                    float secondIntervalStartTime = pedestrianTime * 5f;
                     float currentTime = 0f;
                     bool isBlack = false;
                     while (currentTime < totalTime)
                     {
                         // Update time
+                        pedestrianTurnTimeLeft = totalTime - currentTime;
                         currentTime += blinkInterval;
                         // Check if we are in the last 5 seconds
                         if (currentTime >= totalTime - secondIntervalStartTime)
@@ -208,6 +217,7 @@ public class TrafficLightScheduler : MonoBehaviour
                         // Wait for blink interval
                         yield return new WaitForSeconds(blinkInterval);
                     }
+                    pedestrianTurnTimeLeft = 0f;
                     // End animation
                     SetNewColorPedestrians(TrafficLightState.Red);
 
@@ -217,7 +227,6 @@ public class TrafficLightScheduler : MonoBehaviour
                     currentState = TrafficLightState.Cars;
                     SetNewColorCars(TrafficLightState.Green);
                     break;
-
             }
         }
     }
@@ -228,7 +237,10 @@ public class TrafficLightScheduler : MonoBehaviour
         currentCarTrafficLight.colorChanger.SetColor(color);
         currentCarTrafficLight.road.trafficLightEvents.LightChange(color, false);
     }
-
+    private void EmitColorEvent(TrafficLightState color)
+    {
+        pedestrianIntersectionController.ThrowLightChangeEvent(color, false);
+    }
     private void SetNewColorCars(TrafficLightState color)
     {
         foreach(var carTrafficLight in trafficLights)
@@ -242,7 +254,7 @@ public class TrafficLightScheduler : MonoBehaviour
     private void SetNewColorPedestrians(TrafficLightState color)
     {
         // Launch event to subscribed pedestrians
-        pedestrianIntersectionController.ThrowLightChangeEvent(color, true);
+        pedestrianIntersectionController.ThrowLightChangeEvent(color, false);
         foreach (PedestrianTrafficLight pedestrianTrafficLight in pedestrianTrafficLights)
         {
             pedestrianTrafficLight.currentColor = color;
@@ -257,7 +269,10 @@ public class TrafficLightScheduler : MonoBehaviour
             pedestrianTrafficLight.colorChanger.SetColor(color);
         }
     }
-
+    public float GetPedestrianTurnTimeLeft()
+    {
+        return pedestrianTurnTimeLeft;
+    }
     public TrafficLightState GetState()
     {
         return currentState;

@@ -94,7 +94,9 @@ public class InvisibleLeader : MonoBehaviour
                     StartMoving();
                 }
                 break;
-
+            case TrafficLightState.Red:
+                // Si ya está cruzando que esprinte
+                // Si aun no está cruzando que se pare donde está
             default:
 
                 break;
