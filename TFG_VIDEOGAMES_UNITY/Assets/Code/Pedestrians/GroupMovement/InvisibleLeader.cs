@@ -20,6 +20,13 @@ public class InvisibleLeader : MonoBehaviour
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
     private Quaternion crossingRotation = Quaternion.identity;
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
+    private HashSet<PedestrianIntersectionController> subscribedControllers = new HashSet<PedestrianIntersectionController>();
+    private PedestrianTrafficLightTrigger tlTrigger = null;
+    private PedestrianIntersectionController tlController = null;
+
+    private float baseAgentSpeed = 1f;
+    private float sprintAgentSpeed = 1.7f;
+
     private List<Slot> assignedSlots = null;
     private Vector3 mirrorSlot = Vector3.zero;
     void Start()
@@ -33,6 +40,8 @@ public class InvisibleLeader : MonoBehaviour
             invisiblePedestrian.SetLeader(this);
             StartCoroutine(GoToTarget());
         }
+        baseAgentSpeed = agent.speed + Random.Range(-.2f, .2f);
+        sprintAgentSpeed += Random.Range(-.2f, .2f);
     }
 
     IEnumerator GoToTarget()
@@ -54,53 +63,138 @@ public class InvisibleLeader : MonoBehaviour
     {
         if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
         {
-            var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
-            if (trigger != null)
+            tlTrigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
+            if (tlTrigger != null)
             {
-                var controller = trigger.GetIntersectionController();
-                if (intersectionControllers.Contains(controller))
+                tlController = tlTrigger.GetIntersectionController();
+                if (intersectionControllers.Contains(tlController))
                 {
-                    crossingRotation = trigger.transform.rotation;
-                    // Suscribirse
-                    controller.SubscribeToLightChangeEvent(OnTrafficLightChange);
-                    // Mirar si hay que parar o no
-                    if (controller.GetState() != TrafficLightState.Pedestrian)
+                    if (!subscribedControllers.Contains(tlController))
                     {
-                        // Detenerse
-                        assignedSlots = trigger.GetSlotsForGroup(transform.position, groupMovement.groupSize);
-                        mirrorSlot = groupMovement.GetAveragePositionFromSlots(assignedSlots) + trigger.transform.forward * Vector3.Distance(trigger.transform.position, controller.transform.position) * 1.5f;
-                        assignedSlots.ForEach(slot => slot.isLocked = true);
-                        OnSlotsAssigned();
+                        crossingRotation = tlTrigger.transform.rotation;
+                        // Suscribirse
+                        tlController.SubscribeToLightChangeEvent(OnTrafficLightChange);
+                        subscribedControllers.Add(tlController);
+                        // Mirar si hay que parar o no
+                        if (!tlController.IsPedestrianState())
+                        {
+                            // Detenerse
+                            AssignSlots();
+                        }
+                        else
+                        {
+                            TrafficLightState state = tlController.GetState();
+                            if (state == TrafficLightState.PedestrianRush)
+                            {
+                                if (Random.value > 0.6f)
+                                {
+                                    // Rush
+                                    float timeLeft = tlController.GetPedestrianTurnTimeLeft();
+                                    if (timeLeft < 5f && timeLeft > 3f)
+                                    {
+                                        agent.speed = sprintAgentSpeed;
+                                        mirrorSlot = CalculateOffsetFromBestSlot();
+                                        StartCoroutine(OnCrossingEnabled());
+                                    }
+                                    else if (timeLeft <= 3f)
+                                    {
+                                        AssignSlots();
+                                    }
+                                }
+                                else
+                                {
+                                    AssignSlots();
+                                }
+                            }
+                            else
+                            {
+                                mirrorSlot = CalculateOffsetFromBestSlot();
+                                StartCoroutine(OnCrossingEnabled());
+                            }
+                        }
                     }
+                    else
+                    {
+                        tlController.UnsubscribeToLightChangeEvent(OnTrafficLightChange);
+                        subscribedControllers.Remove(tlController);
+                        agent.speed = baseAgentSpeed;
+                    }
+                    
                 }
             }
             Debug.Log("trigger entry");
         }
     }
-
-    private void OnTriggerExit(Collider other)
+    private Vector3 CalculateOffsetFromBestSlot()
     {
-        if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
-        {
-        }
+        var centeredPos = tlTrigger.GetBestSlot().position + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
+
+        Quaternion previousRotation = new Quaternion(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w);
+        transform.rotation = crossingRotation;
+
+        Vector3 dir = (centeredPos - transform.position).normalized;
+        Vector3 forward = transform.forward.normalized;
+
+        float angle = Vector3.SignedAngle(forward, dir, Vector3.up);
+        Vector3 offsetPos = new Vector3(centeredPos.x, centeredPos.y, centeredPos.z) - transform.right * angle * .05f;
+        transform.rotation = previousRotation;
+        return offsetPos;
+    }
+    private void AssignSlots()
+    {
+        // Detenerse
+        assignedSlots = tlTrigger.GetSlotsForGroup(transform.position, groupMovement.groupSize);
+        mirrorSlot = groupMovement.GetAveragePositionFromSlots(assignedSlots) + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
+        assignedSlots.ForEach(slot => slot.isLocked = true);
+        OnSlotsAssigned();
     }
     private void OnTrafficLightChange(TrafficLightState newColor, bool subscription)
     {
         switch (newColor)
         {
             case TrafficLightState.Pedestrian:
-                if (agent.isStopped)
+                StartMoving();
+                break;
+
+            case TrafficLightState.PedestrianRush:
+                Debug.Log(GetDistanceToMirrorSlot());
+                if (Random.value > 0.6f && GetDistanceToMirrorSlot() > 5f)
                 {
-                    StartMoving();
+                    agent.speed = sprintAgentSpeed;
                 }
                 break;
+
             case TrafficLightState.Red:
-                // Si ya está cruzando que esprinte
-                // Si aun no está cruzando que se pare donde está
+                if (isCrossing)
+                {
+                    agent.speed = sprintAgentSpeed;
+                }
+                else
+                {
+                    // Hay que ver si ya tenía slot asignadooo
+                    if (assignedSlots == null)
+                    {
+                        AssignSlots();
+                    }
+                }
+                break;
             default:
 
                 break;
 
+        }
+    }
+    private float GetDistanceToMirrorSlot()
+    {
+        if (mirrorSlot == Vector3.zero)
+        {
+            var bestSlot = tlTrigger.GetBestSlot().position;
+            mirrorSlot = bestSlot + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
+            return Vector3.Distance(transform.position, mirrorSlot);
+        }
+        else
+        {
+            return Vector3.Distance(transform.position, mirrorSlot);
         }
     }
     private void OnSlotsAssigned()
@@ -112,6 +206,11 @@ public class InvisibleLeader : MonoBehaviour
     }
     private IEnumerator OnSlotAssigned(Vector3 slotPosition)
     {
+        Vector3 alteredPos = new Vector3(
+            slotPosition.x + Random.Range(-0.15f, 0.15f),
+            slotPosition.y,
+            slotPosition.z + Random.Range(-0.15f, 0.15f)
+        );
         bool slotReached = false;
         while (!slotReached)
         {
@@ -175,5 +274,15 @@ public class InvisibleLeader : MonoBehaviour
             Gizmos.color = Color.yellow;
             Gizmos.DrawCube(mirrorSlot, new Vector3(.1f, .1f, .1f));
         }
+    }
+    public void OnEnterPedestrianCrossing(Vector3 crossingCentre)
+    {
+        isCrossing = true;
+    }
+
+    public void OnExitPedestrianCrossing()
+    {
+        isCrossing = false;
+        //crossingPos = Vector3.zero;
     }
 }
