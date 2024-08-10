@@ -38,14 +38,18 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
         intersectionController = _intersectionController;
     }
 
-    public List<Slot> GetSlotsForGroup(Vector3 groupPos, int numPedestrians)
+    public List<Slot> GetSlotsForGroup(InvisibleLeader leader, int numPedestrians)
     {
-        return slotsManager.GetSlotsForGroup(groupPos, numPedestrians);
+        return slotsManager.GetSlotsForGroup(leader, numPedestrians);
     }
 
-    public Slot GetSlotForPedestrian(Vector3 pedestrianPos)
+    public Slot GetSlotForPedestrian(Pedestrian pedestrian)
     {
-        return slotsManager.GetSlotForPedestrian(pedestrianPos);
+        return slotsManager.GetSlotForPedestrian(pedestrian);
+    }
+    public void RemoveAssignation(Pedestrian pedestrian)
+    {
+        slotsManager.RemoveAssignation(pedestrian);
     }
 
     public Slot GetBestSlot()
@@ -73,7 +77,18 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
                 {
                     foreach (var slot in lane)
                     {
-                        Gizmos.color = slot.isLocked ? Color.red : Color.cyan;
+                        if (slot.isReserved && !slot.isLocked)
+                        {
+                            Gizmos.color = Color.green;
+                        }
+                        else if (slot.isLocked)
+                        {
+                            Gizmos.color = Color.red;
+                        }
+                        else
+                        {
+                            Gizmos.color = Color.cyan;
+                        }
                         Gizmos.DrawSphere(slot.position, .16f);
                     }
                 }

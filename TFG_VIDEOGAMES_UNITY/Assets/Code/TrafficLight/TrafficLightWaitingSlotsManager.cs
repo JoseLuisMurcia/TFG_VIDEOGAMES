@@ -19,6 +19,7 @@ public class TrafficLightWaitingSlotsManager
     private Vector3 crossingCentre;
     private float laneLength;
     private Dictionary<int, List<Slot>> tieredSlots = new Dictionary<int, List<Slot>>();
+    private List<SlotAssignation> slotAsignations = new List<SlotAssignation>();
     public TrafficLightWaitingSlotsManager(Vector3 _upperLeft, Vector3 _upperRight, Vector3 _forward, Vector3 _right, Vector3 _crossingCentre)
     {
         // Set variables useful for the future
@@ -70,7 +71,6 @@ public class TrafficLightWaitingSlotsManager
             SortSlotsByTier(slots[i]);
         }
     }
-
     private void SortSlotsByTier(List<Slot> laneSlots)
     {
         // A higher tier number means that the slot is worse
@@ -91,7 +91,6 @@ public class TrafficLightWaitingSlotsManager
             tier++;
         }
     }
-
     private void RemoveLane()
     {
         slots.RemoveAt(numLanes - 1);
@@ -105,8 +104,9 @@ public class TrafficLightWaitingSlotsManager
     {
         return slots[0].Find((x) => x.tier == 0);
     }
-    public List<Slot> GetSlotsForGroup(Vector3 groupPos, int numPedestrians)
+    public List<Slot> GetSlotsForGroup(InvisibleLeader leader, int numPedestrians)
     {
+        Vector3 groupPos = leader.transform.position;
         List<Slot> waitingSlots = GetBestSlotsForGroup(groupPos, numPedestrians);
         if (waitingSlots.Count == 0)
         {
@@ -120,7 +120,8 @@ public class TrafficLightWaitingSlotsManager
             //Select the best slots
             waitingSlots = ChooseBestSlotsForGroup(waitingSlots, groupPos, numPedestrians);
         }
-
+        SlotAssignation newAssignation = new SlotAssignation(waitingSlots, null, leader, true);
+        slotAsignations.Add(newAssignation);
         return waitingSlots;
     }
     private List<Slot> ChooseBestSlotsForGroup(List<Slot> waitingSlots, Vector3 groupPos, int numPedestrians)
@@ -154,8 +155,38 @@ public class TrafficLightWaitingSlotsManager
         return bestSlots;
     }
 
-    public Slot GetSlotForPedestrian(Vector3 pedestrianPos)
+    public Slot GetSlotForPedestrian(Pedestrian pedestrian)
     {
+        Slot reservedSlot = CheckReservedAssignations(pedestrian);
+        if (reservedSlot == null)
+        {   
+            return FindSlotForPedestrian(pedestrian);
+        }
+        return reservedSlot;
+    }
+    private Slot CheckReservedAssignations(Pedestrian newPedestrian)
+    {
+        // Check all the slots that are assigned already but not locked
+        List<SlotAssignation> reservedAssignations = slotAsignations.Where(assignation => !assignation.isGroup && assignation.slots.All(slot => slot.isReserved && !slot.isLocked)).ToList();
+
+        // Compare the current pedestrianPos with all the reservedAssignations, assign him to the closest one of all of them. 
+        SlotAssignation bestAssignation = GetClosestSlotAssignation(newPedestrian.transform.position, reservedAssignations);
+        if (bestAssignation != null)
+        {
+            Pedestrian oldPedestrian = bestAssignation.pedestrian;
+            // Assign the bestPos to the new pedestrian
+            bestAssignation.isGroup = false;
+            bestAssignation.pedestrian = newPedestrian;
+            // Free the assignation and assign those pedestrians a new one
+            // Call PedestrianReassignation and assign a new position to the old pedestrian+
+            PedestrianReassignation(oldPedestrian);
+            return bestAssignation.slots.First();
+        }
+        return null;
+    }
+    private Slot FindSlotForPedestrian(Pedestrian pedestrian)
+    {
+        Vector3 pedestrianPos = pedestrian.transform.position;
         List<Slot> waitingSlots = GetBestTierSlots(pedestrianPos, true);
         // Never return a null, always find a solution
         if (waitingSlots.Count == 0)
@@ -170,8 +201,16 @@ public class TrafficLightWaitingSlotsManager
             }
         }
         Slot selectedSlot = ChooseBestSlot(waitingSlots, pedestrianPos);
-        selectedSlot.isLocked = true;
+        SlotAssignation newAssignation = new SlotAssignation(new List<Slot>() { selectedSlot }, pedestrian, null, false);
+        slotAsignations.Add(newAssignation);
         return selectedSlot;
+    }
+    private void PedestrianReassignation(Pedestrian pedestrian)
+    {
+        Slot selectedSlot = FindSlotForPedestrian(pedestrian);
+        pedestrian.ReassignSlot(selectedSlot);
+        SlotAssignation reassignation = new SlotAssignation(new List<Slot>() { selectedSlot }, pedestrian, null, false);
+        slotAsignations.Add(reassignation);
     }
     private Slot ChooseBestSlot(List<Slot> waitingSlots, Vector3 pedestrianPos)
     {
@@ -182,12 +221,45 @@ public class TrafficLightWaitingSlotsManager
         else
         {
             // waitingSlots.Count > 1
+           // Slot bestSlot = waitingSlots
+           //.OrderBy(slot => (slot.tier * 5) + (slot.lane * 9.5f))
+           //.First();
             Slot bestSlot = waitingSlots
-           .OrderBy(slot => (slot.tier * 5) + (slot.lane * 9.5f))
+           .OrderBy(slot => slot.lane)
            .First();
-
             return bestSlot;
         }
+    }
+    private SlotAssignation GetClosestSlotAssignation(Vector3 pedestrianPos, List<SlotAssignation> reservedAssignations)
+    {
+        SlotAssignation closestAssignation = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (var assignation in reservedAssignations)
+        {
+            // Calculate the average position of the slots in the current assignation
+            Vector3 averageSlotPosition = Vector3.zero;
+            foreach (var slot in assignation.slots)
+            {
+                averageSlotPosition += slot.position;
+            }
+            averageSlotPosition /= assignation.slots.Count;
+
+            // Calculate the distance from the average position to the pedestrian position
+            float pedestrianDistance = Vector3.Distance(averageSlotPosition, pedestrianPos);
+            float assignedDistance = assignation.isGroup ? 
+                Vector3.Distance(assignation.leader.transform.position, averageSlotPosition) : 
+                Vector3.Distance(assignation.pedestrian.transform.position, averageSlotPosition);
+
+            // Check if this assignation is closer than the already assigned pedestrian/group && closer than the previous closest one
+            if (pedestrianDistance < assignedDistance && pedestrianDistance < closestDistance)
+            {
+                closestDistance = pedestrianDistance;
+                closestAssignation = assignation;
+            }
+        }
+
+        return closestAssignation;
     }
     private bool SlotCanSee(Slot slot)
     {
@@ -200,7 +272,7 @@ public class TrafficLightWaitingSlotsManager
         Slot previousSlot = slotsFromPreviousLane.Find((x) => x.id == (slot.id - slotsPerLane));
         if (previousSlot != null)
         {
-            return !previousSlot.isLocked;
+            return !previousSlot.isLocked && !previousSlot.isReserved;
         }
         Debug.LogError("The previous matching lane slot was not found");
         return true;
@@ -234,13 +306,13 @@ public class TrafficLightWaitingSlotsManager
                 if (isRestrictive)
                 {
                     freeLaneTieredSlots = tieredSlots[tier]
-                    .Where(slot => slot.lane == i && !slot.isLocked)
+                    .Where(slot => slot.lane == i && !slot.isLocked && !slot.isReserved)
                     .Where(slot => SlotCanSee(slot))
                     .ToList();
                 }
                 else
                 {
-                    freeLaneTieredSlots = tieredSlots[tier].Where(slot => slot.lane == i && !slot.isLocked).ToList();
+                    freeLaneTieredSlots = tieredSlots[tier].Where(slot => slot.lane == i && !slot.isLocked && !slot.isReserved).ToList();
                 }
 
                 // Get all that are not locked, and then, if there's more than one try to lock the closest one
@@ -275,7 +347,6 @@ public class TrafficLightWaitingSlotsManager
         }
         return bestSlots;
     }
-
     private List<Slot> GetBestSlotsForGroup(Vector3 groupPos, int numPedestrians)
     {
         List<Slot> bestSlots = new List<Slot>();
@@ -283,7 +354,7 @@ public class TrafficLightWaitingSlotsManager
         for (int i = 0; i < numLanes; i++)
         {
             //Find all free slots on the lane that are not locked
-            List<Slot> freeSlots = slots[i].FindAll(x => !x.isLocked);
+            List<Slot> freeSlots = slots[i].FindAll(x => !x.isLocked && !x.isReserved);
 
             // Get all that are not locked, and then, if there's more than one try to lock the closest one
             int numFreeSlots = freeSlots.Count;
@@ -322,34 +393,44 @@ public class TrafficLightWaitingSlotsManager
     {
         return slots[laneId].FindAll((slot) => !slot.isLocked).Count() >= numPedestrians;
     }
+    public void RemoveAssignation(Pedestrian pedestrian)
+    {
+        slotAsignations.RemoveAll(assignation => assignation.pedestrian == pedestrian);
+    }
 }
 
 public class Slot
 {
     public Vector3 position = Vector3.zero;
     public bool isLocked = false;
+    public bool isReserved = false;
+    public bool isGroup = false;
     public int id;
     public float distance;
     public int tier = -1;
     public int lane = -1;
 
-    public Slot(Vector3 _position, int id, float _distance, int _lane)
+    public Slot(Vector3 _position, int _id, float _distance, int _lane)
     {
-        this.position = _position;
-        this.id = id;
-        this.distance = _distance;
-        this.lane = _lane;
+        position = _position;
+        id = _id;
+        distance = _distance;
+        lane = _lane;
     }
 }
 
-public class SlotAsignation
+public class SlotAssignation
 {
-    public NavMeshAgent agent = null;
-    public Slot slot = null;
+    public List<Slot> slots = null;
+    public Pedestrian pedestrian = null;
+    public InvisibleLeader leader = null;
+    public bool isGroup = false;
 
-    public SlotAsignation(NavMeshAgent agent, Slot slot)
+    public SlotAssignation(List<Slot> _slots, Pedestrian _pedestrian, InvisibleLeader _leader, bool _isGroup)
     {
-        this.agent = agent;
-        this.slot = slot;
+        slots = _slots;
+        pedestrian = _pedestrian;
+        leader = _leader;
+        isGroup = _isGroup;
     }
 }

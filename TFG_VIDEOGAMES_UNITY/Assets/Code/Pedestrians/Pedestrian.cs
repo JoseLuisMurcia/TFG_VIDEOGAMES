@@ -174,7 +174,14 @@ public class Pedestrian : MonoBehaviour
     }
     private void AssignSlot()
     {
-        assignedSlot = tlTrigger.GetSlotForPedestrian(transform.position);
+        assignedSlot = tlTrigger.GetSlotForPedestrian(this);
+        mirrorSlot = assignedSlot.position + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
+        StartCoroutine(OnSlotAssigned());
+    }
+    public void ReassignSlot(Slot slot)
+    {
+        StopCoroutine(OnSlotAssigned());
+        assignedSlot = slot;
         mirrorSlot = assignedSlot.position + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
         StartCoroutine(OnSlotAssigned());
     }
@@ -182,7 +189,6 @@ public class Pedestrian : MonoBehaviour
     {
         intersectionControllers = _controllers;
     }
-
     private void OnTrafficLightChange(TrafficLightState newColor, bool subscription)
     {
         switch (newColor)
@@ -234,7 +240,8 @@ public class Pedestrian : MonoBehaviour
     }
     private IEnumerator OnSlotAssigned()
     {
-        assignedSlot.isLocked = true;
+        assignedSlot.isReserved = true;
+        assignedSlot.isLocked = false;
         Vector3 alteredPos = new Vector3(
             assignedSlot.position.x + Random.Range(-0.15f, 0.15f),
             assignedSlot.position.y,
@@ -248,6 +255,7 @@ public class Pedestrian : MonoBehaviour
             float distance = Vector3.Distance(transform.position, alteredPos);
             if (distance < 1f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f)
             {
+                assignedSlot.isLocked = true;
                 slotReached = true;
             }
         }
@@ -255,7 +263,9 @@ public class Pedestrian : MonoBehaviour
     }
     private void StartMoving()
     {
+        assignedSlot.isReserved = false;
         assignedSlot.isLocked = false;
+        tlTrigger.RemoveAssignation(this);
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         animator.SetBool("IsMoving", true);

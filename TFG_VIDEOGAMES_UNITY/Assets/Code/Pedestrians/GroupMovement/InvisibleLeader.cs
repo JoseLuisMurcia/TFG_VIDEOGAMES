@@ -11,7 +11,6 @@ public class InvisibleLeader : MonoBehaviour
     private NavMeshAgent agent;
 
     private Vector3 destination = Vector3.zero;
-    float checkUpdateTime = 1.5f;
 
     [Header("Crossing")]
     public bool isCrossing = false;
@@ -143,7 +142,7 @@ public class InvisibleLeader : MonoBehaviour
     private void AssignSlots()
     {
         // Detenerse
-        assignedSlots = tlTrigger.GetSlotsForGroup(transform.position, groupMovement.groupSize);
+        assignedSlots = tlTrigger.GetSlotsForGroup(this, groupMovement.groupSize - 1);
         mirrorSlot = groupMovement.GetAveragePositionFromSlots(assignedSlots) + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
         assignedSlots.ForEach(slot => slot.isLocked = true);
         OnSlotsAssigned();
@@ -230,7 +229,7 @@ public class InvisibleLeader : MonoBehaviour
 
     private void StartMoving()
     {
-        assignedSlots.ForEach(assignedSlot => assignedSlot.isLocked = false);
+        assignedSlots.ForEach(slot => slot.isLocked = false);
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         assignedSlots = null;
