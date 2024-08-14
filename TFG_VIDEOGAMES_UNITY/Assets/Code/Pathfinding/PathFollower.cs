@@ -15,6 +15,7 @@ public class PathFollower : MonoBehaviour
     [HideInInspector] public int pathIndex = 0;
     public Path path = null;
     [SerializeField] public float speedPercent = 0f;
+    private float previousSpeedPercent = 0f;
     public float movementSpeed = 0f;
 
     // Stop at traffic light variables
@@ -49,8 +50,8 @@ public class PathFollower : MonoBehaviour
     // Pedestrian variables
     [Header("Pedestrian")]
     public bool shouldStopPedestrian = false;
-    float pCarStartBreakingDistance = 4f;
-    float pCarStopDistance = 2f;
+    float pCarStartBreakingDistance = 4.5f;
+    float pCarStopDistance = 3f;
     public Vector3 pedestrianStopPos;
 
     [Header("Others")]
@@ -63,8 +64,6 @@ public class PathFollower : MonoBehaviour
     public bool reactionDelay = false;
     public bool adjustingDistance = false;
     public bool cooldown = false;
-    public float distanceToTarget = -1f;
-    float originalBreakingDistance;
 
     [Header("Overtake")]
     public bool roadValidForOvertaking;
@@ -160,7 +159,6 @@ public class PathFollower : MonoBehaviour
                 break;
         }
 
-        originalBreakingDistance = carStartBreakingDistance;
     }
     void Start()
     {
@@ -410,7 +408,6 @@ public class PathFollower : MonoBehaviour
     {
         pathIndex = 0;
         transform.LookAt(path.lookPoints[0]);
-        float previousSpeedPercent = 0f;
         // Check all the time if the unity has passed the boundaries
 
         while (true)
@@ -447,16 +444,17 @@ public class PathFollower : MonoBehaviour
             else
             {
                 speedPercent = Mathf.Min(1f, speedPercent + accelerationRate * Time.deltaTime);
-                speedPercent = Mathf.Clamp01(speedPercent);
             }
             if (speedPercent > 0.003f) isFullyStopped = false;
 
-            if(speedPercent - previousSpeedPercent > 0.1f)
+            if (speedPercent - previousSpeedPercent > 0.1f)
             {
                 speedPercent = previousSpeedPercent += 0.001f;
                 speedPercent = Mathf.Clamp01(speedPercent);
             }
+            
             previousSpeedPercent = speedPercent;
+            
             Quaternion targetRotation = Quaternion.LookRotation(path.lookPoints[pathIndex] - transform.position);
             if (speedPercent > 0.03f) transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * turnSpeed);
             transform.Translate(Vector3.forward * speed * Time.deltaTime * speedPercent, Space.Self);
@@ -518,7 +516,6 @@ public class PathFollower : MonoBehaviour
         //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
         //    _speedPercent = speedPercent += 0.005f;
 
-        distanceToTarget = distance;
         float brakingDistance = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
         float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
         if (_speedPercent < 0.03f)
@@ -555,7 +552,6 @@ public class PathFollower : MonoBehaviour
             return speedPercent;
 
         float distance = Vector3.Distance(transform.position, carTarget.position);
-        distanceToTarget = distance;
         float brakingDistance = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
         float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
 

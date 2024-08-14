@@ -35,6 +35,7 @@ public class PedestrianCrossingSignal : MonoBehaviour
         // Create the object
         GameObject newGameObject = new GameObject("Pedestrian Trigger");
         newGameObject.transform.position = boxPos;
+        newGameObject.transform.parent = gameObject.transform;
         // Create the boxCollider
         BoxCollider box = newGameObject.AddComponent<BoxCollider>();
         box.isTrigger = true;

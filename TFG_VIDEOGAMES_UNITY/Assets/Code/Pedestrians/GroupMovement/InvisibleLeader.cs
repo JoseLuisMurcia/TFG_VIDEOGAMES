@@ -229,7 +229,7 @@ public class InvisibleLeader : MonoBehaviour
 
     private void StartMoving()
     {
-        assignedSlots.ForEach(slot => slot.isLocked = false);
+        assignedSlots.ForEach(slot => { slot.isLocked = false; slot.isReserved = false; });
         isStoppedAtTrafficLight = false;
         agent.isStopped = false;
         assignedSlots = null;
@@ -274,7 +274,7 @@ public class InvisibleLeader : MonoBehaviour
             Gizmos.DrawCube(mirrorSlot, new Vector3(.1f, .1f, .1f));
         }
     }
-    public void OnEnterPedestrianCrossing(Vector3 crossingCentre)
+    public void OnEnterPedestrianCrossing()
     {
         isCrossing = true;
     }
@@ -282,6 +282,5 @@ public class InvisibleLeader : MonoBehaviour
     public void OnExitPedestrianCrossing()
     {
         isCrossing = false;
-        //crossingPos = Vector3.zero;
     }
 }

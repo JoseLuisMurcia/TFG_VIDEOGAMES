@@ -6,9 +6,9 @@ using UnityEngine.AI;
 
 public class PedestrianGroupMovement : MonoBehaviour
 {
-    [SerializeField] List<Pedestrian> pedestrianPrefabs;
-    [SerializeField] GameObject target;
-    [SerializeField] public int groupSize;
+    private List<Pedestrian> pedestrianPrefabs;
+    [SerializeField] Transform target;
+    public int groupSize;
     float horizontalSpacing = .50f;
     float closeHorizontalSpacing = .35f;
     float verticalSpacing = .4f;
@@ -34,18 +34,22 @@ public class PedestrianGroupMovement : MonoBehaviour
         leader.SetGroupMovement(this);
         leader.transform.LookAt(target.transform.position);
 
+        pedestrianPrefabs = new List<Pedestrian>(PedestrianSpawner.Instance.pedestrianPrefabs);
         // Spawn pedestrians according to the leader
+        int i = 0;
         var positions = GetPositions();
-        for (int i = 0; i < groupSize; i++)
+        while (i < groupSize)
         {
             int pIndex = Random.Range(0, pedestrianPrefabs.Count);
             Pedestrian pedestrian = Instantiate(pedestrianPrefabs[pIndex], positions[i], Quaternion.identity, transform);
             pedestrian.transform.LookAt(target.transform.position);
             pedestrians.Add(pedestrian);
-            pedestrianPrefabs.RemoveAt(pIndex);
             pedestrian.isIndependent = false;
             pedestriansAgents.Add(pedestrian.GetComponent<NavMeshAgent>());
+            pedestrianPrefabs.RemoveAt(pIndex);
+            i++;
         }
+
     }
     public void SetFormation(Formation _formation)
     {
@@ -140,8 +144,11 @@ public class PedestrianGroupMovement : MonoBehaviour
         var positions = GetPositions();
         for (int i = 0; i < positions.Count; i++)
         {
+            var agent = pedestriansAgents[i];
+            Debug.Log("Destination: " + agent.destination + ", new Destination: " + positions[i] + ", remainingDistance: " + agent.remainingDistance);
             Vector3 targetPosition = positions[i];
             pedestriansAgents[i].SetDestination(targetPosition);
+            //pedestrians[i].SetTarget(targetPosition);
             distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
         }
     }
@@ -162,6 +169,7 @@ public class PedestrianGroupMovement : MonoBehaviour
         for (int i = 0; i < waitingPositions.Count; i++)
         {
             pedestriansAgents[i].SetDestination(waitingPositions[i]);
+            //pedestrians[i].SetTarget(waitingPositions[i]);
         }
         while (reachingSlots)
         {
@@ -213,7 +221,10 @@ public class PedestrianGroupMovement : MonoBehaviour
             }
         }
     }
-
+    public void SetTarget(Transform _target)
+    {
+        target = _target;
+    }
     public enum Formation
     {
         Abreast,

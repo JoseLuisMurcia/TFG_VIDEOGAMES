@@ -9,13 +9,13 @@ public class PedestrianCrossingTrigger : MonoBehaviour
         Pedestrian pedestrian = other.gameObject.GetComponent<Pedestrian>();
         InvisibleLeader leader = other.gameObject.GetComponent<InvisibleLeader>();
 
-        if (pedestrian != null && pedestrian.isIndependent)
+        if (pedestrian != null)
         {
-            pedestrian.OnEnterPedestrianCrossing(transform.position);
+            pedestrian.OnEnterPedestrianCrossing();
         }
         else if (leader != null)
         {
-            leader.OnEnterPedestrianCrossing(transform.position);
+            leader.OnEnterPedestrianCrossing();
         }
     }
 
@@ -24,7 +24,7 @@ public class PedestrianCrossingTrigger : MonoBehaviour
         Pedestrian pedestrian = other.gameObject.GetComponent<Pedestrian>();
         InvisibleLeader leader = other.gameObject.GetComponent<InvisibleLeader>();
 
-        if (pedestrian != null && pedestrian.isIndependent)
+        if (pedestrian != null)
         {     
             pedestrian.OnExitPedestrianCrossing();
         }

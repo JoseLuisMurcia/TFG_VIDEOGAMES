@@ -1,16 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class PedestrianSpawner : MonoBehaviour
 {
-    List<Transform> houses = new List<Transform>();
-    public static PedestrianSpawner instance;
-    [SerializeField] Pedestrian[] pedestrianPrefabs;
+    private List<Transform> houses = new List<Transform>();
+    [SerializeField] public List<Pedestrian> pedestrianPrefabs;
+    [SerializeField] private PedestrianGroupMovement groupMovementPrefab;
+    public static PedestrianSpawner Instance;
+    private void Awake()
+    {
+        Instance = this;
+    }
     void Start()
     {
-        instance = this;
-        foreach (Transform child in transform)
+        var housesAssets = GameObject.FindGameObjectWithTag("Houses");
+        foreach (Transform child in housesAssets.transform)
         {
             if (child.gameObject.activeSelf)
             {
@@ -38,56 +44,49 @@ public class PedestrianSpawner : MonoBehaviour
         } while (!destFound);
         return new int[] {srcHouseId, dstHouseId };
     }
-    public void Spawn()
+    public void Spawn1Pedestrian()
     {
-        int[] housesIds = GetSourceAndDestHouse();
-        Vector3 spawnPosition = houses[housesIds[0]].position - houses[housesIds[0]].forward * 3f;
-        //Debug.DrawLine(spawnPosition + Vector3.up * 5, spawnPosition - Vector3.up * 5, Color.red, 60f);
-        int randomInt = Random.Range(0, pedestrianPrefabs.Length);
-        Pedestrian pedestrian = Instantiate(pedestrianPrefabs[randomInt], spawnPosition, houses[housesIds[0]].rotation);
-        pedestrian.SetTarget(houses[housesIds[1]]);
-        var dest = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        dest.transform.position = houses[housesIds[1]].position + Vector3.up * 5f;
-        dest.transform.localScale = Vector3.one * 5f;
+       SpawnPedestrian();
     }
-
-    public void SpawnFivePedestrians()
+    public void Spawn5Pedestrians()
     {
         for (int i = 0; i < 5; i++)
-            Spawn();
+            SpawnPedestrian();
     }
 
     public void Spawn50Pedestrians()
     {
         for (int i = 0; i < 50; i++)
-            Spawn();
+            SpawnPedestrian();
     }
-
-
-    public void Spawn3Formation()
+    private void SpawnPedestrian()
     {
-        FormationManager formationManager = new FormationManager();
-        List<Pedestrian> pedestrians= new List<Pedestrian>();
         int[] housesIds = GetSourceAndDestHouse();
         Vector3 spawnPosition = houses[housesIds[0]].position - houses[housesIds[0]].forward * 3f;
-        List<int> pedestrianIds = GenerateFormation(3);
-        foreach (int id in pedestrianIds)
-            pedestrians.Add(Instantiate(pedestrianPrefabs[id], spawnPosition, houses[housesIds[0]].rotation));
-
+        //Debug.DrawLine(spawnPosition + Vector3.up * 5, spawnPosition - Vector3.up * 5, Color.red, 60f);
+        int randomInt = Random.Range(0, pedestrianPrefabs.Count);
+        Pedestrian pedestrian = Instantiate(pedestrianPrefabs[randomInt], spawnPosition, houses[housesIds[0]].rotation);
+         pedestrian.SetTarget(houses[housesIds[1]]);
+        var dest = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        dest.transform.position = houses[housesIds[1]].position + Vector3.up * 5f;
+        dest.transform.localScale = Vector3.one * 5f;
     }
 
-    private List<int> GenerateFormation(int n)
+    private void SpawnFormation(int groupSize)
     {
-        HashSet<int> candidates = new HashSet<int>();
-        System.Random r = new System.Random();
-        while (candidates.Count < pedestrianPrefabs.Length)
-        {
-            candidates.Add(r.Next(0, pedestrianPrefabs.Length - 1));
-        }
-
-        List<int> result = new List<int>();
-        result.AddRange(candidates);
-        return result;
+        int[] housesIds = GetSourceAndDestHouse();
+        Vector3 spawnPosition = houses[housesIds[0]].position - houses[housesIds[0]].forward * 4f;
+        PedestrianGroupMovement groupMovement = Instantiate(groupMovementPrefab, spawnPosition, houses[housesIds[0]].rotation);
+        groupMovement.groupSize = groupSize;
+        groupMovement.SetTarget(houses[housesIds[1]]);
+    }
+    public void Spawn2Formation()
+    {
+        SpawnFormation(2);
+    }
+    public void Spawn3Formation()
+    {
+        SpawnFormation(3);
     }
 
 }

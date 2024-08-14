@@ -34,14 +34,15 @@ public class Signal : MonoBehaviour
         // Create one box in the middle of the road
         Vector3 boxPos = road.transform.position;        
         // Create the object
-        GameObject newGameObject = new GameObject("Middle Signal Priority Trigger");
-        newGameObject.transform.position = boxPos;
+        GameObject middleTrigger = new GameObject("Middle Signal Priority Trigger");
+        middleTrigger.transform.position = boxPos;
+        middleTrigger.transform.parent = gameObject.transform;
         // Create the boxCollider
-        BoxCollider box = newGameObject.AddComponent<BoxCollider>();
+        BoxCollider box = middleTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
         box.size = new Vector3(4f, 2f, 4f);
 
-        SignalTrigger trigger = newGameObject.AddComponent<SignalTrigger>();
+        SignalTrigger trigger = middleTrigger.AddComponent<SignalTrigger>();
         trigger.signal = this;
 
         // Create another box at the beggining of the road
@@ -49,6 +50,7 @@ public class Signal : MonoBehaviour
         // Create the object
         GameObject startTrigger = new GameObject("Start Signal Priority Trigger");
         startTrigger.transform.position = startBoxPos;
+        startTrigger.transform.parent = gameObject.transform;
         // Create the boxCollider
         BoxCollider startBox = startTrigger.AddComponent<BoxCollider>();
         startBox.isTrigger = true;

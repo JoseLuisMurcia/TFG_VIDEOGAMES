@@ -48,7 +48,7 @@ public class InvisiblePedestrian : MonoBehaviour
         {
             yield return new WaitForSeconds(checkUpdateTime);
             float distance = Vector3.Distance(transform.position, destination);
-            if (distance < 1.5f)
+            if (distance < 2.8f)
             {
                 if (pedestrian)
                 {
@@ -73,6 +73,5 @@ public class InvisiblePedestrian : MonoBehaviour
                 controllers.Add(trigger.GetIntersectionController());
             }
         }
-
     }
 }

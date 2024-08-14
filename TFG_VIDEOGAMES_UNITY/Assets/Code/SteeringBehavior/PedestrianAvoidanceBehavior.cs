@@ -8,10 +8,11 @@ public class PedestrianAvoidanceBehavior
     private Transform transform;
     private bool visualDebug;
     Vector3 rayOrigin;
-    private List<Pedestrian> relevantPedestrians = new List<Pedestrian>();
+    private List<Pedestrian> crossingPedestrians = new List<Pedestrian>();
     private List<Pedestrian> notCrossingPedestrians = new List<Pedestrian>();
     private bool shouldStopCrossingPedestrians = false;
     private bool shouldStopNotCrossingPedestrians = false;
+    private Vector3 crossingPos = Vector3.zero;
 
     public PedestrianAvoidanceBehavior(PathFollower _pathFollower)
     {
@@ -20,7 +21,7 @@ public class PedestrianAvoidanceBehavior
 
     public void ResetStructures()
     {
-        relevantPedestrians.Clear();
+        crossingPedestrians.Clear();
         notCrossingPedestrians.Clear();
     }
     // Update is called once per frame
@@ -31,14 +32,16 @@ public class PedestrianAvoidanceBehavior
         transform = _transform;
         rayOrigin = _rayOrigin;
 
-        if(relevantPedestrians.Count > 0) ProcessRelevantPedestrians();
+        if(crossingPedestrians.Count > 0) ProcessCrossingPedestrians();
         if(notCrossingPedestrians.Count > 0) ProcessNotCrossingPedestrians();
 
-        if(shouldStopCrossingPedestrians || shouldStopNotCrossingPedestrians)
+        Debug.Log("shouldStopCrossingPedestrians: " + shouldStopCrossingPedestrians + ". shouldStopNotCrossingPedestrians: " + shouldStopNotCrossingPedestrians);
+
+        if (shouldStopCrossingPedestrians || shouldStopNotCrossingPedestrians)
         {
             // STOP THE CAR
             pathFollower.shouldStopPedestrian = true;
-            pathFollower.pedestrianStopPos = relevantPedestrians.Count > 0 ? relevantPedestrians[0].crossingPos : notCrossingPedestrians[0].crossingPos;
+            pathFollower.pedestrianStopPos = crossingPos;
         }
         else
         {
@@ -49,63 +52,65 @@ public class PedestrianAvoidanceBehavior
     public void ProcessPedestrianHit(Ray ray, RaycastHit hit, Transform sensor)
     {
         Pedestrian pedestrian = hit.transform.gameObject.GetComponent<Pedestrian>();
-        if (pedestrian == null)
+        if (pedestrian == null) // || Pedestrian no va a meterse realmente) 
             return;
 
-        if (pedestrian.isCrossing && !relevantPedestrians.Contains(pedestrian))
+        if (pedestrian.isCrossing && !crossingPedestrians.Contains(pedestrian))
         {
-            relevantPedestrians.Add(pedestrian);
+            crossingPedestrians.Add(pedestrian);
         }
         if (!pedestrian.isCrossing && !notCrossingPedestrians.Contains(pedestrian))
         {
             notCrossingPedestrians.Add(pedestrian);
         }
     }
-    void ProcessRelevantPedestrians()
+    void ProcessCrossingPedestrians()
     {
         List<Pedestrian> pedestriansToRemove = new List<Pedestrian>();
-        foreach(Pedestrian pedestrian in relevantPedestrians)
+        foreach(Pedestrian pedestrian in crossingPedestrians)
         {
-            if (!AngleRelevant(pedestrian) || !pedestrian.isCrossing)
+            float carDistToPed = Vector3.Distance(transform.position, pedestrian.transform.position);
+            float pedDistToCross = Vector3.Distance(pedestrian.transform.position, crossingPos);
+            float carDistToCross = Vector3.Distance(transform.position, crossingPos);
+
+            //Debug.Log("pedDistToCross: " + pedDistToCross + ", carDistToCross: " + carDistToCross + ", carDistToPed: " + carDistToPed);
+            if (!AngleRelevant(pedestrian, false) || 
+                (carDistToCross < 2.5f && carDistToPed > 3f && pathFollower.speedPercent > 0.65f) 
+                || !pedestrian.isCrossing)
+            {
                 pedestriansToRemove.Add(pedestrian);
+            }
         }
 
         foreach (Pedestrian pedestrian in pedestriansToRemove)
-            relevantPedestrians.Remove(pedestrian);
+            crossingPedestrians.Remove(pedestrian);
 
-        if (relevantPedestrians.Count > 0)
-        {
-            shouldStopCrossingPedestrians = true;
-        }
-        else
-        {
-            shouldStopCrossingPedestrians = false;
-        }
+        shouldStopCrossingPedestrians = crossingPedestrians.Count > 0 ? true : false;
     }
     void ProcessNotCrossingPedestrians()
     {
         List<Pedestrian> pedestriansToRemove = new List<Pedestrian>();
         foreach (Pedestrian pedestrian in notCrossingPedestrians)
         {
-            float distance = Vector3.Distance(transform.position, pedestrian.transform.position);
-            Debug.Log("distance: " + distance + ", speed: " + pathFollower.movementSpeed);
-            if (distance > 2f || pedestrian.isCrossing)
+            float carDistToPed = Vector3.Distance(transform.position, pedestrian.transform.position);
+            float pedDistToCross = Vector3.Distance(pedestrian.transform.position, crossingPos);
+            float carDistToCross = Vector3.Distance(transform.position, crossingPos);
+
+            //Debug.Log("pedDistToCross: " + pedDistToCross + ", carDistToCross: " + carDistToCross + ", carDistToPed: " + carDistToPed);
+            if (!(AngleRelevant(pedestrian, true) && pedDistToCross <= 3.5f) ||
+                (carDistToCross < 3.5f && carDistToPed > 4f && pathFollower.speedPercent > 0.6f)
+                || pedestrian.isCrossing || pedestrian.hasCrossed)
+            {
                 pedestriansToRemove.Add(pedestrian);
+            }
         }
 
         foreach (Pedestrian pedestrian in pedestriansToRemove)
             notCrossingPedestrians.Remove(pedestrian);
 
-        if (notCrossingPedestrians.Count > 0)
-        {
-            shouldStopNotCrossingPedestrians = true;
-        }
-        else
-        {
-            shouldStopNotCrossingPedestrians = false;
-        }
+        shouldStopNotCrossingPedestrians = notCrossingPedestrians.Count > 0 ? true : false;
     }
-    private bool AngleRelevant(Pedestrian pedestrian)
+    private bool AngleRelevant(Pedestrian pedestrian, bool softThreshold)
     {
         // If true, the car should stop
         Vector3 dirToPedestrian = (pedestrian.transform.position - transform.position).normalized;
@@ -113,14 +118,15 @@ public class PedestrianAvoidanceBehavior
 
         float angleToPedestrian = Vector3.SignedAngle(carForward, dirToPedestrian, Vector3.up);
         Vector3 pedestrianForward = pedestrian.transform.forward;
-        float threshold = .7f;
+        float pedThreshold = softThreshold ? .5f : .65f;
+        float carThreshold = .75f;
         float angleThreshold = 20f;
 
-        if (carForward.x > threshold) // Car is going right
+        if (carForward.x > carThreshold) // Car is going right
         {
             if(angleToPedestrian > 0) // Pedestrian to the right
             {
-                if(pedestrianForward.z > threshold) // Pedestrian is looking left enough
+                if(pedestrianForward.z > pedThreshold) // Pedestrian is looking left enough
                 {
                     return true;
                 }
@@ -128,18 +134,18 @@ public class PedestrianAvoidanceBehavior
             }
             else // Pedestrian to the left
             {
-                if (pedestrianForward.z < - threshold) // Pedestrian is looking right enough
+                if (pedestrianForward.z < -pedThreshold) // Pedestrian is looking right enough
                 {
                     return true;
                 }
                 return Mathf.Abs(angleToPedestrian) < angleThreshold;
             }
         }
-        else if(carForward.x < -threshold) // Car is going left
+        else if(carForward.x < -carThreshold) // Car is going left
         {
             if (angleToPedestrian > 0) // Pedestrian to the right
             {
-                if (pedestrianForward.z < - threshold) // Pedestrian is looking left enough
+                if (pedestrianForward.z < -pedThreshold) // Pedestrian is looking left enough
                 {
                     return true;
                 }
@@ -147,18 +153,18 @@ public class PedestrianAvoidanceBehavior
             }
             else // Pedestrian to the left
             {
-                if (pedestrianForward.z > threshold) // Pedestrian is looking right enough
+                if (pedestrianForward.z > pedThreshold) // Pedestrian is looking right enough
                 {
                     return true;
                 }
                 return Mathf.Abs(angleToPedestrian) < angleThreshold;
             }
         }
-        else if (carForward.z > threshold) // Car is going up
+        else if (carForward.z > carThreshold) // Car is going up
         {
             if (angleToPedestrian > 0) // Pedestrian to the right
             {
-                if (pedestrianForward.x < - threshold)
+                if (pedestrianForward.x < -pedThreshold)
                 {
                     return true;
                 }
@@ -166,18 +172,18 @@ public class PedestrianAvoidanceBehavior
             }
             else // Pedestrian to the left
             {
-                if (pedestrianForward.x < threshold)
+                if (pedestrianForward.x > pedThreshold)
                 {
                     return true;
                 }
                 return Mathf.Abs(angleToPedestrian) < angleThreshold;
             }
         }
-        else if (carForward.z < -threshold) // Car is going down
+        else if (carForward.z < -carThreshold) // Car is going down
         {
             if (angleToPedestrian > 0) // Pedestrian to the right
             {
-                if (pedestrianForward.x > threshold)
+                if (pedestrianForward.x > pedThreshold)
                 {
                     return true;
                 }
@@ -185,7 +191,7 @@ public class PedestrianAvoidanceBehavior
             }
             else // Pedestrian to the left
             {
-                if (pedestrianForward.x < - threshold)
+                if (pedestrianForward.x < -pedThreshold)
                 {
                     return true;
                 }
@@ -194,5 +200,9 @@ public class PedestrianAvoidanceBehavior
         }
 
         return false;
+    }
+    public void SetCrossingPos(Vector3 _crossingPos)
+    {
+        crossingPos = _crossingPos;
     }
 }

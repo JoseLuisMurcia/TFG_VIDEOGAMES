@@ -21,6 +21,7 @@ public class WhiskersManager : MonoBehaviour
 
     [SerializeField] bool visualDebug = false;
     public bool intersectionInSight = false;
+    [Header("Pedestrian")]
     public bool pedestrianCrossingInSight = false;
 
     [Header("Overtake")]
@@ -67,8 +68,8 @@ public class WhiskersManager : MonoBehaviour
     }
     void CreateIncorporationWhiskers()
     {
-        List<float> angles = new List<float>() { -85f, -70f, -55f, -40f, -25f, -10f, -6f, -3f, 0f,
-            3f, 6f, 10f, 25f, 40f, 55f, 70f, 85f};
+        List<float> angles = new List<float>() { -85f, -70f, -60f, -50f, -45f, -40f, -35f, -30f, -25f, -20f, -10f, -6f, -3f, 0f,
+            3f, 6f, 10f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 60f, 70f, 85f};
         Transform whiskersParent = transform.Find("Whiskers");
         for (int i = 0; i < angles.Count; i++)
         {
@@ -346,6 +347,11 @@ public class WhiskersManager : MonoBehaviour
         }
 
         
+    }
+
+    public void SetCrossingPos(Vector3 crossingPos)
+    {
+        pedestrianBehavior.SetCrossingPos(crossingPos);
     }
 
 }

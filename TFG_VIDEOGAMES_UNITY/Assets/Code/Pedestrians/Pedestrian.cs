@@ -16,8 +16,8 @@ public class Pedestrian : MonoBehaviour
 
     [Header("Crossing")]
     public bool isCrossing = false;
+    public bool hasCrossed = false;
     public bool isStoppedAtTrafficLight = false;
-    public Vector3 crossingPos = Vector3.zero;
     private InvisiblePedestrian invisiblePedestrian = null;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
     private Quaternion crossingRotation = Quaternion.identity;
@@ -55,6 +55,7 @@ public class Pedestrian : MonoBehaviour
     {
         if (!isStoppedAtTrafficLight)
         {
+            float distance = Vector3.Distance(target.position, transform.position);
             if (agent.remainingDistance > agent.stoppingDistance)
             {
                 animator.SetBool("IsMoving", true);
@@ -320,14 +321,15 @@ public class Pedestrian : MonoBehaviour
         }
     }
 
-    public void OnEnterPedestrianCrossing(Vector3 crossingCentre)
+    public void OnEnterPedestrianCrossing()
     {
         isCrossing = true;
+        hasCrossed = false;
     }
 
     public void OnExitPedestrianCrossing()
     {
+        if(isCrossing) { hasCrossed = true; }
         isCrossing = false;
-        crossingPos = Vector3.zero;
     }
 }

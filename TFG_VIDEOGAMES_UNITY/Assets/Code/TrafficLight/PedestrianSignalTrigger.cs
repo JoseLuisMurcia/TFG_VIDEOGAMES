@@ -5,7 +5,12 @@ using UnityEngine;
 public class PedestrianSignalTrigger : MonoBehaviour
 {
     public PedestrianCrossingSignal signal;
+    private Vector3 crossingPos = Vector3.zero;
 
+    public void Start()
+    {
+        crossingPos = signal.transform.parent.position;
+    }
     private void OnTriggerEnter(Collider other)
     {
         WhiskersManager carManager = other.GetComponent<WhiskersManager>();
@@ -20,7 +25,8 @@ public class PedestrianSignalTrigger : MonoBehaviour
             if (angleFromCarToSignal < 45f)
             {
                 // Tell the priorityBehavior what it needs
-                carManager.pedestrianCrossingInSight = true; ;
+                carManager.pedestrianCrossingInSight = true;
+                carManager.SetCrossingPos(crossingPos);
             }
         }
     }
