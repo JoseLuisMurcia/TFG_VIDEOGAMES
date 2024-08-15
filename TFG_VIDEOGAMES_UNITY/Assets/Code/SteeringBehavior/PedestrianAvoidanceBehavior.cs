@@ -35,7 +35,7 @@ public class PedestrianAvoidanceBehavior
         if(crossingPedestrians.Count > 0) ProcessCrossingPedestrians();
         if(notCrossingPedestrians.Count > 0) ProcessNotCrossingPedestrians();
 
-        Debug.Log("shouldStopCrossingPedestrians: " + shouldStopCrossingPedestrians + ". shouldStopNotCrossingPedestrians: " + shouldStopNotCrossingPedestrians);
+        //Debug.Log("shouldStopCrossingPedestrians: " + shouldStopCrossingPedestrians + ". shouldStopNotCrossingPedestrians: " + shouldStopNotCrossingPedestrians);
 
         if (shouldStopCrossingPedestrians || shouldStopNotCrossingPedestrians)
         {

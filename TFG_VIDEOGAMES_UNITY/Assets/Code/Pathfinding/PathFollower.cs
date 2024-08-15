@@ -429,18 +429,18 @@ public class PathFollower : MonoBehaviour
             {
                 speedPercent = SlowSpeedPedestrian();
             }
-            else if (shouldStopPriority)
+            else if (shouldStopAtTrafficLight && !TargetIsStoppingBeforeTL())
+            {
+                speedPercent = SlowSpeedAtTrafficLight();
+            }
+            else if (shouldStopPriority && !TargetIsStoppingBeforePriority())
             {
                 speedPercent = SlowSpeedPriority();
             }
             else if (shouldBrakeBeforeCar)
             {
                 speedPercent = SlowSpeedBeforeCar();
-            }
-            else if (shouldStopAtTrafficLight)
-            {
-                speedPercent = SlowSpeedAtTrafficLight();
-            }
+            } 
             else
             {
                 speedPercent = Mathf.Min(1f, speedPercent + accelerationRate * Time.deltaTime);
@@ -512,9 +512,6 @@ public class PathFollower : MonoBehaviour
     float SlowSpeedPedestrian()
     {
         float distance = Vector3.Distance(transform.position, pedestrianStopPos);
-        //float _speedPercent = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
-        //if (_speedPercent - speedPercent > 0.1f && _speedPercent > 0.5f)
-        //    _speedPercent = speedPercent += 0.005f;
 
         float brakingDistance = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
         float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
@@ -571,14 +568,14 @@ public class PathFollower : MonoBehaviour
         //    StartCoroutine(AdjustDistance());
         //}
 
-        //if (isFullyStopped && _speedPercent > 0.01f) // The car is fully stopped and the car in front is resuming the car
-        //{
-        //    if (!reactingToCarInFront)
-        //    {
-        //        StartCoroutine(ResumeTheCar());
-        //    }
-        //    return 0f;
-        //}
+        if (isFullyStopped && _speedPercent > 0.01f) // The car is fully stopped and the car in front is resuming the car
+        {
+            if (!reactingToCarInFront)
+            {
+                StartCoroutine(ResumeTheCar());
+            }
+            return 0f;
+        }
 
         if (_speedPercent < 0.05f && !reactingToCarInFront) // Set the car to fully stopped
         {
@@ -686,6 +683,18 @@ public class PathFollower : MonoBehaviour
     public bool TargetIsStoppingBeforePedestrians()
     {
         if (carTarget == null || !targetPathFollower.shouldStopPedestrian) return false;
+
+        return true;
+    }
+    private bool TargetIsStoppingBeforeTL()
+    {
+        if (carTarget == null || !targetPathFollower.shouldStopAtTrafficLight) return false;
+
+        return true;
+    }
+    private bool TargetIsStoppingBeforePriority()
+    {
+        if (carTarget == null || !targetPathFollower.shouldStopPriority) return false;
 
         return true;
     }

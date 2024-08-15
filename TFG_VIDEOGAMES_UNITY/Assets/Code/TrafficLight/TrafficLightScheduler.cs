@@ -57,7 +57,7 @@ public class TrafficLightScheduler : MonoBehaviour
             waitingQueue.Enqueue(pedestrianTrafficLights.First());
             currentState = TrafficLightState.Cars;
             currentTrafficLight = waitingQueue.Dequeue();
-            SetNewColorCars(TrafficLightState.Green);
+            SetNewColorCars(TrafficLightState.Green, greenTime);
             StartCoroutine(HandleTwoTurnTrafficLights());
         }
         else if (trafficLights.Count > 0)
@@ -70,7 +70,7 @@ public class TrafficLightScheduler : MonoBehaviour
 
             currentState = TrafficLightState.Red;
             currentTrafficLight = waitingQueue.Dequeue();
-            SetNewColor(currentState);
+            SetNewColor(currentState, redTime);
             StartCoroutine(HandleTrafficLights());
         }
     }
@@ -84,13 +84,13 @@ public class TrafficLightScheduler : MonoBehaviour
                 case TrafficLightState.Green:
                     yield return new WaitForSeconds(greenTime);
                     currentState = TrafficLightState.Amber;
-                    SetNewColor(currentState);
+                    SetNewColor(currentState, amberTime);
                     break;
 
                 case TrafficLightState.Amber:
                     yield return new WaitForSeconds(amberTime);
                     // Se pone en rojo el que se tiene que poner
-                    SetNewColor(TrafficLightState.Red);
+                    SetNewColor(TrafficLightState.Red, redTime);
                     // Ponemos en verde el nuevo semaforo o damos paso a peatones
                     waitingQueue.Enqueue(currentTrafficLight);
                     currentTrafficLight = waitingQueue.Dequeue();
@@ -105,14 +105,14 @@ public class TrafficLightScheduler : MonoBehaviour
                     else
                     {
                         currentState = TrafficLightState.Green;
-                        SetNewColor(TrafficLightState.Green);
+                        SetNewColor(TrafficLightState.Green, greenTime);
                     }
                     break; 
 
                 case TrafficLightState.Red:
                     yield return new WaitForSeconds(redTime);
                     currentState = TrafficLightState.Green;
-                    SetNewColor(currentState);
+                    SetNewColor(currentState, greenTime);
                     break;
 
                 case TrafficLightState.Pedestrian:
@@ -152,7 +152,7 @@ public class TrafficLightScheduler : MonoBehaviour
                     currentTrafficLight = waitingQueue.Dequeue();
                     yield return new WaitForSeconds(2f);
                     currentState = TrafficLightState.Green;
-                    SetNewColor(TrafficLightState.Green);
+                    SetNewColor(TrafficLightState.Green, greenTime);
                     break;
                 case TrafficLightState.PedestrianRush:
 
@@ -171,13 +171,13 @@ public class TrafficLightScheduler : MonoBehaviour
                 case TrafficLightState.Cars:
                     yield return new WaitForSeconds(greenTime);
                     currentState = TrafficLightState.Amber;
-                    SetNewColorCars(currentState);
+                    SetNewColorCars(currentState, amberTime);
                     break;
 
                 case TrafficLightState.Amber:
                     yield return new WaitForSeconds(amberTime);
                     // Se pone en rojo el que se tiene que poner
-                    SetNewColorCars(TrafficLightState.Red);
+                    SetNewColorCars(TrafficLightState.Red, redToGreenTime);
                     // Ponemos en verde el nuevo semaforo o damos paso a peatones
                     waitingQueue.Enqueue(currentTrafficLight);
                     currentTrafficLight = waitingQueue.Dequeue();
@@ -225,29 +225,29 @@ public class TrafficLightScheduler : MonoBehaviour
                     currentTrafficLight = waitingQueue.Dequeue();
                     yield return new WaitForSeconds(2f);
                     currentState = TrafficLightState.Cars;
-                    SetNewColorCars(TrafficLightState.Green);
+                    SetNewColorCars(TrafficLightState.Green, greenTime);
                     break;
             }
         }
     }
-    private void SetNewColor(TrafficLightState color)
+    private void SetNewColor(TrafficLightState color, float lightChangeTime)
     {
         CarTrafficLight currentCarTrafficLight = currentTrafficLight as CarTrafficLight;
         currentCarTrafficLight.currentColor = color;
         currentCarTrafficLight.colorChanger.SetColor(color);
-        currentCarTrafficLight.road.trafficLightEvents.LightChange(color, false);
+        currentCarTrafficLight.road.trafficLightEvents.LightChange(color, false, lightChangeTime);
     }
     private void EmitColorEvent(TrafficLightState color)
     {
         pedestrianIntersectionController.ThrowLightChangeEvent(color, false);
     }
-    private void SetNewColorCars(TrafficLightState color)
+    private void SetNewColorCars(TrafficLightState color, float lightChangeTime)
     {
         foreach(var carTrafficLight in trafficLights)
         {
             carTrafficLight.currentColor = color;
             carTrafficLight.colorChanger.SetColor(color);
-            carTrafficLight.road.trafficLightEvents.LightChange(color, false);
+            carTrafficLight.road.trafficLightEvents.LightChange(color, false, lightChangeTime);
         }
     }
 

@@ -16,7 +16,7 @@ public class TrafficLightCarController : MonoBehaviour
         pathFollower = GetComponent<PathFollower>();
     }
 
-    private void OnTrafficLightChange(TrafficLightState newColor, bool subscription)
+    private void OnTrafficLightChange(TrafficLightState newColor, bool subscription, float lightChangeTime)
     {
         if (currentRoad == null)
             return;
@@ -29,21 +29,30 @@ public class TrafficLightCarController : MonoBehaviour
                 break;
             case TrafficLightState.Amber:
                 distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
-                if (distance > distanceToStopInAmberLight)
+                if (ShouldBrake(distance,lightChangeTime))
                 {
                     pathFollower.StopAtTrafficLight(subscription);
                 }
                 break;
             case TrafficLightState.Red:
                 distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
-                if (distance > 1f)
+                bool isClose = distance <= 1f ? true : false;
+                bool isFast = pathFollower.speedPercent > 0.6f ? true : false;
+                if (!(isClose && isFast))
                 {
                     pathFollower.StopAtTrafficLight(subscription);
                 }
                 break;
         }
     }
+    private bool ShouldBrake(float distance, float lightChangeTime)
+    {
+        // Calculate time to reach the traffic light
+        float timeToReach = distance / (pathFollower.speedPercent * pathFollower.speed);
 
+        // Decide based on time to reach and time until the light changes
+        return timeToReach >= lightChangeTime;
+    }
     public float GiveDistanceToPathFollower()
     {
         if (currentRoad == null)
@@ -71,7 +80,7 @@ public class TrafficLightCarController : MonoBehaviour
         trafficLight = _newRoad.trafficLight;
         currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
         // Auto send an event in order to know the state
-        OnTrafficLightChange(currentRoad.trafficLight.currentColor, true);
+        OnTrafficLightChange(currentRoad.trafficLight.currentColor, true, -1f);
     }
 
     public void UnsubscribeToTrafficLight()

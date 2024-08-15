@@ -55,7 +55,8 @@ public class Pedestrian : MonoBehaviour
     {
         if (!isStoppedAtTrafficLight)
         {
-            float distance = Vector3.Distance(target.position, transform.position);
+            // todo
+            //float distance = Vector3.Distance(target.position, transform.position);
             if (agent.remainingDistance > agent.stoppingDistance)
             {
                 animator.SetBool("IsMoving", true);

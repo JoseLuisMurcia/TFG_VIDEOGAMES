@@ -11,7 +11,10 @@ public class PedestrianSpawner : MonoBehaviour
     public static PedestrianSpawner Instance;
     private void Awake()
     {
-        Instance = this;
+        if(Instance == null)
+        {
+            Instance = this;
+        }
     }
     void Start()
     {

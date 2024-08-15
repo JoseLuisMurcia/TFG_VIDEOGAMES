@@ -1,8 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UIElements;
 
 public class PedestrianGroupMovement : MonoBehaviour
 {
@@ -24,6 +27,7 @@ public class PedestrianGroupMovement : MonoBehaviour
     private bool reachingSlots = false;
     private bool isWaitingInSlot = false;
     private List<Vector3> waitingPositions;
+    [SerializeField] float updatePathRate = .1f;
 
     void Start()
     {
@@ -49,7 +53,7 @@ public class PedestrianGroupMovement : MonoBehaviour
             pedestrianPrefabs.RemoveAt(pIndex);
             i++;
         }
-
+        StartCoroutine(UpdatePositions());
     }
     public void SetFormation(Formation _formation)
     {
@@ -131,25 +135,37 @@ public class PedestrianGroupMovement : MonoBehaviour
     {
 
     }
-    void Update()
+    private IEnumerator UpdatePositions()
     {
-        if (isWaitingInSlot || reachingSlots)
+        //pedestriansAgents[i].SetDestination(target.transform.position);
+        yield return new WaitForSeconds(1.1f);
+        NavMeshPath[] paths = new NavMeshPath[pedestrians.Count];
+        for (int i = 0; i < pedestrians.Count; i++)
         {
-            // Match rotation
-            //leader.MatchTrafficLightStopRotation();
-            return;
+            paths[i] = new NavMeshPath();
         }
-
-        // Move followers to maintain formation
-        var positions = GetPositions();
-        for (int i = 0; i < positions.Count; i++)
+        while (true)
         {
-            var agent = pedestriansAgents[i];
-            Debug.Log("Destination: " + agent.destination + ", new Destination: " + positions[i] + ", remainingDistance: " + agent.remainingDistance);
-            Vector3 targetPosition = positions[i];
-            pedestriansAgents[i].SetDestination(targetPosition);
-            //pedestrians[i].SetTarget(targetPosition);
-            distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
+            if (isWaitingInSlot || reachingSlots)
+            {
+                // Match rotation
+                // leader.MatchTrafficLightStopRotation();
+                yield return null;
+            }
+            // Move followers to maintain formation
+            var positions = GetPositions();
+            for (int i = 0; i < positions.Count; i++)
+            {
+                Vector3 targetPosition = positions[i];
+                if(pedestriansAgents[i].CalculatePath(targetPosition, paths[i]))
+                {
+                    if(pedestriansAgents[i].SetPath(paths[i]))
+                    {
+                        distanceHandler.CheckDistance(pedestriansAgents[i], targetPosition);
+                    }
+                }
+            }
+            yield return new WaitForSeconds(updatePathRate);
         }
     }
     public void SetWaitingSlots(List<Slot> slots, Quaternion _crossingRotation)
