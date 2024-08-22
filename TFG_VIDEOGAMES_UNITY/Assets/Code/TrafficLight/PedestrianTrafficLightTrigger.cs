@@ -9,7 +9,6 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
     private bool debugTiers = false;
     private void Start()
     {
-        if (!gameObject.CompareTag("IntersectionPedestrianTrigger")) return;
         Vector3 bottomLeft = Vector3.zero;
         Vector3 bottomRight = Vector3.zero;
 
@@ -31,7 +30,6 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
     {
         return intersectionController;
     }
-
 
     public void SetIntersectionController(PedestrianIntersectionController _intersectionController)
     {

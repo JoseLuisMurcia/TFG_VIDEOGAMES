@@ -223,10 +223,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1710651425747079595}
   - component: {fileID: 4236124340388684341}
-  - component: {fileID: 3764856002084150214}
+  - component: {fileID: 2803102716658053976}
   m_Layer: 7
-  m_Name: Trigger_D
-  m_TagString: IntersectionPedestrianTrigger
+  m_Name: PedestrianTrigger_D
+  m_TagString: TrafficLightPedestrianTrigger
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -260,7 +260,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 2, y: 0.33, z: 1}
   m_Center: {x: 0, y: 0.2, z: 0}
---- !u!114 &3764856002084150214
+--- !u!114 &2803102716658053976
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2667023412266342375}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91aafa5c365ab444881c0b2581d1350c, type: 3}
+  m_Script: {fileID: 11500000, guid: 407ced1001241374eaeee9efc0eaf4fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2834019286908396290
@@ -342,7 +342,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1851001029308649030}
   - component: {fileID: 3778824059249823341}
-  - component: {fileID: 1938262587976762638}
+  - component: {fileID: 3670840418578762405}
   m_Layer: 0
   m_Name: InvisiblePedestrianTrigger
   m_TagString: InvisiblePedestrianTrigger
@@ -377,7 +377,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 3.8, y: 1, z: 1.5}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1938262587976762638
+--- !u!114 &3670840418578762405
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -386,7 +386,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3774880187335199520}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91aafa5c365ab444881c0b2581d1350c, type: 3}
+  m_Script: {fileID: 11500000, guid: 086ae5c34ace9724180482b670867101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &7410117927578624190
@@ -516,10 +516,10 @@ GameObject:
   m_Component:
   - component: {fileID: 6997996692020011142}
   - component: {fileID: 1172994504637716399}
-  - component: {fileID: 4745725728796946647}
+  - component: {fileID: 693633947571074070}
   m_Layer: 7
-  m_Name: Trigger_U
-  m_TagString: IntersectionPedestrianTrigger
+  m_Name: PedestrianTrigger_U
+  m_TagString: TrafficLightPedestrianTrigger
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -553,7 +553,7 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 2, y: 0.33, z: 1}
   m_Center: {x: 0, y: 0.2, z: 0}
---- !u!114 &4745725728796946647
+--- !u!114 &693633947571074070
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -562,7 +562,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 9172800257150976883}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91aafa5c365ab444881c0b2581d1350c, type: 3}
+  m_Script: {fileID: 11500000, guid: 407ced1001241374eaeee9efc0eaf4fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &3314269084445855708

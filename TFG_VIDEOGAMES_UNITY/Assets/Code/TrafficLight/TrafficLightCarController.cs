@@ -10,7 +10,6 @@ public class TrafficLightCarController : MonoBehaviour
 
     [SerializeField] public Road currentRoad;
     [SerializeField] public CarTrafficLight trafficLight;
-    float distanceToStopInAmberLight = 3.5f;
     private void Start()
     {
         pathFollower = GetComponent<PathFollower>();

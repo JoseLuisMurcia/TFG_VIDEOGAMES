@@ -15,6 +15,7 @@ public class WhiskersManager : MonoBehaviour
 
     private List<Transform> whiskers = new List<Transform>();
     private List<Transform> incorporationWhiskers = new List<Transform>();
+    private List<Transform> roundaboutWhiskers = new List<Transform>();
     private Vector3 rayOrigin;
     private const float centerReach = 15f;
     private const float sideReach = 10f;
@@ -44,6 +45,7 @@ public class WhiskersManager : MonoBehaviour
 
         CreateWhiskers();
         CreateIncorporationWhiskers();
+        CreateRoundaboutWhiskers();
         boxCollider = GetComponent<BoxCollider>();
 
         avoidanceBehavior = new AvoidanceBehavior(pathFollower, trafficLightCarController);
@@ -68,8 +70,8 @@ public class WhiskersManager : MonoBehaviour
     }
     void CreateIncorporationWhiskers()
     {
-        List<float> angles = new List<float>() { -85f, -70f, -60f, -50f, -45f, -40f, -35f, -30f, -25f, -20f, -10f, -6f, -3f, 0f,
-            3f, 6f, 10f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 60f, 70f, 85f};
+        List<float> angles = new List<float>() { -80f, -75f, -70f, -65f, -60f, -55f, -50f, -45f, -40f, -35f, -30f, -25f, -20f, -10f, -6f, -3f, 0f,
+            3f, 6f, 10f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 55f, 60f, 65f, 70f, 75f, 80f};
         Transform whiskersParent = transform.Find("Whiskers");
         for (int i = 0; i < angles.Count; i++)
         {
@@ -79,6 +81,20 @@ public class WhiskersManager : MonoBehaviour
             _newWhisker.transform.position = whiskers[0].position;
             _newWhisker.transform.localEulerAngles = localRotation;
             incorporationWhiskers.Add(_newWhisker.transform);
+        }
+    }
+    void CreateRoundaboutWhiskers()
+    {
+        List<float> angles = new List<float>() { -72f, -68f, -64f, -60f, -56f, -52f, -48f, -44f, -40f, -36f, -32f, -28f, -24f, -20f, -16f, -12f, -8f, -4f, 0f };
+        Transform whiskersParent = transform.Find("Whiskers");
+        for (int i = 0; i < angles.Count; i++)
+        {
+            Vector3 localRotation = new Vector3(0f, angles[i], 0f);
+            GameObject _newWhisker = new GameObject("Roundabout sensor: " + angles[i]);
+            _newWhisker.transform.parent = whiskersParent;
+            _newWhisker.transform.position = whiskers[0].position;
+            _newWhisker.transform.localEulerAngles = localRotation;
+            roundaboutWhiskers.Add(_newWhisker.transform);
         }
 
     }
@@ -99,33 +115,17 @@ public class WhiskersManager : MonoBehaviour
         CheckCars();
         if (pedestrianCrossingInSight && !pathFollower.TargetIsStoppingBeforePedestrians()) CheckPedestrians();
         if (pathFollower.roadValidForOvertaking) CheckLaneSwap(pathFollower.laneSide);
-        if (intersectionInSight || pathFollower.priorityLevel == PriorityLevel.Roundabout) CheckForIncorporation();
-
+        if (intersectionInSight) CheckPriority(incorporationWhiskers, 15f);
+        if (pathFollower.priorityLevel == PriorityLevel.Roundabout) CheckPriority(roundaboutWhiskers, 12f);
     }
-    void CheckForIncorporation()
+    void CheckPriority(List<Transform> whiskers, float reach)
     {
         if (priorityBehavior.isInRoundabout)
             return;
 
         RaycastHit hit;
-        foreach (Transform sensor in incorporationWhiskers)
+        foreach (Transform sensor in whiskers)
         {
-            float reach = 15f;
-            float localAngle = sensor.localEulerAngles.y;
-            if (pathFollower.priorityLevel == PriorityLevel.Roundabout)
-            {
-                reach = 9f;
-                if (localAngle < 180f)
-                {
-                    continue;
-                }
-            }
-            else
-            {
-                if (localAngle < 10f || localAngle > 351f)
-                    reach *= 1.5f;
-            }
-
             Ray ray = new Ray(rayOrigin, sensor.forward);
             if (Physics.Raycast(ray, out hit, reach, carLayer))
             {

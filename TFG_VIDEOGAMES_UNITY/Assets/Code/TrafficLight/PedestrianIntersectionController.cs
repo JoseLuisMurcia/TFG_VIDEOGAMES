@@ -16,10 +16,15 @@ public class PedestrianIntersectionController : MonoBehaviour
         {
             if (child.gameObject.activeSelf)
             {
-                PedestrianTrafficLightTrigger trigger = child.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
-                if (trigger != null)
+                InvisiblePedestrianTrafficLightTrigger invisiblePedestrianTrigger = child.gameObject.GetComponent<InvisiblePedestrianTrafficLightTrigger>();
+                PedestrianTrafficLightTrigger pedestrianTrigger = child.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
+                if (invisiblePedestrianTrigger != null)
                 {
-                    trigger.SetIntersectionController(this);
+                    invisiblePedestrianTrigger.SetIntersectionController(this);
+                }
+                else if (pedestrianTrigger != null)
+                {
+                    pedestrianTrigger.SetIntersectionController(this);
                 }
             }
         }

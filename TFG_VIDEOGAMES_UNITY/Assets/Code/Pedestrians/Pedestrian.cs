@@ -2,6 +2,7 @@ using PathCreation.Examples;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem.XR;
@@ -13,24 +14,28 @@ public class Pedestrian : MonoBehaviour
     public Transform target;
     float checkUpdateTime = 1.5f;
     public bool isIndependent = true;
+    private float baseAgentSpeed = 1f;
+    private float sprintAgentSpeed = 1.7f;
 
     [Header("Crossing")]
     public bool isCrossing = false;
     public bool hasCrossed = false;
-    public bool isStoppedAtTrafficLight = false;
     private InvisiblePedestrian invisiblePedestrian = null;
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
+
+    [Header("TrafficLightCrossing")]
+    public bool isStoppedAtTrafficLight = false;
     private Quaternion crossingRotation = Quaternion.identity;
     private Slot assignedSlot = null;
     private Vector3 mirrorSlot = Vector3.zero;
-
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
     private HashSet<PedestrianIntersectionController> subscribedControllers = new HashSet<PedestrianIntersectionController>();
     private PedestrianTrafficLightTrigger tlTrigger = null;
     private PedestrianIntersectionController tlController = null;
 
-    private float baseAgentSpeed = 1f;
-    private float sprintAgentSpeed = 1.7f;
+    [Header("NormalCrossing")]
+    private List<Road> crossingRoads = new List<Road>();
+    
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -96,65 +101,69 @@ public class Pedestrian : MonoBehaviour
     {
         if (!isIndependent) return;
 
-        if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
+        if (other.gameObject.CompareTag("TrafficLightPedestrianTrigger"))
         {
-            tlTrigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
-            if (tlTrigger != null)
+            HandleTrafficLightTrigger(other);
+        }
+    }
+    private void HandleTrafficLightTrigger(Collider other)
+    {
+        tlTrigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
+        if (tlTrigger != null)
+        {
+            tlController = tlTrigger.GetIntersectionController();
+            if (intersectionControllers.Contains(tlController))
             {
-                tlController = tlTrigger.GetIntersectionController();
-                if (intersectionControllers.Contains(tlController))
+                if (!subscribedControllers.Contains(tlController))
                 {
-                    if (!subscribedControllers.Contains(tlController))
+                    crossingRotation = tlTrigger.transform.rotation;
+                    // Suscribirse
+                    tlController.SubscribeToLightChangeEvent(OnTrafficLightChange);
+                    subscribedControllers.Add(tlController);
+                    // Mirar si hay que parar o no
+                    if (!tlController.IsPedestrianState())
                     {
-                        crossingRotation = tlTrigger.transform.rotation;
-                        // Suscribirse
-                        tlController.SubscribeToLightChangeEvent(OnTrafficLightChange);
-                        subscribedControllers.Add(tlController);
-                        // Mirar si hay que parar o no
-                        if (!tlController.IsPedestrianState())
+                        // Detenerse
+                        AssignSlot();
+                    }
+                    else
+                    {
+                        TrafficLightState state = tlController.GetState();
+                        if (state == TrafficLightState.PedestrianRush)
                         {
-                            // Detenerse
-                            AssignSlot();
-                        }
-                        else
-                        {
-                            TrafficLightState state = tlController.GetState();
-                            if (state == TrafficLightState.PedestrianRush)
-                            {               
-                                // Randomize the probability of rushing
-                                if(Random.value > 0.6f)
+                            // Randomize the probability of rushing
+                            if (Random.value > 0.6f)
+                            {
+                                // Rush
+                                float timeLeft = tlController.GetPedestrianTurnTimeLeft();
+                                if (timeLeft < 5f && timeLeft > 3f)
                                 {
-                                    // Rush
-                                    float timeLeft = tlController.GetPedestrianTurnTimeLeft();
-                                    if (timeLeft < 5f && timeLeft > 3f)
-                                    {
-                                        agent.speed = sprintAgentSpeed;
-                                        mirrorSlot = CalculateOffsetFromBestSlot();
-                                        StartCoroutine(OnCrossingEnabled());
-                                    }
-                                    else if (timeLeft <= 3f)
-                                    {
-                                        AssignSlot();
-                                    }
+                                    agent.speed = sprintAgentSpeed;
+                                    mirrorSlot = CalculateOffsetFromBestSlot();
+                                    StartCoroutine(OnCrossingEnabled());
                                 }
-                                else
+                                else if (timeLeft <= 3f)
                                 {
                                     AssignSlot();
                                 }
                             }
                             else
                             {
-                                mirrorSlot = CalculateOffsetFromBestSlot();
-                                StartCoroutine(OnCrossingEnabled());
+                                AssignSlot();
                             }
                         }
-                    }                 
-                    else
-                    {
-                        tlController.UnsubscribeToLightChangeEvent(OnTrafficLightChange);
-                        subscribedControllers.Remove(tlController);
-                        agent.speed = baseAgentSpeed;
+                        else
+                        {
+                            mirrorSlot = CalculateOffsetFromBestSlot();
+                            StartCoroutine(OnCrossingEnabled());
+                        }
                     }
+                }
+                else
+                {
+                    tlController.UnsubscribeToLightChangeEvent(OnTrafficLightChange);
+                    subscribedControllers.Remove(tlController);
+                    agent.speed = baseAgentSpeed;
                 }
             }
         }
@@ -187,9 +196,13 @@ public class Pedestrian : MonoBehaviour
         mirrorSlot = assignedSlot.position + tlTrigger.transform.forward * Vector3.Distance(tlTrigger.transform.position, tlController.transform.position) * 1.5f;
         StartCoroutine(OnSlotAssigned());
     }
-    public void SetCrossings(List<PedestrianIntersectionController> _controllers)
+    public void SetTLCrossings(List<PedestrianIntersectionController> _controllers)
     {
         intersectionControllers = _controllers;
+    }
+    public void SetCrossings(List<Road> _crossingRoads)
+    {
+        crossingRoads = _crossingRoads;
     }
     private void OnTrafficLightChange(TrafficLightState newColor, bool subscription)
     {
@@ -200,7 +213,6 @@ public class Pedestrian : MonoBehaviour
                 break;
 
             case TrafficLightState.PedestrianRush:
-                Debug.Log(GetDistanceToMirrorSlot());
                 if(Random.value > 0.6f && GetDistanceToMirrorSlot() > 5f)
                 {
                     agent.speed = sprintAgentSpeed;
@@ -322,10 +334,42 @@ public class Pedestrian : MonoBehaviour
         }
     }
 
-    public void OnEnterPedestrianCrossing()
+    public void OnEnterPedestrianCrossing(Road crossingRoad)
     {
         isCrossing = true;
         hasCrossed = false;
+        if (crossingRoads.Contains(crossingRoad))
+        {
+            // Cruzar recto
+            StartCoroutine(GoToMirrorCrossingPos());
+        }
+    }
+
+    private IEnumerator GoToMirrorCrossingPos()
+    {
+        Vector3 newForward = Mathf.Abs(transform.forward.x) > 0.65f 
+            ? new Vector3(Mathf.Sign(transform.forward.x), 0, 0)
+            : new Vector3(0, 0, Mathf.Sign(transform.forward.z));
+        Vector3 mirrorCrossingPos = transform.position + newForward * 5.5f;
+        NavMeshPath path = new NavMeshPath();
+        if (agent.CalculatePath(mirrorCrossingPos, path))
+        {
+            if (agent.SetPath(path))
+            {
+                bool targetReached = false;
+                while (!targetReached)
+                {
+                    yield return new WaitForSeconds(0.2f);
+                    float distance = Vector3.Distance(transform.position, mirrorCrossingPos);
+                    if (distance < .8f)
+                    {
+                        targetReached = true;
+                    }
+                }
+                mirrorCrossingPos = Vector3.zero;
+                agent.SetDestination(target.position);
+            }
+        }        
     }
 
     public void OnExitPedestrianCrossing()

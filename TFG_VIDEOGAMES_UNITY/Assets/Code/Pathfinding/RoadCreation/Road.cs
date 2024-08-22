@@ -102,7 +102,7 @@ public class Road : MonoBehaviour
         {
             Vector3 boxPos = neighbour.transform.position;
             // Create the object
-            GameObject newGameObject = new GameObject("Intersecion Trigger " + num);
+            GameObject newGameObject = new GameObject("Intersection Trigger " + num);
             newGameObject.transform.position = boxPos;
             newGameObject.transform.parent = gameObject.transform;
             // Create the boxCollider
@@ -237,6 +237,17 @@ public class Road : MonoBehaviour
         }
 
         return true;
+    }
+
+    public bool IsExternalRoundaboutLane(Node node)
+    {
+        if (lanes.Count < 2 || typeOfRoad != TypeOfRoad.Roundabout)
+            return false;
+
+        if (lanes[1].nodes.Contains(node))
+            return true;
+
+        return false;
     }
 }
 

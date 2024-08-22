@@ -19,6 +19,7 @@ public class InvisibleLeader : MonoBehaviour
     [SerializeField] InvisiblePedestrian invisiblePedestrianPrefab;
     private Quaternion crossingRotation = Quaternion.identity;
     private List<PedestrianIntersectionController> intersectionControllers = new List<PedestrianIntersectionController>();
+    private List<Road> crossingRoads = new List<Road>();
     private HashSet<PedestrianIntersectionController> subscribedControllers = new HashSet<PedestrianIntersectionController>();
     private PedestrianTrafficLightTrigger tlTrigger = null;
     private PedestrianIntersectionController tlController = null;
@@ -60,68 +61,71 @@ public class InvisibleLeader : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("IntersectionPedestrianTrigger"))
+        if (other.gameObject.CompareTag("TrafficLightPedestrianTrigger"))
         {
-            tlTrigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
-            if (tlTrigger != null)
+            HandleTrafficLightTrigger(other);
+        }
+    }
+    private void HandleTrafficLightTrigger(Collider other)
+    {
+        tlTrigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
+        if (tlTrigger != null)
+        {
+            tlController = tlTrigger.GetIntersectionController();
+            if (intersectionControllers.Contains(tlController))
             {
-                tlController = tlTrigger.GetIntersectionController();
-                if (intersectionControllers.Contains(tlController))
+                if (!subscribedControllers.Contains(tlController))
                 {
-                    if (!subscribedControllers.Contains(tlController))
+                    crossingRotation = tlTrigger.transform.rotation;
+                    // Suscribirse
+                    tlController.SubscribeToLightChangeEvent(OnTrafficLightChange);
+                    subscribedControllers.Add(tlController);
+                    // Mirar si hay que parar o no
+                    if (!tlController.IsPedestrianState())
                     {
-                        crossingRotation = tlTrigger.transform.rotation;
-                        // Suscribirse
-                        tlController.SubscribeToLightChangeEvent(OnTrafficLightChange);
-                        subscribedControllers.Add(tlController);
-                        // Mirar si hay que parar o no
-                        if (!tlController.IsPedestrianState())
+                        // Detenerse
+                        AssignSlots();
+                    }
+                    else
+                    {
+                        TrafficLightState state = tlController.GetState();
+                        if (state == TrafficLightState.PedestrianRush)
                         {
-                            // Detenerse
-                            AssignSlots();
-                        }
-                        else
-                        {
-                            TrafficLightState state = tlController.GetState();
-                            if (state == TrafficLightState.PedestrianRush)
+                            if (Random.value > 0.6f)
                             {
-                                if (Random.value > 0.6f)
+                                // Rush
+                                float timeLeft = tlController.GetPedestrianTurnTimeLeft();
+                                if (timeLeft < 5f && timeLeft > 3f)
                                 {
-                                    // Rush
-                                    float timeLeft = tlController.GetPedestrianTurnTimeLeft();
-                                    if (timeLeft < 5f && timeLeft > 3f)
-                                    {
-                                        agent.speed = sprintAgentSpeed;
-                                        mirrorSlot = CalculateOffsetFromBestSlot();
-                                        StartCoroutine(OnCrossingEnabled());
-                                    }
-                                    else if (timeLeft <= 3f)
-                                    {
-                                        AssignSlots();
-                                    }
+                                    agent.speed = sprintAgentSpeed;
+                                    mirrorSlot = CalculateOffsetFromBestSlot();
+                                    StartCoroutine(OnCrossingEnabled());
                                 }
-                                else
+                                else if (timeLeft <= 3f)
                                 {
                                     AssignSlots();
                                 }
                             }
                             else
                             {
-                                mirrorSlot = CalculateOffsetFromBestSlot();
-                                StartCoroutine(OnCrossingEnabled());
+                                AssignSlots();
                             }
                         }
+                        else
+                        {
+                            mirrorSlot = CalculateOffsetFromBestSlot();
+                            StartCoroutine(OnCrossingEnabled());
+                        }
                     }
-                    else
-                    {
-                        tlController.UnsubscribeToLightChangeEvent(OnTrafficLightChange);
-                        subscribedControllers.Remove(tlController);
-                        agent.speed = baseAgentSpeed;
-                    }
-                    
                 }
+                else
+                {
+                    tlController.UnsubscribeToLightChangeEvent(OnTrafficLightChange);
+                    subscribedControllers.Remove(tlController);
+                    agent.speed = baseAgentSpeed;
+                }
+
             }
-            Debug.Log("trigger entry");
         }
     }
     private Vector3 CalculateOffsetFromBestSlot()
@@ -222,11 +226,14 @@ public class InvisibleLeader : MonoBehaviour
         }
         StopMoving();
     }
-    public void SetCrossings(List<PedestrianIntersectionController> _controllers)
+    public void SetTLCrossings(List<PedestrianIntersectionController> _controllers)
     {
         intersectionControllers = _controllers;
     }
-
+    public void SetCrossings(List<Road> _crossingRoads)
+    {
+        crossingRoads = _crossingRoads;
+    }
     private void StartMoving()
     {
         assignedSlots.ForEach(slot => { slot.isLocked = false; slot.isReserved = false; });
@@ -274,11 +281,40 @@ public class InvisibleLeader : MonoBehaviour
             Gizmos.DrawCube(mirrorSlot, new Vector3(.1f, .1f, .1f));
         }
     }
-    public void OnEnterPedestrianCrossing()
+    public void OnEnterPedestrianCrossing(Road crossingRoad)
     {
         isCrossing = true;
+        if (crossingRoads.Contains(crossingRoad))
+        {
+            // Cruzar recto
+            StartCoroutine(GoToMirrorCrossingPos());
+        }
     }
-
+    private IEnumerator GoToMirrorCrossingPos()
+    {
+        Vector3 newForward = Mathf.Abs(transform.forward.x) > 0.65f
+            ? new Vector3(Mathf.Sign(transform.forward.x), 0, 0)
+            : new Vector3(0, 0, Mathf.Sign(transform.forward.z));
+        Vector3 mirrorCrossingPos = transform.position + newForward * 5.5f;
+        NavMeshPath path = new NavMeshPath();
+        if (agent.CalculatePath(mirrorCrossingPos, path))
+        {
+            if (agent.SetPath(path))
+            {
+                bool targetReached = false;
+                while (!targetReached)
+                {
+                    yield return new WaitForSeconds(0.2f);
+                    float distance = Vector3.Distance(transform.position, mirrorCrossingPos);
+                    if (distance < .8f)
+                    {
+                        targetReached = true;
+                    }
+                }
+                agent.SetDestination(destination);
+            }
+        }
+    }
     public void OnExitPedestrianCrossing()
     {
         isCrossing = false;

@@ -21,14 +21,15 @@ public class PathFollower : MonoBehaviour
     // Stop at traffic light variables
     [Header("TrafficLight")]
     public bool shouldStopAtTrafficLight = false;
-    private float trafficLightStopDist = 5;
+    private float carStartBrakingDistanceTrafficLight = 5f;
+    private float carStopDistanceTrafficLight = 1.5f;
     [HideInInspector] TrafficLightCarController trafficLightCarController;
 
     // Car collision avoidance variables
     [Header("CarAvoidance")]
     public bool reactingToCarInFront = false;
     public bool shouldBrakeBeforeCar = false;
-    [SerializeField] float carStartBreakingDistance;
+    [SerializeField] float carStartBrakingDistance;
     [SerializeField] float carStopDistance;
     [HideInInspector] public Transform carTarget;
     [HideInInspector] public PathFollower targetPathFollower;
@@ -44,14 +45,17 @@ public class PathFollower : MonoBehaviour
     [HideInInspector] public Vector3 stopPosition = Vector3.zero;
     [HideInInspector] public PriorityBehavior targetPriorityBehavior;
     [HideInInspector] public PriorityBehavior priorityBehavior;
-    [HideInInspector] private float carStartBreakingDistancePriority;
+    [HideInInspector] private float carStartBrakingDistancePriority;
+    [HideInInspector] private float carStopDistancePriority;
+    float carStopDistancePriorityRoundabout = 1f;
+    float carStartBrakingDistancePriorityRoundabout = 5f;
 
 
     // Pedestrian variables
     [Header("Pedestrian")]
     public bool shouldStopPedestrian = false;
-    float pCarStartBreakingDistance = 4.5f;
-    float pCarStopDistance = 3f;
+    float carStartBrakingDistancePedestrian;
+    float carStopDistancePedestrian;
     public Vector3 pedestrianStopPos;
 
     [Header("Others")]
@@ -79,77 +83,99 @@ public class PathFollower : MonoBehaviour
     private void SetSpecsForTypeCar()
     {
         float speedMultiplier;
+        float turnExtraSpeed = .3f;
         switch (typeOfCar)
         {
             case TypeOfCar.Delivery:
-                carStartBreakingDistance = Random.Range(2.5f, 4f);
-                //carStartBreakingDistance = 2.5f;
-                trafficLightStopDist = Random.Range(4.5f, 6.5f);
-                carStartBreakingDistancePriority = Random.Range(3, 5f);
+                carStartBrakingDistance = Random.Range(2.5f, 4f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4.5f, 6.5f);
+                carStartBrakingDistancePriority = Random.Range(3, 5f);
+                carStartBrakingDistancePedestrian = Random.Range(4.2f, 5.5f);
                 carStopDistance = Random.Range(1.35f, 1.65f);
-                //carStopDistance = 1.5f;
-                speedMultiplier = Random.Range(0.7f, 1.1f);
-                speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
-                break;
-            case TypeOfCar.Sedan:
-                carStartBreakingDistance = Random.Range(1.5f, 4f);
-                trafficLightStopDist = Random.Range(4f, 6f);
-                carStartBreakingDistancePriority = Random.Range(3, 4f);
-                carStopDistance = Random.Range(1.35f, 1.65f);
-                speedMultiplier = Random.Range(0.9f, 1.6f);
-                speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
-                break;
-            case TypeOfCar.SedanSport:
-                carStartBreakingDistance = Random.Range(1.5f, 4f);
-                trafficLightStopDist = Random.Range(4f, 6f);
-                carStartBreakingDistancePriority = Random.Range(3.5f, 5f);
-
-                carStopDistance = Random.Range(1.35f, 1.65f);
-                speedMultiplier = Random.Range(1.3f, 1.9f);
-                speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
-                break;
-            case TypeOfCar.Suv:
-                carStartBreakingDistance = Random.Range(1.5f, 4f);
-                trafficLightStopDist = Random.Range(4f, 6f);
-                carStartBreakingDistancePriority = Random.Range(3, 4f);
-
-                carStopDistance = Random.Range(1.35f, 1.65f);
-                speedMultiplier = Random.Range(1f, 1.3f);
-                speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
-                break;
-            case TypeOfCar.SuvLuxury:
-                carStartBreakingDistance = Random.Range(1.5f, 4f);
-                trafficLightStopDist = Random.Range(4f, 6f);
-                carStartBreakingDistancePriority = Random.Range(2.7f, 4f);
-
-                carStopDistance = Random.Range(1.35f, 1.65f);
-                speedMultiplier = Random.Range(1.2f, 1.6f);
-                speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
-                break;
-            case TypeOfCar.Truck:
-                carStartBreakingDistance = Random.Range(2.5f, 5f);
-                trafficLightStopDist = Random.Range(4f, 6f);
-                carStartBreakingDistancePriority = Random.Range(3, 5.5f);
-
-                carStopDistance = Random.Range(1.3f, 1.7f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(1f, 1.5f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
                 speedMultiplier = Random.Range(0.8f, 1.1f);
                 speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
+                break;
+            case TypeOfCar.Sedan:
+                carStartBrakingDistance = Random.Range(1.5f, 4f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4f, 6f);
+                carStartBrakingDistancePriority = Random.Range(3, 4f);
+                carStartBrakingDistancePedestrian = Random.Range(4f, 5f);
+                carStopDistance = Random.Range(1.35f, 1.65f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(1f, 1.5f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
+                speedMultiplier = Random.Range(1f, 1.5f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
+                break;
+            case TypeOfCar.SedanSport:
+                carStartBrakingDistance = Random.Range(1.5f, 4f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4f, 6f);
+                carStartBrakingDistancePriority = Random.Range(3f, 5f);
+                carStartBrakingDistancePedestrian = Random.Range(4f, 5f);
+                carStopDistance = Random.Range(1.35f, 1.65f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(.5f, 1f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
+                speedMultiplier = Random.Range(1.3f, 1.7f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
+                break;
+            case TypeOfCar.Suv:
+                carStartBrakingDistance = Random.Range(1.5f, 4f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4f, 6f);
+                carStartBrakingDistancePriority = Random.Range(3f, 4f);
+                carStartBrakingDistancePedestrian = Random.Range(4.5f, 5.5f);
+                carStopDistance = Random.Range(1.35f, 1.65f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(1f, 1.5f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
+                speedMultiplier = Random.Range(1f, 1.3f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
+                break;
+            case TypeOfCar.SuvLuxury:
+                carStartBrakingDistance = Random.Range(1.5f, 4f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4f, 6f);
+                carStartBrakingDistancePriority = Random.Range(3f, 4f);
+                carStartBrakingDistancePedestrian = Random.Range(4f, 5f);
+                carStopDistance = Random.Range(1.35f, 1.65f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(1f, 1.5f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
+                speedMultiplier = Random.Range(1.2f, 1.6f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
+                break;
+            case TypeOfCar.Truck:
+                carStartBrakingDistance = Random.Range(2.5f, 5f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4f, 6f);
+                carStartBrakingDistancePriority = Random.Range(4f, 5.5f);
+                carStartBrakingDistancePedestrian = Random.Range(5f, 6.5f);
+                carStopDistance = Random.Range(1.3f, 1.7f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(1.3f, 1.5f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
+                speedMultiplier = Random.Range(0.75f, 1.1f);
+                speed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
                 break;
             case TypeOfCar.Van:
-                carStartBreakingDistance = Random.Range(1.5f, 4f);
-                trafficLightStopDist = Random.Range(4f, 6f);
-                carStartBreakingDistancePriority = Random.Range(3, 4.5f);
-
+                carStartBrakingDistance = Random.Range(1.5f, 4f);
+                carStartBrakingDistanceTrafficLight = Random.Range(4f, 6f);
+                carStartBrakingDistancePriority = Random.Range(3f, 4.5f);
+                carStartBrakingDistancePedestrian = Random.Range(4.2f, 6f);
                 carStopDistance = Random.Range(1.35f, 1.65f);
-                speedMultiplier = Random.Range(0.7f, 1.1f);
+                carStopDistanceTrafficLight = Random.Range(1.35f, 1.65f);
+                carStopDistancePriority = Random.Range(1f, 1.5f);
+                carStopDistancePedestrian = Random.Range(3f, 4f);
+                speedMultiplier = Random.Range(0.8f, 1.1f);
                 speed *= speedMultiplier;
-                turnSpeed *= speedMultiplier;
+                turnSpeed *= speedMultiplier + turnExtraSpeed;
                 break;
             default:
                 Debug.Log("haha wtf bro");
@@ -513,7 +539,7 @@ public class PathFollower : MonoBehaviour
     {
         float distance = Vector3.Distance(transform.position, pedestrianStopPos);
 
-        float brakingDistance = Mathf.Clamp01((distance - pCarStopDistance) / pCarStartBreakingDistance);
+        float brakingDistance = Mathf.Clamp01((distance - carStopDistancePedestrian) / carStartBrakingDistancePedestrian);
         float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
         if (_speedPercent < 0.03f)
         {
@@ -523,16 +549,18 @@ public class PathFollower : MonoBehaviour
     }
     float SlowSpeedPriority()
     {
-        float _speedPercent;
         float distance = Vector3.Distance(transform.position, stopPosition);
+        float brakingDistance;
+        
         if (priorityLevel == PriorityLevel.Roundabout)
         {
-            _speedPercent = Mathf.Clamp01(distance / 5f);
+            brakingDistance = Mathf.Clamp01((distance - carStopDistancePriorityRoundabout) / carStartBrakingDistancePriorityRoundabout);
         }
         else
         {
-            _speedPercent = Mathf.Clamp01(distance / 8f);
+            brakingDistance = Mathf.Clamp01((distance - carStopDistancePriority) / carStartBrakingDistancePriority);
         }
+        float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
 
         if (speedPercent - _speedPercent > 0.5f)
             _speedPercent = speedPercent - 0.01f;
@@ -549,7 +577,7 @@ public class PathFollower : MonoBehaviour
             return speedPercent;
 
         float distance = Vector3.Distance(transform.position, carTarget.position);
-        float brakingDistance = Mathf.Clamp01((distance - carStopDistance) / carStartBreakingDistance);
+        float brakingDistance = Mathf.Clamp01((distance - carStopDistance) / carStartBrakingDistance);
         float _speedPercent = Mathf.Lerp(speedPercent, brakingDistance, decelerationRate * Time.deltaTime);
 
         //if (laneSide == LaneSide.Right && speed - targetPathFollower.speed > 0.3f && overtakeBehavior.canSwapLane && !overtaking)
@@ -587,12 +615,12 @@ public class PathFollower : MonoBehaviour
     float SlowSpeedAtTrafficLight()
     {
         float distance = trafficLightCarController.GiveDistanceToPathFollower();
-        speedPercent = Mathf.Clamp01((distance - 1.5f) / trafficLightStopDist);
-        if (speedPercent < 0.04f)
+        float _speedPercent = Mathf.Clamp01((distance - carStopDistanceTrafficLight) / carStartBrakingDistanceTrafficLight);
+        if (_speedPercent < 0.04f)
         {
             StopTheCar();
         }
-        return speedPercent;
+        return _speedPercent;
     }
     #endregion
 
@@ -611,13 +639,13 @@ public class PathFollower : MonoBehaviour
         // Security check so that it does not get stupid close
         if (randomInt == 0)
         {
-            float distanceResult = carStartBreakingDistance - increaseValue * numIterations;
+            float distanceResult = carStartBrakingDistance - increaseValue * numIterations;
             if (distanceResult < minRange)
                 randomInt = 1;
         }
         else
         {
-            float distanceResult = carStartBreakingDistance + increaseValue * numIterations;
+            float distanceResult = carStartBrakingDistance + increaseValue * numIterations;
             if (distanceResult > maxRange)
                 randomInt = 0;
         }
@@ -629,12 +657,12 @@ public class PathFollower : MonoBehaviour
             if (randomInt == 0)
             {
                 // Get closer to the car in front
-                carStartBreakingDistance -= increaseValue;
+                carStartBrakingDistance -= increaseValue;
             }
             else
             {
                 // Get further from the car in front
-                carStartBreakingDistance += increaseValue;
+                carStartBrakingDistance += increaseValue;
             }
             i++;
         }
@@ -710,7 +738,18 @@ public class PathFollower : MonoBehaviour
             path.DrawWithGizmos();
         }
     }
-
+    public Road FindPreviousRoadOnPath()
+    {
+        Road currentRoad = nodeList[pathIndex].road;
+        int i = pathIndex - 1;
+        while (i > 0)
+        {
+            Road previousRoad = nodeList[i].road;
+            if (previousRoad != currentRoad) return previousRoad;
+            i--;
+        }
+        return null;
+    }
 }
 
 public enum LaneSide
@@ -721,9 +760,9 @@ public enum LaneSide
 }
 public enum PriorityLevel
 {
+    Roundabout,
     Stop,
     Yield,
-    Roundabout,
     Max
 }
 

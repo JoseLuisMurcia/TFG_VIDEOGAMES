@@ -531,33 +531,70 @@ public class WorldGrid : MonoBehaviour
                                 if (absoluteAngle > minAngle && absoluteAngle < maxAngle)
                                 {
                                     Vector2 dirToMove = new Vector2(dirToMovePosition.x, dirToMovePosition.z);
-                                    float offsetInfluence = 1.1f;
+                                    float offsetInfluence = distance < 3f ? .3f: .7f;
                                     Vector3 unionNodePos = (exit.worldPosition + entry.worldPosition) * 0.5f;
                                     Vector2 perpendicularDir = Vector2.Perpendicular(dirToMove);
                                     Vector3 perpendicularDirection = new Vector3(perpendicularDir.x, 0, perpendicularDir.y);
+
+                                    Vector3 firstUnionNodePos = Vector3.zero;
+                                    Vector3 secondUnionNodePos = Vector3.zero;
+                                    Vector3 middleUnionNodePos = Vector3.zero;
                                     if (signedAngle > 0)
                                     {
                                         unionNodePos = unionNodePos + perpendicularDirection * offsetInfluence;
+                                        firstUnionNodePos = ((exit.worldPosition + unionNodePos) * .5f) + perpendicularDirection * offsetInfluence;
+                                        secondUnionNodePos = (unionNodePos + entry.worldPosition) * .5f + perpendicularDirection * offsetInfluence;
+                                        middleUnionNodePos = (firstUnionNodePos + secondUnionNodePos) * .5f + perpendicularDirection * offsetInfluence;
                                     }
                                     else
                                     {
                                         unionNodePos = unionNodePos - perpendicularDirection * offsetInfluence;
+                                        firstUnionNodePos = ((exit.worldPosition + unionNodePos) * .5f) - perpendicularDirection * offsetInfluence;
+                                        secondUnionNodePos = ((unionNodePos + entry.worldPosition) * .5f) - perpendicularDirection * offsetInfluence;
+                                        middleUnionNodePos = (firstUnionNodePos + secondUnionNodePos) * .5f - perpendicularDirection * offsetInfluence;
                                     }
 
-                                    Node unionNode = new Node(unionNodePos, road);
-                                    exit.AddNeighbour(unionNode);
-                                    unionNode.AddNeighbour(entry);
+                                    Node firstUnionNode = new Node(firstUnionNodePos, road);
+                                    Node secondUnionNode = new Node(secondUnionNodePos, road);
+                                    Node middleUnionNode = new Node(middleUnionNodePos, road);
+                                    exit.AddNeighbour(firstUnionNode);
+                                    firstUnionNode.AddNeighbour(middleUnionNode);
+                                    middleUnionNode.AddNeighbour(secondUnionNode);
+                                    secondUnionNode.AddNeighbour(entry);
+                                    unionNodes.Add(firstUnionNode);
+                                    unionNodes.Add(middleUnionNode);
+                                    unionNodes.Add(secondUnionNode);
+                                    grid.Add(firstUnionNode);
+                                    grid.Add(middleUnionNode);
+                                    grid.Add(secondUnionNode);
                                     if (road.numberOfLanes > 1)
                                     {
-                                        road.lanes[1].nodes.Add(unionNode);
+                                        road.lanes[1].nodes.Add(firstUnionNode);
+                                        road.lanes[1].nodes.Add(middleUnionNode);
+                                        road.lanes[1].nodes.Add(secondUnionNode);
                                     }
                                     else
                                     {
-                                        road.lanes[0].nodes.Add(unionNode);
+                                        road.lanes[0].nodes.Add(firstUnionNode);
+                                        road.lanes[0].nodes.Add(middleUnionNode);
+                                        road.lanes[0].nodes.Add(secondUnionNode);
 
                                     }
-                                    unionNodes.Add(unionNode);
-                                    grid.Add(unionNode);
+
+                                    //Node unionNode = new Node(unionNodePos, road);
+                                    //exit.AddNeighbour(unionNode);
+                                    //unionNode.AddNeighbour(entry);
+                                    //if (road.numberOfLanes > 1)
+                                    //{
+                                    //    road.lanes[1].nodes.Add(unionNode);
+                                    //}
+                                    //else
+                                    //{
+                                    //    road.lanes[0].nodes.Add(unionNode);
+
+                                    //}
+                                    //unionNodes.Add(unionNode);
+                                    //grid.Add(unionNode);
                                 }
                             }
                         }
@@ -611,21 +648,20 @@ public class WorldGrid : MonoBehaviour
             {
                 Gizmos.color = Color.white;
 
-                if (n.laneSide == LaneSide.Left)
-                {
-                    Gizmos.color = Color.magenta;
-                    Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
-                }
-                else if (n.laneSide == LaneSide.Right)
-                {
-                    Gizmos.color = Color.black;
-                    Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
-                }
-                else
-                {
+                //if (n.laneSide == LaneSide.Left)
+                //{
+                //    Gizmos.color = Color.magenta;
+                //    Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
+                //}
+                //else if (n.laneSide == LaneSide.Right)
+                //{
+                //    Gizmos.color = Color.black;
+                //    Gizmos.DrawCube(n.worldPosition, Vector3.one * .2f);
+                //}
+
                     Gizmos.DrawCube(n.worldPosition, Vector3.one * .1f);
 
-                }
+                
 
                 foreach (Node neighbour in n.neighbours)
                 {
@@ -637,11 +673,11 @@ public class WorldGrid : MonoBehaviour
                 }
             }
 
-            foreach (Vector3 startLanePos in debugNodes)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawCube(startLanePos, Vector3.one * (0.15f));
-            }
+            //foreach (Vector3 startLanePos in debugNodes)
+            //{
+            //    Gizmos.color = Color.red;
+            //    Gizmos.DrawCube(startLanePos, Vector3.one * (0.15f));
+            //}
 
             foreach (Node union in unionNodes)
             {
@@ -658,6 +694,16 @@ public class WorldGrid : MonoBehaviour
                     {
                         l.DrawWithGizmos(1);
                     }
+                }
+                foreach (Node entry in road.entryNodes)
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawCube(entry.worldPosition, Vector3.one * (0.15f));
+                }
+                foreach (Node entry in road.exitNodes)
+                {
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawCube(entry.worldPosition, Vector3.one * (0.15f));
                 }
             }
         }

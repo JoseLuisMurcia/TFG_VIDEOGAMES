@@ -18,11 +18,11 @@ public class IntersectionTriggers : MonoBehaviour
     // Try to find the road that this intersection is placed in
     private IEnumerator FindBelongingRoad()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(15f);
         float bestDistance = Mathf.Infinity;
         foreach (Road neighbour in parentRoad.connections)
         {
-            if (neighbour == null || parentRoad == null || belongingRoad == null)
+            if (neighbour == null || parentRoad == null)
             {
                 Destroy(gameObject);
                 break;

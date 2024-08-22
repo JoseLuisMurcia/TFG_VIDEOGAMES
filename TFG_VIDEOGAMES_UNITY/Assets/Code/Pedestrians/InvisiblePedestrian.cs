@@ -11,6 +11,7 @@ public class InvisiblePedestrian : MonoBehaviour
     private Vector3 destination = Vector3.zero;
     float checkUpdateTime = 1f;
     private HashSet<PedestrianIntersectionController> controllers = new HashSet<PedestrianIntersectionController>();
+    private HashSet<Road> roads = new HashSet<Road>();
     private Pedestrian pedestrian = null;
     private InvisibleLeader invisibleLeader = null;
 
@@ -52,11 +53,13 @@ public class InvisiblePedestrian : MonoBehaviour
             {
                 if (pedestrian)
                 {
-                    pedestrian.SetCrossings(controllers.ToList());
+                    pedestrian.SetCrossings(roads.ToList());
+                    pedestrian.SetTLCrossings(controllers.ToList());
                 }
                 else
                 {
-                    invisibleLeader.SetCrossings(controllers.ToList());
+                    invisibleLeader.SetCrossings(roads.ToList());
+                    invisibleLeader.SetTLCrossings(controllers.ToList());
                 }
                 Destroy(gameObject);
             }
@@ -67,10 +70,16 @@ public class InvisiblePedestrian : MonoBehaviour
     {
         if (other.gameObject.CompareTag("InvisiblePedestrianTrigger"))
         {
-            var trigger = other.gameObject.GetComponent<PedestrianTrafficLightTrigger>();
-            if (trigger != null)
+            var tlCrossingTrigger = other.gameObject.GetComponent<InvisiblePedestrianTrafficLightTrigger>();
+            if (tlCrossingTrigger != null)
             {
-                controllers.Add(trigger.GetIntersectionController());
+                controllers.Add(tlCrossingTrigger.GetIntersectionController());
+                return;
+            }
+            var crossingTrigger = other.gameObject.GetComponent<InvisiblePedestrianCrossingTrigger>();
+            if (crossingTrigger != null)
+            {
+                roads.Add(crossingTrigger.GetParentRoad());             
             }
         }
     }
