@@ -12,6 +12,7 @@ public class NavMeshGenerator : MonoBehaviour
     }
     public void BakeNavMesh()
     {
+        if (!navMeshSurface) return;
         navMeshSurface.RemoveData();
         navMeshSurface.BuildNavMesh();
     }

@@ -49,7 +49,8 @@ public class CarSpawner : MonoBehaviour
         GameObject prefab;
         carPrefabsDictionary.TryGetValue(key, out prefab);
 
-        Node startNode = WorldGrid.Instance.GetRandomNodeInRoads();
+        bool isProcedural = RoadConnecter.Instance != null;
+        Node startNode = isProcedural ? RoadConnecter.Instance.GetRandomNodeInRoads() : WorldGrid.Instance.GetRandomNodeInRoads();
         Vector3 directionToLookAt = (startNode.neighbours[0].worldPosition - startNode.worldPosition).normalized;
         Quaternion rotation = Quaternion.LookRotation(directionToLookAt, Vector3.up);
         Vector3 spawnPos = startNode.worldPosition - directionToLookAt;

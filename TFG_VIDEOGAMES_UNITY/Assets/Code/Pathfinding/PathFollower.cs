@@ -80,6 +80,8 @@ public class PathFollower : MonoBehaviour
     private static float minDistanceToSpawnNewTarget = 18f;
     float accelerationRate = 0.2f;
     float decelerationRate = 100f;
+
+    private bool isProcedural = false;
     private void SetSpecsForTypeCar()
     {
         float speedMultiplier;
@@ -186,6 +188,10 @@ public class PathFollower : MonoBehaviour
         }
 
     }
+    private void Awake()
+    {
+        isProcedural = WorldGrid.Instance == null && RoadConnecter.Instance != null;
+    }
     void Start()
     {
         SetSpecsForTypeCar();
@@ -229,11 +235,11 @@ public class PathFollower : MonoBehaviour
         if (path == null && !pathRequested)
         {
             //Debug.LogWarning("CAR WAS SPAWNED AND IT DID NOT HAVE A PATH WTF");
-            Node targetNode = WorldGrid.Instance.GetRandomNodeInRoads();
+            Node targetNode = isProcedural ? RoadConnecter.Instance.GetRandomNodeInRoads() : WorldGrid.Instance.GetRandomNodeInRoads();
             float newDistance = Vector3.Distance(targetNode.worldPosition, transform.position);
             while (newDistance < minDistanceToSpawnNewTarget)
             {
-                targetNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+                targetNode = isProcedural ? RoadConnecter.Instance.GetRandomNodeInRoads() : WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
                 newDistance = Vector3.Distance(transform.position, targetNode.worldPosition);
             }
 
@@ -249,7 +255,7 @@ public class PathFollower : MonoBehaviour
         Node newNode = null;
         while (newDistance < minDistanceToSpawnNewTarget)
         {
-            newNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+            newNode = isProcedural ? RoadConnecter.Instance.GetRandomNodeInRoads() : WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
             newTargetPos = newNode.worldPosition;
             newDistance = Vector3.Distance(_startNode.worldPosition, newTargetPos);
         }
@@ -413,7 +419,7 @@ public class PathFollower : MonoBehaviour
         Node newNode = null;
         while (newDistance < minDistanceToSpawnNewTarget)
         {
-            newNode = WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
+            newNode = isProcedural ? RoadConnecter.Instance.GetRandomNodeInRoads() : WorldGrid.Instance.GetRandomNodeInRoads(); // This will be the endNode
             newTargetPos = newNode.worldPosition;
             newDistance = Vector3.Distance(endNode.worldPosition, newTargetPos);
         }

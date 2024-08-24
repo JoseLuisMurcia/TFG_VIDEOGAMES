@@ -7,11 +7,12 @@ namespace PG
     public class Visualizer : MonoBehaviour
     {
         [HideInInspector] public RoadPlacer roadPlacer;
+        [HideInInspector] private RoadConnecter roadConnecter;
         private LSystemGenerator lsystem;
         private DecorationPlacer decorationPlacer;
         private GenerationUI generationUI;
-        [HideInInspector] public List<Node> pointNodes = new List<Node>();
-        [HideInInspector] public List<Node> surroundingNodes = new List<Node>();
+        [HideInInspector] public List<GridNode> pointNodes = new List<GridNode>();
+        [HideInInspector] public List<GridNode> surroundingNodes = new List<GridNode>();
         [SerializeField] public Grid grid;
         //List<Vector3> positions = new List<Vector3>();
         private int length = 8;
@@ -43,6 +44,7 @@ namespace PG
             instance = this;
             lsystem = GetComponent<LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
+            roadConnecter = GetComponent<RoadConnecter>();
             decorationPlacer = GetComponent<DecorationPlacer>();
             generationUI = GetComponent<GenerationUI>();
         }
@@ -109,7 +111,7 @@ namespace PG
             VisualizeSequence(sequence);
         }
         // Hay que desplazarse en nodos, en cubitos del grid, luego ya mapeamos a carreteras, nada de posiciones, cubos
-        private void VisualizeSequence(string sequence)
+        private async void VisualizeSequence(string sequence)
         {
             Stack<AgentParameters> savePoints = new Stack<AgentParameters>();
             int gridTopX = grid.gridSizeX;
@@ -121,7 +123,7 @@ namespace PG
 
             Vector3 direction = Vector3.forward;
 
-            Node firstNode = grid.nodesGrid[currentPosX, currentPosY];
+            GridNode firstNode = grid.nodesGrid[currentPosX, currentPosY];
             AddToSavedPoints(firstNode);
 
             foreach (char letter in sequence)
@@ -187,16 +189,17 @@ namespace PG
                         break;
                 }
             }
-            roadPlacer.PlaceRoadAssets(grid, this);
+            List<GameObject> roadAssets = roadPlacer.PlaceRoadAssets(grid, this);
+            await roadConnecter.ConnectRoads(roadAssets);
             new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
-            //generationUI.OnCityCreated();
+            generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
             navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)
         {
-            Node startNode = grid.nodesGrid[startX, startY];
+            GridNode startNode = grid.nodesGrid[startX, startY];
             if (startNode.usage != Usage.point)
                 return;
 
@@ -220,7 +223,7 @@ namespace PG
                 int newX = startX + dirX * i;
                 int newY = startY + dirY * i;
                 int[] currentPos = { newX, newY };
-                Node currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
+                GridNode currentNode = grid.nodesGrid[currentPos[0], currentPos[1]];
                 //regionHelper.SetBoundaries(currentNode);
                 if (currentNode.usage != Usage.road && currentNode.usage != Usage.point)
                 {
@@ -231,14 +234,14 @@ namespace PG
 
 
             }
-            Node endNode = grid.nodesGrid[endX, endY];
+            GridNode endNode = grid.nodesGrid[endX, endY];
             MarkSurroundingNodes(endX, endY, neighbourIncrement[0], neighbourIncrement[1]);
             MarkCornerDecorationNodes(endNode);
             AddToSavedPoints(endNode);
         }
         // This method receives a startPosition and the increment with direction it has to perform to reach a target, it has to be called on a loop
         // The increment received is to advance laterally to the main road and check if there is a road.
-        public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement, Node targetNode)
+        public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement, GridNode targetNode)
         {
             int i = 1;
             while (i <= neighboursOffset)
@@ -272,9 +275,9 @@ namespace PG
             }
             return true;
         }
-        private bool TargetReached(int x, int y, Node targetNode)
+        private bool TargetReached(int x, int y, GridNode targetNode)
         {
-            Node newNode = grid.nodesGrid[x, y];
+            GridNode newNode = grid.nodesGrid[x, y];
             if (newNode == targetNode)
                 return true;
 
@@ -313,7 +316,7 @@ namespace PG
             {
                 if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
                 {
-                    Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
+                    GridNode increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
                     if (!increasedNode.occupied)
                     {
                         MarkNodeAsDecoration(increasedNode);
@@ -322,7 +325,7 @@ namespace PG
 
                 if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
                 {
-                    Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
+                    GridNode decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
                     if (!decreasedNode.occupied)
                     {
                         MarkNodeAsDecoration(decreasedNode);
@@ -337,19 +340,19 @@ namespace PG
             {
                 if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
                 {
-                    Node increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
+                    GridNode increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
                     RemoveNodeFromDecoration(increasedNode);
                 }
 
                 if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
                 {
-                    Node decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
+                    GridNode decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
                     RemoveNodeFromDecoration(decreasedNode);
                 }
 
             }
         }
-        public void MarkCornerDecorationNodes(Node node)
+        public void MarkCornerDecorationNodes(GridNode node)
         {
             List<Vector2Int> positions = new List<Vector2Int>() { new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1), new Vector2Int(1, 1),
             new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(0, 1), new Vector2Int(1, 0)};
@@ -360,14 +363,14 @@ namespace PG
                 if (OutOfGrid(x + position.x, y + position.y))
                     continue;
 
-                Node neighbour = grid.nodesGrid[x + position.x, y + position.y];
+                GridNode neighbour = grid.nodesGrid[x + position.x, y + position.y];
                 if (!neighbour.occupied)
                 {
                     MarkNodeAsDecoration(neighbour);
                 }
             }
         }
-        public void UnmarkCornerDecorationNodes(Node node)
+        public void UnmarkCornerDecorationNodes(GridNode node)
         {
             List<Vector2Int> positions = new List<Vector2Int>() { new Vector2Int(-1, 1), new Vector2Int(-1, -1), new Vector2Int(1, -1), new Vector2Int(1, 1),
             new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(0, 1), new Vector2Int(1, 0)};
@@ -378,17 +381,17 @@ namespace PG
                 if (OutOfGrid(x + position.x, y + position.y))
                     continue;
 
-                Node neighbour = grid.nodesGrid[x + position.x, y + position.y];
+                GridNode neighbour = grid.nodesGrid[x + position.x, y + position.y];
                 RemoveNodeFromDecoration(neighbour);
             }
         }
-        private void MarkNodeAsDecoration(Node node)
+        private void MarkNodeAsDecoration(GridNode node)
         {
             node.occupied = false;
             node.usage = Usage.decoration;
             surroundingNodes.Add(node);
         }
-        private void RemoveNodeFromDecoration(Node node)
+        private void RemoveNodeFromDecoration(GridNode node)
         {
             if (!node.occupied)
             {
@@ -396,7 +399,7 @@ namespace PG
                 surroundingNodes.Remove(node);
             }         
         }
-        public void AddToSavedPoints(Node _node)
+        public void AddToSavedPoints(GridNode _node)
         {
             _node.occupied = true;
             _node.usage = Usage.point;
@@ -404,7 +407,7 @@ namespace PG
         }
         public bool NearbyRoad(int xPos, int yPos)
         {
-            Node node = grid.nodesGrid[xPos, yPos];
+            GridNode node = grid.nodesGrid[xPos, yPos];
             if (node.usage == Usage.road || node.usage == Usage.point)
             {
                 return true;

@@ -29,6 +29,8 @@ public class Road : MonoBehaviour
 
     [HideInInspector] public float boxColliderSize;
     [HideInInspector] public Bounds bounds;
+    private bool reset = false;
+    public bool procedural = false;
 
     private void Awake()
     {
@@ -42,14 +44,40 @@ public class Road : MonoBehaviour
         SortReferencePoints();
         boxColliderSize = boxCollider.bounds.size.x;
     }
-
-    void Start()
+    public IEnumerator Restart()
     {
+        yield return new WaitForSeconds(.5f);
+        connections.Clear();
+        rayPositions.Clear();
+        reset = true;
+        trafficLightEvents = GetComponent<TrafficLightEvents>();
+        boxCollider = GetComponent<BoxCollider>();
+        pathCreator = GetComponent<PathCreator>();
+        bounds = GetComponent<MeshFilter>().mesh.bounds;
+        leftBottom = gameObject.transform.Find("LeftBottom");
+        SetConnections();
+        SetLanes();
+        boxColliderSize = boxCollider.bounds.size.x;
+
         if (typeOfRoad != TypeOfRoad.Roundabout)
         {
             Destroy(boxCollider);
         }
+        if (typeOfRoad == TypeOfRoad.Intersection)
+        {
+            CreateIntersectionPriorityTriggers();
+        }
+    }
 
+    void Start()
+    {
+        if (procedural)
+            return;
+
+        if (typeOfRoad != TypeOfRoad.Roundabout)
+        {
+            Destroy(boxCollider);
+        }
 
         if (typeOfRoad == TypeOfRoad.Intersection)
         {
@@ -136,7 +164,6 @@ public class Road : MonoBehaviour
         foreach (Vector3 localPoint in localPoints)
             laneReferencePoints.Add(transform.TransformPoint(localPoint));
     }
-
     private void SetConnections()
     {
         Vector3 center = transform.position + boxCollider.center;
@@ -156,6 +183,7 @@ public class Road : MonoBehaviour
         Vector3 ray6newPos = (ray1newPos + ray2Pos) * 0.5f;
         Vector3 ray7newPos = (ray2Pos + ray2newPos) * 0.5f;
         Vector3 ray8newPos = (ray2newPos + ray3Pos) * 0.5f;
+
         Vector3 ray9newPos = (ray3Pos + ray3newPos) * 0.5f;
         Vector3 ray10newPos = (ray3newPos + ray4Pos) * 0.5f;
         Vector3 ray11newPos = (ray4Pos + ray4newPos) * 0.5f;
@@ -176,20 +204,21 @@ public class Road : MonoBehaviour
         rayPositions.Add(ray11newPos);
         rayPositions.Add(ray12newPos);
 
+        int i = 0;
         foreach (Vector3 rayPos in rayPositions)
         {
             Vector3 rayOrigin = rayPos + Vector3.up * 25f;
             Ray ray = new Ray(rayOrigin, Vector3.down);
             RaycastHit hit;
-            //Debug.DrawRay(rayPos + Vector3.up * 50, Vector3.down * 55f, Color.magenta, 30f);
             if (Physics.Raycast(ray, out hit, 55f, roadMask))
             {
                 Road road = hit.collider.gameObject.GetComponent<Road>();
-                if (road != null && IsCompatible(road))
-                {
+                if (road != null && IsCompatible(road) && road != this)
+                {          
                     connections.Add(road);
                 }
             }
+            i++;
         }
     }
 

@@ -99,7 +99,7 @@ namespace PG
 
             bool found = false;
             VoronoiRegion firstRegion = null;
-            Debug.Log("CreateSuburbs");
+            //Debug.Log("CreateSuburbs");
             while (!found)
             {
                 int firstId = Random.Range(0, freeRegions.Count);
@@ -143,7 +143,7 @@ namespace PG
                 }
 
             }
-            Debug.Log("Node count: " + nodeCount);
+            //Debug.Log("Node count: " + nodeCount);
             AssignTypeToRegions(firstSuburbsDistrictRegions, Region.Suburbs);
             CheckForIsolatedRegions(regions, Region.Suburbs);
         }

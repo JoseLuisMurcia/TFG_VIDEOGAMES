@@ -5,6 +5,7 @@ using UnityEngine;
 public class Pathfinding : MonoBehaviour
 {
     PathfinderRequestManager requestManager;
+    [SerializeField] private bool isProcedural = false;
     void Awake()
     {
         requestManager = GetComponent<PathfinderRequestManager>();
@@ -16,20 +17,21 @@ public class Pathfinding : MonoBehaviour
     }
     public void StartFindPath(Vector3 startPos, Vector3 targetPos, Vector3 carForward)
     {
-        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
-        Node targetNode = WorldGrid.Instance.FindEndNode(targetPos);
+
+        Node startNode = isProcedural ? RoadConnecter.Instance.FindStartNode(startPos, carForward) : WorldGrid.Instance.FindStartNode(startPos, carForward);
+        Node targetNode = isProcedural ? RoadConnecter.Instance.FindStartNode(startPos, carForward) : WorldGrid.Instance.FindEndNode(targetPos);
         StartCoroutine(FindPath(startNode, targetNode));
     }
     public void StartFindPath(Vector3 startPos, Node targetNode, Vector3 carForward)
     {
-        Node startNode = WorldGrid.Instance.FindStartNode(startPos, carForward);
+        Node startNode = isProcedural ? RoadConnecter.Instance.FindStartNode(startPos, carForward) : WorldGrid.Instance.FindStartNode(startPos, carForward);
         StartCoroutine(FindPath(startNode, targetNode));
     }
     private IEnumerator FindPath(Node startNode, Node targetNode)
     {
         bool pathSuccess = false;
         startNode.gCost = 0;
-        Heap<Node> openSet = new Heap<Node>(WorldGrid.Instance.MaxSize);
+        Heap<Node> openSet = isProcedural ? new Heap<Node>(RoadConnecter.Instance.MaxSize) : new Heap<Node>(WorldGrid.Instance.MaxSize);
         HashSet<Node> closedSet = new HashSet<Node>();
         openSet.Add(startNode);
 

@@ -1589,7 +1589,6 @@ public class WorldGrid : MonoBehaviour
             }
         }
     }
-
     #endregion
 
     #region Auxiliar methods

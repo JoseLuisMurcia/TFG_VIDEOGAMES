@@ -15,15 +15,15 @@ namespace PG
         public float randomNaturePlacementThreshold = 0.3f;
         public Dictionary<Vector2Int, GameObject> structuresDictionary = new Dictionary<Vector2Int, GameObject>();
         public Dictionary<Vector2Int, GameObject> natureDictionary = new Dictionary<Vector2Int, GameObject>();
-        private List<Node> surroundingNodes;
+        private List<GridNode> surroundingNodes;
 
         public void PlaceStructuresAroundRoad()
         {
             // Get all surrounding nodes (nodes available to put a house in)
             surroundingNodes = Visualizer.instance.surroundingNodes.Distinct().ToList();
 
-            List<Node> updatedList = new List<Node>();
-            foreach (Node node in surroundingNodes)
+            List<GridNode> updatedList = new List<GridNode>();
+            foreach (GridNode node in surroundingNodes)
             {
                 if (node.usage == Usage.decoration)
                 {
@@ -35,8 +35,8 @@ namespace PG
             // Get the proper orientations for those hypothetical houses 
             Dictionary<Vector2Int, Direction> spots = GetDirectionsForAssetsAroundRoad();
 
-            List<Node> blockedNodes = new List<Node>();
-            foreach (Node node in surroundingNodes)
+            List<GridNode> blockedNodes = new List<GridNode>();
+            foreach (GridNode node in surroundingNodes)
             {
                 if (blockedNodes.Contains(node))
                     continue;
@@ -63,7 +63,7 @@ namespace PG
                 }
 
                 int sizePerBuilding = GetSizePerBuilding();
-                List<Node> fittingNodes = GetFittingNodes(node, spots[key], sizePerBuilding);
+                List<GridNode> fittingNodes = GetFittingNodes(node, spots[key], sizePerBuilding);
                 if (fittingNodes == null)
                     continue;
 
@@ -89,7 +89,7 @@ namespace PG
                         break;
                 }
                 Vector3 housePosition = Vector3.zero;
-                foreach (Node fittingNode in fittingNodes)
+                foreach (GridNode fittingNode in fittingNodes)
                 {
                     Vector2Int fittingNodeKey = new Vector2Int(fittingNode.gridX, fittingNode.gridY);
                     structuresDictionary[fittingNodeKey] = house;
@@ -122,7 +122,7 @@ namespace PG
             }
         }
         // Get the available nodes for placing the house
-        private List<Node> GetFittingNodes(Node referenceNode, Direction direction, int sizePerBuilding)
+        private List<GridNode> GetFittingNodes(GridNode referenceNode, Direction direction, int sizePerBuilding)
         {
             int[] startOffset = new int[] { 0, 0 };
             if (direction == Direction.back || direction == Direction.forward)
@@ -146,7 +146,7 @@ namespace PG
                     startOffset[1] += 1;
                 }
 
-                List<Node> combination = new List<Node>();
+                List<GridNode> combination = new List<GridNode>();
                 for (int j = 0; j < sizePerBuilding; j++)
                 {
                     int x = referenceNode.gridX + startOffset[0];
@@ -162,7 +162,7 @@ namespace PG
 
                     if (!Grid.Instance.OutOfGrid(x, y))
                     {
-                        Node currentNode = Grid.Instance.nodesGrid[x, y];
+                        GridNode currentNode = Grid.Instance.nodesGrid[x, y];
                         if (!currentNode.occupied)
                         {
                             combination.Add(currentNode);
@@ -184,7 +184,7 @@ namespace PG
             // Si da true, mirando hacia abajo pues ya sabes
             Dictionary<Vector2Int, Direction> freeSpaces = new Dictionary<Vector2Int, Direction>();
 
-            foreach (Node node in surroundingNodes)
+            foreach (GridNode node in surroundingNodes)
             {
                 foreach (Direction direction in RoadPlacer.Instance.GetAllDirections())
                 {
@@ -195,7 +195,7 @@ namespace PG
                     if (Grid.Instance.OutOfGrid(x, y))
                         continue;
 
-                    Node selectedNode = Grid.Instance.nodesGrid[x, y];
+                    GridNode selectedNode = Grid.Instance.nodesGrid[x, y];
                     if (selectedNode.usage == Usage.road || selectedNode.usage == Usage.point)
                     {
                         freeSpaces.Add(new Vector2Int(node.gridX, node.gridY), direction);

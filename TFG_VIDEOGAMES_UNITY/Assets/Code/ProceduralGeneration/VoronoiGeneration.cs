@@ -59,7 +59,7 @@ namespace PG
             {
                 points[i] = centres[i];
                 voronoiRegions[i].point = points[i];
-                voronoiRegions[i].nodes = new List<Node>();
+                voronoiRegions[i].nodes = new List<GridNode>();
                 voronoiRegions[i].neighbourRegions = new HashSet<VoronoiRegion>();
             }
             for (int x = 0; x < size; x++)
@@ -79,7 +79,7 @@ namespace PG
                         }
                     }
                     int regionId = value % regionsCount;
-                    Node node = Grid.Instance.nodesGrid[x, y];
+                    GridNode node = Grid.Instance.nodesGrid[x, y];
                     voronoiRegions[regionId].nodes.Add(node);
                     node.voronoiRegion = voronoiRegions[regionId];
                 }
@@ -110,7 +110,7 @@ namespace PG
                 voronoiRegions.Add(new VoronoiRegion(nodeColor, points[i], i));
             }
         }
-        public void SetRegions(int x, int y, Node node)
+        public void SetRegions(int x, int y, GridNode node)
         {
             float distance = float.MaxValue;
             int value = 0;
@@ -147,9 +147,9 @@ namespace PG
             {
                 for (int y = 0; y < size; y++)
                 {
-                    Node currentNode = Grid.Instance.nodesGrid[x, y];
-                    List<Node> neighbours = Grid.Instance.GetNeighboursForVoronoi(currentNode);
-                    foreach (Node neighbour in neighbours)
+                    GridNode currentNode = Grid.Instance.nodesGrid[x, y];
+                    List<GridNode> neighbours = Grid.Instance.GetNeighboursForVoronoi(currentNode);
+                    foreach (GridNode neighbour in neighbours)
                     {
                         if (currentNode.voronoiRegion.id != neighbour.voronoiRegion.id)
                         {
@@ -197,7 +197,7 @@ namespace PG
             foreach (VoronoiRegion region in voronoiRegions)
             {
                 Gizmos.color = (debugType == DebugType.Fragments) ? region.color : GetColorFromRegionType(region.regionType);
-                foreach (Node node in region.nodes)
+                foreach (GridNode node in region.nodes)
                 {
                     Gizmos.DrawCube(node.worldPosition, Vector3.one * 4f);
                 }
@@ -252,7 +252,7 @@ namespace PG
     public class VoronoiRegion
     {
         public Color color { set; get; }
-        public List<Node> nodes = new List<Node>();
+        public List<GridNode> nodes = new List<GridNode>();
         public HashSet<VoronoiRegion> neighbourRegions = new HashSet<VoronoiRegion>();
         public Vector2 point;
         public Region regionType = Region.Residential;
