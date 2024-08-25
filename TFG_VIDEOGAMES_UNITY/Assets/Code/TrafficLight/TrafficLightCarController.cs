@@ -8,7 +8,6 @@ public class TrafficLightCarController : MonoBehaviour
 {
     PathFollower pathFollower;
 
-    [SerializeField] public Road currentRoad;
     [SerializeField] public CarTrafficLight trafficLight;
     private void Start()
     {
@@ -17,7 +16,7 @@ public class TrafficLightCarController : MonoBehaviour
 
     private void OnTrafficLightChange(TrafficLightState newColor, bool subscription, float lightChangeTime)
     {
-        if (currentRoad == null)
+        if (trafficLight == null)
             return;
 
         float distance;
@@ -27,14 +26,14 @@ public class TrafficLightCarController : MonoBehaviour
                 pathFollower.ContinueAtTrafficLight(subscription);
                 break;
             case TrafficLightState.Amber:
-                distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
+                distance = CheckDistanceWithTrafficLight(trafficLight.transform.position);
                 if (ShouldBrake(distance,lightChangeTime))
                 {
                     pathFollower.StopAtTrafficLight(subscription);
                 }
                 break;
             case TrafficLightState.Red:
-                distance = CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
+                distance = CheckDistanceWithTrafficLight(trafficLight.transform.position);
                 bool isClose = distance <= 1f ? true : false;
                 bool isFast = pathFollower.speedPercent > 0.6f ? true : false;
                 if (!(isClose && isFast))
@@ -54,18 +53,18 @@ public class TrafficLightCarController : MonoBehaviour
     }
     public float GiveDistanceToPathFollower()
     {
-        if (currentRoad == null)
+        if (trafficLight == null)
         {
             pathFollower.shouldStopAtTrafficLight = false;
             return 100f;
         }
-        return CheckDistanceWithTrafficLight(currentRoad.trafficLight.transform.position);
+        return CheckDistanceWithTrafficLight(trafficLight.transform.position);
     }
 
     private float CheckDistanceWithTrafficLight(Vector3 trafficLightPos)
     {
         // Encontrar punto a una distancia X a partir de una direccion.
-        Vector3 trafficLightPosForward = currentRoad.trafficLight.transform.forward;
+        Vector3 trafficLightPosForward = trafficLight.transform.forward;
         Vector2 perpDir = Vector2.Perpendicular(new Vector2(trafficLightPosForward.x, trafficLightPosForward.z));
         Vector3 perpendicularDirection = new Vector3(perpDir.x, 0, perpDir.y).normalized;
 
@@ -73,20 +72,18 @@ public class TrafficLightCarController : MonoBehaviour
         return Vector3.Cross(ray.direction, transform.position - ray.origin).magnitude;
     }
 
-    public void SubscribeToTrafficLight(Road _newRoad)
+    public void SubscribeToTrafficLight(CarTrafficLight _trafficLight)
     {
-        currentRoad = _newRoad;
-        trafficLight = _newRoad.trafficLight;
-        currentRoad.trafficLightEvents.onLightChange += OnTrafficLightChange;
+        trafficLight = _trafficLight;
+        trafficLight.trafficLightEvents.onLightChange += OnTrafficLightChange;
         // Auto send an event in order to know the state
-        OnTrafficLightChange(currentRoad.trafficLight.currentColor, true, -1f);
+        OnTrafficLightChange(trafficLight.currentColor, true, -1f);
     }
 
     public void UnsubscribeToTrafficLight()
     {
-        currentRoad.trafficLightEvents.onLightChange -= OnTrafficLightChange;
+        trafficLight.trafficLightEvents.onLightChange -= OnTrafficLightChange;
         pathFollower.shouldStopAtTrafficLight = false;
-        currentRoad = null;
         trafficLight = null;
     }
 }

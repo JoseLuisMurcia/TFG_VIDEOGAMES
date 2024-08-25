@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class IntersectionTriggers : MonoBehaviour
 {
-    // Start is called before the first frame update
     bool hasTrafficLight = false;
     public Road parentRoad;
     Road belongingRoad = null;
@@ -18,7 +17,7 @@ public class IntersectionTriggers : MonoBehaviour
     // Try to find the road that this intersection is placed in
     private IEnumerator FindBelongingRoad()
     {
-        yield return new WaitForSeconds(15f);
+        yield return new WaitForSeconds(1.5f);
         float bestDistance = Mathf.Infinity;
         foreach (Road neighbour in parentRoad.connections)
         {
@@ -36,7 +35,7 @@ public class IntersectionTriggers : MonoBehaviour
         }
         if (parentRoad != null && belongingRoad != null)
         {
-            if (belongingRoad.trafficLight != null)
+            if (belongingRoad.trafficLights.Count > 0)
             {
                 hasTrafficLight = true;
                 DestroyIfTrafficLight();
@@ -48,10 +47,16 @@ public class IntersectionTriggers : MonoBehaviour
     private void DestroyIfTrafficLight()
     {
         Vector3 triggerForward = transform.forward;
-        Vector3 trafficLightForward = belongingRoad.trafficLight.transform.forward;
-        float angle = Vector3.Angle(triggerForward, trafficLightForward);
-        if (angle > 145f)
-            Destroy(gameObject);
+        foreach (var trafficLight in belongingRoad.trafficLights)
+        {
+            Vector3 trafficLightForward = trafficLight.transform.forward;
+            float angle = Vector3.Angle(triggerForward, trafficLightForward);
+            if (angle > 145f)
+            {
+                Destroy(gameObject);
+                break;
+            }
+        }      
     }
 
     private void OnTriggerEnter(Collider other)
@@ -67,12 +72,17 @@ public class IntersectionTriggers : MonoBehaviour
 
             if (hasTrafficLight) // SI TIENE TRAFFIC LIGHT SI O SI HAY QUE NO ACEPTARLA? CREO QUE TENGO QUE HACER EL CASO INVERSO
             {
-                Vector3 trafficLightForward = belongingRoad.trafficLight.transform.forward;
-                float angleBetweenCarForwardAndTrafficLightForward = Vector3.Angle(carForward, trafficLightForward);
-                if (angleBetweenCarForwardAndTrafficLightForward > 140f)
+                foreach (var trafficLight in belongingRoad.trafficLights)
                 {
-                    carManager.intersectionInSight = true;
+                    Vector3 trafficLightForward = trafficLight.transform.forward;
+                    float angleBetweenCarForwardAndTrafficLightForward = Vector3.Angle(carForward, trafficLightForward);
+                    if (angleBetweenCarForwardAndTrafficLightForward > 145f)
+                    {
+                        carManager.intersectionInSight = true;
+                        break;
+                    }
                 }
+                
             }
             else
             {

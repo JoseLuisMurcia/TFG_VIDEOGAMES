@@ -33,7 +33,7 @@ public class PriorityBehavior
     public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
         PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
-        if (carsInSight.Contains(hitCarPathFollower) || BothCarsInSameRoad(hitCarPathFollower))
+        if (carsInSight.Contains(hitCarPathFollower) || BothCarsInSameRoad(hitCarPathFollower) || pathFollower.nodeList.Count <= 0)
             return;
 
         PriorityLevel carPriority = pathFollower.priorityLevel;
@@ -196,7 +196,10 @@ public class PriorityBehavior
             float distanceToCar = Vector3.Distance(car.transform.position, transform.position);
             float dot = Vector3.Dot(carForward, dirToCarInSight);
 
-            if (distanceToCar > maxDistance || pathFollower.priorityLevel > car.priorityLevel || (AngleNotRelevant(angleToCarInSight, car, dot, futureCarPosition, angleToFuturePos) ? true : ShouldIgnoreDifferentRoads(car)))
+            if (distanceToCar > maxDistance 
+                || pathFollower.priorityLevel > car.priorityLevel 
+                || ShouldObeyTrafficLight() 
+                || (AngleNotRelevant(angleToCarInSight, car, dot, futureCarPosition, angleToFuturePos) ? true : ShouldIgnoreDifferentRoads(car)))
             {
                 carsToBeRemoved.Add(car);
             }
@@ -324,8 +327,7 @@ public class PriorityBehavior
             relevantCarsInSight.Remove(car);
         }
 
-        int numRelevantCars = relevantCarsInSight.Count;
-        if (numRelevantCars > 0)
+        if (relevantCarsInSight.Count > 0)
         {
             if (avoidanceBehavior.hasTarget)
             {
@@ -508,6 +510,39 @@ public class PriorityBehavior
 
         if (currentRoad == hitCarPreviousRoad || previousRoad == hitCarCurrentRoad)
             return true;
+
+        return false;
+    }
+    // Never set shouldStopPriority to true if the car should obey a trafficLight
+    private bool ShouldObeyTrafficLight()
+    {
+        Road currentRoad = pathFollower.nodeList[pathFollower.pathIndex].road;
+        Road previousRoad = pathFollower.FindPreviousRoadOnPath();
+        List<CarTrafficLight> roadTrafficLights = new List<CarTrafficLight>();
+        if (currentRoad.trafficLights.Count <= 0)
+        {
+            if (currentRoad.typeOfRoad == TypeOfRoad.Intersection && previousRoad != null)
+            {
+                roadTrafficLights = previousRoad.trafficLights;
+            }
+        }
+        else
+        {
+            roadTrafficLights = currentRoad.trafficLights;
+        }
+        if (roadTrafficLights.Count > 0)
+        {
+            Vector3 carForward = transform.forward;
+            foreach (CarTrafficLight trafficLight in roadTrafficLights)
+            {
+                Vector3 trafficLightForward = trafficLight.transform.forward;
+                float angle = Vector3.Angle(carForward, trafficLightForward);
+                if (angle > 140f)
+                {
+                    return true;
+                }
+            }
+        }
 
         return false;
     }

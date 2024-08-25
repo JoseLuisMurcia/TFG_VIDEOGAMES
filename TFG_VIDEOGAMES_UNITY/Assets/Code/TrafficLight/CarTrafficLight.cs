@@ -6,8 +6,7 @@ public class CarTrafficLight : TrafficLight
 {
     [SerializeField] LayerMask roadMask;
     private Vector3 rayPos;
-    [HideInInspector] public Road road;
-
+    [HideInInspector] public TrafficLightEvents trafficLightEvents;
     [HideInInspector] public ColorChanger colorChanger;
     [SerializeField] bool tryDebug = false;
 
@@ -15,6 +14,7 @@ public class CarTrafficLight : TrafficLight
     {
         if (WorldGrid.Instance != null)
         {
+            trafficLightEvents = GetComponent<TrafficLightEvents>();
             colorChanger = GetComponentInChildren<ColorChanger>();
             FindRoad();
         }         
@@ -25,6 +25,7 @@ public class CarTrafficLight : TrafficLight
         if (WorldGrid.Instance != null)
         {
             if(colorChanger == null) colorChanger = GetComponentInChildren<ColorChanger>();
+            if(trafficLightEvents == null) trafficLightEvents = GetComponent<TrafficLightEvents>();
             currentColor = TrafficLightState.Red;
             colorChanger.SetColor(currentColor);    
         }        
@@ -33,9 +34,11 @@ public class CarTrafficLight : TrafficLight
 
     public bool FindRoad()
     {
+        // If Procedural
         if (RoadConnecter.Instance != null)
         {
             colorChanger = GetComponentInChildren<ColorChanger>();
+            trafficLightEvents = GetComponent<TrafficLightEvents>();
             currentColor = TrafficLightState.Red;
             colorChanger.SetColor(currentColor);
         }
@@ -49,12 +52,11 @@ public class CarTrafficLight : TrafficLight
         {
             //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
             GameObject roadGameObject = hit.collider.gameObject;
-            road = roadGameObject.GetComponent<Road>();
+            Road road = roadGameObject.GetComponent<Road>();
             if (road != null)
             {
                 //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
-                road.trafficLight = this;
-                road.CreateTrafficLightTriggers();
+                road.CreateTrafficLightTriggers(this);
                 return true;
             }
             else
@@ -85,7 +87,7 @@ public class CarTrafficLight : TrafficLight
         if (Physics.Raycast(ray, out hit, 100, roadMask))
         {
             GameObject roadGameObject = hit.collider.gameObject;
-            road = roadGameObject.GetComponent<Road>();
+            Road road = roadGameObject.GetComponent<Road>();
             if (road != null)
             {
                 Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);

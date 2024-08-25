@@ -244,7 +244,7 @@ public class TrafficLightScheduler : MonoBehaviour
         CarTrafficLight currentCarTrafficLight = currentTrafficLight as CarTrafficLight;
         currentCarTrafficLight.currentColor = color;
         currentCarTrafficLight.colorChanger.SetColor(color);   
-        currentCarTrafficLight.road.trafficLightEvents.LightChange(color, false, lightChangeTime);
+        currentCarTrafficLight.trafficLightEvents.LightChange(color, false, lightChangeTime);
     }
     private void EmitColorEvent(TrafficLightState color)
     {
@@ -256,7 +256,7 @@ public class TrafficLightScheduler : MonoBehaviour
         {
             carTrafficLight.currentColor = color;
             carTrafficLight.colorChanger.SetColor(color);
-            carTrafficLight.road.trafficLightEvents.LightChange(color, false, lightChangeTime);
+            carTrafficLight.trafficLightEvents.LightChange(color, false, lightChangeTime);
         }
     }
 

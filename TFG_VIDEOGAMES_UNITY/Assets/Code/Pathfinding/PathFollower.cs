@@ -499,7 +499,7 @@ public class PathFollower : MonoBehaviour
     {
         if (shouldStopAtTrafficLight == false)
         {
-            if (trafficLightCarController.currentRoad == null)
+            if (trafficLightCarController.trafficLight == null)
                 return;
 
             if (reactionTimeCoroutine != null)

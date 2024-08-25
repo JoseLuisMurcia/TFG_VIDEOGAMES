@@ -38,9 +38,9 @@ public class AvoidanceBehavior
         {
             UnableTarget();
         }
-        else if (trafficLightController.currentRoad != null)
+        else if (trafficLightController.trafficLight != null)
         {
-            if (DifferentRoads(trafficLightController, hitCarTrafficLightController))
+            if (DifferentTrafficLights(trafficLightController, hitCarTrafficLightController))
             {
                 UnableTarget();
             }
@@ -122,15 +122,15 @@ public class AvoidanceBehavior
         //}
     }
 
-    private bool DifferentRoads(TrafficLightCarController carTrafficLightCont, TrafficLightCarController hitCarTrafficLightCont)
+    private bool DifferentTrafficLights(TrafficLightCarController carTrafficLightCont, TrafficLightCarController hitCarTrafficLightCont)
     {
-        Road ownRoad = carTrafficLightCont.currentRoad;
-        Road hitCarRoad = hitCarTrafficLightCont.currentRoad;
+        CarTrafficLight trafficLight = carTrafficLightCont.trafficLight;
+        CarTrafficLight hitCarTrafficLight= hitCarTrafficLightCont.trafficLight;
 
-        if (hitCarRoad == null)
+        if (hitCarTrafficLight == null)
             return true;
 
-        if (ownRoad == hitCarRoad)
+        if (trafficLight == hitCarTrafficLight)
             return false;
 
 
@@ -154,9 +154,9 @@ public class AvoidanceBehavior
             hitCarPathFollower = hit.collider.gameObject.GetComponent<PathFollower>();
             hitCarTrafficLightController = hit.collider.gameObject.GetComponent<TrafficLightCarController>();
 
-            if (trafficLightController.currentRoad != null) // If our car has to stop before traffic, only enable the target traffic light if the car is in the same traffic light as us.
+            if (trafficLightController.trafficLight != null) // If our car has to stop before traffic, only enable the target traffic light if the car is in the same traffic light as us.
             {
-                if (!DifferentRoads(trafficLightController, hitCarTrafficLightController) && BothShouldStopBeforeLight())
+                if (!DifferentTrafficLights(trafficLightController, hitCarTrafficLightController) && BothShouldStopBeforeLight())
                 {
                     if (NewTargetIsValid())
                         return;

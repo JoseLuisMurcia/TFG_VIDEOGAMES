@@ -9,8 +9,7 @@ public class Road : MonoBehaviour
     [SerializeField] LayerMask roadMask;
     public TypeOfRoad typeOfRoad;
     [SerializeField] public NumDirection numDirection;
-    [HideInInspector] public CarTrafficLight trafficLight;
-    [HideInInspector] public TrafficLightEvents trafficLightEvents;
+    
     [HideInInspector] public List<Road> connections = new List<Road>();
     [HideInInspector] public List<Lane> lanes;
     [HideInInspector] public List<Vector3> laneReferencePoints = new List<Vector3>();
@@ -30,10 +29,10 @@ public class Road : MonoBehaviour
     [HideInInspector] public float boxColliderSize;
     [HideInInspector] public Bounds bounds;
     public bool procedural = false;
+    public List<CarTrafficLight> trafficLights = new List<CarTrafficLight>();
 
     private void Awake()
     {
-        trafficLightEvents = GetComponent<TrafficLightEvents>();
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
         bounds = GetComponent<MeshFilter>().mesh.bounds;
@@ -48,7 +47,6 @@ public class Road : MonoBehaviour
         yield return new WaitForSeconds(.5f);
         connections.Clear();
         rayPositions.Clear();
-        trafficLightEvents = GetComponent<TrafficLightEvents>();
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
         bounds = GetComponent<MeshFilter>().mesh.bounds;
@@ -83,8 +81,9 @@ public class Road : MonoBehaviour
         }
     }
 
-    public void CreateTrafficLightTriggers()
+    public void CreateTrafficLightTriggers(CarTrafficLight trafficLight)
     {
+        trafficLights.Add(trafficLight);
         Vector3 entryPos;
         Vector3 exitPos;
 
@@ -109,6 +108,11 @@ public class Road : MonoBehaviour
         entryTrigger.transform.position = entryPos;
         entryTrigger.transform.parent = gameObject.transform;
         entryTrigger.AddComponent<EnterTriggerArea>();
+        EnterTriggerArea entryTriggerArea = entryTrigger.GetComponent<EnterTriggerArea>();
+        if (entryTriggerArea != null)
+        {
+            entryTriggerArea.SetTrafficLight(trafficLight);
+        }
         BoxCollider box = entryTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
         box.size = new Vector3(transform.localScale.x * .4f, 2f, transform.localScale.z * .9f);

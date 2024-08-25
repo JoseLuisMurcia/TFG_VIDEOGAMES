@@ -11,7 +11,7 @@ public class ExitTriggerArea : MonoBehaviour
         if (carController == null)
             return;
 
-        if (carController.currentRoad != null)
+        if (carController.trafficLight != null)
             carController.UnsubscribeToTrafficLight();
     }
 }
