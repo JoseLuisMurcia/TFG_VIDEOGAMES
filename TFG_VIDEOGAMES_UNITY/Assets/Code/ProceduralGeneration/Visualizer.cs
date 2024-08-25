@@ -191,6 +191,7 @@ namespace PG
             }
             List<GameObject> roadAssets = roadPlacer.PlaceRoadAssets(grid, this);
             await roadConnecter.ConnectRoads(roadAssets);
+            // FindTrafficLights
             new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();

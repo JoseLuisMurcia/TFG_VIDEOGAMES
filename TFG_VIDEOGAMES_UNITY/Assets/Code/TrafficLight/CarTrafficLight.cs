@@ -9,22 +9,36 @@ public class CarTrafficLight : TrafficLight
     [HideInInspector] public Road road;
 
     [HideInInspector] public ColorChanger colorChanger;
+    [SerializeField] bool tryDebug = false;
 
     private void Awake()
     {
-        colorChanger = GetComponentInChildren<ColorChanger>();
-        FindRoad();
+        if (WorldGrid.Instance != null)
+        {
+            colorChanger = GetComponentInChildren<ColorChanger>();
+            FindRoad();
+        }         
     }
 
     void Start()
     {
-        currentColor = TrafficLightState.Red;
-        colorChanger.SetColor(currentColor);
+        if (WorldGrid.Instance != null)
+        {
+            if(colorChanger == null) colorChanger = GetComponentInChildren<ColorChanger>();
+            currentColor = TrafficLightState.Red;
+            colorChanger.SetColor(currentColor);    
+        }        
     }
 
 
-    public void FindRoad()
+    public bool FindRoad()
     {
+        if (RoadConnecter.Instance != null)
+        {
+            colorChanger = GetComponentInChildren<ColorChanger>();
+            currentColor = TrafficLightState.Red;
+            colorChanger.SetColor(currentColor);
+        }
         float forwardDistance = 1f;
         float rightDistance = 1f;
         rayPos = transform.forward * forwardDistance + transform.right * rightDistance + transform.position;
@@ -38,23 +52,70 @@ public class CarTrafficLight : TrafficLight
             road = roadGameObject.GetComponent<Road>();
             if (road != null)
             {
+                //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
                 road.trafficLight = this;
                 road.CreateTrafficLightTriggers();
+                return true;
             }
             else
             {
-                Debug.LogWarning("Road found null by Traffic Light: " + gameObject.name);
+                //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.black, 50f);
+                //Debug.LogWarning("Road found null by Traffic Light: " + gameObject.name);
                 gameObject.SetActive(false);
-                //Destroy(gameObject);
+                Destroy(gameObject);
+            }
+        }
+        else
+        {
+            //Debug.DrawRay(ray.origin, ray.direction * 50f, Color.magenta, 50f);
+            //Debug.LogWarning("Road not found by Traffic Light: " + gameObject.name);
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+        }
+        return false;
+    }
+    public void DebugShit()
+    {
+        float forwardDistance = 1f;
+        float rightDistance = 1f;
+        rayPos = transform.forward * forwardDistance + transform.right * rightDistance + transform.position;
+        Ray ray = new Ray(rayPos + Vector3.up * 50, Vector3.down);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, 100, roadMask))
+        {
+            GameObject roadGameObject = hit.collider.gameObject;
+            road = roadGameObject.GetComponent<Road>();
+            if (road != null)
+            {
+                Debug.DrawRay(ray.origin, ray.direction * 50f, Color.blue, 50f);
+            }
+            else
+            {
+                Debug.DrawRay(ray.origin, ray.direction * 50f, Color.black, 50f);
+                Debug.DrawRay(transform.position + Vector3.up * 50f, ray.direction * 50f, Color.black, 50f);
+                Debug.LogWarning("Road found null by Traffic Light: " + gameObject.name);
             }
         }
         else
         {
             Debug.DrawRay(ray.origin, ray.direction * 50f, Color.magenta, 50f);
+            Debug.DrawRay(transform.position + Vector3.up * 50f, ray.direction * 50f, Color.magenta, 50f);
             Debug.LogWarning("Road not found by Traffic Light: " + gameObject.name);
-            gameObject.SetActive(false);
-            //Destroy(gameObject);
         }
     }
 
+    public void Update()
+    {
+        if (tryDebug)
+        {
+            tryDebug = false;
+            DebugShit();
+        }
+    }
+
+    public void DestroyTrafficLight()
+    {
+        Destroy(gameObject);
+    }
 }

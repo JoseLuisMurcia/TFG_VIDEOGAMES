@@ -9,12 +9,15 @@ namespace PG
 {
     public class RoadPlacer : MonoBehaviour
     {
+        #region prefabs
         [SerializeField]
-        private GameObject roadStraight, roadCorner, road3way, road4way;
+        private GameObject roadStraight, roadCorner, road3way, road4way, pedestrianCrossing, trafficLightCrossing;
         [SerializeField]
         private GameObject trafficLights;
         [SerializeField]
-        private GameObject stopSignal, yieldSignal, pedestrianSignal, sidewalk;
+        private GameObject stopSignal, yieldSignal, sidewalk;
+        #endregion
+
         private Grid grid;
         private Visualizer visualizer;
         private List<GridNode> updatedNodes = new List<GridNode>();

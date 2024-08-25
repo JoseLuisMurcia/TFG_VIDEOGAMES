@@ -29,7 +29,6 @@ public class Road : MonoBehaviour
 
     [HideInInspector] public float boxColliderSize;
     [HideInInspector] public Bounds bounds;
-    private bool reset = false;
     public bool procedural = false;
 
     private void Awake()
@@ -49,7 +48,6 @@ public class Road : MonoBehaviour
         yield return new WaitForSeconds(.5f);
         connections.Clear();
         rayPositions.Clear();
-        reset = true;
         trafficLightEvents = GetComponent<TrafficLightEvents>();
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
@@ -92,7 +90,7 @@ public class Road : MonoBehaviour
 
         if(laneReferencePoints.Count - 1 < 0)
         {
-            Debug.LogWarning("NO TIENE LANEREFERENCEPOINTS WTF");
+            Debug.LogError("NO TIENE LANEREFERENCEPOINTS WTF");
         }
         if(Vector3.Distance(trafficLight.transform.position, laneReferencePoints[0]) < Vector3.Distance(trafficLight.transform.position, laneReferencePoints[laneReferencePoints.Count - 1]))
         {

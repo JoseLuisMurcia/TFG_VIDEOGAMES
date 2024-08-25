@@ -39,8 +39,17 @@ public class TrafficLightScheduler : MonoBehaviour
                 PedestrianTrafficLight ptf = child.gameObject.GetComponent<PedestrianTrafficLight>();
                 if (tf != null)
                 {
-                    trafficLights.Add(tf);
-                    //waitingQueue.Enqueue(tf);
+                    if (WorldGrid.Instance == null)
+                    {
+                        if (tf.FindRoad())
+                        {
+                            trafficLights.Add(tf);
+                        }
+                    }
+                    else
+                    {
+                        trafficLights.Add(tf);
+                    }
                 }
                 if (ptf != null)
                 {
@@ -234,7 +243,7 @@ public class TrafficLightScheduler : MonoBehaviour
     {
         CarTrafficLight currentCarTrafficLight = currentTrafficLight as CarTrafficLight;
         currentCarTrafficLight.currentColor = color;
-        currentCarTrafficLight.colorChanger.SetColor(color);
+        currentCarTrafficLight.colorChanger.SetColor(color);   
         currentCarTrafficLight.road.trafficLightEvents.LightChange(color, false, lightChangeTime);
     }
     private void EmitColorEvent(TrafficLightState color)
