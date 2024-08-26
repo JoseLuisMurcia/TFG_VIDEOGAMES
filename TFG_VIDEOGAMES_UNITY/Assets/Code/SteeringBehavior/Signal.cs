@@ -11,6 +11,22 @@ public class Signal : MonoBehaviour
 
     void Start()
     {
+        if (WorldGrid.Instance != null)
+        {
+            OnRoadsReady();
+        }
+        else
+        {
+            StartCoroutine(ProceduralStart());
+        }
+    }
+    private IEnumerator ProceduralStart()
+    {
+        yield return new WaitForSeconds(1);
+        OnRoadsReady();
+    }
+    private void OnRoadsReady()
+    {
         FindRoad();
         CreateIntersectionPriorityTrigger();
     }

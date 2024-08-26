@@ -106,21 +106,26 @@ public class Road : MonoBehaviour
         // Create the object
         GameObject entryTrigger = new GameObject("TrafficLight Entry Trigger");
         entryTrigger.transform.position = entryPos;
-        entryTrigger.transform.parent = gameObject.transform;
-        entryTrigger.AddComponent<EnterTriggerArea>();
-        EnterTriggerArea entryTriggerArea = entryTrigger.GetComponent<EnterTriggerArea>();
+        entryTrigger.transform.parent = trafficLight.transform;
+        EnterTriggerArea entryTriggerArea = entryTrigger.AddComponent<EnterTriggerArea>();
         if (entryTriggerArea != null)
         {
             entryTriggerArea.SetTrafficLight(trafficLight);
         }
         BoxCollider box = entryTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
-        box.size = new Vector3(transform.localScale.x * .4f, 2f, transform.localScale.z * .9f);
+        box.size = (Mathf.Abs(transform.eulerAngles.y) == 90f || Mathf.Abs(transform.eulerAngles.y) == 270f) ? 
+            new Vector3(transform.localScale.z * .9f, 2f, transform.localScale.x * .4f) :
+            new Vector3(transform.localScale.x * .4f, 2f, transform.localScale.z * .9f);
 
         GameObject exitTrigger = new GameObject("TrafficLight Exit Trigger");
         exitTrigger.transform.position = exitPos;
-        exitTrigger.transform.parent = gameObject.transform;
-        exitTrigger.AddComponent<ExitTriggerArea>();
+        exitTrigger.transform.parent = trafficLight.transform;
+        ExitTriggerArea exitTriggerArea = exitTrigger.AddComponent<ExitTriggerArea>();
+        if (exitTriggerArea != null)
+        {
+            exitTriggerArea.SetTrafficLight(trafficLight);
+        }
         box = exitTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
         box.size = Vector3.one * 2.5f;
@@ -128,6 +133,10 @@ public class Road : MonoBehaviour
     private void CreateIntersectionPriorityTriggers()
     {
         int num = 0;
+
+        if (transform.Cast<Transform>().Any(child => child.gameObject.CompareTag("PedestrianSignal")))
+            return;
+
         foreach (Road neighbour in connections)
         {
             Vector3 boxPos = neighbour.transform.position;
@@ -141,7 +150,6 @@ public class Road : MonoBehaviour
             box.size = Vector3.one * 3;
             IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>();
             trigger.parentRoad = this;
-            //trigger.DeleteIfTrafficLight(neighbour);
             num++;
         }
 

@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class ExitTriggerArea : MonoBehaviour
 {
+    private CarTrafficLight trafficLight;
     private void OnTriggerExit(Collider other)
     {
         // FIND THE CAR THAT HAS COLLIDED WITH THE TRIGGER AND UNSUBSCRIBE IT TO THE ROADTRIGGERENTER
@@ -11,7 +12,11 @@ public class ExitTriggerArea : MonoBehaviour
         if (carController == null)
             return;
 
-        if (carController.trafficLight != null)
+        if (carController.trafficLight != null && carController.trafficLight == trafficLight)
             carController.UnsubscribeToTrafficLight();
+    }
+    public void SetTrafficLight(CarTrafficLight _trafficLight)
+    {
+        trafficLight = _trafficLight;
     }
 }

@@ -8,6 +8,7 @@ public class PriorityBehavior
     private Vector3 rayOrigin;
     private Transform carTarget;
     public bool hasSignalInSight = false;
+    bool isCloseToSignal = false;
     private Transform transform;
     private Transform signalInSight;
 
@@ -33,7 +34,7 @@ public class PriorityBehavior
     public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
         PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
-        if (carsInSight.Contains(hitCarPathFollower) || BothCarsInSameRoad(hitCarPathFollower) || pathFollower.nodeList.Count <= 0)
+        if (!isCloseToSignal || carsInSight.Contains(hitCarPathFollower) || BothCarsInSameRoad(hitCarPathFollower) || pathFollower.nodeList.Count <= 0)
             return;
 
         PriorityLevel carPriority = pathFollower.priorityLevel;
@@ -74,6 +75,7 @@ public class PriorityBehavior
     void CheckIfSignalOutOfRange()
     {
         float distance = Vector3.Distance(transform.position, signalInSight.position);
+        isCloseToSignal = distance < 10f;
         Vector3 carForward = transform.forward.normalized;
         Vector3 dirToSignal = (signalInSight.position - transform.position).normalized;
         PriorityLevel priority = pathFollower.priorityLevel;
@@ -89,6 +91,7 @@ public class PriorityBehavior
     public void RemoveSignalFromSight()
     {
         signalInSight = null;
+        isCloseToSignal = false;
         hasSignalInSight = false;
         pathFollower.priorityLevel = PriorityLevel.Max;
     }
@@ -197,6 +200,7 @@ public class PriorityBehavior
             float dot = Vector3.Dot(carForward, dirToCarInSight);
 
             if (distanceToCar > maxDistance 
+                || !isCloseToSignal
                 || pathFollower.priorityLevel > car.priorityLevel 
                 || ShouldObeyTrafficLight() 
                 || (AngleNotRelevant(angleToCarInSight, car, dot, futureCarPosition, angleToFuturePos) ? true : ShouldIgnoreDifferentRoads(car)))
