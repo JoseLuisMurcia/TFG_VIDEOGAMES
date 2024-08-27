@@ -132,11 +132,23 @@ public class Road : MonoBehaviour
     }
     private void CreateIntersectionPriorityTriggers()
     {
-        int num = 0;
+        // Create boxCollider trigger to exit intersection and disable intersection whiskers
+        BoxCollider exitTrigger = gameObject.AddComponent<BoxCollider>();
+        exitTrigger.isTrigger = true;
 
+        if (connections.Count > 2)
+        {
+            exitTrigger.size = exitTrigger.size * 0.8f;
+        }
+        else
+        {
+            exitTrigger.size = Vector3.Scale(exitTrigger.size, new Vector3(0.3f, 1f, 0.6f));
+        }
         if (transform.Cast<Transform>().Any(child => child.gameObject.CompareTag("PedestrianSignal")))
             return;
 
+        // If not pedestrian crossing, create IntersectionTriggers
+        int num = 0;
         foreach (Road neighbour in connections)
         {
             Vector3 boxPos = neighbour.transform.position;
@@ -150,20 +162,11 @@ public class Road : MonoBehaviour
             box.size = Vector3.one * 3;
             IntersectionTriggers trigger = newGameObject.AddComponent<IntersectionTriggers>();
             trigger.parentRoad = this;
+            trigger.belongingRoad = neighbour;
             num++;
         }
 
-        BoxCollider exitTrigger = gameObject.AddComponent<BoxCollider>();
-        exitTrigger.isTrigger = true;
-        
-        if(connections.Count > 2)
-        {
-            exitTrigger.size = exitTrigger.size * 0.8f;
-        }
-        else
-        {
-            exitTrigger.size = Vector3.Scale(exitTrigger.size, new Vector3(0.3f, 1f, 0.6f));
-        }
+       
 
     }
     private void SortReferencePoints()
@@ -238,10 +241,9 @@ public class Road : MonoBehaviour
         WhiskersManager carManager = other.GetComponent<WhiskersManager>();
         if (carManager != null)
         {
-            if (carManager.intersectionInSight)
-                carManager.intersectionInSight = false;
+            carManager.intersectionInSight = false;
 
-            if(carManager.pedestrianCrossingInSight)
+            if (carManager.pedestrianCrossingInSight)
             {
                 carManager.ExitPedestriansPriority();
             }

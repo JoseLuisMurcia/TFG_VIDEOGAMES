@@ -34,7 +34,8 @@ public class PriorityBehavior
     public void ProcessCarHit(Ray ray, RaycastHit hit, Transform sensor)
     {
         PathFollower hitCarPathFollower = hit.transform.gameObject.GetComponent<PathFollower>();
-        if (!isCloseToSignal || carsInSight.Contains(hitCarPathFollower) || BothCarsInSameRoad(hitCarPathFollower) || pathFollower.nodeList.Count <= 0)
+        
+        if ((hasSignalInSight && !isCloseToSignal) || carsInSight.Contains(hitCarPathFollower) || BothCarsInSameRoad(hitCarPathFollower) || pathFollower.nodeList.Count <= 0)
             return;
 
         PriorityLevel carPriority = pathFollower.priorityLevel;
@@ -46,6 +47,7 @@ public class PriorityBehavior
             Vector3 dirToHitCar = (hit.transform.position - transform.position).normalized;
             Vector3 carForward = transform.forward;
             float angleTolerance = 40f;
+            
             // El plan es, detectar los coches que tengamos delante y con la misma prioridad o mayor y guardarlos en una lista que procesamos a parte
             // Descartar aquellos que tengamos delante con las mismas intenciones que nosotros O, guardar las distancias con aquellos tambien?¿
             if (Vector3.Angle(carForward, hitCarForward) > angleTolerance && Vector3.Dot(transform.forward, dirToHitCar) > 0f)
@@ -200,7 +202,7 @@ public class PriorityBehavior
             float dot = Vector3.Dot(carForward, dirToCarInSight);
 
             if (distanceToCar > maxDistance 
-                || !isCloseToSignal
+                || (hasSignalInSight && !isCloseToSignal)
                 || pathFollower.priorityLevel > car.priorityLevel 
                 || ShouldObeyTrafficLight() 
                 || (AngleNotRelevant(angleToCarInSight, car, dot, futureCarPosition, angleToFuturePos) ? true : ShouldIgnoreDifferentRoads(car)))

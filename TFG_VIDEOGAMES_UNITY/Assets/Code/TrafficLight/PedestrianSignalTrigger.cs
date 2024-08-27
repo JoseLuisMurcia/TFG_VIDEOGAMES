@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem.HID;
 
 public class PedestrianSignalTrigger : MonoBehaviour
 {
@@ -21,8 +22,8 @@ public class PedestrianSignalTrigger : MonoBehaviour
             Vector3 signalPos = signal.transform.position;
             Vector3 dirFromCarToSignal = (signalPos - carPos).normalized;
             float angleFromCarToSignal = Vector3.Angle(carForward, dirFromCarToSignal);
-
-            if (angleFromCarToSignal < 45f)
+            float dot = Vector3.Dot(carForward, dirFromCarToSignal);
+            if (angleFromCarToSignal < 45f && dot > 0f)
             {
                 // Tell the priorityBehavior what it needs
                 carManager.pedestrianCrossingInSight = true;
