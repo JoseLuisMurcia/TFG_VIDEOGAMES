@@ -45,7 +45,7 @@ namespace PG
             int nodeCount = regions[firstId].nodes.Count;
             bool conditionsMet = false;
 
-            Debug.Log("CreateMainDistrict");
+            //Debug.Log("CreateMainDistrict");
 
             while (!conditionsMet)
             {
@@ -81,7 +81,7 @@ namespace PG
                 }
 
             }
-            Debug.Log("Node count: " + nodeCount);
+            //Debug.Log("Node count: " + nodeCount);
             AssignTypeToRegions(mainDistrictRegions, Region.Main);
             CheckForIsolatedRegions(regions, Region.Main);
         }

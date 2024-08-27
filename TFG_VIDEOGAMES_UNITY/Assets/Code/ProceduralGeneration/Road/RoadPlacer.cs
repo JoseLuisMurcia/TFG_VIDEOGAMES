@@ -11,7 +11,7 @@ namespace PG
     {
         #region prefabs
         [SerializeField]
-        private GameObject roadStraight, roadCorner, road3way, road4way, pedestrianCrossing, trafficLightCrossing;
+        private GameObject straight, corner, roundabout, bridge, slant, intersection3way, intersection4way, pedestrianCrossing, pedestrianCrossingTL;
         [SerializeField]
         private GameObject trafficLights;
         [SerializeField]
@@ -35,7 +35,7 @@ namespace PG
         {
             grid = _grid;
             visualizer = _visualizer;
-            // Clear this data structure, from now on only the points who can go forward in a direction until they meet the end of the world will remain the pointNodesList
+            // Clear useless pointNodes, from now on only the points who can go forward in a direction until they meet the end of the world will remain the pointNodesList
             List<GridNode> _pointNodes = new List<GridNode>();
             foreach (GridNode node in visualizer.pointNodes)
             {
@@ -69,7 +69,7 @@ namespace PG
                 }
             }
             visualizer.pointNodes = _pointNodes;
-           
+
             // Spawn the road prefabs
             for (int i = 0; i < grid.gridSizeX; i++)
             {
@@ -96,7 +96,7 @@ namespace PG
                                     {
                                         rotation = Quaternion.Euler(0, 90, 0);
                                     }
-                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(roadStraight, currentNode.worldPosition, rotation, transform);
+                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(straight, currentNode.worldPosition, rotation, transform);
                                 }
                                 else
                                 {
@@ -112,7 +112,7 @@ namespace PG
                                     {
                                         rotation = Quaternion.Euler(0, 90, 0);
                                     }
-                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(roadCorner, currentNode.worldPosition, rotation, transform);
+                                    roadDictionary[new Vector2Int(i, j)] = Instantiate(corner, currentNode.worldPosition, rotation, transform);
                                 }
                                 break;
                             case 3:
@@ -128,10 +128,10 @@ namespace PG
                                 {
                                     rotation = Quaternion.Euler(0, 90, 0);
                                 }
-                                roadDictionary[new Vector2Int(i, j)] = Instantiate(road3way, currentNode.worldPosition, rotation, transform);
+                                roadDictionary[new Vector2Int(i, j)] = Instantiate(intersection3way, currentNode.worldPosition, rotation, transform);
                                 break;
                             case 4:
-                                roadDictionary[new Vector2Int(i, j)] = Instantiate(road4way, currentNode.worldPosition, Quaternion.identity, transform);
+                                roadDictionary[new Vector2Int(i, j)] = Instantiate(intersection4way, currentNode.worldPosition, Quaternion.identity, transform);
                                 break;
                             default:
                                 break;
@@ -140,6 +140,8 @@ namespace PG
 
                 }
             }
+
+            return roadDictionary.Values.ToList();
 
             // Delete outdated prefabs and spawn the correct ones
             foreach (GridNode node in updatedNodes)
@@ -173,7 +175,7 @@ namespace PG
                             {
                                 rotation = Quaternion.Euler(0, 90, 0);
                             }
-                            roadDictionary[key] = Instantiate(roadStraight, node.worldPosition, rotation, transform);
+                            roadDictionary[key] = Instantiate(straight, node.worldPosition, rotation, transform);
                         }
                         else
                         {
@@ -189,7 +191,7 @@ namespace PG
                             {
                                 rotation = Quaternion.Euler(0, 90, 0);
                             }
-                            roadDictionary[key] = Instantiate(roadCorner, node.worldPosition, rotation, transform);
+                            roadDictionary[key] = Instantiate(corner, node.worldPosition, rotation, transform);
                         }
                         break;
                     case 3:
@@ -205,10 +207,10 @@ namespace PG
                         {
                             rotation = Quaternion.Euler(0, 90, 0);
                         }
-                        roadDictionary[key] = Instantiate(road3way, node.worldPosition, rotation, transform);
+                        roadDictionary[key] = Instantiate(intersection3way, node.worldPosition, rotation, transform);
                         break;
                     case 4:
-                        roadDictionary[key] = Instantiate(road4way, node.worldPosition, Quaternion.identity, transform);
+                        roadDictionary[key] = Instantiate(intersection4way, node.worldPosition, Quaternion.identity, transform);
                         break;
                     default:
                         break;
@@ -311,10 +313,10 @@ namespace PG
         }
         private GameObject CreateStraight(int x, int y, List<Direction> directions)
         {
-            Straight straight = new Straight();
+            Straight _straight = new Straight();
             GridNode currentNode = grid.nodesGrid[x, y];
-            currentNode.belongingStraight = straight;
-            straight.gridNodes.Add(currentNode);
+            currentNode.belongingStraight = _straight;
+            _straight.gridNodes.Add(currentNode);
             Road initRoad = GetRoadFromPosition(x,y);
             Road entryRoad = null;
             Road exitRoad = null;
@@ -351,22 +353,22 @@ namespace PG
                     else
                     {
                         // Add to straight and destroy the prefab in position
-                        advancedNode.belongingStraight = straight;
-                        straight.gridNodes.Add(advancedNode);
+                        advancedNode.belongingStraight = _straight;
+                        _straight.gridNodes.Add(advancedNode);
                         DestroyRoadOnPosition(advancedNode.gridX, advancedNode.gridY);
                     }
                     i++;
                 }
             }
-            straight.SetCenterPosition();
+            _straight.SetCenterPosition();
             // Create a straight perfectly scaled and centered
             Quaternion rotation = Quaternion.identity;
             if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
             {
                 rotation = Quaternion.Euler(0, 90, 0);
             }
-            GameObject straightGO = Instantiate(roadStraight, straight.center, rotation, transform);
-            Vector3 newScale = new Vector3(4f * straight.gridNodes.Count, 4f, 4f);
+            GameObject straightGO = Instantiate(this.straight, _straight.center, rotation, transform);
+            Vector3 newScale = new Vector3(4f * _straight.gridNodes.Count, 4f, 4f);
             straightGO.transform.localScale = newScale;
 
             if (entryRoad == null)
@@ -472,17 +474,31 @@ namespace PG
             List<Direction> neighbours = GetNeighboursData(node.gridX, node.gridY).neighbours;
             if (neighbours.Count == 1)
             {
-                // If your neighbour is an intersection, delete yourself, thank you.
-                Direction direction = neighbours[0];
-                int[] neighbourOffset = DirectionToInt(direction);
-                GridNode neighbour = grid.nodesGrid[node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]];
-                if (GetNeighboursData(node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]).neighbours.Count > 2)
-                {
-                    visualizer.MarkCornerDecorationNodes(neighbour);
-                    return true;
-                }
+                return ShouldEliminateSingleNeighbourNode(node, neighbours[0]);
+            }
+            if (neighbours.Count == 2)
+            {
+                return ShouldEliminateStraightPathNode(neighbours);
             }
             return false;
+        }
+        private bool ShouldEliminateSingleNeighbourNode(GridNode node, Direction direction)
+        {
+            int[] neighbourOffset = DirectionToInt(direction);
+            GridNode neighbour = grid.nodesGrid[node.gridX + neighbourOffset[0], node.gridY + neighbourOffset[1]];
+            if (GetNeighboursData(neighbour.gridX, neighbour.gridY).neighbours.Count > 2)
+            {
+                visualizer.MarkCornerDecorationNodes(neighbour);
+                return true;
+            }
+            return false;
+        }
+        private bool ShouldEliminateStraightPathNode(List<Direction> neighbours)
+        {
+            bool isHorizontalPath = neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right);
+            bool isVerticalPath = neighbours.Contains(Direction.back) && neighbours.Contains(Direction.forward);
+
+            return isHorizontalPath || isVerticalPath;
         }
         // This method is called when you only have one road neighbour and you cant be merged with another road.
         private bool ShouldBeEliminated(GridNode startNode, int maxIterations)
