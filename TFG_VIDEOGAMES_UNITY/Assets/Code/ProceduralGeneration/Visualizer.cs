@@ -189,10 +189,10 @@ namespace PG
                         break;
                 }
             }
+            new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             List<GameObject> roadAssets = roadPlacer.PlaceRoadAssets(grid, this);
             await roadConnecter.ConnectRoads(roadAssets);
             // FindTrafficLights
-            new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
             generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
             navMeshGenerator.BakeNavMesh();

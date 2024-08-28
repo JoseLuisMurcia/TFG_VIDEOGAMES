@@ -5612,6 +5612,7 @@ GameObject:
   - component: {fileID: 1772971131}
   - component: {fileID: 1772971134}
   - component: {fileID: 1772971133}
+  - component: {fileID: 1772971135}
   m_Layer: 0
   m_Name: LSystem
   m_TagString: Untagged
@@ -5651,7 +5652,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 4
+  iterationLimit: 5
   randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.25
 --- !u!4 &1772971128
@@ -5805,6 +5806,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4582a37e37e978a459a5fd03a151dad0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1772971135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1772971125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c2e1bbe28834de42babab8f39a5741f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &1784643967

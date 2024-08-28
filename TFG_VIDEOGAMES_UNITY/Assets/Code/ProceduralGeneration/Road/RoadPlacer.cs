@@ -26,15 +26,22 @@ namespace PG
         private List<GameObject> trafficSignsAndLights = new List<GameObject>();
         [SerializeField] bool visualDebug;
         public static RoadPlacer Instance;
-
+        private StraightSplitter straightSplitter;
         private void Awake()
         {
             Instance = this;
+            straightSplitter = GetComponent<StraightSplitter>();
+            if (straightSplitter)
+            {
+                straightSplitter.SetCrossingPrefabs(pedestrianCrossing, pedestrianCrossingTL);
+            }
         }
+
         public List<GameObject> PlaceRoadAssets(Grid _grid, Visualizer _visualizer)
         {
             grid = _grid;
             visualizer = _visualizer;
+
             // Clear useless pointNodes, from now on only the points who can go forward in a direction until they meet the end of the world will remain the pointNodesList
             List<GridNode> _pointNodes = new List<GridNode>();
             foreach (GridNode node in visualizer.pointNodes)
@@ -141,8 +148,6 @@ namespace PG
                 }
             }
 
-            return roadDictionary.Values.ToList();
-
             // Delete outdated prefabs and spawn the correct ones
             foreach (GridNode node in updatedNodes)
             {
@@ -235,26 +240,32 @@ namespace PG
                 if (currentNode.belongingStraight != null)
                     continue;
 
-                GameObject straightGO;
+                List<Straight> straights;
                 if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
                 {
                     // Vertical 
                     // Advance vertically until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
-                    straightGO = CreateStraight(position.x, position.y, new List<Direction> { Direction.forward, Direction.back });
+                    straights = CreateStraight(position.x, position.y, new List<Direction> { Direction.forward, Direction.back });
                 }
                 else
                 {
                     // Horizontal
                     // Advance horizontally until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
-                    straightGO = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
+                    straights = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
                 }
-                addedStraights[position] = straightGO;
+                
+                foreach(Straight straight in straights)
+                {
+                    addedStraights[straight.position] = straight.gameObject;
+                }
             }
             RemoveRedundantRoads();
             foreach(Vector2Int position in addedStraights.Keys)
             {
                 roadDictionary[position] = addedStraights[position];
             }
+
+            return roadDictionary.Values.ToList();
 
             // Intersections creation
             for (int i = 0; i < grid.gridSizeX; i++)
@@ -311,7 +322,7 @@ namespace PG
 
             return roadDictionary.Values.ToList();
         }
-        private GameObject CreateStraight(int x, int y, List<Direction> directions)
+        private List<Straight> CreateStraight(int x, int y, List<Direction> directions)
         {
             Straight _straight = new Straight();
             GridNode currentNode = grid.nodesGrid[x, y];
@@ -360,17 +371,6 @@ namespace PG
                     i++;
                 }
             }
-            _straight.SetCenterPosition();
-            // Create a straight perfectly scaled and centered
-            Quaternion rotation = Quaternion.identity;
-            if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
-            {
-                rotation = Quaternion.Euler(0, 90, 0);
-            }
-            GameObject straightGO = Instantiate(this.straight, _straight.center, rotation, transform);
-            Vector3 newScale = new Vector3(4f * _straight.gridNodes.Count, 4f, 4f);
-            straightGO.transform.localScale = newScale;
-
             if (entryRoad == null)
             {
                 entryRoad = initRoad;
@@ -379,6 +379,23 @@ namespace PG
             {
                 exitRoad = initRoad;
             }
+            // Create a pedestrian crossing by splitting the straight road in half
+            StraightSplit split = straightSplitter.HandleUnifiedStraight(_straight, directions, entryRoad, exitRoad);
+            foreach(var key in split.crossingDictionary.Keys)
+            {
+                roadDictionary[key] = split.crossingDictionary[key];
+            }
+            _straight.SetCenterPosition();
+            // Create a straight perfectly scaled and centered
+            Quaternion rotation = Quaternion.identity;
+            if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+            {
+                rotation = Quaternion.Euler(0, 90, 0);
+            }
+            GameObject straightGO = Instantiate(straight, _straight.center, rotation, transform);
+            Vector3 newScale = new Vector3(4f * _straight.gridNodes.Count, 4f, 4f);
+            straightGO.transform.localScale = newScale;
+   
             // Adjust points for car navigation
             Road road = straightGO.GetComponent<Road>();
             if (road)
@@ -388,7 +405,7 @@ namespace PG
                 road.laneReferencePoints[0] = exitRoad.laneReferencePoints[0];
             }
             straightGO.SetActive(false);
-            return straightGO;
+            return split.dividedStraights;
         }
         private Road GetRoadFromPosition(int x, int y)
         {
@@ -596,7 +613,7 @@ namespace PG
             return false;
         }
 
-        private int[] GetIntDirectionToNode(GridNode actualNode, GridNode newNode)
+        public int[] GetIntDirectionToNode(GridNode actualNode, GridNode newNode)
         {
             Direction direction = GetDirectionBasedOnPos(actualNode, newNode);
             return DirectionToInt(direction);
@@ -722,8 +739,8 @@ namespace PG
                             if (direction != newDirection)
                                 visualizer.MarkCornerDecorationNodes(node);
                         }
-                        updatedNodes.Add(node);
                         node.occupied = true;
+                        updatedNodes.Add(node);
                         int x = node.gridX; int y = node.gridY;
                         int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
                         visualizer.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
@@ -757,26 +774,9 @@ namespace PG
             }
 
         }
-        private void CreateSpheresInFreeDirections(int x, int y, List<Direction> freeDirections)
-        {
-            foreach (Direction direction in freeDirections)
-            {
-                Vector3 dir = DirectionToVector(direction);
-                int dirX = Mathf.RoundToInt(dir.x); int dirZ = Mathf.RoundToInt(dir.z);
-                int newX = x + dirX;
-                int newY = y + dirZ;
-                if (!OutOfGrid(newX, newY))
-                {
-                    Vector3 pos = grid.nodesGrid[newX, newY].worldPosition;
-                    if (visualDebug) SpawnSphere(pos, Color.yellow, 4f);
-                }
-
-            }
-        }
         private List<GridNode> GoStraight(Direction direction, int startX, int startY)
         {
-            List<GridNode> path = new List<GridNode>();
-            path.Add(grid.nodesGrid[startX, startY]);
+            List<GridNode> path = new List<GridNode>{ grid.nodesGrid[startX, startY] };
             int[] dir = DirectionToInt(direction);
             int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
 
@@ -820,6 +820,7 @@ namespace PG
             int mergingIntersectionDist = 2;
             foreach (Direction dir in nb.neighbours)
             {
+                // From the mergingNode, explore neighbours to find intersections or corners
                 int[] direction = DirectionToInt(dir);
                 for (int i = 1; i <= mergingIntersectionDist; i++)
                 {
@@ -985,24 +986,7 @@ namespace PG
             return Direction.zero;
         }
     }
-    public class Straight
-    {
-        public List<GridNode> gridNodes = new List<GridNode>();
-        public List<Node> waypoints = new List<Node>();
-        public Vector3 center = Vector3.zero;
-
-        public void SetCenterPosition()
-        {
-            int numNodes = gridNodes.Count;
-            Vector3 pos = Vector3.zero;
-            foreach (GridNode node in gridNodes)
-            {
-                node.belongingStraight = this;
-                pos += node.worldPosition;
-            }
-            center = pos / numNodes;
-        }
-    }
+    
     public class NeighboursData
     {
         public List<Direction> neighbours = new List<Direction>();
