@@ -59,7 +59,7 @@ namespace PG
                 {
                     node.occupied = false;
                     node.usage = Usage.decoration;
-                    if (visualDebug) SpawnSphere(node.worldPosition, Color.black, 3f);
+                    if (visualDebug) SpawnSphere(node.worldPosition, Color.black, 3f, 2f);
                     continue;
                 }
 
@@ -71,7 +71,7 @@ namespace PG
                 else
                 {
                     node.usage = Usage.road;
-                    if(visualDebug) SpawnSphere(node.worldPosition, Color.black, 1f);
+                    if(visualDebug) SpawnSphere(node.worldPosition, Color.black, 1f, 2f);
 
                 }
             }
@@ -224,6 +224,7 @@ namespace PG
 
             // Straights recreation
             Dictionary<Vector2Int, GameObject> addedStraights = new Dictionary<Vector2Int, GameObject>();
+            Dictionary<Vector2Int, GameObject> addedCrossings = new Dictionary<Vector2Int, GameObject>();
             foreach (Vector2Int position in roadDictionary.Keys)
             {
                 GridNode currentNode = grid.nodesGrid[position.x, position.y];
@@ -237,26 +238,30 @@ namespace PG
                     continue;
 
                 // If it is already marked, ignore it
-                if (currentNode.belongingStraight != null)
+                if (currentNode.isProcessedStraight)
                     continue;
 
-                List<Straight> straights;
+                StraightSplit split;
                 if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
                 {
                     // Vertical 
                     // Advance vertically until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
-                    straights = CreateStraight(position.x, position.y, new List<Direction> { Direction.forward, Direction.back });
+                    split = CreateStraight(position.x, position.y, new List<Direction> { Direction.forward, Direction.back });
                 }
                 else
                 {
                     // Horizontal
                     // Advance horizontally until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
-                    straights = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
+                    split = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
                 }
                 
-                foreach(Straight straight in straights)
+                foreach(Straight straight in split.dividedStraights)
                 {
                     addedStraights[straight.position] = straight.gameObject;
+                }
+                foreach (Vector2Int key in split.crossingDictionary.Keys)
+                {
+                    addedCrossings[key] = split.crossingDictionary[key];
                 }
             }
             RemoveRedundantRoads();
@@ -264,7 +269,10 @@ namespace PG
             {
                 roadDictionary[position] = addedStraights[position];
             }
-
+            foreach (Vector2Int position in addedCrossings.Keys)
+            {
+                roadDictionary[position] = addedCrossings[position];
+            }
             return roadDictionary.Values.ToList();
 
             // Intersections creation
@@ -322,12 +330,12 @@ namespace PG
 
             return roadDictionary.Values.ToList();
         }
-        private List<Straight> CreateStraight(int x, int y, List<Direction> directions)
+        private StraightSplit CreateStraight(int x, int y, List<Direction> directions)
         {
-            Straight _straight = new Straight();
+            Straight unifiedStraight = new Straight();
             GridNode currentNode = grid.nodesGrid[x, y];
-            currentNode.belongingStraight = _straight;
-            _straight.gridNodes.Add(currentNode);
+            currentNode.isProcessedStraight = true;
+            unifiedStraight.gridNodes.Add(currentNode);
             Road initRoad = GetRoadFromPosition(x,y);
             Road entryRoad = null;
             Road exitRoad = null;
@@ -364,8 +372,8 @@ namespace PG
                     else
                     {
                         // Add to straight and destroy the prefab in position
-                        advancedNode.belongingStraight = _straight;
-                        _straight.gridNodes.Add(advancedNode);
+                        advancedNode.isProcessedStraight = true;
+                        unifiedStraight.gridNodes.Add(advancedNode);
                         DestroyRoadOnPosition(advancedNode.gridX, advancedNode.gridY);
                     }
                     i++;
@@ -380,32 +388,98 @@ namespace PG
                 exitRoad = initRoad;
             }
             // Create a pedestrian crossing by splitting the straight road in half
-            StraightSplit split = straightSplitter.HandleUnifiedStraight(_straight, directions, entryRoad, exitRoad);
-            foreach(var key in split.crossingDictionary.Keys)
-            {
-                roadDictionary[key] = split.crossingDictionary[key];
-            }
-            _straight.SetCenterPosition();
+            StraightSplit split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions, entryRoad, exitRoad);
+            // TODO: For each straight received, spawn a prefab and set the straight position
             // Create a straight perfectly scaled and centered
-            Quaternion rotation = Quaternion.identity;
-            if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+
+            if (split.dividedStraights.Count == 0)
             {
-                rotation = Quaternion.Euler(0, 90, 0);
+                unifiedStraight.SetCenterPosition();
+                Quaternion rotation = Quaternion.identity;
+                if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+                {
+                    rotation = Quaternion.Euler(0, 90, 0);
+                }
+                GameObject straightGO = Instantiate(straight, unifiedStraight.center, rotation, transform);
+                Vector3 newScale = new Vector3(4f * unifiedStraight.gridNodes.Count, 4f, 4f);
+                straightGO.transform.localScale = newScale;
+                unifiedStraight.gameObject = straightGO;
+                unifiedStraight.position = new Vector2Int(x, y);
+                // Adjust points for car navigation
+                Road road = straightGO.GetComponent<Road>();
+                if (road)
+                {
+                    road.numDirection = NumDirection.TwoDirectional;
+                    road.laneReferencePoints[road.laneReferencePoints.Count - 1] = entryRoad.laneReferencePoints[entryRoad.laneReferencePoints.Count - 1];
+                    road.laneReferencePoints[0] = exitRoad.laneReferencePoints[0];
+                }
+                straightGO.SetActive(false);
+                split.dividedStraights = new List<Straight> { unifiedStraight };
             }
-            GameObject straightGO = Instantiate(straight, _straight.center, rotation, transform);
-            Vector3 newScale = new Vector3(4f * _straight.gridNodes.Count, 4f, 4f);
-            straightGO.transform.localScale = newScale;
-   
-            // Adjust points for car navigation
-            Road road = straightGO.GetComponent<Road>();
-            if (road)
+            else
             {
-                road.numDirection = NumDirection.TwoDirectional;
-                road.laneReferencePoints[road.laneReferencePoints.Count - 1] = entryRoad.laneReferencePoints[entryRoad.laneReferencePoints.Count-1];
-                road.laneReferencePoints[0] = exitRoad.laneReferencePoints[0];
+                foreach (Straight dividedStraight in split.dividedStraights)
+                {
+                    // We need to get all the roads from the divided straight so that we can look at the laneReferencePoints.
+                    GridNode entryGridNode = dividedStraight.gridNodes[0];
+                    GridNode exitGridNode = dividedStraight.gridNodes[dividedStraight.gridNodes.Count - 1];
+                    SpawnSphere(entryGridNode.worldPosition, Color.red, 2f, 2f);
+                    SpawnSphere(exitGridNode.worldPosition, Color.blue, 2f, 2f);
+                    entryRoad = GetRoadFromPosition(entryGridNode.gridX, entryGridNode.gridY);
+                    exitRoad = GetRoadFromPosition(exitGridNode.gridX, exitGridNode.gridY);
+
+                    SpawnSphere(entryRoad.laneReferencePoints[1], Color.magenta, 1.5f, 2f);
+                    SpawnSphere(exitRoad.laneReferencePoints[0], Color.cyan, 1.5f, 2f);
+                    // falla sobre todo cuando la carretera viene sin partir
+                    if(entryRoad == null|| exitRoad == null)
+                    {
+                        Debug.LogWarning("SE PUDRIO");
+                    }
+                    // Spawn gameobject
+                    dividedStraight.SetCenterPosition();
+                    Quaternion rotation = Quaternion.identity;
+                    if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+                    {
+                        rotation = Quaternion.Euler(0, 90, 0);
+                    }
+                    GameObject straightGO = Instantiate(straight, dividedStraight.center, rotation, transform);
+                    Vector3 newScale = new Vector3(4f * dividedStraight.gridNodes.Count, 4f, 4f);
+                    straightGO.transform.localScale = newScale;
+                    dividedStraight.gameObject = straightGO;
+                    // Adjust points for car navigation
+                    Road road = straightGO.GetComponent<Road>();
+                    if (road)
+                    {
+                        road.numDirection = NumDirection.TwoDirectional;
+                        road.numberOfLanes = 2;
+
+                        //SpawnSphere(road.laneReferencePoints[1], Color.magenta, 5f);
+                        //SpawnSphere(road.laneReferencePoints[0], Color.cyan, 5f);
+
+                        Vector3 entryPos = road.laneReferencePoints[1];
+                        Vector3 exitPos = road.laneReferencePoints[0];
+                        Vector3 newExitPos = entryRoad.laneReferencePoints[entryRoad.laneReferencePoints.Count - 1];
+                        Vector3 newEntryPos = exitRoad.laneReferencePoints[0];
+
+                        if (Vector3.Distance(newExitPos, exitPos) > Vector3.Distance(newExitPos, entryPos))
+                        {
+                            road.laneReferencePoints[road.laneReferencePoints.Count - 1] = newExitPos;
+                            road.laneReferencePoints[0] = newEntryPos;
+                        }
+                        else
+                        {
+                            road.laneReferencePoints[road.laneReferencePoints.Count - 1] = newEntryPos;
+                            road.laneReferencePoints[0] = newExitPos;
+                        }
+                        //SpawnSphere(road.laneReferencePoints[1], Color.red, 5f);
+                        //SpawnSphere(road.laneReferencePoints[0], Color.blue, 5f);
+                        
+                    }
+                    straightGO.SetActive(false);
+                }
             }
-            straightGO.SetActive(false);
-            return split.dividedStraights;
+
+            return split;
         }
         private Road GetRoadFromPosition(int x, int y)
         {
@@ -563,7 +637,7 @@ namespace PG
                             visualizer.UnmarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
                             currentNode.occupied = false;
                             currentNode.usage = Usage.empty;
-                            if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f);
+                            if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
                             updatedNodes.Add(currentNode);
                         }
                         else
@@ -699,7 +773,7 @@ namespace PG
 
                     }
                     visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
-                    if (visualDebug) SpawnSphere(grid.nodesGrid[gridX, gridY].worldPosition, Color.cyan, 2.5f);
+                    if (visualDebug) SpawnSphere(grid.nodesGrid[gridX, gridY].worldPosition, Color.cyan, 2.5f, 2f);
                     return;
                 }
                 i++;
@@ -709,7 +783,7 @@ namespace PG
             // If going straight has not been successful, we must call the pathfinder to find a path for us
             // We must have a list of candidates positions to do the movement
             GridNode currentNode = grid.nodesGrid[gridX, gridY];
-            if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 2.5f);
+            if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 2.5f, 2f);
             i = 0;
             while (i < visualizer.pointNodes.Count)
             {
@@ -750,7 +824,7 @@ namespace PG
                     visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
                     //visualizer.MarkCornerDecorationNodes(path[0]);
                     if (visualDebug) CreateSpheresInPath(path);
-                    if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta, 3f);
+                    if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta, 3f, 2f);
                     //Debug.Log("PATH CREATED WITH PATHFINDING");
                     return;
                 }
@@ -769,7 +843,7 @@ namespace PG
             foreach (GridNode node in path)
             {
                 if (node.usage != Usage.point)
-                    if (visualDebug) SpawnSphere(node.worldPosition, Color.green, 3f);
+                    if (visualDebug) SpawnSphere(node.worldPosition, Color.green, 3f, 2f);
 
             }
 
@@ -859,11 +933,11 @@ namespace PG
                 count++;
             return count;
         }
-        private void SpawnSphere(Vector3 pos, Color color, float offset)
+        private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             startSphere.transform.parent = transform;
-            startSphere.transform.localScale = Vector3.one * 3f;
+            startSphere.transform.localScale = Vector3.one * size;
             startSphere.transform.position = pos + Vector3.up * 3f * offset;
             startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
@@ -888,11 +962,11 @@ namespace PG
             float dirY = direction.z;
             if (dirX > 0.5f)
                 return Direction.right;
-            if (dirX < 0.5f)
+            if (dirX < -0.5f)
                 return Direction.left;
             if (dirY > 0.5f)
                 return Direction.forward;
-            if (dirY < 0.5f)
+            if (dirY < -0.5f)
                 return Direction.back;
 
             return Direction.zero;

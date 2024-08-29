@@ -40,44 +40,42 @@ namespace PG
             // Dividir según región
             // Mirar al vecino interseccion del entry y el exit road
             // TODO Recuperar los vecinos en base al grid, no a las roads...
-           // int numEntryRoadNeighbours = entryRoad.connections.First(road => road.typeOfRoad == TypeOfRoad.Intersection).connections.Count;
-           // int numExitRoadNeighbours = exitRoad.connections.First(road => road.typeOfRoad == TypeOfRoad.Intersection).connections.Count;
+            // int numEntryRoadNeighbours = entryRoad.connections.First(road => road.typeOfRoad == TypeOfRoad.Intersection).connections.Count;
+            // int numExitRoadNeighbours = exitRoad.connections.First(road => road.typeOfRoad == TypeOfRoad.Intersection).connections.Count;
 
-            int numDivisions;
+            int divisionFactor;
             switch (roadRegion)
             {
                 case Region.Main:
-                    numDivisions = Mathf.Max(1, unifiedStraight.gridNodes.Count / 4); // Mayor densidad en la región principal
+                    divisionFactor = 4; // Mayor densidad en la región principal
                     break;
                 case Region.Residential:
-                    numDivisions = Mathf.Max(1, unifiedStraight.gridNodes.Count / 6); // Densidad media en áreas residenciales
+                    divisionFactor = 6; // Densidad media en áreas residenciales
                     break;
                 case Region.Suburbs:
-                    numDivisions = Mathf.Max(1, unifiedStraight.gridNodes.Count / 8); // Menor densidad en suburbios
+                    divisionFactor = 8; // Menor densidad en suburbios
                     break;
                 default:
-                    numDivisions = 1; // Valor por defecto
+                    divisionFactor = 10; // Valor por defecto
                     break;
             }
 
-            // Distancia mínima entre crossings
-            int minDistance = 3;
+            // Calcular el número máximo de divisiones posibles
+            int numDivisions = (unifiedStraight.gridNodes.Count) / (divisionFactor + 1);
 
             // Lista para almacenar los nuevos segmentos de Straight
             List<Straight> dividedStraights = new List<Straight>();
 
-            // Particionamos la recta unificada en segmentos más pequeños
-            int segmentLength = unifiedStraight.gridNodes.Count / numDivisions;
-
-            // TODO: Manejar el caso donde segmentLength = 1, hay que instanciar y dividir tambien, pero en menos pedazos... según la región?¿
+            // Índice actual en el gridNodes
             int currentIndex = 0;
+
             for (int i = 0; i < numDivisions; i++)
             {
                 // Crear nuevo segmento
                 Straight newStraight = new Straight();
 
-                // Calcular la posición de inicio y fin del segmento
-                int nodesToTake = (i == numDivisions - 1) ? unifiedStraight.gridNodes.Count - currentIndex : segmentLength;
+                // Número de nodos a tomar, ajustado para el último segmento
+                int nodesToTake = (i == numDivisions - 1) ? unifiedStraight.gridNodes.Count - currentIndex : divisionFactor;
 
                 newStraight.gridNodes = unifiedStraight.gridNodes.GetRange(currentIndex, nodesToTake);
                 currentIndex += nodesToTake;
@@ -90,7 +88,7 @@ namespace PG
                 dividedStraights.Add(newStraight);
 
                 // Si no es el último segmento, reservar un nodo para el crossing
-                if (i < numDivisions - 1)
+                if (i < numDivisions)
                 {
                     currentIndex++; // Avanzar un nodo para dejar espacio para el crossing
                 }
@@ -103,7 +101,6 @@ namespace PG
                 PlacePedestrianCrossing(crossingDictionary, directions, dividedStraights[i], dividedStraights[i + 1]);
             }
 
-            // TODO quitar esta mierda
             return new StraightSplit(dividedStraights, crossingDictionary);
         }
 
@@ -161,7 +158,7 @@ namespace PG
             Vector3 pos = Vector3.zero;
             foreach (GridNode node in gridNodes)
             {
-                node.belongingStraight = this;
+                node.isProcessedStraight = true;
                 pos += node.worldPosition;
             }
             center = pos / numNodes;

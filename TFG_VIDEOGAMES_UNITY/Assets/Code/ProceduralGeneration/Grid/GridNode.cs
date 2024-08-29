@@ -16,7 +16,7 @@ namespace PG
         public GridNode parent; // Used by pathfinding
         int heapIndex;
         public int gridX, gridY;
-        public Straight belongingStraight = null;
+        public bool isProcessedStraight = false;
         public Region regionType = Region.Residential;
         public GridNode previousNode; // Used by grid creation
         public VoronoiRegion voronoiRegion = null;

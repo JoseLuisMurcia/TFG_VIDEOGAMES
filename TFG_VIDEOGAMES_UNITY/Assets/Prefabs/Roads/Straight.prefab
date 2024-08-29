@@ -133,8 +133,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -149,6 +147,7 @@ MonoBehaviour:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
   procedural: 0
+  trafficLights: []
 --- !u!114 &2865572004310302337
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -164,10 +163,10 @@ MonoBehaviour:
   editorData:
     _bezierPath:
       points:
-      - {x: 0.4334829, y: 0, z: 0}
-      - {x: 0.21831527, y: 0, z: 0}
-      - {x: -0.21201992, y: 0, z: 0}
-      - {x: -0.42718753, y: 0, z: 0}
+      - {x: 0.4716345, y: 0, z: -0.0013688058}
+      - {x: 0.23513126, y: 0, z: -0.0011258032}
+      - {x: -0.2378752, y: 0, z: -0.0006397981}
+      - {x: -0.47437844, y: 0, z: -0.00039679557}
       isClosed: 0
       space: 2
       controlMode: 3
@@ -195,7 +194,7 @@ MonoBehaviour:
     showNormalsInVertexMode: 0
     showBezierPathInVertexMode: 0
     showDisplayOptions: 0
-    showPathOptions: 0
+    showPathOptions: 1
     showVertexPathDisplayOptions: 0
     showVertexPathOptions: 1
     showNormals: 0
