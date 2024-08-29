@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -387,12 +388,23 @@ namespace PG
             {
                 exitRoad = initRoad;
             }
+
             // Create a pedestrian crossing by splitting the straight road in half
+            // But first, let's order the nodes :)
+            List<GridNode> sortedNodes;
+            if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+            {
+                sortedNodes = unifiedStraight.gridNodes.OrderByDescending(x => x.gridY).ToList();
+            }
+            else
+            {
+                sortedNodes = unifiedStraight.gridNodes.OrderBy(x => x.gridX).ToList();
+            }
+            unifiedStraight.gridNodes = sortedNodes;
             StraightSplit split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions, entryRoad, exitRoad);
-            // TODO: For each straight received, spawn a prefab and set the straight position
             // Create a straight perfectly scaled and centered
 
-            if (split.dividedStraights.Count == 0)
+            if (split.dividedStraights.Count <= 1)
             {
                 unifiedStraight.SetCenterPosition();
                 Quaternion rotation = Quaternion.identity;
@@ -423,15 +435,10 @@ namespace PG
                     // We need to get all the roads from the divided straight so that we can look at the laneReferencePoints.
                     GridNode entryGridNode = dividedStraight.gridNodes[0];
                     GridNode exitGridNode = dividedStraight.gridNodes[dividedStraight.gridNodes.Count - 1];
-                    SpawnSphere(entryGridNode.worldPosition, Color.red, 2f, 2f);
-                    SpawnSphere(exitGridNode.worldPosition, Color.blue, 2f, 2f);
                     entryRoad = GetRoadFromPosition(entryGridNode.gridX, entryGridNode.gridY);
                     exitRoad = GetRoadFromPosition(exitGridNode.gridX, exitGridNode.gridY);
 
-                    SpawnSphere(entryRoad.laneReferencePoints[1], Color.magenta, 1.5f, 2f);
-                    SpawnSphere(exitRoad.laneReferencePoints[0], Color.cyan, 1.5f, 2f);
-                    // falla sobre todo cuando la carretera viene sin partir
-                    if(entryRoad == null|| exitRoad == null)
+                    if (entryRoad == null || exitRoad == null)
                     {
                         Debug.LogWarning("SE PUDRIO");
                     }
@@ -453,27 +460,22 @@ namespace PG
                         road.numDirection = NumDirection.TwoDirectional;
                         road.numberOfLanes = 2;
 
-                        //SpawnSphere(road.laneReferencePoints[1], Color.magenta, 5f);
-                        //SpawnSphere(road.laneReferencePoints[0], Color.cyan, 5f);
-
-                        Vector3 entryPos = road.laneReferencePoints[1];
-                        Vector3 exitPos = road.laneReferencePoints[0];
-                        Vector3 newExitPos = entryRoad.laneReferencePoints[entryRoad.laneReferencePoints.Count - 1];
-                        Vector3 newEntryPos = exitRoad.laneReferencePoints[0];
-
-                        if (Vector3.Distance(newExitPos, exitPos) > Vector3.Distance(newExitPos, entryPos))
+                        if (Vector3.Distance(entryRoad.laneReferencePoints[1], exitGridNode.worldPosition) > Vector3.Distance(entryRoad.laneReferencePoints[0], exitGridNode.worldPosition))
                         {
-                            road.laneReferencePoints[road.laneReferencePoints.Count - 1] = newExitPos;
-                            road.laneReferencePoints[0] = newEntryPos;
+                            road.laneReferencePoints[1] = entryRoad.laneReferencePoints[1]; // entry
+                            road.laneReferencePoints[0] = exitRoad.laneReferencePoints[0]; // exit
                         }
                         else
                         {
-                            road.laneReferencePoints[road.laneReferencePoints.Count - 1] = newEntryPos;
-                            road.laneReferencePoints[0] = newExitPos;
+                            road.laneReferencePoints[0] = entryRoad.laneReferencePoints[0]; // entry
+                            road.laneReferencePoints[1] = exitRoad.laneReferencePoints[1]; // exit
                         }
-                        //SpawnSphere(road.laneReferencePoints[1], Color.red, 5f);
-                        //SpawnSphere(road.laneReferencePoints[0], Color.blue, 5f);
-                        
+                        //SpawnSphere(road.laneReferencePoints[1], Color.yellow, 3f, 3f); // entry
+                        //SpawnSphere(road.laneReferencePoints[0], Color.green, 3f, 3f); // exit
+                        Vector3 originPos = road.laneReferencePoints[1] + Vector3.up * 9f;
+                        Vector3 destPos = road.laneReferencePoints[0] + Vector3.up * 9f;
+                        Vector3 dir = destPos - originPos;
+                        Debug.DrawRay(originPos, dir, Color.red, 500f);
                     }
                     straightGO.SetActive(false);
                 }
@@ -936,6 +938,15 @@ namespace PG
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.parent = transform;
+            startSphere.transform.localScale = Vector3.one * size;
+            startSphere.transform.position = pos + Vector3.up * 3f * offset;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+        }
+        private void SpawnSphere(Vector3 pos, Color color, float offset, float size, string name)
+        {
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.name = name;
             startSphere.transform.parent = transform;
             startSphere.transform.localScale = Vector3.one * size;
             startSphere.transform.position = pos + Vector3.up * 3f * offset;

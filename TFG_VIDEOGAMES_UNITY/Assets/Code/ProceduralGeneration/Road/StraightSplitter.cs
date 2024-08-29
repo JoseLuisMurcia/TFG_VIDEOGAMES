@@ -59,9 +59,9 @@ namespace PG
                     divisionFactor = 10; // Valor por defecto
                     break;
             }
-
             // Calcular el número máximo de divisiones posibles
             int numDivisions = (unifiedStraight.gridNodes.Count) / (divisionFactor + 1);
+            if (numDivisions <= 1) return new StraightSplit(new List<Straight>(), new Dictionary<Vector2Int, GameObject>());
 
             // Lista para almacenar los nuevos segmentos de Straight
             List<Straight> dividedStraights = new List<Straight>();
@@ -81,8 +81,7 @@ namespace PG
                 currentIndex += nodesToTake;
 
                 // Establecer la posición media para el segmento
-                Vector2Int averagePosition = CalculateAveragePosition(newStraight.gridNodes);
-                newStraight.position = averagePosition;
+                newStraight.position = CalculateAveragePosition(newStraight.gridNodes);
 
                 // Añadir el nuevo segmento a la lista
                 dividedStraights.Add(newStraight);

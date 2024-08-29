@@ -3922,6 +3922,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1213979570}
+  - component: {fileID: 1213979571}
   m_Layer: 5
   m_Name: PedestrianSpawners
   m_TagString: Untagged
@@ -3951,6 +3952,30 @@ RectTransform:
   m_AnchoredPosition: {x: 1077, y: -277.8}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1213979571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213979569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2aa65448bb8e1a3498759a1668dc0816, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pedestrianPrefabs:
+  - {fileID: -7425872149870384169, guid: ef6c74458fde4a24facffaf95936fafd, type: 3}
+  - {fileID: -4920278875206145156, guid: de7bd657dcf9200448472a4392a45c33, type: 3}
+  - {fileID: 3715691973092161381, guid: d85cde5389e41344a945fd41cc00b012, type: 3}
+  - {fileID: -6053116506924623085, guid: fa816f428d449a24abf6a70aa4de8841, type: 3}
+  - {fileID: 7298717099595558627, guid: 973f502b36b799648a12258e0ae76d5c, type: 3}
+  - {fileID: 990037564, guid: 2b0f2b6b042e67d4abeb05c361ef4442, type: 3}
+  - {fileID: 7967663660669342160, guid: c9887b1787bc8fe4b94a78970b9be0f1, type: 3}
+  - {fileID: 7732174824716915725, guid: b1b4381f69b444445b060244ddf90e59, type: 3}
+  - {fileID: -2694600308136341511, guid: 55ad97432db009244b7a7339ff0d3157, type: 3}
+  - {fileID: 1603133501383668325, guid: f1d8389de5c8b1c4c9016ee5e4c2e443, type: 3}
+  groupMovementPrefab: {fileID: 4216563880320145569, guid: 9191a06f32c86d345b7e04b49251fd1a, type: 3}
 --- !u!1 &1246595448 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8d2fed6b486f53c4f8fd2781fdcbbd68, type: 3}
@@ -5652,7 +5677,7 @@ MonoBehaviour:
   rules:
   - {fileID: 11400000, guid: 5a7e49cab1c067949ba518d15a99e950, type: 2}
   rootSentence: '[F]--F'
-  iterationLimit: 3
+  iterationLimit: 4
   randomIgnoreRuleModifier: 1
   chanceToIgnoreRule: 0.25
 --- !u!4 &1772971128
@@ -5722,7 +5747,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd2c22ba04c326e4c830ee4bb9af030e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayGridGizmos: 1
+  displayGridGizmos: 0
   roadMask:
     serializedVersion: 2
     m_Bits: 128
