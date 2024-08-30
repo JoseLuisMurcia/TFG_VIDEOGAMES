@@ -6,7 +6,7 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
 {
     private PedestrianIntersectionController intersectionController;
     private TrafficLightWaitingSlotsManager slotsManager;
-    private bool debugTiers = false;
+    [SerializeField] private bool debugTiers = false;
     private void Start()
     {
         Vector3 bottomLeft = Vector3.zero;
@@ -23,7 +23,6 @@ public class PedestrianTrafficLightTrigger : MonoBehaviour
                 bottomLeft = child.transform.position;
             }
         }
-
         slotsManager = new TrafficLightWaitingSlotsManager(bottomLeft, bottomRight, transform.forward, transform.right, transform.parent.position);
     }
     public PedestrianIntersectionController GetIntersectionController()

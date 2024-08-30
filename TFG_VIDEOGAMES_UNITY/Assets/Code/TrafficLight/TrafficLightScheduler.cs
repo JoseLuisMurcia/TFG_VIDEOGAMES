@@ -30,7 +30,7 @@ public class TrafficLightScheduler : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
         pedestrianIntersectionController = GetComponent<PedestrianIntersectionController>();
-
+        bool procedural = WorldGrid.Instance == null;
         foreach (Transform child in transform)
         {
             if (child.gameObject.activeSelf)
@@ -39,8 +39,9 @@ public class TrafficLightScheduler : MonoBehaviour
                 PedestrianTrafficLight ptf = child.gameObject.GetComponent<PedestrianTrafficLight>();
                 if (tf != null)
                 {
-                    if (WorldGrid.Instance == null)
+                    if (procedural) 
                     {
+                        // Procedural
                         if (tf.FindRoad())
                         {
                             trafficLights.Add(tf);
@@ -53,6 +54,10 @@ public class TrafficLightScheduler : MonoBehaviour
                 }
                 if (ptf != null)
                 {
+                    if (procedural)
+                    {
+                        ptf.StartSetColor();
+                    }
                     pedestrianTrafficLights.Add(ptf);
                 }
             }

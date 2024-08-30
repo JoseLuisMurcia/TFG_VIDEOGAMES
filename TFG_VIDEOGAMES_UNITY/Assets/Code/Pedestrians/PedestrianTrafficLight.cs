@@ -14,6 +14,12 @@ public class PedestrianTrafficLight : TrafficLight
 
     void Start()
     {
+        if (WorldGrid.Instance != null)
+            colorChanger.SetColor(currentColor);
+    }
+
+    public void StartSetColor()
+    {
         colorChanger.SetColor(currentColor);
     }
 }

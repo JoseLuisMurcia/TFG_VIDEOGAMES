@@ -144,7 +144,7 @@ public class Road : MonoBehaviour
         {
             exitTrigger.size = Vector3.Scale(exitTrigger.size, new Vector3(0.3f, 1f, 0.6f));
         }
-        if (transform.Cast<Transform>().Any(child => child.gameObject.CompareTag("PedestrianSignal")))
+        if (transform.gameObject.CompareTag("PedestrianCrossing") || transform.Cast<Transform>().Any(child => child.gameObject.CompareTag("PedestrianSignal")))
             return;
 
         // If not pedestrian crossing, create IntersectionTriggers

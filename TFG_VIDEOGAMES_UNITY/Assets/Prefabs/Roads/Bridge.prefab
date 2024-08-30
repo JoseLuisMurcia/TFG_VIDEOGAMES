@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5251624386204839777}
   - component: {fileID: 5251624386204839771}
   - component: {fileID: 5251624386204839782}
+  - component: {fileID: 7762486734870447377}
   m_Layer: 7
   m_Name: Bridge
   m_TagString: Untagged
@@ -117,8 +118,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 2
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -132,6 +131,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   upperNumDirection: 1
   lowerNumDirection: 0
   invertUpperRoad: 1
@@ -191,3 +192,19 @@ MonoBehaviour:
     showNormalsHelpInfo: 0
     tabIndex: 0
   initialized: 1
+--- !u!114 &7762486734870447377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4909184589635201545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff

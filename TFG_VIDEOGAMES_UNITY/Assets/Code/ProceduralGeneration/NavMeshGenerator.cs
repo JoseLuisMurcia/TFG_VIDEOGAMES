@@ -15,5 +15,6 @@ public class NavMeshGenerator : MonoBehaviour
         if (!navMeshSurface) return;
         navMeshSurface.RemoveData();
         navMeshSurface.BuildNavMesh();
+        Debug.Log("NavMesh has been built");
     }
 }

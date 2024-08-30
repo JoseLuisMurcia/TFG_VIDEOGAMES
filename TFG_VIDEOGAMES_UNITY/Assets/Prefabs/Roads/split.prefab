@@ -242,8 +242,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 4
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -257,6 +255,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   laneRefEnd: {x: 0, y: 0, z: 0}
   laneRefStart: {x: 0, y: 0, z: 0}
   laneDir: {x: 0, y: 0, z: 0}
@@ -273,7 +273,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &7365362393118126960

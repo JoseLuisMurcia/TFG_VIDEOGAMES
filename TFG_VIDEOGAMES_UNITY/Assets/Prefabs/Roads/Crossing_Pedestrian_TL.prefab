@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 259682350749119059}
   m_Layer: 7
   m_Name: Crossing_Pedestrian_TL
-  m_TagString: Untagged
+  m_TagString: PedestrianCrossing
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 3
   m_StaticEditorFlags: 8
@@ -135,8 +135,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -151,6 +149,7 @@ MonoBehaviour:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
   procedural: 0
+  trafficLights: []
 --- !u!114 &259682350749119059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -177,7 +176,7 @@ GameObject:
   m_Component:
   - component: {fileID: 259682351126236600}
   - component: {fileID: 259682351126236607}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: NavMeshModifierVolume
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -273,6 +272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 407ced1001241374eaeee9efc0eaf4fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugTiers: 0
 --- !u!1 &2834019286908396290
 GameObject:
   m_ObjectHideFlags: 0
@@ -566,6 +566,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 407ced1001241374eaeee9efc0eaf4fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  debugTiers: 0
 --- !u!1001 &3314269084445855708
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -645,6 +646,10 @@ PrefabInstance:
     - target: {fileID: 606664835893330802, guid: 3a6b9322b74c0084893c6fdcb0feab78, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 606664836061498212, guid: 3a6b9322b74c0084893c6fdcb0feab78, type: 3}
+      propertyPath: pedestrianTime
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 606664836061498213, guid: 3a6b9322b74c0084893c6fdcb0feab78, type: 3}
       propertyPath: m_Name

@@ -2,6 +2,7 @@ using PG;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditorInternal;
 using UnityEngine;
 namespace PG
 {
@@ -9,7 +10,8 @@ namespace PG
     {
         private GameObject crossingPrefab;
         private GameObject crossingTLPrefab;
-        public StraightSplit HandleUnifiedStraight(Straight unifiedStraight, List<Direction> directions, Road entryRoad, Road exitRoad)
+        private int[] divisionFactor = new int[2];
+        public StraightSplit HandleUnifiedStraight(Straight unifiedStraight, List<Direction> directions)
         {
             // Necesito definir reglas para cómo voy a dividir la recta sin ser repetitivo, pero con lógica
             // La densidad va en funcion de la región/zona. 1 - centro, 2 - residencial, 3 - suburbios
@@ -37,31 +39,46 @@ namespace PG
 
             Region roadRegion = regionCounts.OrderByDescending(kv => kv.Value).First().Key;
 
-            // Dividir según región
-            // Mirar al vecino interseccion del entry y el exit road
-            // TODO Recuperar los vecinos en base al grid, no a las roads...
-            // int numEntryRoadNeighbours = entryRoad.connections.First(road => road.typeOfRoad == TypeOfRoad.Intersection).connections.Count;
-            // int numExitRoadNeighbours = exitRoad.connections.First(road => road.typeOfRoad == TypeOfRoad.Intersection).connections.Count;
+            // Con esto podemos saber cuantos vecinos tiene el entry y exit.
+            // Si tiene 1 o 2 vecinos, es una curva o sin salida. Por lo que no tiene señales ni trafficlight
+            // Si tiene 3 vecinos, tiene señales o trafficLight
+            // Si tiene 4 vecinos, tiene trafficLight
+            GridNode entryNode;
+            GridNode exitNode;
+            if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+            {
+                entryNode = Grid.Instance.nodesGrid[unifiedStraight.gridNodes[0].gridX, unifiedStraight.gridNodes[0].gridY + 1];
+                exitNode = Grid.Instance.nodesGrid[unifiedStraight.gridNodes.Last().gridX, unifiedStraight.gridNodes.Last().gridY - 1];              
+            }
+            else
+            {
+                entryNode = Grid.Instance.nodesGrid[unifiedStraight.gridNodes[0].gridX - 1, unifiedStraight.gridNodes[0].gridY];
+                exitNode = Grid.Instance.nodesGrid[unifiedStraight.gridNodes.Last().gridX + 1, unifiedStraight.gridNodes.Last().gridY];
+            }
 
-            int divisionFactor;
+            // Dividir según región
             switch (roadRegion)
             {
-                case Region.Main:
-                    divisionFactor = 4; // Mayor densidad en la región principal
+                case Region.Main: // Mayor densidad en la región principal
+                    divisionFactor[0] = 4; 
+                    divisionFactor[1] = 6;
                     break;
-                case Region.Residential:
-                    divisionFactor = 6; // Densidad media en áreas residenciales
+                case Region.Residential: // Densidad media en áreas residenciales
+                    divisionFactor[0] = 6; 
+                    divisionFactor[1] = 8; 
                     break;
-                case Region.Suburbs:
-                    divisionFactor = 8; // Menor densidad en suburbios
+                case Region.Suburbs: // Menor densidad en suburbios
+                    divisionFactor[0] = 8; 
+                    divisionFactor[0] = 10; 
                     break;
-                default:
-                    divisionFactor = 10; // Valor por defecto
+                default: // Valor por defecto
+                    divisionFactor[0] = 10; 
+                    divisionFactor[1] = 12; 
                     break;
             }
-            // Calcular el número máximo de divisiones posibles
-            int numDivisions = (unifiedStraight.gridNodes.Count) / (divisionFactor + 1);
-            if (numDivisions <= 1) return new StraightSplit(new List<Straight>(), new Dictionary<Vector2Int, GameObject>());
+            // Calcular el número máximo de divisiones posibles basado en el rango
+            int minDivisionLength = divisionFactor[0];
+            int maxDivisionLength = divisionFactor[1];
 
             // Lista para almacenar los nuevos segmentos de Straight
             List<Straight> dividedStraights = new List<Straight>();
@@ -69,25 +86,26 @@ namespace PG
             // Índice actual en el gridNodes
             int currentIndex = 0;
 
-            for (int i = 0; i < numDivisions; i++)
+            while (currentIndex < unifiedStraight.gridNodes.Count)
             {
-                // Crear nuevo segmento
                 Straight newStraight = new Straight();
 
-                // Número de nodos a tomar, ajustado para el último segmento
-                int nodesToTake = (i == numDivisions - 1) ? unifiedStraight.gridNodes.Count - currentIndex : divisionFactor;
+                int remainingNodes = unifiedStraight.gridNodes.Count - currentIndex;
+                int nodesToTake = Random.Range(minDivisionLength, maxDivisionLength + 1);
+
+                if (remainingNodes <= maxDivisionLength + 1)
+                {
+                    nodesToTake = remainingNodes; // Leave at least one node for the crossing
+                }
 
                 newStraight.gridNodes = unifiedStraight.gridNodes.GetRange(currentIndex, nodesToTake);
                 currentIndex += nodesToTake;
 
-                // Establecer la posición media para el segmento
                 newStraight.position = CalculateAveragePosition(newStraight.gridNodes);
-
-                // Añadir el nuevo segmento a la lista
                 dividedStraights.Add(newStraight);
 
-                // Si no es el último segmento, reservar un nodo para el crossing
-                if (i < numDivisions)
+                // Reservar un nodo para el crossing si no es el último segmento
+                if (currentIndex < unifiedStraight.gridNodes.Count)
                 {
                     currentIndex++; // Avanzar un nodo para dejar espacio para el crossing
                 }
@@ -97,7 +115,7 @@ namespace PG
             // Colocar los crossings entre los segmentos
             for (int i = 0; i < dividedStraights.Count - 1; i++)
             {
-                PlacePedestrianCrossing(crossingDictionary, directions, dividedStraights[i], dividedStraights[i + 1]);
+                PlacePedestrianCrossing(crossingDictionary, directions, dividedStraights[i], dividedStraights[i + 1], roadRegion);
             }
 
             return new StraightSplit(dividedStraights, crossingDictionary);
@@ -122,7 +140,7 @@ namespace PG
         }
 
         // Función auxiliar para colocar un pedestrian crossing entre dos segmentos
-        private void PlacePedestrianCrossing(Dictionary<Vector2Int, GameObject> crossings, List<Direction> directions, Straight firstStraight, Straight secondStraight)
+        private void PlacePedestrianCrossing(Dictionary<Vector2Int, GameObject> crossings, List<Direction> directions, Straight firstStraight, Straight secondStraight, Region roadRegion)
         {
             // Lógica para colocar un crossing entre firstStraight y secondStraight
             // Esto puede incluir instanciar un prefab, configurar posiciones, etc.
@@ -130,17 +148,46 @@ namespace PG
             GridNode secondNode = secondStraight.gridNodes[0];
             Vector2Int position = CalculateAveragePosition(new List<GridNode> { firstNode, secondNode }); 
             Quaternion rotation = Quaternion.identity;
+
+            // Assign randomPrefab
+            GameObject chosenPrefab;
+            float value = Random.value;
+            switch (roadRegion)
+            {
+                case Region.Main: // 40% Chance traffic light
+                    chosenPrefab = value > 0.4f ? crossingPrefab : crossingTLPrefab;
+                    break;
+                case Region.Residential: // 30% Chance traffic light
+                    chosenPrefab = value > 0.3f ? crossingPrefab : crossingTLPrefab;
+                    break;
+                case Region.Suburbs: // 15% Chance traffic light
+                    chosenPrefab = value > 0.15f ? crossingPrefab : crossingTLPrefab;
+                    break;
+                default:
+                    chosenPrefab = crossingPrefab;
+                    break;
+            }
+
+            // Spawn prefab
             if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
             {
                 rotation = Quaternion.Euler(0, 90, 0);
             }
-            GameObject crossingGO = Instantiate(crossingPrefab, Grid.Instance.nodesGrid[position.x, position.y].worldPosition, rotation, transform);
+            GameObject crossingGO = Instantiate(chosenPrefab, Grid.Instance.nodesGrid[position.x, position.y].worldPosition, rotation, transform);
             crossings.Add(position, crossingGO);
         }
         public void SetCrossingPrefabs(GameObject _crossingPrefab, GameObject _crossingTLPrefab)
         {
             crossingPrefab = _crossingPrefab;
             crossingTLPrefab = _crossingTLPrefab;
+        }
+        private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+        {
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.parent = transform;
+            startSphere.transform.localScale = Vector3.one * size;
+            startSphere.transform.position = pos + Vector3.up * 3f * offset;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
     }
 

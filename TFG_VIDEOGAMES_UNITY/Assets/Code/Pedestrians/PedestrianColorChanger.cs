@@ -9,7 +9,7 @@ public class PedestrianColorChanger : MonoBehaviour
     Material black, metallicBlack, green, red;
     private Renderer debugSphereRenderer;
 
-    void Start()
+    void Awake()
     {
         meshRenderer = GetComponent<MeshRenderer>();
         black = meshRenderer.materials[0];

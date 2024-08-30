@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 7961983944339967954}
   - component: {fileID: 7961983944339967957}
   - component: {fileID: 7961983944339967956}
+  - component: {fileID: 9201924877495727158}
   m_Layer: 7
   m_Name: Slant
   m_TagString: Untagged
@@ -213,8 +214,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 6
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -228,3 +227,21 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
+--- !u!114 &9201924877495727158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7115634528952152710}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff

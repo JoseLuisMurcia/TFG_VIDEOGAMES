@@ -274,7 +274,6 @@ namespace PG
             {
                 roadDictionary[position] = addedCrossings[position];
             }
-            return roadDictionary.Values.ToList();
 
             // Intersections creation
             for (int i = 0; i < grid.gridSizeX; i++)
@@ -401,7 +400,7 @@ namespace PG
                 sortedNodes = unifiedStraight.gridNodes.OrderBy(x => x.gridX).ToList();
             }
             unifiedStraight.gridNodes = sortedNodes;
-            StraightSplit split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions, entryRoad, exitRoad);
+            StraightSplit split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions);
             // Create a straight perfectly scaled and centered
 
             if (split.dividedStraights.Count <= 1)
@@ -938,15 +937,6 @@ namespace PG
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            startSphere.transform.parent = transform;
-            startSphere.transform.localScale = Vector3.one * size;
-            startSphere.transform.position = pos + Vector3.up * 3f * offset;
-            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
-        }
-        private void SpawnSphere(Vector3 pos, Color color, float offset, float size, string name)
-        {
-            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            startSphere.name = name;
             startSphere.transform.parent = transform;
             startSphere.transform.localScale = Vector3.one * size;
             startSphere.transform.position = pos + Vector3.up * 3f * offset;

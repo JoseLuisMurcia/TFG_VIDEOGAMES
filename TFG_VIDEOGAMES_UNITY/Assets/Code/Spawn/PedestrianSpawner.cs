@@ -1,3 +1,4 @@
+using PG;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,20 @@ public class PedestrianSpawner : MonoBehaviour
     }
     void Start()
     {
-        var housesAssets = GameObject.FindGameObjectWithTag("Houses");
-        foreach (Transform child in housesAssets.transform)
+        if (RoadPlacer.Instance == null)
         {
-            if (child.gameObject.activeSelf)
+            var housesAssets = GameObject.FindGameObjectWithTag("Houses");
+            foreach (Transform child in housesAssets.transform)
             {
-                houses.Add(child);
+                if (child.gameObject.activeSelf)
+                {
+                    houses.Add(child);
+                }
             }
+        }
+        else // Procedural
+        {
+            // TODO
         }
     }
     // 0 for src, 1 for dst

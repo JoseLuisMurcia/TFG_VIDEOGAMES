@@ -74,7 +74,7 @@ GameObject:
   - component: {fileID: 1630963810064525067}
   m_Layer: 7
   m_Name: Crossing_Pedestrian
-  m_TagString: Untagged
+  m_TagString: PedestrianCrossing
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 3
   m_StaticEditorFlags: 8
@@ -194,8 +194,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -209,6 +207,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1630963810064525067
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -235,7 +235,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3906676919896565939}
   - component: {fileID: 1244946521158170893}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: NavMeshModifierVolume
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -268,7 +268,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35e95dc5ff2b64380880dd7ac5922847, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Size: {x: 0.6, y: 1, z: 1.25}
+  m_Size: {x: 0.6, y: 1, z: 1.3}
   m_Center: {x: 0, y: 0, z: 0}
   m_Area: 4
   m_AffectedAgents: ffffffff

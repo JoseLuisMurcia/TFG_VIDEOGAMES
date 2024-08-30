@@ -20,6 +20,7 @@ public class TrafficLightWaitingSlotsManager
     private float laneLength;
     private Dictionary<int, List<Slot>> tieredSlots = new Dictionary<int, List<Slot>>();
     private List<SlotAssignation> slotAsignations = new List<SlotAssignation>();
+    bool isRotated;
     public TrafficLightWaitingSlotsManager(Vector3 _upperLeft, Vector3 _upperRight, Vector3 _forward, Vector3 _right, Vector3 _crossingCentre)
     {
         // Set variables useful for the future
@@ -30,6 +31,7 @@ public class TrafficLightWaitingSlotsManager
         this.laneLength = Vector3.Distance(upperLeft, upperRight);
         this.crossingCentre = _crossingCentre;
 
+        isRotated = Mathf.Abs(_forward.z) > 0.8f ? false : true;
         float horizontalOffset = laneLength / (slotsPerLane - 1);
         float verticalInitialOffset = .5f;
         slots = new List<List<Slot>>();
@@ -42,6 +44,13 @@ public class TrafficLightWaitingSlotsManager
                     upperLeft.x + right.x * j * horizontalOffset,
                     upperLeft.y,
                     upperLeft.z - forward.z * verticalInitialOffset - forward.z * i * verticalOffset);
+
+                if (isRotated)
+                {
+                    slotPosition.x = upperLeft.x - forward.x * verticalInitialOffset - forward.x * i * verticalOffset;
+                    slotPosition.z = upperLeft.z + right.z * j * horizontalOffset;
+                }
+                
                 float distanceToCentre = Vector3.Distance(crossingCentre, slotPosition);
                 slots[i].Add(new Slot(slotPosition, i * slotsPerLane + j, distanceToCentre, i));
             }
