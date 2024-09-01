@@ -78,7 +78,7 @@ namespace PG
                 else
                 {
                     node.usage = Usage.road;
-                    if(visualDebug) SpawnSphere(node.worldPosition, Color.black, 1f, 2f);
+                    if (visualDebug) SpawnSphere(node.worldPosition, Color.black, 1f, 2f);
 
                 }
             }
@@ -103,7 +103,7 @@ namespace PG
                                     ConnectToOtherRoad(i, j, data);
                                 }
                                 break;
-                            case 2:                           
+                            case 2:
                                 if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
                                 {
                                     if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
@@ -163,30 +163,12 @@ namespace PG
 
                     if (roadDictionary[key].name == "End(Clone)")
                     {
-                        if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
+                        // It must be a straight road from the restrictions imposed on GoStraight()
+                        if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
                         {
-                            if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
-                            {
-                                rotation = Quaternion.Euler(0, 90, 0);
-                            }
-                            roadDictionary[key] = Instantiate(straight, node.worldPosition, rotation, transform);
+                            rotation = Quaternion.Euler(0, 90, 0);
                         }
-                        else
-                        {
-                            if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.back))
-                            {
-                                rotation = Quaternion.Euler(0, 180, 0);
-                            }
-                            else if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward))
-                            {
-                                rotation = Quaternion.Euler(0, -90, 0);
-                            }
-                            else if (neighbours.Contains(Direction.back) && neighbours.Contains(Direction.right))
-                            {
-                                rotation = Quaternion.Euler(0, 90, 0);
-                            }
-                            roadDictionary[key] = Instantiate(corner, node.worldPosition, rotation, transform);
-                        }
+                        roadDictionary[key] = Instantiate(straight, node.worldPosition, rotation, transform);
                         continue;
                     }
                     else
@@ -246,8 +228,6 @@ namespace PG
                 }
             }
 
-
-            // TOCAR A PARTIR DE AQUI
             // Straights recreation
             Dictionary<Vector2Int, GameObject> addedStraights = new Dictionary<Vector2Int, GameObject>();
             Dictionary<Vector2Int, GameObject> addedCrossings = new Dictionary<Vector2Int, GameObject>();
@@ -280,8 +260,8 @@ namespace PG
                     // Advance horizontally until finding the extremes, add all those positions to a straight and mark those nodes with the belonging straight
                     split = CreateStraight(position.x, position.y, new List<Direction> { Direction.left, Direction.right });
                 }
-                
-                foreach(Straight straight in split.dividedStraights)
+
+                foreach (Straight straight in split.dividedStraights)
                 {
                     addedStraights[straight.position] = straight.gameObject;
                 }
@@ -291,7 +271,7 @@ namespace PG
                 }
             }
             RemoveRedundantRoads();
-            foreach(Vector2Int position in addedStraights.Keys)
+            foreach (Vector2Int position in addedStraights.Keys)
             {
                 roadDictionary[position] = addedStraights[position];
             }
@@ -313,7 +293,7 @@ namespace PG
                         switch (data.neighbours.Count)
                         {
                             case 3:
-                                if (currentNode.isRoundabout) 
+                                if (currentNode.isRoundabout)
                                 {
                                     // Create 3 yield roundabout signals
                                     foreach (Direction dir in neighbours)
@@ -377,7 +357,7 @@ namespace PG
             GridNode currentNode = grid.nodesGrid[x, y];
             currentNode.isProcessedStraight = true;
             unifiedStraight.gridNodes.Add(currentNode);
-            Road initRoad = GetRoadFromPosition(x,y);
+            Road initRoad = GetRoadFromPosition(x, y);
             Road entryRoad = null;
             Road exitRoad = null;
             DestroyRoadOnPosition(x, y);
@@ -395,8 +375,9 @@ namespace PG
                     if (advancedNode == null)
                     {
                         // Enter here on last iteration for each direction so that we can store the last road and get the reference points
-                        if (i != 1) {
-                            GridNode lastNodeInDirection = AdvanceInDirection(x, y, offset, i-1);
+                        if (i != 1)
+                        {
+                            GridNode lastNodeInDirection = AdvanceInDirection(x, y, offset, i - 1);
                             if (directions[0] != direction)
                             {
                                 exitRoad = GetRoadFromPosition(lastNodeInDirection.gridX, lastNodeInDirection.gridY);
@@ -408,7 +389,7 @@ namespace PG
                         }
                         break;
                     }
-                    else if(advancedNode != null && !advancedNode.isRoundabout)
+                    else if (advancedNode != null && !advancedNode.isRoundabout)
                     {
                         advancedNode.isProcessedStraight = true;
                         if (!roadDictionary.ContainsKey(new Vector2Int(advancedNode.gridX, advancedNode.gridY)))
@@ -549,7 +530,7 @@ namespace PG
         }
         private void RemoveRedundantRoads()
         {
-            foreach(Vector2Int key in gameObjectsToRemove)
+            foreach (Vector2Int key in gameObjectsToRemove)
             {
                 Destroy(roadDictionary[key]);
                 roadDictionary.Remove(key);
@@ -691,6 +672,14 @@ namespace PG
                             currentNode.usage = Usage.empty;
                             if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
                             updatedNodes.Add(currentNode);
+                            var key = new Vector2Int(currentNode.gridX, currentNode.gridY);
+                            if (roadDictionary.ContainsKey(key))
+                            {
+                                if (roadDictionary[key].gameObject.name == "End(Clone)")
+                                {
+                                    Debug.LogWarning("NOS HEMOS UNIDO A UN END(CLONE) EN ShouldBeEliminated");
+                                }
+                            }
                         }
                         else
                         {
@@ -769,7 +758,7 @@ namespace PG
             return roadNeighbours;
         }
 
-        private NeighboursData GetNeighboursData(int posX, int posY)
+        public NeighboursData GetNeighboursData(int posX, int posY)
         {
             NeighboursData data = new NeighboursData();
             int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
@@ -822,6 +811,7 @@ namespace PG
                         updatedNodes.Add(node);
                         if (node.usage != Usage.point)
                             node.usage = Usage.road;
+                        var key = new Vector2Int(node.gridX, node.gridY);
 
                     }
                     visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
@@ -868,7 +858,16 @@ namespace PG
                                 visualizer.MarkCornerDecorationNodes(node);
                         }
                         node.occupied = true;
+                        var key = new Vector2Int(node.gridX, node.gridY);
                         updatedNodes.Add(node);
+                        if (roadDictionary.ContainsKey(key))
+                        {
+                            if (roadDictionary[key].gameObject.name == "End(Clone)")
+                            {
+                                SpawnSphere(node.worldPosition, Color.red, 3f, 3f);
+                                Debug.LogWarning("NOS HEMOS UNIDO A UN END(CLONE) En ConnectToOtherRoad PATHFINDING");
+                            }
+                        }
                         int x = node.gridX; int y = node.gridY;
                         int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
                         visualizer.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
@@ -902,7 +901,7 @@ namespace PG
         }
         private List<GridNode> GoStraight(Direction direction, int startX, int startY)
         {
-            List<GridNode> path = new List<GridNode>{ grid.nodesGrid[startX, startY] };
+            List<GridNode> path = new List<GridNode> { grid.nodesGrid[startX, startY] };
             int[] dir = DirectionToInt(direction);
             int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(direction);
 
@@ -919,9 +918,23 @@ namespace PG
                 path.Add(currentNode);
                 if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
                 {
+                    // Check for roundabout ends that could result in a corner and not a straight road.
+                    // If from the merging node, advancing in the same dir we don't find another roundabout node, that means that we would create a corner
+                    List<Direction> mergingNodeNeighbours = GetNeighboursData(currentPosX, currentPosY).neighbours;
+                    if (mergingNodeNeighbours.Count == 1 && currentNode.isRoundabout)
+                    {
+                        int nextPosX = startX + dir[0] * (i + 1);
+                        int nextPosY = startY + dir[1] * (i + 1);
+
+                        if (OutOfGrid(nextPosX, nextPosY))
+                            return null;
+
+                        GridNode nextNode = grid.nodesGrid[nextPosX, nextPosY];
+                        if (!nextNode.isRoundabout)
+                            return null;
+                    }
+
                     // Here check the last node, because there are some things to be respected before merging.
-                    // 1) The last node should be at least 2 nodes away from an intersection. Otherwise intersections are going to be created stupidly close to each other.
-                    // 2) If the last node is going to create an intersection, such intersection should not have a bending neighbour, otherwise that's going to be problematic for the triggers.
                     if (CheckMergingNodeTerms(currentNode))
                         return path;
                     return null;
@@ -1122,7 +1135,7 @@ namespace PG
             }
         }
     }
-    
+
     public class NeighboursData
     {
         public List<Direction> neighbours = new List<Direction>();

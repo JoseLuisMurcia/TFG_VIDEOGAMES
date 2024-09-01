@@ -29,17 +29,18 @@ namespace PG
             List<GridNode> path = null;
             Direction direction = Direction.zero;
             bool hasRoundaboutNearby = CheckNearbyRoundabouts(node.gridX, node.gridY);
+            bool hasEnoughSpace = CheckFreeDistance(node.gridX, node.gridY, neighbours);
             // Viabilidad de la rotonda
             if (is3Way)
             {
                 // La dirección en la que hay que comprobar disponibilidad
                 direction = RoadPlacer.Instance.GetAllDirections().Except(neighbours).FirstOrDefault();
                 path = GoStraight(direction, node.gridX, node.gridY);
-                isRoundaboutFeasible = (path != null && !hasRoundaboutNearby) ? true : false;
+                isRoundaboutFeasible = (path != null && !hasRoundaboutNearby && hasEnoughSpace) ? true : false;
             }
             else
             {
-                isRoundaboutFeasible = !hasRoundaboutNearby;
+                isRoundaboutFeasible = !hasRoundaboutNearby && hasEnoughSpace;
             }
 
             // Calcular probabilidad de spawnear rotonda
@@ -112,6 +113,44 @@ namespace PG
                 }
             }
             return false;
+        }
+        private bool CheckFreeDistance(int startX, int startY, List<Direction> neighbours)
+        {
+            // Comprobar que la rotonda se puede expandir minimo N nodos.
+            // Esto es para que no se coloque una curva a 2 nodos del centro
+            foreach (Direction direction in neighbours)
+            {
+                int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+
+                int i = 2;
+                int minDistance = 3;
+                while (i <= minDistance)
+                {
+                    int currentPosX = startX + dir[0] * i;
+                    int currentPosY = startY + dir[1] * i;
+
+                    if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                        break;
+
+                    List<Direction> directions = RoadPlacer.Instance.GetNeighboursData(currentPosX, currentPosY).neighbours;
+                    if(i < minDistance)
+                    {
+                        if (directions.Count == 1 || directions.Count >= 3)
+                            return false;
+                    }
+                    else if (i == minDistance)
+                    {
+                        if (directions.Count < 2)
+                            return false;
+                    }
+                    //GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+                    //if (!(currentNode.usage == Usage.road || currentNode.usage == Usage.point))
+                    //    return false;
+
+                    i++;
+                }
+            }
+            return true;
         }
         private List<GridNode> GoStraight(Direction direction, int startX, int startY)
         {
