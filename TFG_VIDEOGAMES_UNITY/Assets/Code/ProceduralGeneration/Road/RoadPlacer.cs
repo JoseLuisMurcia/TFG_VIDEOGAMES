@@ -292,6 +292,14 @@ namespace PG
                     {
                         switch (data.neighbours.Count)
                         {
+                            case 2:
+                                // If corner and not straight
+                                if (!(neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
+                                {
+                                    Instantiate(sidewalk, currentNode.worldPosition - Vector3.up * .1f, Quaternion.identity, transform);
+                                }
+                                break;
+
                             case 3:
                                 if (currentNode.isRoundabout)
                                 {
@@ -345,7 +353,7 @@ namespace PG
                     }
                     else if (currentNode.usage == Usage.decoration)
                     {
-                        Instantiate(sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
+                        Instantiate(sidewalk, currentNode.worldPosition - Vector3.up * .1f, Quaternion.identity, transform);
                     }
                 }
             }

@@ -56,37 +56,136 @@ namespace PG
                 entryNode = Grid.Instance.nodesGrid[unifiedStraight.gridNodes[0].gridX - 1, unifiedStraight.gridNodes[0].gridY];
                 exitNode = Grid.Instance.nodesGrid[unifiedStraight.gridNodes.Last().gridX + 1, unifiedStraight.gridNodes.Last().gridY];
             }
+            // Direction to advance
+            Direction direction = RoadPlacer.Instance.GetDirectionBasedOnPos(entryNode, exitNode);
 
-            // Dividir según región
-            switch (roadRegion)
+            bool connectsToRoundabout = ConnectsToRoundabout(exitNode, direction);
+            // The min nodes to be able to split a road
+            int minNodes = -1;
+            int nodesToTakeOnFailure = -1;
+            
+            int roadLength = unifiedStraight.gridNodes.Count;
+            if (roadLength <= 10) // 5-10 Short road
             {
-                case Region.Main: // Mayor densidad en la región principal
-                    divisionFactor[0] = 4; 
-                    divisionFactor[1] = 6;
-                    break;
-                case Region.Residential: // Densidad media en áreas residenciales
-                    divisionFactor[0] = 6; 
-                    divisionFactor[1] = 8; 
-                    break;
-                case Region.Suburbs: // Menor densidad en suburbios
-                    divisionFactor[0] = 8; 
-                    divisionFactor[1] = 10; 
-                    break;
-                default: // Valor por defecto
-                    divisionFactor[0] = 10; 
-                    divisionFactor[1] = 12; 
-                    break;
+                nodesToTakeOnFailure = 3;
+                // Dividir según región
+                switch (roadRegion)
+                {
+                    case Region.Main: // Mayor densidad en la región principal
+                        divisionFactor[0] = 3;
+                        divisionFactor[1] = 5;
+                        minNodes = connectsToRoundabout ? 7 : 6;
+                        break;
+                    case Region.Residential: // Densidad media en áreas residenciales
+                        divisionFactor[0] = 4;
+                        divisionFactor[1] = 5;
+                        minNodes = connectsToRoundabout ? 7 : 6;
+                        break;
+                    case Region.Suburbs: // Menor densidad en suburbios
+                        divisionFactor[0] = 5;
+                        divisionFactor[1] = 6;
+                        minNodes = connectsToRoundabout ? 7 : 6;
+                        break;
+                    default: // Valor por defecto
+                        divisionFactor[0] = 10;
+                        divisionFactor[1] = 12;
+                        minNodes = connectsToRoundabout ? 7 : 6;
+                        break;
+                }
             }
+            else if (roadLength <= 20) // 11-20 Medium road
+            {
+                nodesToTakeOnFailure = 4;
+                // Dividir según región
+                switch (roadRegion)
+                {
+                    case Region.Main: // Mayor densidad en la región principal
+                        divisionFactor[0] = 4;
+                        divisionFactor[1] = 7;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    case Region.Residential: // Densidad media en áreas residenciales
+                        divisionFactor[0] = 5;
+                        divisionFactor[1] = 7;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    case Region.Suburbs: // Menor densidad en suburbios
+                        divisionFactor[0] = 6;
+                        divisionFactor[1] = 8;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    default: // Valor por defecto
+                        divisionFactor[0] = 10;
+                        divisionFactor[1] = 12;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                }
+            }
+            else if (roadLength <= 30) // 21-30 Long road
+            {
+                nodesToTakeOnFailure = 5;
+                // Dividir según región
+                switch (roadRegion)
+                {
+                    case Region.Main: // Mayor densidad en la región principal
+                        divisionFactor[0] = 7;
+                        divisionFactor[1] = 11;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    case Region.Residential: // Densidad media en áreas residenciales
+                        divisionFactor[0] = 8;
+                        divisionFactor[1] = 11;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    case Region.Suburbs: // Menor densidad en suburbios
+                        divisionFactor[0] = 9;
+                        divisionFactor[1] = 13;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    default: // Valor por defecto
+                        divisionFactor[0] = 10;
+                        divisionFactor[1] = 12;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                }
+            }
+            else // 30-?? Ultra long road
+            {
+                nodesToTakeOnFailure = 5;
+                // Dividir según región
+                switch (roadRegion)
+                {
+                    case Region.Main: // Mayor densidad en la región principal
+                        divisionFactor[0] = 9;
+                        divisionFactor[1] = 14;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    case Region.Residential: // Densidad media en áreas residenciales
+                        divisionFactor[0] = 10;
+                        divisionFactor[1] = 14;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    case Region.Suburbs: // Menor densidad en suburbios
+                        divisionFactor[0] = 11;
+                        divisionFactor[1] = 16;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                    default: // Valor por defecto
+                        divisionFactor[0] = 10;
+                        divisionFactor[1] = 12;
+                        minNodes = connectsToRoundabout ? 8 : 7;
+                        break;
+                }
+            }
+
             // Calcular el número máximo de divisiones posibles basado en el rango
             int minDivisionLength = divisionFactor[0];
             int maxDivisionLength = divisionFactor[1];
-
             // Lista para almacenar los nuevos segmentos de Straight
             List<Straight> dividedStraights = new List<Straight>();
 
             // Índice actual en el gridNodes
             int currentIndex = 0;
-
             while (currentIndex < unifiedStraight.gridNodes.Count)
             {
                 Straight newStraight = new Straight();
@@ -94,9 +193,35 @@ namespace PG
                 int remainingNodes = unifiedStraight.gridNodes.Count - currentIndex;
                 int nodesToTake = Random.Range(minDivisionLength, maxDivisionLength + 1);
 
-                if (remainingNodes <= maxDivisionLength + 1)
+                bool lastIteration = false;
+                if (remainingNodes <= nodesToTake + 1)
                 {
+                    lastIteration = true;
                     nodesToTake = remainingNodes; // Leave at least one node for the crossing
+                }
+
+                // Hacer un check para recalcular nodesToTake en caso de que para la siguiente iteracion
+                // vaya a quedar una recta demasiado corta (A.K.A) un crossing demasiado cerca del final de la recta
+                if (!lastIteration)
+                {
+                    int nodesAvailableForNextIteration = remainingNodes - (nodesToTake + 1);
+                    // Si para la siguiente recta quedarán menos de 3 nodos, el crossing estaría a 2 nodos de la interseccion.
+                    // Si quedan 3 o 4, la siguiente iteración será la ultima
+                    if (nodesAvailableForNextIteration < 3)
+                    {
+                        // Recalcular hasta encontrar solucion
+                        // Cuantos nodos quedan? Ver si con los que quedan es factible partir la recta o no
+                        if (remainingNodes < minNodes)
+                        {
+                            nodesToTake = remainingNodes;
+                        }
+                        else
+                        {
+                            // Split the road
+                            // Esto puede que falle
+                            nodesToTake = nodesToTakeOnFailure;
+                        }
+                    }
                 }
 
                 try
@@ -123,7 +248,7 @@ namespace PG
                 // Reservar un nodo para el crossing si no es el último segmento
                 if (currentIndex < unifiedStraight.gridNodes.Count)
                 {
-                    currentIndex++; // Avanzar un nodo para dejar espacio para el crossing
+                    currentIndex++;
                 }
             }
             Dictionary<Vector2Int, GameObject> crossingDictionary = new Dictionary<Vector2Int, GameObject>();
@@ -154,17 +279,22 @@ namespace PG
 
             return new Vector2Int(avgX, avgY);
         }
+        private bool ConnectsToRoundabout(GridNode node, Direction direction)
+        {
+            // Check if the proposed node connects to a roundabout
+            int[] movementOffset = RoadPlacer.Instance.DirectionToInt(direction);
+            int newX = node.gridX + movementOffset[0];
+            int newY = node.gridY + movementOffset[1];
 
+            GridNode connectionNode = Grid.Instance.nodesGrid[newX, newY];
+            if (connectionNode != null && connectionNode.isRoundabout)
+                return true;
+
+            return false;
+        }
         // Función auxiliar para colocar un pedestrian crossing entre dos segmentos
         private void PlacePedestrianCrossing(Dictionary<Vector2Int, GameObject> crossings, List<Direction> directions, Straight firstStraight, Straight secondStraight, Region roadRegion)
         {
-            // Lógica para colocar un crossing entre firstStraight y secondStraight
-            // Esto puede incluir instanciar un prefab, configurar posiciones, etc.
-            GridNode firstNode = firstStraight.gridNodes[firstStraight.gridNodes.Count - 1];
-            GridNode secondNode = secondStraight.gridNodes[0];
-            Vector2Int position = CalculateAveragePosition(new List<GridNode> { firstNode, secondNode }); 
-            Quaternion rotation = Quaternion.identity;
-
             // Assign randomPrefab
             GameObject chosenPrefab;
             float value = Random.value;
@@ -185,6 +315,13 @@ namespace PG
             }
 
             // Spawn prefab
+            // Lógica para colocar un crossing entre firstStraight y secondStraight
+            // Esto puede incluir instanciar un prefab, configurar posiciones, etc.
+            GridNode firstNode = firstStraight.gridNodes.Last();
+            GridNode secondNode = secondStraight.gridNodes.First();
+            Vector2Int position = CalculateAveragePosition(new List<GridNode> { firstNode, secondNode });
+            Quaternion rotation = Quaternion.identity;
+
             if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
             {
                 rotation = Quaternion.Euler(0, 90, 0);
