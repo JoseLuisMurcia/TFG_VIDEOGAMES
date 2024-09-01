@@ -9,7 +9,7 @@ public class Road : MonoBehaviour
     [SerializeField] LayerMask roadMask;
     public TypeOfRoad typeOfRoad;
     [SerializeField] public NumDirection numDirection;
-    
+
     [HideInInspector] public List<Road> connections = new List<Road>();
     [HideInInspector] public List<Lane> lanes;
     [HideInInspector] public List<Vector3> laneReferencePoints = new List<Vector3>();
@@ -47,12 +47,15 @@ public class Road : MonoBehaviour
         yield return new WaitForSeconds(.5f);
         connections.Clear();
         rayPositions.Clear();
+        laneReferencePoints.Clear();
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
-        bounds = GetComponent<MeshFilter>().mesh.bounds;
+        MeshFilter meshFilter = GetComponent<MeshFilter>();
+        bounds = meshFilter.mesh.bounds;
         leftBottom = gameObject.transform.Find("LeftBottom");
         SetConnections();
         SetLanes();
+        SortReferencePoints();
         boxColliderSize = boxCollider.bounds.size.x;
 
         if (typeOfRoad != TypeOfRoad.Roundabout)
@@ -87,11 +90,11 @@ public class Road : MonoBehaviour
         Vector3 entryPos;
         Vector3 exitPos;
 
-        if(laneReferencePoints.Count - 1 < 0)
+        if (laneReferencePoints.Count - 1 < 0)
         {
             Debug.LogError("NO TIENE LANEREFERENCEPOINTS WTF");
         }
-        if(Vector3.Distance(trafficLight.transform.position, laneReferencePoints[0]) < Vector3.Distance(trafficLight.transform.position, laneReferencePoints[laneReferencePoints.Count - 1]))
+        if (Vector3.Distance(trafficLight.transform.position, laneReferencePoints[0]) < Vector3.Distance(trafficLight.transform.position, laneReferencePoints[laneReferencePoints.Count - 1]))
         {
             entryPos = laneReferencePoints[laneReferencePoints.Count - 1];
             exitPos = laneReferencePoints[0];
@@ -114,7 +117,7 @@ public class Road : MonoBehaviour
         }
         BoxCollider box = entryTrigger.AddComponent<BoxCollider>();
         box.isTrigger = true;
-        box.size = (Mathf.Abs(transform.eulerAngles.y) == 90f || Mathf.Abs(transform.eulerAngles.y) == 270f) ? 
+        box.size = (Mathf.Abs(transform.eulerAngles.y) == 90f || Mathf.Abs(transform.eulerAngles.y) == 270f) ?
             new Vector3(transform.localScale.z * .9f, 2f, transform.localScale.x * .4f) :
             new Vector3(transform.localScale.x * .4f, 2f, transform.localScale.z * .9f);
 
@@ -166,7 +169,7 @@ public class Road : MonoBehaviour
             num++;
         }
 
-       
+
 
     }
     private void SortReferencePoints()
@@ -181,7 +184,7 @@ public class Road : MonoBehaviour
     {
         Vector3 center = transform.position + boxCollider.center;
         Vector3 halfSize = boxCollider.bounds.size * 0.5f;
-        float offset = 0.3f;
+        float offset = (typeOfRoad == TypeOfRoad.Roundabout && procedural) ? 2f : 0.3f;
         Vector3 ray1Pos = new Vector3(center.x + halfSize.x + offset, 0, center.z + halfSize.z + offset);
         Vector3 ray2Pos = new Vector3(center.x - halfSize.x - offset, 0, center.z + halfSize.z + offset);
         Vector3 ray3Pos = new Vector3(center.x - halfSize.x - offset, 0, center.z - halfSize.z - offset);
@@ -217,21 +220,21 @@ public class Road : MonoBehaviour
         rayPositions.Add(ray11newPos);
         rayPositions.Add(ray12newPos);
 
-        int i = 0;
         foreach (Vector3 rayPos in rayPositions)
         {
             Vector3 rayOrigin = rayPos + Vector3.up * 25f;
             Ray ray = new Ray(rayOrigin, Vector3.down);
             RaycastHit hit;
+
             if (Physics.Raycast(ray, out hit, 55f, roadMask))
             {
+                //Debug.DrawRay(rayOrigin, Vector3.down * 55f, Color.black, 50f);
                 Road road = hit.collider.gameObject.GetComponent<Road>();
                 if (road != null && IsCompatible(road) && road != this)
-                {          
+                {
                     connections.Add(road);
                 }
             }
-            i++;
         }
     }
 
@@ -289,6 +292,14 @@ public class Road : MonoBehaviour
             return true;
 
         return false;
+    }
+
+    public void RecalculateReferencePoints()
+    {
+        laneReferencePoints = new List<Vector3>();
+        List<Vector3> localPoints = pathCreator.bezierPath.GetAnchorPoints();
+        foreach (Vector3 localPoint in localPoints)
+            laneReferencePoints.Add(transform.TransformPoint(localPoint));
     }
 }
 

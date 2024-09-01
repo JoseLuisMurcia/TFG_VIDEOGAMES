@@ -42,10 +42,10 @@ public class RoadConnecter : MonoBehaviour
             if (road == null) continue;
 
             roads.Add(road);
+            roadGameObject.SetActive(true);
             road.procedural = true;
             road.numberOfLanes = 2;
             road.numDirection = NumDirection.TwoDirectional;
-            roadGameObject.SetActive(true);
             road.StartCoroutine(road.Restart());
         }
         await StartConnecting();
@@ -58,7 +58,7 @@ public class RoadConnecter : MonoBehaviour
     }
     private IEnumerator StartConnectingCoroutine(TaskCompletionSource<bool> tcs)
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(2f);
         foreach (Road road in roads)
         {
             // If varios carriles, iterar sobre las pos de los carriles e ir creando nodos de principio a final e ir conectándolos.
@@ -150,7 +150,6 @@ public class RoadConnecter : MonoBehaviour
                         Vector3 rayOrigin = rayPos + Vector3.up * 25f;
                         Ray ray = new Ray(rayOrigin, Vector3.down);
                         RaycastHit hit;
-                        //Debug.DrawRay(rayPos + Vector3.up * 50, Vector3.down * 55f, Color.magenta, 30f);
                         if (Physics.Raycast(ray, out hit, 55f, roadMask))
                         {
                             Road hitRoad = hit.collider.gameObject.GetComponent<Road>();
@@ -163,8 +162,39 @@ public class RoadConnecter : MonoBehaviour
                         i++;
                     }
                     // Now the entry and exit to the connection has been found
-                    Transform entryTransform = roundabout.entries[entryId];
-                    Transform exitTransform = roundabout.exits[entryId];
+                    Transform entryTransform = null;
+                    Transform exitTransform = null;
+                    try
+                    {
+                        entryTransform = roundabout.entries[entryId];
+                        exitTransform = roundabout.exits[entryId];
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning("no entryId: " + ex.Message);
+                        i = 0;
+                        while (entryNotFound && i < 4)
+                        {
+                            middlePos = (roundabout.entries[i].position + roundabout.exits[i].position) * .5f;
+                            Vector3 dir = (middlePos - roundabout.transform.position).normalized;
+                            Vector3 rayPos = middlePos + dir * 2f;
+                            Vector3 rayOrigin = rayPos + Vector3.up * 25f;
+                            Ray ray = new Ray(rayOrigin, Vector3.down);
+                            RaycastHit hit;
+                            if (Physics.Raycast(ray, out hit, 55f, roadMask))
+                            {
+                                Road hitRoad = hit.collider.gameObject.GetComponent<Road>();
+                                Debug.DrawRay(rayPos + Vector3.up * 50, Vector3.down * 55f, Color.magenta, 30f);
+                                if (road != null && hitRoad == connection)
+                                {
+                                    entryId = i;
+                                    entryNotFound = false;
+                                }
+                            }
+                            i++;
+                        }
+                    }
+                   
                     Vector3 entry = entryTransform.position;
                     Vector3 exit = exitTransform.position;
 
@@ -361,7 +391,6 @@ public class RoadConnecter : MonoBehaviour
             }
         }
     }
-
     private Node GetClosestNodeToRoad(Vector3 position, Road connection)
     {
         Node entryNode = connection.entryNodes[0];
@@ -372,7 +401,6 @@ public class RoadConnecter : MonoBehaviour
         }
         return entryNode;
     }
-
     private void PerformSpecialConnection(float distance, float dot, Node exitNode, Node entryNode, Road road)
     {
         if (distance < 3f && dot > 0)
@@ -1395,6 +1423,8 @@ public class RoadConnecter : MonoBehaviour
                 startPoints[1] = start + direction * distance;
                 endPoints[1] = end + direction * distance;
                 //SpawnSpheres(startPoints[1], endPoints[1]);
+                //SpawnSphere(start, Color.red, 3f, 3f);
+                //SpawnSphere(end, Color.blue, 3f, 3f);
             }
 
         }
@@ -1482,6 +1512,7 @@ public class RoadConnecter : MonoBehaviour
         int numberOfLanes = road.numberOfLanes;
         Vector3 startRefPoint = road.laneReferencePoints[0];
         Vector3 endRefPoint = road.laneReferencePoints[1];
+        road.RecalculateReferencePoints();
         CreateNodesFromStartAndEnd(road, startRefPoint, endRefPoint, road.numDirection, road.invertPath, numberOfLanes, false, road.lanes);
         ConnectNodesInRoad(road);
     }
@@ -1580,7 +1611,14 @@ public class RoadConnecter : MonoBehaviour
     #endregion
 
     #region Auxiliar methods
-
+    private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform;
+        startSphere.transform.localScale = Vector3.one * size;
+        startSphere.transform.position = pos + Vector3.up * 3f * offset;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+    }
     private Vector3 RotatePointAroundPivot(Vector3 point, Vector3 pivot, Vector3 angles)
     {
         Vector3 dir = point - new Vector3(pivot.x, pivot.y, pivot.z);

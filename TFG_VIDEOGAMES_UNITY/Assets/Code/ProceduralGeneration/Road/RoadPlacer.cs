@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
 
 namespace PG
@@ -12,11 +13,11 @@ namespace PG
     {
         #region prefabs
         [SerializeField]
-        private GameObject straight, corner, roundabout, bridge, slant, intersection3way, intersection4way, pedestrianCrossing, pedestrianCrossingTL;
+        private GameObject end, straight, corner, roundabout, bridge, slant, intersection3way, intersection4way, pedestrianCrossing, pedestrianCrossingTL;
         [SerializeField]
         private GameObject trafficLights;
         [SerializeField]
-        private GameObject stopSignal, yieldSignal, sidewalk;
+        private GameObject stopSignal, yieldSignal, roundaboutSignal, sidewalk;
         #endregion
 
         private Grid grid;
@@ -26,15 +27,20 @@ namespace PG
         private List<Vector2Int> gameObjectsToRemove = new List<Vector2Int>();
         private List<GameObject> trafficSignsAndLights = new List<GameObject>();
         [SerializeField] bool visualDebug;
+        [SerializeField] bool drawGizmos;
         public static RoadPlacer Instance;
         private StraightSplitter straightSplitter;
+        private IntersectionPlacer intersectionPlacer;
         private void Awake()
         {
             Instance = this;
-            straightSplitter = GetComponent<StraightSplitter>();
-            if (straightSplitter)
+            if (TryGetComponent(out straightSplitter))
             {
                 straightSplitter.SetCrossingPrefabs(pedestrianCrossing, pedestrianCrossingTL);
+            }
+            if (TryGetComponent(out intersectionPlacer))
+            {
+                intersectionPlacer.SetIntersectionPrefabs(intersection3way, intersection4way, roundabout, end, roadDictionary);
             }
         }
 
@@ -86,7 +92,7 @@ namespace PG
                     GridNode currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNeighboursData(i, j);
                     List<Direction> neighbours = data.neighbours;
-                    if (currentNode.occupied)
+                    if (currentNode.occupied && !currentNode.isRoundabout)
                     {
                         Quaternion rotation = Quaternion.identity;
                         switch (data.neighbours.Count)
@@ -97,7 +103,7 @@ namespace PG
                                     ConnectToOtherRoad(i, j, data);
                                 }
                                 break;
-                            case 2:
+                            case 2:                           
                                 if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
                                 {
                                     if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
@@ -124,22 +130,10 @@ namespace PG
                                 }
                                 break;
                             case 3:
-                                if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
-                                {
-                                    rotation = Quaternion.Euler(0, -90, 0);
-                                }
-                                else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.back) && neighbours.Contains(Direction.left))
-                                {
-                                    rotation = Quaternion.Euler(0, 180, 0);
-                                }
-                                else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
-                                {
-                                    rotation = Quaternion.Euler(0, 90, 0);
-                                }
-                                roadDictionary[new Vector2Int(i, j)] = Instantiate(intersection3way, currentNode.worldPosition, rotation, transform);
+                                intersectionPlacer.HandleIntersection(currentNode, neighbours);
                                 break;
                             case 4:
-                                roadDictionary[new Vector2Int(i, j)] = Instantiate(intersection4way, currentNode.worldPosition, Quaternion.identity, transform);
+                                intersectionPlacer.HandleIntersection(currentNode, neighbours);
                                 break;
                             default:
                                 break;
@@ -148,6 +142,7 @@ namespace PG
 
                 }
             }
+
 
             // Delete outdated prefabs and spawn the correct ones
             foreach (GridNode node in updatedNodes)
@@ -160,8 +155,44 @@ namespace PG
                 Vector2Int key = new Vector2Int(gridX, gridY);
                 if (roadDictionary.ContainsKey(key))
                 {
+                    // Dont update roundabout nodes
+                    if (roadDictionary[key].name == "Roundabout(Clone)")
+                        continue;
+
                     Destroy(roadDictionary[key]);
-                    roadDictionary.Remove(key);
+
+                    if (roadDictionary[key].name == "End(Clone)")
+                    {
+                        if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
+                        {
+                            if (neighbours.Contains(Direction.forward) || neighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            roadDictionary[key] = Instantiate(straight, node.worldPosition, rotation, transform);
+                        }
+                        else
+                        {
+                            if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, 180, 0);
+                            }
+                            else if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward))
+                            {
+                                rotation = Quaternion.Euler(0, -90, 0);
+                            }
+                            else if (neighbours.Contains(Direction.back) && neighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            roadDictionary[key] = Instantiate(corner, node.worldPosition, rotation, transform);
+                        }
+                        continue;
+                    }
+                    else
+                    {
+                        roadDictionary.Remove(key);
+                    }
                 }
 
                 if (!node.occupied)
@@ -170,10 +201,14 @@ namespace PG
                 switch (data.neighbours.Count)
                 {
                     case 1:
+                        if (node.isRoundabout)
+                            break;
                         Debug.LogWarning("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
                         //roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         break;
                     case 2:
+                        if (node.isRoundabout)
+                            break;
 
                         if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
                         {
@@ -201,28 +236,18 @@ namespace PG
                         }
                         break;
                     case 3:
-                        if (neighbours.Contains(Direction.left) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
-                        {
-                            rotation = Quaternion.Euler(0, -90, 0);
-                        }
-                        else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.back) && neighbours.Contains(Direction.left))
-                        {
-                            rotation = Quaternion.Euler(0, 180, 0);
-                        }
-                        else if (neighbours.Contains(Direction.right) && neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back))
-                        {
-                            rotation = Quaternion.Euler(0, 90, 0);
-                        }
-                        roadDictionary[key] = Instantiate(intersection3way, node.worldPosition, rotation, transform);
+                        intersectionPlacer.HandleIntersection(node, neighbours);
                         break;
                     case 4:
-                        roadDictionary[key] = Instantiate(intersection4way, node.worldPosition, Quaternion.identity, transform);
+                        intersectionPlacer.HandleIntersection(node, neighbours);
                         break;
                     default:
                         break;
                 }
             }
 
+
+            // TOCAR A PARTIR DE AQUI
             // Straights recreation
             Dictionary<Vector2Int, GameObject> addedStraights = new Dictionary<Vector2Int, GameObject>();
             Dictionary<Vector2Int, GameObject> addedCrossings = new Dictionary<Vector2Int, GameObject>();
@@ -231,7 +256,7 @@ namespace PG
                 GridNode currentNode = grid.nodesGrid[position.x, position.y];
                 NeighboursData data = GetNeighboursData(position.x, position.y);
                 List<Direction> neighbours = data.neighbours;
-                if (neighbours.Count != 2)
+                if (neighbours.Count != 2 || currentNode.isRoundabout)
                     continue;
 
                 // It should be a straight road, not a corner/bend
@@ -275,7 +300,7 @@ namespace PG
                 roadDictionary[position] = addedCrossings[position];
             }
 
-            // Intersections creation
+            // Intersections and sidewalk creation
             for (int i = 0; i < grid.gridSizeX; i++)
             {
                 for (int j = 0; j < grid.gridSizeY; j++)
@@ -288,46 +313,62 @@ namespace PG
                         switch (data.neighbours.Count)
                         {
                             case 3:
-                                float random = Random.Range(0f, 1f);
-                                if (random < 0.5f)
+                                if (currentNode.isRoundabout) 
                                 {
-                                    // Instantiate 2 signals
-                                    Vector2Int key = new Vector2Int(currentNode.gridX, currentNode.gridY);
-                                    GameObject intersection = roadDictionary[key];
-                                    Direction d1 = neighbours[Random.Range(0, neighbours.Count)];
-                                    neighbours.Remove(d1);
-                                    Direction d2 = neighbours[Random.Range(0, neighbours.Count)];
-                                    neighbours.Remove(d2);
+                                    // Create 3 yield roundabout signals
+                                    foreach (Direction dir in neighbours)
+                                    {
+                                        GameObject roundaboutYield = Instantiate(roundaboutSignal, currentNode.worldPosition + GetOffsetForSignal(dir, true), GetRotationForSignal(dir), transform);
+                                        trafficSignsAndLights.Add(roundaboutYield);
+                                    }
+                                }
+                                else
+                                {
+                                    float random = Random.Range(0f, 1f);
+                                    if (random < 0.5f)
+                                    {
+                                        // Instantiate 2 signals
+                                        Direction d1 = neighbours[Random.Range(0, neighbours.Count)];
+                                        neighbours.Remove(d1);
+                                        Direction d2 = neighbours[Random.Range(0, neighbours.Count)];
+                                        neighbours.Remove(d2);
 
-                                    GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1), GetRotationForSignal(d1), transform);
-                                    GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2), GetRotationForSignal(d2), transform);
-                                    trafficSignsAndLights.Add(stop);
-                                    trafficSignsAndLights.Add(yield);
+                                        GameObject stop = Instantiate(stopSignal, currentNode.worldPosition + GetOffsetForSignal(d1, false), GetRotationForSignal(d1), transform);
+                                        GameObject yield = Instantiate(yieldSignal, currentNode.worldPosition + GetOffsetForSignal(d2, false), GetRotationForSignal(d2), transform);
+                                        trafficSignsAndLights.Add(stop);
+                                        trafficSignsAndLights.Add(yield);
+                                    }
+                                    else
+                                    {
+                                        trafficSignsAndLights.Add(Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform));
+                                    }
+                                }
+
+                                break;
+
+                            case 4:
+                                if (currentNode.isRoundabout)
+                                {
+                                    // Create 4 yield roundabout signals
+                                    foreach (Direction dir in neighbours)
+                                    {
+                                        GameObject roundaboutYield = Instantiate(roundaboutSignal, currentNode.worldPosition + GetOffsetForSignal(dir, true), GetRotationForSignal(dir), transform);
+                                        trafficSignsAndLights.Add(roundaboutYield);
+                                    }
                                 }
                                 else
                                 {
                                     trafficSignsAndLights.Add(Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform));
                                 }
                                 break;
-
-                            case 4:
-                                trafficSignsAndLights.Add(Instantiate(trafficLights, currentNode.worldPosition, Quaternion.identity, transform));
-                                break;
                         }
+                    }
+                    else if (currentNode.usage == Usage.decoration)
+                    {
+                        Instantiate(sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
                     }
                 }
             }
-
-            // Instantiate sidewalk
-            for (int i = 0; i < grid.gridSizeX; i++)
-            {
-                for (int j = 0; j < grid.gridSizeY; j++)
-                {
-                    GridNode node = grid.nodesGrid[i, j];
-                    if (node.usage == Usage.decoration) Instantiate(sidewalk, node.worldPosition, Quaternion.identity, transform);
-                }
-            }
-
             return roadDictionary.Values.ToList();
         }
         private StraightSplit CreateStraight(int x, int y, List<Direction> directions)
@@ -359,22 +400,34 @@ namespace PG
                             if (directions[0] != direction)
                             {
                                 exitRoad = GetRoadFromPosition(lastNodeInDirection.gridX, lastNodeInDirection.gridY);
-                                //entryRoad = GetRoadFromPosition(lastNodeInDirection.gridX, lastNodeInDirection.gridY);
                             }
                             else
                             {
                                 entryRoad = GetRoadFromPosition(lastNodeInDirection.gridX, lastNodeInDirection.gridY);
-                                //exitRoad = GetRoadFromPosition(lastNodeInDirection.gridX, lastNodeInDirection.gridY);
                             }
                         }
                         break;
                     }
-                    else
+                    else if(advancedNode != null && !advancedNode.isRoundabout)
                     {
-                        // Add to straight and destroy the prefab in position
                         advancedNode.isProcessedStraight = true;
-                        unifiedStraight.gridNodes.Add(advancedNode);
-                        DestroyRoadOnPosition(advancedNode.gridX, advancedNode.gridY);
+                        if (!roadDictionary.ContainsKey(new Vector2Int(advancedNode.gridX, advancedNode.gridY)))
+                        {
+                            SpawnSphere(grid.nodesGrid[x, y].worldPosition, Color.white, 2f, 2.5f);
+                            foreach (var node in unifiedStraight.gridNodes)
+                            {
+                                SpawnSphere(node.worldPosition, Color.magenta, 2f, 2f);
+
+                            }
+                            SpawnSphere(advancedNode.worldPosition, Color.black, 2f, 2.5f);
+                            Debug.LogWarning("NODO SIN KEY, POR QUE?");
+                        }
+                        else
+                        {
+                            // Add to straight and destroy the prefab in position
+                            unifiedStraight.gridNodes.Add(advancedNode);
+                            DestroyRoadOnPosition(advancedNode.gridX, advancedNode.gridY);
+                        }
                     }
                     i++;
                 }
@@ -424,16 +477,16 @@ namespace PG
                     road.laneReferencePoints[road.laneReferencePoints.Count - 1] = entryRoad.laneReferencePoints[entryRoad.laneReferencePoints.Count - 1];
                     road.laneReferencePoints[0] = exitRoad.laneReferencePoints[0];
                 }
-                straightGO.SetActive(false);
                 split.dividedStraights = new List<Straight> { unifiedStraight };
+                straightGO.SetActive(false);
             }
             else
             {
                 foreach (Straight dividedStraight in split.dividedStraights)
                 {
                     // We need to get all the roads from the divided straight so that we can look at the laneReferencePoints.
-                    GridNode entryGridNode = dividedStraight.gridNodes[0];
-                    GridNode exitGridNode = dividedStraight.gridNodes[dividedStraight.gridNodes.Count - 1];
+                    GridNode entryGridNode = dividedStraight.gridNodes.FirstOrDefault();
+                    GridNode exitGridNode = dividedStraight.gridNodes.Last();
                     entryRoad = GetRoadFromPosition(entryGridNode.gridX, entryGridNode.gridY);
                     exitRoad = GetRoadFromPosition(exitGridNode.gridX, exitGridNode.gridY);
 
@@ -469,8 +522,6 @@ namespace PG
                             road.laneReferencePoints[0] = entryRoad.laneReferencePoints[0]; // entry
                             road.laneReferencePoints[1] = exitRoad.laneReferencePoints[1]; // exit
                         }
-                        //SpawnSphere(road.laneReferencePoints[1], Color.yellow, 3f, 3f); // entry
-                        //SpawnSphere(road.laneReferencePoints[0], Color.green, 3f, 3f); // exit
                         Vector3 originPos = road.laneReferencePoints[1] + Vector3.up * 9f;
                         Vector3 destPos = road.laneReferencePoints[0] + Vector3.up * 9f;
                         Vector3 dir = destPos - originPos;
@@ -494,13 +545,13 @@ namespace PG
         }
         private void DestroyRoadOnPosition(int x, int y)
         {
-            Destroy(roadDictionary[new Vector2Int(x, y)]);
             gameObjectsToRemove.Add(new Vector2Int(x, y));
         }
         private void RemoveRedundantRoads()
         {
             foreach(Vector2Int key in gameObjectsToRemove)
             {
+                Destroy(roadDictionary[key]);
                 roadDictionary.Remove(key);
             }
         }
@@ -527,10 +578,10 @@ namespace PG
             // If it is a straight, add to straight nodes list. If it is not a straight, we have already reached the limit, continue with next direction.
             return grid.nodesGrid[newX, newY];
         }
-        private Vector3 GetOffsetForSignal(Direction direction)
+        private Vector3 GetOffsetForSignal(Direction direction, bool isRoundabout)
         {
             float multiplier = 2.5f;
-            Vector3 offset = RoadPlacer.Instance.DirectionToVector(direction) * 3f;
+            Vector3 offset = DirectionToVector(direction) * (isRoundabout ? 5f : 3f);
             switch (direction)
             {
                 case Direction.left:
@@ -619,7 +670,7 @@ namespace PG
                 }
                 else if (numRoadNeighbours >= 3)
                 {
-                    // We have reached the end, delete everything xd
+                    // We have reached the end, delete everything
                     pathToEliminate.Add(currentNode);
 
                     Direction direction = Direction.zero;
@@ -774,7 +825,7 @@ namespace PG
 
                     }
                     visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
-                    if (visualDebug) SpawnSphere(grid.nodesGrid[gridX, gridY].worldPosition, Color.cyan, 2.5f, 2f);
+                    if (visualDebug) SpawnSphere(grid.nodesGrid[gridX, gridY].worldPosition, Color.red, 2.5f, 2f);
                     return;
                 }
                 i++;
@@ -786,9 +837,10 @@ namespace PG
             GridNode currentNode = grid.nodesGrid[gridX, gridY];
             if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.cyan, 2.5f, 2f);
             i = 0;
-            while (i < visualizer.pointNodes.Count)
+            List<GridNode> shuffledNodes = visualizer.pointNodes.OrderBy(x => Random.value).ToList();
+            while (i < shuffledNodes.Count)
             {
-                GridNode targetNode = visualizer.pointNodes[i];
+                GridNode targetNode = shuffledNodes[i];
                 if (!CheckMergingNodeTerms(targetNode))
                 {
                     i++; continue;
@@ -799,17 +851,18 @@ namespace PG
                 {
                     i++; continue;
                 }
+                // Create path with pathfinder
                 path = GridPathfinder.instance.FindPath(currentNode, targetNode);
                 if (path != null)
                 {
                     Direction direction = Direction.zero;
                     GridNode nextNode;
-                    for (i = 0; i < path.Count; i++)
+                    for (int j = 0; j < path.Count; j++)
                     {
-                        GridNode node = path[i];
-                        if (i + 1 < path.Count)
+                        GridNode node = path[j];
+                        if (j + 1 < path.Count)
                         {
-                            nextNode = path[i + 1];
+                            nextNode = path[j + 1];
                             Direction newDirection = GetDirectionBasedOnPos(node, nextNode);
                             if (direction != newDirection)
                                 visualizer.MarkCornerDecorationNodes(node);
@@ -823,10 +876,8 @@ namespace PG
                             node.usage = Usage.road;
                     }
                     visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
-                    //visualizer.MarkCornerDecorationNodes(path[0]);
                     if (visualDebug) CreateSpheresInPath(path);
                     if (visualDebug) SpawnSphere(path[path.Count - 1].worldPosition, Color.magenta, 3f, 2f);
-                    //Debug.Log("PATH CREATED WITH PATHFINDING");
                     return;
                 }
                 i++;
@@ -918,22 +969,6 @@ namespace PG
             }
             return true;
         }
-        private int GetNumNeighbours(int posX, int posY)
-        {
-            int count = 0;
-            if (grid.nodesGrid[posX + 1, posY].occupied) // Right
-                count++;
-
-            if (grid.nodesGrid[posX - 1, posY].occupied) // Left
-                count++;
-
-            if (grid.nodesGrid[posX, posY + 1].occupied) // Up
-                count++;
-
-            if (grid.nodesGrid[posX, posY - 1].occupied) // Down
-                count++;
-            return count;
-        }
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -1005,6 +1040,21 @@ namespace PG
             }
             return Vector3.zero;
         }
+        public Direction GetOppositeDir(Direction direction)
+        {
+            switch (direction)
+            {
+                case Direction.left:
+                    return Direction.right;
+                case Direction.right:
+                    return Direction.left;
+                case Direction.forward:
+                    return Direction.back;
+                case Direction.back:
+                    return Direction.forward;
+            }
+            return Direction.zero;
+        }
         private bool OutOfGrid(int posX, int posY)
         {
             return grid.OutOfGrid(posX, posY);
@@ -1059,6 +1109,17 @@ namespace PG
                 return Direction.back;
 
             return Direction.zero;
+        }
+        private void OnDrawGizmos()
+        {
+            if (!drawGizmos) return;
+
+            foreach (var key in roadDictionary.Keys)
+            {
+                GridNode node = Grid.Instance.nodesGrid[key.x, key.y];
+                Gizmos.color = Color.black;
+                Gizmos.DrawCube(node.worldPosition, Vector3.one);
+            }
         }
     }
     

@@ -107,8 +107,8 @@ namespace PG
                 }
             }
 
-            int[] neighbourIncrement = Visualizer.instance.GetLateralIncrementOnDirection(dirX, dirY);
-            return Visualizer.instance.EnoughSpace(endX, endY, neighbourIncrement[0], neighbourIncrement[1], targetNode); 
+            int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(dirX, dirY);
+            return Visualizer.Instance.EnoughSpace(endX, endY, neighbourIncrement[0], neighbourIncrement[1], targetNode); 
         }
         private int AddCostIfDirectionChanges(GridNode currentNode, GridNode neighbour)
         {

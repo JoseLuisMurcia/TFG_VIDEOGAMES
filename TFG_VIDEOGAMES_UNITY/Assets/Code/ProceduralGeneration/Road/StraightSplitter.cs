@@ -2,6 +2,7 @@ using PG;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEditorInternal;
 using UnityEngine;
 namespace PG
@@ -69,7 +70,7 @@ namespace PG
                     break;
                 case Region.Suburbs: // Menor densidad en suburbios
                     divisionFactor[0] = 8; 
-                    divisionFactor[0] = 10; 
+                    divisionFactor[1] = 10; 
                     break;
                 default: // Valor por defecto
                     divisionFactor[0] = 10; 
@@ -98,7 +99,22 @@ namespace PG
                     nodesToTake = remainingNodes; // Leave at least one node for the crossing
                 }
 
-                newStraight.gridNodes = unifiedStraight.gridNodes.GetRange(currentIndex, nodesToTake);
+                try
+                {
+                    newStraight.gridNodes = unifiedStraight.gridNodes.GetRange(currentIndex, nodesToTake);
+                }
+                catch (System.Exception ex)
+                {
+                    var currentNode = unifiedStraight.gridNodes[currentIndex];
+                    SpawnSphere(Grid.Instance.nodesGrid[currentNode.gridX, currentNode.gridY].worldPosition, Color.white, 2f, 2.5f);
+                    foreach (var node in newStraight.gridNodes)
+                    {
+                        SpawnSphere(node.worldPosition, Color.yellow, 2f, 1.5f);
+                    }
+                    Debug.LogWarning(ex.Message + ", currentIndex: " + currentIndex + ", nodesToTake: " + nodesToTake + 
+                        ", remainingNodes: " + remainingNodes + ", totalNodesCount: " + unifiedStraight.gridNodes.Count
+                        + ", maxDivisionLength: " + maxDivisionLength);
+                }
                 currentIndex += nodesToTake;
 
                 newStraight.position = CalculateAveragePosition(newStraight.gridNodes);

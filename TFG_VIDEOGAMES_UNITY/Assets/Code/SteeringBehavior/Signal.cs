@@ -28,6 +28,11 @@ public class Signal : MonoBehaviour
     private void OnRoadsReady()
     {
         FindRoad();
+        if (road == null)
+        {
+            Destroy(gameObject);
+            return;
+        }
         CreateIntersectionPriorityTrigger();
     }
     private void FindRoad()
@@ -40,7 +45,6 @@ public class Signal : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, 100, roadMask))
         {
-            //Debug.DrawLine(ray.origin, hit.point, Color.green, 10f);
             GameObject roadGameObject = hit.collider.gameObject;
             road = roadGameObject.GetComponent<Road>();
         }

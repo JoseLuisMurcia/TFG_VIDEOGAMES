@@ -312,11 +312,6 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: da4c8e8599abde0479576d08ec72b471, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &12071112 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 12071111}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &46605185
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -692,8 +687,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -707,6 +700,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &81812548
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -889,11 +884,6 @@ Transform:
   m_Father: {fileID: 1536007458}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &117444746 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 1160259523}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &120196218
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1040,6 +1030,7 @@ GameObject:
   - component: {fileID: 132756188}
   - component: {fileID: 132756187}
   - component: {fileID: 132756194}
+  - component: {fileID: 132756195}
   m_Layer: 7
   m_Name: straightRoad (16)
   m_TagString: Untagged
@@ -1143,8 +1134,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -1158,6 +1147,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &132756190
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1250,7 +1241,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &132756195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 132756185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &136891001
@@ -1322,16 +1329,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
---- !u!4 &143812648 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 97531839}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &169426493 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
-  m_PrefabInstance: {fileID: 564128802}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &178937550
 GameObject:
   m_ObjectHideFlags: 0
@@ -1552,8 +1549,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -1567,6 +1562,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &191131093
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1717,8 +1714,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -1732,6 +1727,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &198681314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1961,8 +1958,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -1976,6 +1971,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &202797876
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -2124,11 +2121,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
---- !u!4 &211716421 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
-  m_PrefabInstance: {fileID: 211716420}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &219054895 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9023660943327097044, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
@@ -2223,8 +2215,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -2238,6 +2228,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &219636646
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2534,8 +2526,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -2549,6 +2539,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &225041502
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2877,8 +2869,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -2892,6 +2882,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &230661487
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3093,8 +3085,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 6
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -3108,6 +3098,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &232275701
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3436,11 +3428,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &249728554 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 249728553}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &250642825
 GameObject:
   m_ObjectHideFlags: 0
@@ -3516,6 +3503,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68ec41bc400990c408f18ceb75f4a391, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isProcedural: 0
 --- !u!114 &250723370
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3528,7 +3516,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 977c2f0d781bd7c4b915313df9d01d77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayGridGizmos: 0
+  displayGridGizmos: 1
   grid: []
   debugNodes: []
   unionNodes: []
@@ -3617,8 +3605,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -3632,6 +3618,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &264293963
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3805,8 +3793,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -3820,6 +3806,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &269939855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3880,7 +3868,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -4079,11 +4067,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
---- !u!4 &293989532 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
-  m_PrefabInstance: {fileID: 293989531}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &297858454
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4382,6 +4365,7 @@ GameObject:
   - component: {fileID: 331366005}
   - component: {fileID: 331366004}
   - component: {fileID: 331366011}
+  - component: {fileID: 331366012}
   m_Layer: 7
   m_Name: straightRoad (2)
   m_TagString: Untagged
@@ -4447,7 +4431,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -4485,8 +4469,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -4500,6 +4482,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &331366007
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4592,7 +4576,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &331366012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 331366002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &347183405
@@ -4612,6 +4612,7 @@ GameObject:
   - component: {fileID: 347183408}
   - component: {fileID: 347183407}
   - component: {fileID: 347183414}
+  - component: {fileID: 347183415}
   m_Layer: 7
   m_Name: straightRoad (23)
   m_TagString: Untagged
@@ -4715,8 +4716,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -4730,6 +4729,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &347183410
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4822,7 +4823,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &347183415
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 347183405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &352461255
@@ -4953,11 +4970,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3772698478319317217, guid: d379f475803bbd34d91987f2a12a4ff5, type: 3}
   m_PrefabInstance: {fileID: 2115908795}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &360300809 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 629224390}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &360792179
 GameObject:
   m_ObjectHideFlags: 0
@@ -5029,8 +5041,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -5044,6 +5054,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &360792183
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5340,8 +5352,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -5355,6 +5365,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &363345740
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5699,8 +5711,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -5714,6 +5724,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &395767175
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6017,6 +6029,7 @@ GameObject:
   - component: {fileID: 406864795}
   - component: {fileID: 406864794}
   - component: {fileID: 406864801}
+  - component: {fileID: 406864802}
   m_Layer: 7
   m_Name: straightRoad (26)
   m_TagString: Untagged
@@ -6120,8 +6133,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -6135,6 +6146,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &406864797
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6227,7 +6240,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &406864802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406864792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &409747789
@@ -6299,11 +6328,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &409747790 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 409747789}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &410164679
 GameObject:
   m_ObjectHideFlags: 0
@@ -6390,7 +6414,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 0.3
     vertexPathMinVertexSpacing: 0.01
     showTransformTool: 1
@@ -6428,8 +6452,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -6443,6 +6465,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &410164683
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -6555,6 +6579,7 @@ GameObject:
   - component: {fileID: 411308288}
   - component: {fileID: 411308287}
   - component: {fileID: 411308294}
+  - component: {fileID: 411308295}
   m_Layer: 7
   m_Name: straightRoad (10)
   m_TagString: Untagged
@@ -6658,8 +6683,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -6673,6 +6696,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &411308290
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6765,7 +6790,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &411308295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 411308285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &417123078
@@ -6835,8 +6876,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 2
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -6850,6 +6889,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   upperNumDirection: 1
   lowerNumDirection: 0
   invertUpperRoad: 0
@@ -7438,8 +7479,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -7453,6 +7492,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &474308137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7513,7 +7554,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -7820,7 +7861,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -7858,8 +7899,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -7873,6 +7912,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &483175200
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8210,11 +8251,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
---- !u!4 &497244368 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
-  m_PrefabInstance: {fileID: 1939421252}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &498066726
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8412,8 +8448,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -8427,6 +8461,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &499887787
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8642,8 +8678,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -8657,6 +8691,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &504683336
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8797,11 +8833,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
---- !u!4 &505905656 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
-  m_PrefabInstance: {fileID: 505905655}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &506787157
 GameObject:
   m_ObjectHideFlags: 0
@@ -8841,8 +8872,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -8856,6 +8885,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &506787159
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -8995,11 +9026,6 @@ Transform:
   m_Father: {fileID: 1299408148}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &513538548 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 1802439064}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &523038905
 GameObject:
   m_ObjectHideFlags: 0
@@ -9496,8 +9522,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -9511,6 +9535,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &568349150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9571,7 +9597,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -9758,8 +9784,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -9773,6 +9797,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &580303745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10069,8 +10095,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -10084,6 +10108,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &585623080
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10180,6 +10206,7 @@ GameObject:
   - component: {fileID: 587393311}
   - component: {fileID: 587393310}
   - component: {fileID: 587393317}
+  - component: {fileID: 587393318}
   m_Layer: 7
   m_Name: straightRoad (12)
   m_TagString: Untagged
@@ -10245,7 +10272,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -10283,8 +10310,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -10298,6 +10323,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &587393313
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10390,7 +10417,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &587393318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 587393308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &605141865
@@ -10410,6 +10453,7 @@ GameObject:
   - component: {fileID: 605141868}
   - component: {fileID: 605141867}
   - component: {fileID: 605141874}
+  - component: {fileID: 605141875}
   m_Layer: 7
   m_Name: straightRoad (13)
   m_TagString: Untagged
@@ -10475,7 +10519,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -10513,8 +10557,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -10528,6 +10570,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &605141870
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10620,7 +10664,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &605141875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 605141865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &607486344
@@ -10680,11 +10740,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
---- !u!4 &607486345 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
-  m_PrefabInstance: {fileID: 607486344}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &611439699
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10951,7 +11006,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -10989,8 +11044,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -11004,6 +11057,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &616035240
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11154,8 +11209,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -11169,6 +11222,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &620956468
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11459,8 +11514,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 6
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -11474,6 +11527,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &632278016
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11534,7 +11589,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 0.3
     vertexPathMinVertexSpacing: 0.01
     showTransformTool: 1
@@ -11680,7 +11735,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -11718,8 +11773,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -11733,6 +11786,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &646020179
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11829,6 +11884,7 @@ GameObject:
   - component: {fileID: 646115176}
   - component: {fileID: 646115175}
   - component: {fileID: 646115182}
+  - component: {fileID: 646115183}
   m_Layer: 7
   m_Name: straightRoad (18)
   m_TagString: Untagged
@@ -11932,8 +11988,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -11947,6 +12001,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &646115178
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -12039,7 +12095,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &646115183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 646115173}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &647063105
@@ -12346,8 +12418,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 7
   numDirection: 2
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -12361,6 +12431,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   upperNumDirection: 1
   lowerNumDirection: 0
   invertUpperRoad: 0
@@ -12592,6 +12664,7 @@ GameObject:
   - component: {fileID: 686190202}
   - component: {fileID: 686190201}
   - component: {fileID: 686190208}
+  - component: {fileID: 686190209}
   m_Layer: 7
   m_Name: straightRoad (20)
   m_TagString: Untagged
@@ -12695,8 +12768,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -12710,6 +12781,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &686190204
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -12802,7 +12875,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &686190209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 686190199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &698099956
@@ -12844,8 +12933,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -12859,6 +12946,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &698099958
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -13159,7 +13248,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -13197,8 +13286,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -13212,6 +13299,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &716437218
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -13364,11 +13453,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1aab72e8bfd11044c9fd5079b08b5a6b, type: 3}
---- !u!4 &729357490 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
-  m_PrefabInstance: {fileID: 1244238684}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &735711836
 GameObject:
   m_ObjectHideFlags: 0
@@ -13467,7 +13551,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -13505,8 +13589,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -13520,6 +13602,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &735711842
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -13616,6 +13700,7 @@ GameObject:
   - component: {fileID: 738137533}
   - component: {fileID: 738137532}
   - component: {fileID: 738137539}
+  - component: {fileID: 738137540}
   m_Layer: 7
   m_Name: straightRoad (15)
   m_TagString: Untagged
@@ -13681,7 +13766,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -13719,8 +13804,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -13734,6 +13817,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &738137535
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -13826,7 +13911,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &738137540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 738137530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &747131155
@@ -13965,8 +14066,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -13980,6 +14079,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &747131161
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14230,7 +14331,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -14268,8 +14369,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -14283,6 +14382,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &785553481
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14417,8 +14518,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -14432,6 +14531,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &793549981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14492,7 +14593,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -14737,11 +14838,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
---- !u!4 &837992088 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
-  m_PrefabInstance: {fileID: 1810061244}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &844258413
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14957,8 +15053,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -14972,6 +15066,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &850429973
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -15187,8 +15283,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -15202,6 +15296,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &870652731
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15526,8 +15622,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -15541,6 +15635,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &917617245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15799,7 +15895,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -15837,8 +15933,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -15852,6 +15946,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &920598234
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15986,8 +16082,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -16001,6 +16095,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &927807002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16061,7 +16157,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -16194,6 +16290,7 @@ GameObject:
   - component: {fileID: 937300547}
   - component: {fileID: 937300546}
   - component: {fileID: 937300553}
+  - component: {fileID: 937300554}
   m_Layer: 7
   m_Name: straightRoad (25)
   m_TagString: Untagged
@@ -16297,8 +16394,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -16312,6 +16407,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &937300549
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16404,7 +16501,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &937300554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 937300544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!4 &943651790 stripped
@@ -16538,8 +16651,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -16553,6 +16664,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &954274139
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -16869,7 +16982,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -16907,8 +17020,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -16922,6 +17033,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &970103940
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17427,11 +17540,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
---- !u!4 &1013221995 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 136891001}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1017485051 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 187d0b2c7c74e71449d3e32d7798f775, type: 3}
@@ -17716,8 +17824,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -17731,6 +17837,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1039955939
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17810,11 +17918,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1039955933}
   m_Mesh: {fileID: 6440166555503141632, guid: bf7c0963a998bf7428ecfca6474c74d3, type: 3}
---- !u!4 &1055444771 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 1745002646}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1055452641
 GameObject:
   m_ObjectHideFlags: 0
@@ -17984,8 +18087,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
-  - {fileID: 1215289160}
-  - {fileID: 2091932267}
+  - {fileID: 1630963810811161258}
+  - {fileID: 1630963809654973958}
   - {fileID: 5722735866664479839}
   - {fileID: 1320006118}
   - {fileID: 2045943728}
@@ -18045,45 +18148,45 @@ Transform:
   - {fileID: 483175195}
   - {fileID: 1140960626}
   - {fileID: 474308134}
-  - {fileID: 497244368}
-  - {fileID: 1477628298}
-  - {fileID: 1271498067}
+  - {fileID: 8195159218659090929}
+  - {fileID: 2865572005204157054}
+  - {fileID: 92845071243758274}
   - {fileID: 850429970}
-  - {fileID: 1940846796}
-  - {fileID: 1696678804}
+  - {fileID: 2865572004617732118}
+  - {fileID: 2865572004895489301}
   - {fileID: 2009422634}
-  - {fileID: 360300809}
+  - {fileID: 2865572003832204608}
   - {fileID: 269939852}
-  - {fileID: 1583066529}
-  - {fileID: 729357490}
-  - {fileID: 12071112}
+  - {fileID: 2865572004129857266}
+  - {fileID: 8195159217691282153}
+  - {fileID: 2865572004315008577}
   - {fileID: 1225074993}
   - {fileID: 363345735}
   - {fileID: 1146255149}
   - {fileID: 585623075}
   - {fileID: 1194318118}
-  - {fileID: 2018821884}
+  - {fileID: 8195159218529804110}
   - {fileID: 225041497}
   - {fileID: 1173425055}
-  - {fileID: 1773144198}
-  - {fileID: 1757092663}
-  - {fileID: 1817688851}
-  - {fileID: 2054553115}
-  - {fileID: 1055444771}
-  - {fileID: 513538548}
-  - {fileID: 1397730845}
+  - {fileID: 7321090823861737973}
+  - {fileID: 6313707493654096118}
+  - {fileID: 7759897857903860023}
+  - {fileID: 7759897856856988231}
+  - {fileID: 7000514156971455929}
+  - {fileID: 7000514156915711159}
+  - {fileID: 7000514157843871843}
   - {fileID: 954274136}
-  - {fileID: 1013221995}
-  - {fileID: 1644757507}
-  - {fileID: 2060181190}
-  - {fileID: 117444746}
-  - {fileID: 143812648}
-  - {fileID: 169426493}
-  - {fileID: 1677826698}
+  - {fileID: 7000514158580604758}
+  - {fileID: 7759897857707874385}
+  - {fileID: 7000514157795459647}
+  - {fileID: 7000514157691466476}
+  - {fileID: 7000514158772019856}
+  - {fileID: 7759897856472773962}
+  - {fileID: 6313707495169984153}
   - {fileID: 920598229}
-  - {fileID: 837992088}
+  - {fileID: 6313707493387711491}
   - {fileID: 646020174}
-  - {fileID: 1675627557}
+  - {fileID: 7321090824254621336}
   - {fileID: 1417309412}
   - {fileID: 1456365581}
   - {fileID: 202797873}
@@ -18095,7 +18198,7 @@ Transform:
   - {fileID: 1589434247}
   - {fileID: 395767170}
   - {fileID: 2042943680}
-  - {fileID: 505905656}
+  - {fileID: 6313707495195697736}
   - {fileID: 716437213}
   - {fileID: 870652726}
   - {fileID: 785553476}
@@ -18107,40 +18210,41 @@ Transform:
   - {fileID: 580303742}
   - {fileID: 1694163315}
   - {fileID: 417123079}
-  - {fileID: 293989532}
+  - {fileID: 7321090823659938874}
   - {fileID: 232275699}
   - {fileID: 1688143953}
   - {fileID: 1814576634}
   - {fileID: 1467539704}
   - {fileID: 504683331}
   - {fileID: 499887782}
-  - {fileID: 1419396657}
-  - {fileID: 1392799434}
+  - {fileID: 2865572005189679286}
+  - {fileID: 2865572005065543759}
   - {fileID: 198681311}
   - {fileID: 620956465}
   - {fileID: 917617242}
   - {fileID: 1863508244}
   - {fileID: 1859107900}
   - {fileID: 219636643}
-  - {fileID: 1655235773}
-  - {fileID: 2146522781}
-  - {fileID: 607486345}
+  - {fileID: 2865572004819425850}
+  - {fileID: 2865572004739246106}
+  - {fileID: 8195159219538614333}
   - {fileID: 747131156}
   - {fileID: 2055944307}
   - {fileID: 735711837}
   - {fileID: 1311057936}
   - {fileID: 2054603457}
   - {fileID: 653234392}
-  - {fileID: 409747790}
-  - {fileID: 211716421}
-  - {fileID: 1544394156}
+  - {fileID: 2865572004177936331}
+  - {fileID: 7321090823339377125}
+  - {fileID: 7000514158662530017}
   - {fileID: 81812545}
   - {fileID: 1446751788}
   - {fileID: 191131088}
   - {fileID: 1536007458}
-  - {fileID: 249728554}
+  - {fileID: 2865572004488720559}
   - {fileID: 230661482}
   - {fileID: 2098872316}
+  - {fileID: 2003349649}
   m_Father: {fileID: 0}
   m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -18405,8 +18509,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -18420,6 +18522,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1090501629
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -18516,6 +18620,7 @@ GameObject:
   - component: {fileID: 1095850617}
   - component: {fileID: 1095850616}
   - component: {fileID: 1095850623}
+  - component: {fileID: 1095850624}
   m_Layer: 7
   m_Name: straightRoad (3)
   m_TagString: Untagged
@@ -18619,8 +18724,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -18634,6 +18737,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1095850619
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -18726,7 +18831,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1095850624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1095850614}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1103278984
@@ -18865,8 +18986,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -18880,6 +18999,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1103278990
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -19174,8 +19295,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -19189,6 +19308,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1131273955
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -19464,8 +19585,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -19479,6 +19598,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1140960631
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -19656,7 +19777,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -19694,8 +19815,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -19709,6 +19828,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1146255154
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20073,7 +20194,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -20111,8 +20232,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -20126,6 +20245,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1173425060
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20534,8 +20655,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -20549,6 +20668,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1194318123
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20757,11 +20878,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
---- !u!4 &1215289160 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1630963810064525057, guid: 5462880c161e7e54d854578d808f3c8f, type: 3}
-  m_PrefabInstance: {fileID: 1954762155}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1220444767
 GameObject:
   m_ObjectHideFlags: 0
@@ -20779,6 +20895,7 @@ GameObject:
   - component: {fileID: 1220444770}
   - component: {fileID: 1220444769}
   - component: {fileID: 1220444776}
+  - component: {fileID: 1220444777}
   m_Layer: 7
   m_Name: straightRoad (22)
   m_TagString: Untagged
@@ -20882,8 +20999,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -20897,6 +21012,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1220444772
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20989,7 +21106,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1220444777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1220444767}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1223553768
@@ -21039,6 +21172,7 @@ GameObject:
   - component: {fileID: 1224915737}
   - component: {fileID: 1224915736}
   - component: {fileID: 1224915743}
+  - component: {fileID: 1224915744}
   m_Layer: 7
   m_Name: straightRoad (14)
   m_TagString: Untagged
@@ -21104,7 +21238,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -21142,8 +21276,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -21157,6 +21289,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1224915739
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21249,7 +21383,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1224915744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1224915734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1225074992
@@ -21350,7 +21500,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -21388,8 +21538,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -21403,6 +21551,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1225074998
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21641,6 +21791,7 @@ GameObject:
   - component: {fileID: 1241386542}
   - component: {fileID: 1241386541}
   - component: {fileID: 1241386548}
+  - component: {fileID: 1241386549}
   m_Layer: 7
   m_Name: straightRoad (5)
   m_TagString: Untagged
@@ -21744,8 +21895,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -21759,6 +21908,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1241386544
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21851,7 +22002,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1241386549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241386539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &1244238684
@@ -22070,8 +22237,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -22085,6 +22250,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1270546504
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -22164,11 +22331,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1270546498}
   m_Mesh: {fileID: 6440166555503141632, guid: bf7c0963a998bf7428ecfca6474c74d3, type: 3}
---- !u!4 &1271498067 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 92845071059348229, guid: 841708f05e7c76145aa837b856dee943, type: 3}
-  m_PrefabInstance: {fileID: 352461255}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1273761202
 GameObject:
   m_ObjectHideFlags: 0
@@ -22374,7 +22536,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 0.3
     vertexPathMinVertexSpacing: 0.01
     showTransformTool: 1
@@ -22439,8 +22601,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 5
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -22454,6 +22614,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   exits: []
   entries: []
   laneTwoDirReferencePoints: []
@@ -22528,7 +22690,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 0.3
     vertexPathMinVertexSpacing: 0.01
     showTransformTool: 1
@@ -22727,8 +22889,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -22742,6 +22902,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1311057939
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -22838,6 +23000,7 @@ GameObject:
   - component: {fileID: 1320006119}
   - component: {fileID: 1320006125}
   - component: {fileID: 1320006126}
+  - component: {fileID: 1320006127}
   m_Layer: 7
   m_Name: straightRoad
   m_TagString: Untagged
@@ -22891,7 +23054,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -22929,8 +23092,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -22944,6 +23105,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1320006121
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -23048,7 +23211,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1320006127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1320006117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1322434358
@@ -23466,8 +23645,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -23481,6 +23658,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1337226461
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23729,6 +23908,7 @@ GameObject:
   - component: {fileID: 1346145703}
   - component: {fileID: 1346145702}
   - component: {fileID: 1346145709}
+  - component: {fileID: 1346145710}
   m_Layer: 7
   m_Name: straightRoad (17)
   m_TagString: Untagged
@@ -23832,8 +24012,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -23847,6 +24025,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1346145705
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -23939,7 +24119,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1346145710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1346145700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1353127984
@@ -23959,6 +24155,7 @@ GameObject:
   - component: {fileID: 1353127987}
   - component: {fileID: 1353127986}
   - component: {fileID: 1353127993}
+  - component: {fileID: 1353127994}
   m_Layer: 7
   m_Name: straightRoad (11)
   m_TagString: Untagged
@@ -24062,8 +24259,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -24077,6 +24272,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1353127989
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -24169,7 +24366,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1353127994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353127984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1364377037
@@ -24566,16 +24779,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &1392799434 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 1392799433}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1397730845 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 1006808396}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1400060462
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24871,6 +25074,7 @@ GameObject:
   - component: {fileID: 1416855686}
   - component: {fileID: 1416855685}
   - component: {fileID: 1416855692}
+  - component: {fileID: 1416855693}
   m_Layer: 7
   m_Name: straightRoad (9)
   m_TagString: Untagged
@@ -24974,8 +25178,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -24989,6 +25191,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1416855688
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25081,7 +25285,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1416855693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416855683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1416974536
@@ -25185,8 +25405,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -25200,6 +25418,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1417309415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25429,11 +25649,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &1419396657 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 1419396656}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1424573092 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9023660943327097044, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
@@ -25673,6 +25888,7 @@ GameObject:
   - component: {fileID: 1446536800}
   - component: {fileID: 1446536799}
   - component: {fileID: 1446536805}
+  - component: {fileID: 1446536806}
   m_Layer: 7
   m_Name: carretera_curva (10)
   m_TagString: Untagged
@@ -25712,8 +25928,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -25727,6 +25941,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1446536800
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25787,7 +26003,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -25900,7 +26116,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1446536806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446536797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1446751787
@@ -26039,8 +26271,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -26054,6 +26284,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1446751793
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -26396,7 +26628,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 1
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1456365581
 Transform:
   m_ObjectHideFlags: 0
@@ -26424,7 +26656,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!114 &1456365583
@@ -26444,8 +26676,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -26459,6 +26689,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1456365584
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26555,6 +26787,7 @@ GameObject:
   - component: {fileID: 1463250589}
   - component: {fileID: 1463250588}
   - component: {fileID: 1463250595}
+  - component: {fileID: 1463250596}
   m_Layer: 7
   m_Name: straightRoad (21)
   m_TagString: Untagged
@@ -26658,8 +26891,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -26673,6 +26904,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1463250591
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -26765,7 +26998,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1463250596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1463250586}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1467539703
@@ -26904,8 +27153,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -26919,6 +27166,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1467539709
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -27033,11 +27282,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 5874231622567735579, guid: 576522d9d31783e409690774d5a7ca93, type: 3}
---- !u!4 &1477628298 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 1531403512}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1480458553
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27273,8 +27517,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -27288,6 +27530,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1487755416
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -27427,8 +27671,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -27442,6 +27684,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1493572580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27502,7 +27746,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -27768,6 +28012,7 @@ GameObject:
   - component: {fileID: 1501581644}
   - component: {fileID: 1501581643}
   - component: {fileID: 1501581650}
+  - component: {fileID: 1501581651}
   m_Layer: 7
   m_Name: straightRoad (19)
   m_TagString: Untagged
@@ -27871,8 +28116,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -27886,6 +28129,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1501581646
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -27978,7 +28223,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1501581651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501581641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!4 &1502976525 stripped
@@ -28039,8 +28300,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -28054,6 +28313,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1526378312
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28146,7 +28407,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1529163338 stripped
@@ -28462,8 +28723,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -28477,6 +28736,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1536007461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28750,11 +29011,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5af4de4e772513a41ac0a701d73fae6a, type: 3}
---- !u!4 &1544394156 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 55502542}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1544960245
 GameObject:
   m_ObjectHideFlags: 0
@@ -28772,6 +29028,7 @@ GameObject:
   - component: {fileID: 1544960248}
   - component: {fileID: 1544960247}
   - component: {fileID: 1544960254}
+  - component: {fileID: 1544960255}
   m_Layer: 7
   m_Name: straightRoad (6)
   m_TagString: Untagged
@@ -28875,8 +29132,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -28890,6 +29145,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1544960250
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -28982,7 +29239,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1544960255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1544960245}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1547624652 stripped
@@ -29134,6 +29407,7 @@ GameObject:
   - component: {fileID: 1561232319}
   - component: {fileID: 1561232318}
   - component: {fileID: 1561232325}
+  - component: {fileID: 1561232326}
   m_Layer: 7
   m_Name: straightRoad (4)
   m_TagString: Untagged
@@ -29237,8 +29511,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -29252,6 +29524,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1561232321
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -29344,7 +29618,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1561232326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561232316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1561312936
@@ -29402,8 +29692,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -29417,6 +29705,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1561312939
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29477,7 +29767,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -29771,11 +30061,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 2.1916296, y: 8.696025, z: 1.360098}
   m_Center: {x: -0.05239377, y: 3.8480048, z: -0.0013236661}
---- !u!4 &1583066529 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 458154100}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1583908037
 GameObject:
   m_ObjectHideFlags: 0
@@ -29924,8 +30209,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -29939,6 +30222,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1589434250
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30170,11 +30455,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3004758090400749255, guid: d9e6be94d16010a4ea07e0e42e67bc51, type: 3}
   m_PrefabInstance: {fileID: 1599614353}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &1644757507 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
-  m_PrefabInstance: {fileID: 1480458553}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1655235772
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30236,11 +30516,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &1655235773 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 1655235772}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1663220490
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30339,8 +30614,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 6
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -30354,6 +30627,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1663220492
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30517,8 +30792,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -30532,6 +30805,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1664592928
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -30611,16 +30886,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1664592922}
   m_Mesh: {fileID: 6440166555503141632, guid: bf7c0963a998bf7428ecfca6474c74d3, type: 3}
---- !u!4 &1675627557 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
-  m_PrefabInstance: {fileID: 1963658809}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1677826698 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
-  m_PrefabInstance: {fileID: 498066726}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1683373007
 GameObject:
   m_ObjectHideFlags: 0
@@ -30757,8 +31022,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -30772,6 +31035,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1683373013
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -31110,8 +31375,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 6
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -31125,6 +31388,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1688143956
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -31286,7 +31551,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 0.3
     vertexPathMinVertexSpacing: 0.01
     showTransformTool: 1
@@ -31324,8 +31589,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 2
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -31339,6 +31602,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   upperNumDirection: 1
   lowerNumDirection: 0
   invertUpperRoad: 0
@@ -31488,11 +31753,6 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: da4c8e8599abde0479576d08ec72b471, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &1696678804 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 1696678803}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1705715135
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32081,6 +32341,7 @@ GameObject:
   - component: {fileID: 1749028487}
   - component: {fileID: 1749028486}
   - component: {fileID: 1749028493}
+  - component: {fileID: 1749028494}
   m_Layer: 7
   m_Name: straightRoad (7)
   m_TagString: Untagged
@@ -32184,8 +32445,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -32199,6 +32458,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1749028489
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -32291,7 +32552,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1749028494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1749028484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1 &1752728245
@@ -32414,8 +32691,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -32429,6 +32704,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1752728250
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -32524,11 +32801,6 @@ MonoBehaviour:
   m_Area: 1
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
---- !u!4 &1757092663 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
-  m_PrefabInstance: {fileID: 2046987081}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1760349889
 GameObject:
   m_ObjectHideFlags: 0
@@ -32665,11 +32937,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 2.1916296, y: 8.696025, z: 1.360098}
   m_Center: {x: -0.05239377, y: 3.8480048, z: -0.0013236661}
---- !u!4 &1773144198 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
-  m_PrefabInstance: {fileID: 1841041748}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1778895922
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32933,8 +33200,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -32948,6 +33213,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1790490220
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -33319,7 +33586,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -33357,8 +33624,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -33372,6 +33637,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1809417757
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -33587,8 +33854,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -33602,6 +33867,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1814576637
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33762,11 +34029,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1814576633}
   m_Mesh: {fileID: -7008648107721451985, guid: 74ce9b1f1efc09f4399d05d6a6de4d8a, type: 3}
---- !u!4 &1817688851 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
-  m_PrefabInstance: {fileID: 1282179167}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1841041748
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33903,8 +34165,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -33918,6 +34178,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &1859107903
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34214,8 +34476,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -34229,6 +34489,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1863508249
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -34547,7 +34809,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 0.3
     vertexPathMinVertexSpacing: 0.01
     showTransformTool: 1
@@ -34585,8 +34847,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -34600,6 +34860,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &1868667024
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -34712,6 +34974,7 @@ GameObject:
   - component: {fileID: 1871368495}
   - component: {fileID: 1871368494}
   - component: {fileID: 1871368501}
+  - component: {fileID: 1871368502}
   m_Layer: 7
   m_Name: straightRoad (24)
   m_TagString: Untagged
@@ -34815,8 +35078,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -34830,6 +35091,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &1871368497
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -34922,7 +35185,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &1871368502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1871368492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &1873693440
@@ -35239,6 +35518,63 @@ Transform:
   m_Father: {fileID: 580303742}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1922769013
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1060473895}
+    m_Modifications:
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_RootOrder
+      value: 157
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 122.53
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 19.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6496437081037585619, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+      propertyPath: m_Name
+      value: Intersection_4_way
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
 --- !u!1 &1933532395
 GameObject:
   m_ObjectHideFlags: 0
@@ -35329,11 +35665,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
---- !u!4 &1940846796 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 1991474832}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1954762155
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35703,6 +36034,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+--- !u!4 &2003349649 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5867112481991419497, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+  m_PrefabInstance: {fileID: 1922769013}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2009422633
 GameObject:
   m_ObjectHideFlags: 0
@@ -35774,8 +36110,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -35789,6 +36123,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &2009422637
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36029,11 +36365,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
---- !u!4 &2018821884 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
-  m_PrefabInstance: {fileID: 2018821883}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2021421800
 GameObject:
   m_ObjectHideFlags: 0
@@ -36132,7 +36463,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -36170,8 +36501,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -36185,6 +36514,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &2021421806
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -36333,8 +36664,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -36348,6 +36677,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &2042943683
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -36444,6 +36775,7 @@ GameObject:
   - component: {fileID: 2045943730}
   - component: {fileID: 2045943729}
   - component: {fileID: 2045943736}
+  - component: {fileID: 2045943737}
   m_Layer: 7
   m_Name: straightRoad (1)
   m_TagString: Untagged
@@ -36547,8 +36879,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -36562,6 +36892,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &2045943732
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -36654,7 +36986,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_OverrideArea: 1
-  m_Area: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
+--- !u!114 &2045943737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2045943727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
   m_IgnoreFromBuild: 0
   m_AffectedAgents: ffffffff
 --- !u!1001 &2046987081
@@ -36722,11 +37070,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
---- !u!4 &2054553115 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
-  m_PrefabInstance: {fileID: 243696431}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2054603456
 GameObject:
   m_ObjectHideFlags: 0
@@ -36863,8 +37206,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -36878,6 +37219,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &2054603462
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -37026,8 +37369,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 1
   numDirection: 0
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -37041,6 +37382,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!64 &2055944310
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -37124,11 +37467,6 @@ MeshFilter:
 Transform:
   m_CorrespondingSourceObject: {fileID: 355647666155603537, guid: 5af4de4e772513a41ac0a701d73fae6a, type: 3}
   m_PrefabInstance: {fileID: 1326327810}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &2060181190 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
-  m_PrefabInstance: {fileID: 1059002128}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &2067627504
 GameObject:
@@ -37347,11 +37685,6 @@ Transform:
   m_Father: {fileID: 1446536798}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &2091932267 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1630963810064525057, guid: 5462880c161e7e54d854578d808f3c8f, type: 3}
-  m_PrefabInstance: {fileID: 946422023}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2094965340
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -37571,7 +37904,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 19.5
     vertexPathMinVertexSpacing: 0.461
     showTransformTool: 1
@@ -37609,8 +37942,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -37624,6 +37955,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &2098872321
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -37839,8 +38172,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 0
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -37854,6 +38185,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!65 &2102315545
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -38018,8 +38351,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 2
   numDirection: 1
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -38033,6 +38364,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
 --- !u!114 &2105603531
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38093,7 +38426,7 @@ MonoBehaviour:
       - 0
       globalNormalsAngle: 0
       flipNormals: 0
-    vertexPathUpToDate: 1
+    vertexPathUpToDate: 0
     vertexPathMaxAngleError: 5
     vertexPathMinVertexSpacing: 0.28
     showTransformTool: 1
@@ -38522,10 +38855,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
---- !u!4 &2146522781 stripped
+--- !u!4 &92845071243758274 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
-  m_PrefabInstance: {fileID: 2146522780}
+  m_CorrespondingSourceObject: {fileID: 92845071059348229, guid: 841708f05e7c76145aa837b856dee943, type: 3}
+  m_PrefabInstance: {fileID: 352461255}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &92845072511856904
 PrefabInstance:
@@ -38736,6 +39069,16 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5093479335981751800, guid: b45187d68e895ae4abd03294857f88be, type: 3}
   m_PrefabInstance: {fileID: 5356174700797339435}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1630963809654973958 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1630963810064525057, guid: 5462880c161e7e54d854578d808f3c8f, type: 3}
+  m_PrefabInstance: {fileID: 946422023}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1630963810811161258 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1630963810064525057, guid: 5462880c161e7e54d854578d808f3c8f, type: 3}
+  m_PrefabInstance: {fileID: 1954762155}
+  m_PrefabAsset: {fileID: 0}
 --- !u!23 &1711813854463937908
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -38824,6 +39167,66 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!4 &2865572003832204608 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 629224390}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004129857266 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 458154100}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004177936331 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 409747789}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004315008577 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 12071111}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004488720559 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 249728553}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004617732118 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 1991474832}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004739246106 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 2146522780}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004819425850 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 1655235772}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572004895489301 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 1696678803}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572005065543759 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 1392799433}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572005189679286 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 1419396656}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2865572005204157054 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+  m_PrefabInstance: {fileID: 1531403512}
+  m_PrefabAsset: {fileID: 0}
 --- !u!33 &3469287838066987846
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -38855,6 +39258,7 @@ GameObject:
   - component: {fileID: 5251624386227581834}
   - component: {fileID: 4909184589623998182}
   - component: {fileID: 4909184589623998183}
+  - component: {fileID: 4909184589623998184}
   m_Layer: 7
   m_Name: road_bridge
   m_TagString: Untagged
@@ -38889,6 +39293,22 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 0.99999994, y: 0.5199999, z: 0.99999994}
   m_Center: {x: 0, y: 0.25999996, z: 0}
+--- !u!114 &4909184589623998184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4909184589623998181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 1
+  m_Area: 3
+  m_IgnoreFromBuild: 0
+  m_AffectedAgents: ffffffff
 --- !u!114 &5251624386227581834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38959,8 +39379,6 @@ MonoBehaviour:
     m_Bits: 128
   typeOfRoad: 7
   numDirection: 2
-  trafficLight: {fileID: 0}
-  trafficLightEvents: {fileID: 0}
   connections: []
   laneReferencePoints: []
   leftBottom: {fileID: 0}
@@ -38974,6 +39392,8 @@ MonoBehaviour:
   bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+  procedural: 0
+  trafficLights: []
   upperNumDirection: 1
   lowerNumDirection: 0
   invertUpperRoad: 0
@@ -39108,6 +39528,26 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dbea7613b96aa564992c4d575ab4c67e, type: 3}
+--- !u!4 &6313707493387711491 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
+  m_PrefabInstance: {fileID: 1810061244}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6313707493654096118 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
+  m_PrefabInstance: {fileID: 2046987081}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6313707495169984153 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
+  m_PrefabInstance: {fileID: 498066726}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6313707495195697736 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6313707495097099199, guid: 166171a30b92f154cbc9d7d3a026e063, type: 3}
+  m_PrefabInstance: {fileID: 505905655}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6313707495338583382
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39209,6 +39649,66 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!4 &7000514156915711159 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 1802439064}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514156971455929 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 1745002646}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514157691466476 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 1160259523}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514157795459647 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 1059002128}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514157843871843 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 1006808396}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514158580604758 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 136891001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514158662530017 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 55502542}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7000514158772019856 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7000514158716441903, guid: 4f7d417d47243df45aae9728b444fc0a, type: 3}
+  m_PrefabInstance: {fileID: 97531839}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7321090823339377125 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
+  m_PrefabInstance: {fileID: 211716420}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7321090823659938874 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
+  m_PrefabInstance: {fileID: 293989531}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7321090823861737973 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
+  m_PrefabInstance: {fileID: 1841041748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7321090824254621336 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7321090823399573665, guid: 0d4e1586c0f1aa04c9a3cb9e6fd70319, type: 3}
+  m_PrefabInstance: {fileID: 1963658809}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7365362393911315362
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39266,6 +39766,46 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e26cdd42e6fe8f644ab4c7414078a000, type: 3}
+--- !u!4 &7759897856472773962 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
+  m_PrefabInstance: {fileID: 564128802}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7759897856856988231 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
+  m_PrefabInstance: {fileID: 243696431}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7759897857707874385 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
+  m_PrefabInstance: {fileID: 1480458553}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7759897857903860023 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7759897857032722792, guid: 1d0b5072bf55f2f408fd81b1f5f3bf79, type: 3}
+  m_PrefabInstance: {fileID: 1282179167}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8195159217691282153 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
+  m_PrefabInstance: {fileID: 1244238684}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8195159218529804110 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
+  m_PrefabInstance: {fileID: 2018821883}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8195159218659090929 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
+  m_PrefabInstance: {fileID: 1939421252}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8195159219538614333 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8195159218935323061, guid: 8b55ff7b3cd225f4c90b7de03abaf194, type: 3}
+  m_PrefabInstance: {fileID: 607486344}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8516786963672084314
 PrefabInstance:
   m_ObjectHideFlags: 0

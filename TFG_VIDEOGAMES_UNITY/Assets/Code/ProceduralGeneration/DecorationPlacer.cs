@@ -20,7 +20,7 @@ namespace PG
         public void PlaceStructuresAroundRoad()
         {
             // Get all surrounding nodes (nodes available to put a house in)
-            surroundingNodes = Visualizer.instance.surroundingNodes.Distinct().ToList();
+            surroundingNodes = Visualizer.Instance.surroundingNodes.Distinct().ToList();
 
             List<GridNode> updatedList = new List<GridNode>();
             foreach (GridNode node in surroundingNodes)

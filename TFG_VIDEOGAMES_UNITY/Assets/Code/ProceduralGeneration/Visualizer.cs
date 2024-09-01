@@ -22,7 +22,7 @@ namespace PG
         [SerializeField] private NavMeshGenerator navMeshGenerator;
         //private int[] lengthValues = { 6, 8, 10, 12 };
         private int[] lengthValues = { 8, 12 };
-        public static Visualizer instance;
+        public static Visualizer Instance;
         public int Length
         {
             get
@@ -41,7 +41,7 @@ namespace PG
 
         private void Awake()
         {
-            instance = this;
+            Instance = this;
             lsystem = GetComponent<LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
             roadConnecter = GetComponent<RoadConnecter>();
@@ -194,7 +194,7 @@ namespace PG
             await roadConnecter.ConnectRoads(roadAssets);
             generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
-            navMeshGenerator.BakeNavMesh();
+            //navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

@@ -12,6 +12,7 @@ public class Pedestrian : MonoBehaviour
 	private Animator animator;
 
     public Transform target;
+    private Vector3 destination;
     float checkUpdateTime = 1.5f;
     public bool isIndependent = true;
     private float baseAgentSpeed = 1f;
@@ -43,10 +44,10 @@ public class Pedestrian : MonoBehaviour
 
         if (target != null && isIndependent)
         {
+            destination = new Vector3(target.transform.position.x, target.transform.position.y, target.transform.position.z);
             invisiblePedestrian = Instantiate(invisiblePedestrianPrefab, transform.position, transform.rotation);
-            invisiblePedestrian.SetDestination(target.transform.position);
+            invisiblePedestrian.SetDestination(destination);
             invisiblePedestrian.SetPedestrian(this);
-            //agent.SetDestination(target.transform.position);
             StartCoroutine(CheckArrivalToDestination());
         }
         else if (!isIndependent)
@@ -84,12 +85,12 @@ public class Pedestrian : MonoBehaviour
     IEnumerator CheckArrivalToDestination()
     {
         yield return new WaitForSeconds(1);
-        agent.SetDestination(target.transform.position);
+        agent.SetDestination(destination);
 
         while (true)
         {
             yield return new WaitForSeconds(checkUpdateTime);
-            float distance = Vector3.Distance(transform.position, target.transform.position);
+            float distance = Vector3.Distance(transform.position, destination);
             if(distance < 3f && !animator.GetBool("IsMoving") && agent.velocity.magnitude < .05f) 
             {
                 Destroy(gameObject);

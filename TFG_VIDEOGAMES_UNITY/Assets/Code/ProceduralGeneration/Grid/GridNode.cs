@@ -21,6 +21,7 @@ namespace PG
         public GridNode previousNode; // Used by grid creation
         public VoronoiRegion voronoiRegion = null;
         public readonly List<GridNode> neighbours = new List<GridNode>();
+        public bool isRoundabout = false; // Used by roadPlacer
         public GridNode(Vector3 _worldPos, int _gridX, int _gridY)
         {
             worldPosition = _worldPos;

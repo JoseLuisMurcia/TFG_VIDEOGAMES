@@ -88,6 +88,7 @@ namespace PG
                             default:
                                 break;
                         }
+                        Gizmos.color = n.isRoundabout ? Color.green : Gizmos.color;
                         Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
                     }
                 }
