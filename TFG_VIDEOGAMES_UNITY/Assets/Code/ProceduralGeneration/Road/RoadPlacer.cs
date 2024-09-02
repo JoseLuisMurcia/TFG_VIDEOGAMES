@@ -15,6 +15,8 @@ namespace PG
         [SerializeField]
         private GameObject end, straight, corner, roundabout, bridge, slant, intersection3way, intersection4way, pedestrianCrossing, pedestrianCrossingTL;
         [SerializeField]
+        private GameObject slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2;
+        [SerializeField]
         private GameObject trafficLights;
         [SerializeField]
         private GameObject stopSignal, yieldSignal, roundaboutSignal, sidewalk;
@@ -31,6 +33,7 @@ namespace PG
         public static RoadPlacer Instance;
         private StraightSplitter straightSplitter;
         private IntersectionPlacer intersectionPlacer;
+        private BridgePlacer bridgePlacer;
         private void Awake()
         {
             Instance = this;
@@ -41,6 +44,10 @@ namespace PG
             if (TryGetComponent(out intersectionPlacer))
             {
                 intersectionPlacer.SetIntersectionPrefabs(intersection3way, intersection4way, roundabout, end, roadDictionary);
+            }
+            if (TryGetComponent(out bridgePlacer))
+            {
+                bridgePlacer.SetBridgePrefabs(slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight, roadDictionary);
             }
         }
 
@@ -581,6 +588,7 @@ namespace PG
                     return offset + Vector3.left * multiplier;
                 case Direction.back:
                     return offset + Vector3.right * multiplier;
+                case Direction.zero:
                 default:
                     return Vector3.zero;
             }
@@ -683,7 +691,7 @@ namespace PG
                             var key = new Vector2Int(currentNode.gridX, currentNode.gridY);
                             if (roadDictionary.ContainsKey(key))
                             {
-                                if (roadDictionary[key].gameObject.name == "End(Clone)")
+                                if (roadDictionary[key].name == "End(Clone)")
                                 {
                                     Debug.LogWarning("NOS HEMOS UNIDO A UN END(CLONE) EN ShouldBeEliminated");
                                 }
@@ -870,7 +878,7 @@ namespace PG
                         updatedNodes.Add(node);
                         if (roadDictionary.ContainsKey(key))
                         {
-                            if (roadDictionary[key].gameObject.name == "End(Clone)")
+                            if (roadDictionary[key].name == "End(Clone)")
                             {
                                 SpawnSphere(node.worldPosition, Color.red, 3f, 3f);
                                 Debug.LogWarning("NOS HEMOS UNIDO A UN END(CLONE) En ConnectToOtherRoad PATHFINDING");
@@ -995,7 +1003,7 @@ namespace PG
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             startSphere.transform.parent = transform;
             startSphere.transform.localScale = Vector3.one * size;
-            startSphere.transform.position = pos + Vector3.up * 3f * offset;
+            startSphere.transform.position = pos + 3f * offset * Vector3.up;
             startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
         public Vector3 DirectionToVector(Direction direction)
