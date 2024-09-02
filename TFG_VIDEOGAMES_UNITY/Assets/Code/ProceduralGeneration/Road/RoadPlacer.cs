@@ -5,6 +5,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using UnityEngine.XR;
 
 
 namespace PG
@@ -14,6 +15,8 @@ namespace PG
         #region prefabs
         [SerializeField]
         private GameObject end, straight, corner, roundabout, bridge, slant, intersection3way, intersection4way, pedestrianCrossing, pedestrianCrossingTL;
+        [SerializeField]
+        private GameObject slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2;
         [SerializeField]
         private GameObject trafficLights;
         [SerializeField]
@@ -31,6 +34,7 @@ namespace PG
         public static RoadPlacer Instance;
         private StraightSplitter straightSplitter;
         private IntersectionPlacer intersectionPlacer;
+        private BridgePlacer bridgePlacer;
         private void Awake()
         {
             Instance = this;
@@ -41,6 +45,10 @@ namespace PG
             if (TryGetComponent(out intersectionPlacer))
             {
                 intersectionPlacer.SetIntersectionPrefabs(intersection3way, intersection4way, roundabout, end, roadDictionary);
+            }
+            if (TryGetComponent(out bridgePlacer))
+            {
+                bridgePlacer.SetBridgePrefabs(slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight, roadDictionary);
             }
         }
 
@@ -94,10 +102,18 @@ namespace PG
                     List<Direction> neighbours = data.neighbours;
                     if (currentNode.occupied && !currentNode.isRoundabout)
                     {
+                        Vector2Int key = new Vector2Int(i, j);
+                        if (roadDictionary.ContainsKey(key) && roadDictionary[key].name == "Intersection_4_way(Clone)" && currentNode.isRoundabout)
+                        {
+                            Debug.LogWarning("GENTUZOO");
+                        }
                         Quaternion rotation = Quaternion.identity;
                         switch (data.neighbours.Count)
                         {
                             case 1:
+                                if (currentNode.isRoundabout)
+                                    break;
+
                                 if (!ShouldBeEliminated(currentNode, 2))
                                 {
                                     ConnectToOtherRoad(i, j, data);
@@ -143,7 +159,6 @@ namespace PG
                 }
             }
 
-
             // Delete outdated prefabs and spawn the correct ones
             foreach (GridNode node in updatedNodes)
             {
@@ -155,8 +170,7 @@ namespace PG
                 Vector2Int key = new Vector2Int(gridX, gridY);
                 if (roadDictionary.ContainsKey(key))
                 {
-                    // Dont update roundabout nodes
-                    if (roadDictionary[key].name == "Roundabout(Clone)")
+                    if (node.isRoundabout && roadDictionary[key].name != "End(Clone)")
                         continue;
 
                     Destroy(roadDictionary[key]);
@@ -514,7 +528,7 @@ namespace PG
                         Vector3 originPos = road.laneReferencePoints[1] + Vector3.up * 9f;
                         Vector3 destPos = road.laneReferencePoints[0] + Vector3.up * 9f;
                         Vector3 dir = destPos - originPos;
-                        Debug.DrawRay(originPos, dir, Color.red, 500f);
+                        if (visualDebug) Debug.DrawRay(originPos, dir, Color.red, 500f);
                     }
                     straightGO.SetActive(false);
                 }
@@ -680,13 +694,10 @@ namespace PG
                             currentNode.usage = Usage.empty;
                             if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
                             updatedNodes.Add(currentNode);
-                            var key = new Vector2Int(currentNode.gridX, currentNode.gridY);
-                            if (roadDictionary.ContainsKey(key))
+                            if (currentNode.isRoundabout)
                             {
-                                if (roadDictionary[key].gameObject.name == "End(Clone)")
-                                {
-                                    Debug.LogWarning("NOS HEMOS UNIDO A UN END(CLONE) EN ShouldBeEliminated");
-                                }
+                                SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 4f);
+                                Debug.LogWarning("UPDATE ROUNDABOUT NODE EN ShouldBeEliminated");
                             }
                         }
                         else
@@ -814,7 +825,11 @@ namespace PG
                         int x = node.gridX; int y = node.gridY;
                         int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(currentDirection);
                         visualizer.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
-
+                        if (node.isRoundabout)
+                        {
+                            SpawnSphere(node.worldPosition, Color.magenta, 2f, 4f);
+                            Debug.LogWarning("NOS HEMOS UNIDO A UNA ROUNDABOUT CON GO STRAIGHT");
+                        }
                         node.occupied = true;
                         updatedNodes.Add(node);
                         if (node.usage != Usage.point)
@@ -868,6 +883,11 @@ namespace PG
                         node.occupied = true;
                         var key = new Vector2Int(node.gridX, node.gridY);
                         updatedNodes.Add(node);
+                        if (node.isRoundabout)
+                        {
+                            SpawnSphere(node.worldPosition, Color.red, 2f, 4f);
+                            Debug.LogWarning("NOS HEMOS UNIDO A UNA ROUNDABOUT CON PATHFINDING");
+                        }
                         if (roadDictionary.ContainsKey(key))
                         {
                             if (roadDictionary[key].gameObject.name == "End(Clone)")
@@ -927,7 +947,7 @@ namespace PG
                 if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
                 {
                     // Check for roundabout ends that could result in a corner and not a straight road.
-                    // If from the merging node, advancing in the same dir we don't find another roundabout node, that means that we would create a corner
+                    // If from the merging node, advancing in the original dir we don't find another roundabout node, that means that we would create a corner
                     List<Direction> mergingNodeNeighbours = GetNeighboursData(currentPosX, currentPosY).neighbours;
                     if (mergingNodeNeighbours.Count == 1 && currentNode.isRoundabout)
                     {

@@ -40,7 +40,7 @@ namespace PG
             }
             else
             {
-                isRoundaboutFeasible = !hasRoundaboutNearby && hasEnoughSpace;
+                isRoundaboutFeasible = !hasRoundaboutNearby && hasEnoughSpace && !Was3WayRoundabout(node.gridX, node.gridY, neighbours);
             }
 
             // Calcular probabilidad de spawnear rotonda
@@ -64,30 +64,21 @@ namespace PG
                     break;
             }
 
+            // Determine if roundabout should be spawned
+            bool shouldSpawnRoundabout = spawnRoundabout && isRoundaboutFeasible;
+
             // Spawning
-            if (is3Way)
+            if (shouldSpawnRoundabout)
             {
-                // 3 way
-                if (spawnRoundabout && isRoundaboutFeasible)
-                {
-                    SpawnRoundabout(node, is3Way, neighbours, path, direction);
-                }
-                else
-                {
-                    SpawnIntersection(node, GetRotationFromNeighbours(neighbours), is3Way);
-                }
+                // Spawn roundabout
+                SpawnRoundabout(node, is3Way, neighbours, is3Way ? path : null, is3Way ? direction : Direction.zero);
             }
             else
             {
-                // 4 way
-                if (spawnRoundabout && isRoundaboutFeasible)
-                {
-                    SpawnRoundabout(node, is3Way, neighbours, null, Direction.zero);
-                }
-                else
-                {
-                    SpawnIntersection(node, Quaternion.identity, is3Way);
-                }
+                // Spawn intersection
+                // Determine rotation for intersection
+                Quaternion intersectionRotation = is3Way ? GetRotationFromNeighbours(neighbours) : Quaternion.identity;
+                SpawnIntersection(node, intersectionRotation, is3Way);
             }
         }
         private bool CheckNearbyRoundabouts(int startX, int startY)
@@ -152,6 +143,34 @@ namespace PG
             }
             return true;
         }
+        private bool Was3WayRoundabout(int startX, int startY, List<Direction> neighbours)
+        {
+            // Avanzar 2 nodos desde la startPos en todas las direcciones
+            // Si se encuentra nodo marcado como roundabout en el segundo nodo, return true
+            // No se deben sobreescribir las rotondas de 3 por intersecciones de 4
+            foreach (Direction direction in neighbours)
+            {
+                int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+
+                int i = 2;
+                int maxDistance = 2;
+                while (i <= maxDistance)
+                {
+                    int currentPosX = startX + dir[0] * i;
+                    int currentPosY = startY + dir[1] * i;
+
+                    if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                        break;
+
+                    GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+                    if (currentNode.isRoundabout)
+                        return true;
+
+                    i++;
+                }
+            }
+            return false;
+        }
         private List<GridNode> GoStraight(Direction direction, int startX, int startY)
         {
             List<GridNode> path = new List<GridNode> { Grid.Instance.nodesGrid[startX, startY] };
@@ -210,12 +229,24 @@ namespace PG
         {
             Vector2Int key = new Vector2Int(node.gridX, node.gridY);
             GameObject intersectionPrefab = is3Way ? intersection3way : intersection4way;
+            if (roadDictionary.ContainsKey(key))
+            {
+                Destroy(roadDictionary[key]);
+                roadDictionary.Remove(key);
+            }
             roadDictionary[key] = Instantiate(intersectionPrefab, node.worldPosition, rotation, transform);
         }
         private void SpawnRoundabout(GridNode node, bool is3Way, List<Direction> neighbours, List<GridNode> path, Direction chosenDir)
         {
             // Remove all nearby roads
             node.isRoundabout = true;
+            node.occupied = true;
+            Vector2Int originKey = new Vector2Int(node.gridX, node.gridY);
+            if (roadDictionary.ContainsKey(originKey))
+            {
+                Destroy(roadDictionary[originKey]);
+                roadDictionary.Remove(originKey);
+            }
             RoadPlacer.Instance.GetAllDirections().ForEach(direction =>
             {
                 int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
@@ -236,8 +267,7 @@ namespace PG
             }
 
             // Instantiate roundabout
-            Vector2Int roundaboutKey = new Vector2Int(node.gridX, node.gridY);
-            roadDictionary[roundaboutKey] = Instantiate(roundabout, node.worldPosition, Quaternion.identity, transform);
+            roadDictionary[originKey] = Instantiate(roundabout, node.worldPosition, Quaternion.identity, transform);
 
             // 3 Way, we need
             if (is3Way)
@@ -250,14 +280,13 @@ namespace PG
 
                     GridNode pathNode = path[j];
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(chosenDir);
-                    Visualizer.Instance.MarkSurroundingNodes(pathNode.gridX, pathNode.gridY, neighbourIncrement[0], neighbourIncrement[1]);
                     pathNode.occupied = true;
                     pathNode.isRoundabout = true;
+                    Visualizer.Instance.MarkSurroundingNodes(pathNode.gridX, pathNode.gridY, neighbourIncrement[0], neighbourIncrement[1]);
                     if (pathNode.usage != Usage.point)
                         pathNode.usage = Usage.road;
                 }
 
-                Visualizer.Instance.MarkCornerDecorationNodes(path.Last());
 
                 // Spawn end road
                 Direction oppositeDirection = RoadPlacer.Instance.GetOppositeDir(RoadPlacer.Instance.GetAllDirections().Except(neighbours).FirstOrDefault());
@@ -284,7 +313,7 @@ namespace PG
                 GridNode endNode = Grid.Instance.nodesGrid[endPos.x, endPos.y];
                 endNode.occupied = true;
                 endNode.isRoundabout = true;
-                //endNode.usage = Usage.point;
+                Visualizer.Instance.MarkCornerDecorationNodes(path.Last());
                 roadDictionary[endPos] = Instantiate(end, endNode.worldPosition, endRotation, transform);
             }
         }
