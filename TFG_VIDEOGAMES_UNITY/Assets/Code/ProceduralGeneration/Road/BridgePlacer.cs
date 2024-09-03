@@ -2,6 +2,7 @@ using PG;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
@@ -16,39 +17,8 @@ namespace PG
         // Returns false if not
         public bool SpawnBridge(GridNode node, List<Direction> neighbours)
         {
-            // Describir algoritmo
-            // Segun el numero de vecinos se actúa de forma distinta
-            // Si tenemos 4 vecinos, simplemente tenemos que ver si nos podemos expandir N nodos en la direccion y sentido en la que coloquemos el puente
-            // Si tenemos 3 vecinos, colocaremos el lado expandible del puente en la direccion completada y tendremos que expandirnos en la que no lo está
-            // Si tenemos 2 vecinos, colocaremos el lado expandible del puente en la direccion completada y tendremos que expandirnos en la que no lo está
-            // Si tenemos 1 vecino, comprobar la expansion en todos los lados que faltan
             if (node.roadType == RoadType.Roundabout || node.roadType == RoadType.Bridge)
                 return false;
-
-            // This variable means the direction of expansion of the bridge
-            // The asset is spawned by default as vertical
-            // 90 euler degrees rotation on Y axis turns it to horizontal
-            bool isHorizontal = true;
-            int numNeighbours = neighbours.Count;
-            bool bridgeCanBeSpawned = false;
-            switch (numNeighbours)
-            {
-                case 1:
-                    return false;
-                    break;
-                case 2:
-                    return false;
-                    break;
-                case 3:
-                    return false;
-                    break;
-                case 4:
-                    bridgeCanBeSpawned = CheckAllDirections(node);
-                    isHorizontal = Random.value > .5f;
-                    break;
-                default:
-                    return false;
-            }
 
             // Calcular probabilidad de spawnear bridge segun region
             Region roadRegion = node.regionType;
@@ -71,8 +41,36 @@ namespace PG
                     break;
             }
 
+            // Segun el numero de vecinos se actúa de forma distinta
+            // Cuando spawneamos un puente tenemos 2 casos segun la direccion que enfoquemos.
+            // 1 - Puede que no haya vecinos en esa direccion, por lo que tenemos que expandir y ver si encontramos un nuevo camino
+            // 2 - Sí hay camino en esa dirección, hay que comprobar si es válido
+
+            // Guardamos los paths validos que ha generado en las direccions donde no habia vecinos y lo procesamos.
+            // Basta con que falle una sola direccion para que se aborte el intento de spawnear un bridge.
+            Dictionary<Direction, List<GridNode>> bridgeDictionary = new Dictionary<Direction, List<GridNode>>();
+
+            // Procesar las direcciones en las que no hay camino (Aquí no entra si tiene 4 vecinos ya)
+            List<Direction> directionsToExplore = RoadPlacer.Instance.GetAllDirections().Except(neighbours).ToList();
+            foreach (Direction direction in directionsToExplore)
+            {
+                List<GridNode> path = FindPath(node, direction);
+                if (path == null) return false;
+
+                bridgeDictionary[direction] = path;
+            }
+
+            // Procesar las direcciones en las que sí hay camino (vecinos)
+            bool neighboursAreValid = CheckDirections(node, neighbours);
+            if (!neighboursAreValid) return false;
+
+            // Si hemos llegado hasta aquí, el puente se va a spawnear
+            // Primero hay que procesar los nodos de los paths de cada direccion (si es que hay)
+
+            // Luego se spawnean los assets como si tuvieramos ya 4 vecinos
+            bool isHorizontal = true;
             spawnBridge = true;
-            if (bridgeCanBeSpawned)
+            if (spawnBridge)
             {
                 SpawnBridge(node, isHorizontal);
                 return true;
@@ -125,6 +123,17 @@ namespace PG
             }
             return true;
         }
+        private bool CheckDirections(GridNode startingNode, List<Direction> directions)
+        {
+            // These is the minimum number of nodes that are checked FROM the starting node in all directions
+            int minNodesToCheck = 3;
+            foreach (Direction direction in directions)
+            {
+                if (!IsPathFree(startingNode, direction, minNodesToCheck))
+                    return false;
+            }
+            return true;
+        }
         private bool IsPathFree(GridNode startingNode, Direction direction, int numNodes)
         {
             int startX = startingNode.gridX;
@@ -133,7 +142,7 @@ namespace PG
             int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(direction);
 
             int i = 1;
-            while (i <= numNodes) 
+            while (i <= numNodes)
             {
                 int currentPosX = startX + dir[0] * i;
                 int currentPosY = startY + dir[1] * i;
@@ -145,19 +154,56 @@ namespace PG
                 List<Direction> currentNeighbours = RoadPlacer.Instance.GetNeighboursData(currentPosX, currentPosY).neighbours;
 
                 // Check the feasability of the node
-                if (currentNode.roadType == RoadType.Roundabout || currentNeighbours.Count > 2 || !IsCornerNode(currentNeighbours))
+                if (currentNode.roadType == RoadType.Roundabout || currentNeighbours.Count > 2 || currentNeighbours.Count == 1 || IsCornerNode(currentNeighbours ))
                     return false;
 
                 i++;
             }
             return true;
         }
+        private List<GridNode> FindPath(GridNode startingNode, Direction direction)
+        {
+            List<GridNode> path = FindPathInDirection(startingNode, direction);
+            if (path != null)
+            {
+                // Going straight
+                return path;
+            }
+            // Pathfinding
+            return FindPathWithPathfinding(startingNode, direction);
+        }
+        private List<GridNode> FindPathInDirection(GridNode startingNode, Direction direction)
+        {
+            return RoadPlacer.Instance.GoStraight(direction, startingNode.gridX, startingNode.gridY);
+        }
+        private List<GridNode> FindPathWithPathfinding(GridNode startingNode, Direction direction)
+        {
+            // Create path with pathfinder
+            int i = 0;
+            List<GridNode> shuffledNodes = Visualizer.Instance.pointNodes.OrderBy(x => Random.value).ToList();
+            while (i < shuffledNodes.Count)
+            {
+                GridNode targetNode = shuffledNodes[i];
+                if (!RoadPlacer.Instance.CheckMergingNodeTerms(targetNode) || targetNode == startingNode)
+                {
+                    i++;
+                    continue;
+                }
+                List<GridNode> path = GridPathfinder.instance.FindPath(startingNode, targetNode);
+                if (path != null)
+                    return path;
+
+                // Path not found, try with another target node
+                i++;
+            }
+            return null;
+        }
         private bool IsCornerNode(List<Direction> neighbours)
         {
             if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
-                return true;
+                return false;
 
-            return false;
+            return true;
         }
         private void DeleteGameObjectIfExistent(Vector2Int key)
         {

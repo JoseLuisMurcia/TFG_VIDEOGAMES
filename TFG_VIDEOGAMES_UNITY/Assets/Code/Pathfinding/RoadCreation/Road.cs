@@ -33,7 +33,7 @@ public class Road : MonoBehaviour
 
     private void Awake()
     {
-        if (PG.Grid.Instance != null) return;
+        //if (PG.Grid.Instance != null) return;
 
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();

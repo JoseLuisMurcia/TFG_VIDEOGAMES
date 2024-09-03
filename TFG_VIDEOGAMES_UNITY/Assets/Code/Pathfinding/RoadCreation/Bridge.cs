@@ -19,7 +19,8 @@ public class Bridge : Road
         numDirection = NumDirection.ZERO;
         numberOfLanes = lowerRoadNumLanes+upperRoadNumLanes;
         SetLanes();
-        Destroy(boxCollider);
+
+        if (PG.Grid.Instance == null) Destroy(boxCollider);
     }
     private void SetLanes()
     {

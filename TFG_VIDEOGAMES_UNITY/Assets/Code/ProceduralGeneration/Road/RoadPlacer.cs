@@ -935,7 +935,7 @@ namespace PG
             }
 
         }
-        private List<GridNode> GoStraight(Direction direction, int startX, int startY)
+        public List<GridNode> GoStraight(Direction direction, int startX, int startY)
         {
             List<GridNode> path = new List<GridNode> { grid.nodesGrid[startX, startY] };
             int[] dir = DirectionToInt(direction);
@@ -983,7 +983,7 @@ namespace PG
                 i++;
             }
         }
-        private bool CheckMergingNodeTerms(GridNode mergingNode)
+        public bool CheckMergingNodeTerms(GridNode mergingNode)
         {
             // Here check the last node, because there are some things to be respected before merging.
             // 1) The last node should be at least 2 nodes away from an intersection. Otherwise intersections are going to be created stupidly close to each other.

@@ -10,6 +10,7 @@ public class Roundabout : Road
 
     void Start()
     {
+        if (boxCollider == null) boxCollider = GetComponent<BoxCollider>();
         Transform exitParent = gameObject.transform.Find("Exits");
         Transform entryParent = gameObject.transform.Find("Entries");
         foreach (Transform child in exitParent.transform)
