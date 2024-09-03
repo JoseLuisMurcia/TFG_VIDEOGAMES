@@ -15,14 +15,12 @@ namespace PG
         private GameObject intersection3way, intersection4way, roundabout, end;
         private Dictionary<Vector2Int, GameObject> roadDictionary;
         private Vector2Int endPos;
-
         public void HandleIntersection(GridNode node, List<Direction> neighbours)
         {
-            // Primero identificar si es factible colocar una rotonda en el nodo
-            // Comprobar alrededores, ocupa 5 nodos, el actual + alrededores.
-            // Y si ya se han instanciado carreteras alrededor, hay que agregarlas como Keys a ser borradas
-            // Comprobar viabilidad
-            // Spawnear
+            // This method decides what's best to spawn at the given node between a roundabout or a bridge
+
+
+            // Comprobar viabilidad de la rotonda
             endPos = Vector2Int.zero;
             bool is3Way = neighbours.Count == 3;
             bool isRoundaboutFeasible;
@@ -30,7 +28,6 @@ namespace PG
             Direction direction = Direction.zero;
             bool hasRoundaboutNearby = CheckNearbyRoundabouts(node.gridX, node.gridY);
             bool hasEnoughSpace = CheckFreeDistance(node.gridX, node.gridY, neighbours);
-            // Viabilidad de la rotonda
             if (is3Way)
             {
                 // La dirección en la que hay que comprobar disponibilidad
@@ -97,7 +94,7 @@ namespace PG
                     if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
                         break;
 
-                    if (Grid.Instance.nodesGrid[currentPosX, currentPosY].isRoundabout)
+                    if (Grid.Instance.nodesGrid[currentPosX, currentPosY].roadType == RoadType.Roundabout)
                         return true;
 
                     i++;
@@ -163,7 +160,7 @@ namespace PG
                         break;
 
                     GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
-                    if (currentNode.isRoundabout)
+                    if (currentNode.roadType == RoadType.Roundabout)
                         return true;
 
                     i++;
@@ -239,7 +236,7 @@ namespace PG
         private void SpawnRoundabout(GridNode node, bool is3Way, List<Direction> neighbours, List<GridNode> path, Direction chosenDir)
         {
             // Remove all nearby roads
-            node.isRoundabout = true;
+            node.roadType = RoadType.Roundabout;
             node.occupied = true;
             Vector2Int originKey = new Vector2Int(node.gridX, node.gridY);
             if (roadDictionary.ContainsKey(originKey))
@@ -251,7 +248,7 @@ namespace PG
             {
                 int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
                 GridNode newNode = Grid.Instance.nodesGrid[node.gridX + dir[0], node.gridY + dir[1]];
-                newNode.isRoundabout = true;
+                newNode.roadType = RoadType.Roundabout;
                 newNode.occupied = true;
                 newNode.usage = Usage.road;
             });
@@ -281,7 +278,7 @@ namespace PG
                     GridNode pathNode = path[j];
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(chosenDir);
                     pathNode.occupied = true;
-                    pathNode.isRoundabout = true;
+                    pathNode.roadType = RoadType.Roundabout;
                     Visualizer.Instance.MarkSurroundingNodes(pathNode.gridX, pathNode.gridY, neighbourIncrement[0], neighbourIncrement[1]);
                     if (pathNode.usage != Usage.point)
                         pathNode.usage = Usage.road;
@@ -312,7 +309,7 @@ namespace PG
                 }
                 GridNode endNode = Grid.Instance.nodesGrid[endPos.x, endPos.y];
                 endNode.occupied = true;
-                endNode.isRoundabout = true;
+                endNode.roadType = RoadType.Roundabout;
                 Visualizer.Instance.MarkCornerDecorationNodes(path.Last());
                 roadDictionary[endPos] = Instantiate(end, endNode.worldPosition, endRotation, transform);
             }

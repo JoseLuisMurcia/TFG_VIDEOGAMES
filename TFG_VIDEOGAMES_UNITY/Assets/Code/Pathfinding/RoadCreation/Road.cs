@@ -33,6 +33,8 @@ public class Road : MonoBehaviour
 
     private void Awake()
     {
+        if (PG.Grid.Instance != null) return;
+
         boxCollider = GetComponent<BoxCollider>();
         pathCreator = GetComponent<PathCreator>();
         bounds = GetComponent<MeshFilter>().mesh.bounds;
@@ -70,7 +72,7 @@ public class Road : MonoBehaviour
 
     void Start()
     {
-        if (procedural)
+        if (procedural || PG.Grid.Instance != null)
             return;
 
         if (typeOfRoad != TypeOfRoad.Roundabout)
@@ -182,6 +184,10 @@ public class Road : MonoBehaviour
     }
     private void SetConnections()
     {
+        if (boxCollider == null)
+        {
+            Debug.LogError("wtf bro");
+        }
         Vector3 center = transform.position + boxCollider.center;
         Vector3 halfSize = boxCollider.bounds.size * 0.5f;
         float offset = (typeOfRoad == TypeOfRoad.Roundabout && procedural) ? 2f : 0.3f;

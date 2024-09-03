@@ -67,9 +67,9 @@ namespace PG
             {
                 Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, 1, gridWorldSize.y));
 
-                if (debugMode == DebugMode.Allocation)
+                foreach (GridNode n in nodesGrid)
                 {
-                    foreach (GridNode n in nodesGrid)
+                    if (debugMode == DebugMode.Allocation)
                     {
                         switch (n.usage)
                         {
@@ -88,11 +88,31 @@ namespace PG
                             default:
                                 break;
                         }
-                        //Gizmos.color = n.isRoundabout ? Color.green : Gizmos.color;
-                        Gizmos.color = n.occupied ? Color.green : Gizmos.color;
-                        Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
                     }
+                    else if (debugMode == DebugMode.RoadType)
+                    {
+                        switch (n.roadType)
+                        {
+                            case RoadType.Default:
+                                Gizmos.color = Color.grey;
+                                break;
+                            case RoadType.Intersection:
+                                Gizmos.color = Color.green;
+                                break;
+                            case RoadType.Roundabout:
+                                Gizmos.color = Color.blue;
+                                break;
+                            case RoadType.Bridge:
+                                Gizmos.color = Color.red;
+                                break;
+                            default:
+                                break;
+                        }
+
+                    }
+                    Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
                 }
+                
             }
         }
 
@@ -200,6 +220,7 @@ namespace PG
     enum DebugMode
     {
         Allocation,
+        RoadType,
         Disabled
     }
 }

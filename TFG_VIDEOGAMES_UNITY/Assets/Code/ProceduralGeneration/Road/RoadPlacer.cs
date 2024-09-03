@@ -48,7 +48,7 @@ namespace PG
             }
             if (TryGetComponent(out bridgePlacer))
             {
-                bridgePlacer.SetBridgePrefabs(slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight, roadDictionary);
+                bridgePlacer.SetBridgePrefabs(bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight, roadDictionary);
             }
         }
 
@@ -100,10 +100,10 @@ namespace PG
                     GridNode currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNeighboursData(i, j);
                     List<Direction> neighbours = data.neighbours;
-                    if (currentNode.occupied && !currentNode.isRoundabout)
+                    if (currentNode.occupied && currentNode.roadType != RoadType.Roundabout && currentNode.roadType != RoadType.Bridge)
                     {
                         Vector2Int key = new Vector2Int(i, j);
-                        if (roadDictionary.ContainsKey(key) && roadDictionary[key].name == "Intersection_4_way(Clone)" && currentNode.isRoundabout)
+                        if (roadDictionary.ContainsKey(key) && roadDictionary[key].name == "Intersection_4_way(Clone)" && currentNode.roadType == RoadType.Roundabout)
                         {
                             Debug.LogWarning("GENTUZOO");
                         }
@@ -111,9 +111,6 @@ namespace PG
                         switch (data.neighbours.Count)
                         {
                             case 1:
-                                if (currentNode.isRoundabout)
-                                    break;
-
                                 if (!ShouldBeEliminated(currentNode, 2))
                                 {
                                     ConnectToOtherRoad(i, j, data);
@@ -146,10 +143,12 @@ namespace PG
                                 }
                                 break;
                             case 3:
-                                intersectionPlacer.HandleIntersection(currentNode, neighbours);
+                                if (!bridgePlacer.SpawnBridge(currentNode, neighbours))
+                                    intersectionPlacer.HandleIntersection(currentNode, neighbours);
                                 break;
                             case 4:
-                                intersectionPlacer.HandleIntersection(currentNode, neighbours);
+                                if (!bridgePlacer.SpawnBridge(currentNode, neighbours))
+                                    intersectionPlacer.HandleIntersection(currentNode, neighbours);
                                 break;
                             default:
                                 break;
@@ -170,7 +169,7 @@ namespace PG
                 Vector2Int key = new Vector2Int(gridX, gridY);
                 if (roadDictionary.ContainsKey(key))
                 {
-                    if (node.isRoundabout && roadDictionary[key].name != "End(Clone)")
+                    if (node.roadType == RoadType.Bridge || (node.roadType == RoadType.Roundabout && roadDictionary[key].name != "End(Clone)"))
                         continue;
 
                     Destroy(roadDictionary[key]);
@@ -197,13 +196,13 @@ namespace PG
                 switch (data.neighbours.Count)
                 {
                     case 1:
-                        if (node.isRoundabout)
+                        if (node.roadType == RoadType.Roundabout)
                             break;
                         Debug.LogWarning("WTF BRO THERE IS STILL A ROAD WITH ONLY ONE NEIGHBOUR");
                         //roadDictionary[key] = Instantiate(roadEnd, node.worldPosition, Quaternion.identity, transform);
                         break;
                     case 2:
-                        if (node.isRoundabout)
+                        if (node.roadType == RoadType.Roundabout)
                             break;
 
                         if ((neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
@@ -235,7 +234,8 @@ namespace PG
                         intersectionPlacer.HandleIntersection(node, neighbours);
                         break;
                     case 4:
-                        intersectionPlacer.HandleIntersection(node, neighbours);
+                        if (!bridgePlacer.SpawnBridge(node, neighbours))
+                            intersectionPlacer.HandleIntersection(node, neighbours);
                         break;
                     default:
                         break;
@@ -250,7 +250,7 @@ namespace PG
                 GridNode currentNode = grid.nodesGrid[position.x, position.y];
                 NeighboursData data = GetNeighboursData(position.x, position.y);
                 List<Direction> neighbours = data.neighbours;
-                if (neighbours.Count != 2 || currentNode.isRoundabout)
+                if (neighbours.Count != 2 || currentNode.roadType == RoadType.Roundabout || currentNode.roadType == RoadType.Bridge)
                     continue;
 
                 // It should be a straight road, not a corner/bend
@@ -315,7 +315,7 @@ namespace PG
                                 break;
 
                             case 3:
-                                if (currentNode.isRoundabout)
+                                if (currentNode.roadType == RoadType.Roundabout)
                                 {
                                     // Create 3 yield roundabout signals
                                     foreach (Direction dir in neighbours)
@@ -349,7 +349,10 @@ namespace PG
                                 break;
 
                             case 4:
-                                if (currentNode.isRoundabout)
+                                if (currentNode.roadType == RoadType.Bridge)
+                                    break;
+
+                                if (currentNode.roadType == RoadType.Roundabout)
                                 {
                                     // Create 4 yield roundabout signals
                                     foreach (Direction dir in neighbours)
@@ -411,7 +414,7 @@ namespace PG
                         }
                         break;
                     }
-                    else if (advancedNode != null && !advancedNode.isRoundabout)
+                    else if (advancedNode != null && advancedNode.roadType != RoadType.Roundabout && advancedNode.roadType != RoadType.Bridge)
                     {
                         advancedNode.isProcessedStraight = true;
                         if (!roadDictionary.ContainsKey(new Vector2Int(advancedNode.gridX, advancedNode.gridY)))
@@ -495,7 +498,7 @@ namespace PG
 
                     if (entryRoad == null || exitRoad == null)
                     {
-                        Debug.LogWarning("SE PUDRIO");
+                        Debug.LogError("SE PUDRIO");
                     }
                     // Spawn gameobject
                     dividedStraight.SetCenterPosition();
@@ -554,6 +557,11 @@ namespace PG
         {
             foreach (Vector2Int key in gameObjectsToRemove)
             {
+                if (roadDictionary[key].name == "Slant_Curve(Clone)")
+                {
+                    Debug.LogError("no se borra esto wey");
+                    continue;
+                }
                 Destroy(roadDictionary[key]);
                 roadDictionary.Remove(key);
             }
@@ -694,7 +702,7 @@ namespace PG
                             currentNode.usage = Usage.empty;
                             if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
                             updatedNodes.Add(currentNode);
-                            if (currentNode.isRoundabout)
+                            if (currentNode.roadType == RoadType.Roundabout)
                             {
                                 SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 4f);
                                 Debug.LogWarning("UPDATE ROUNDABOUT NODE EN ShouldBeEliminated");
@@ -825,7 +833,7 @@ namespace PG
                         int x = node.gridX; int y = node.gridY;
                         int[] neighbourIncrement = visualizer.GetLateralIncrementOnDirection(currentDirection);
                         visualizer.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
-                        if (node.isRoundabout)
+                        if (node.roadType == RoadType.Roundabout)
                         {
                             SpawnSphere(node.worldPosition, Color.magenta, 2f, 4f);
                             Debug.LogWarning("NOS HEMOS UNIDO A UNA ROUNDABOUT CON GO STRAIGHT");
@@ -883,7 +891,7 @@ namespace PG
                         node.occupied = true;
                         var key = new Vector2Int(node.gridX, node.gridY);
                         updatedNodes.Add(node);
-                        if (node.isRoundabout)
+                        if (node.roadType == RoadType.Roundabout)
                         {
                             SpawnSphere(node.worldPosition, Color.red, 2f, 4f);
                             Debug.LogWarning("NOS HEMOS UNIDO A UNA ROUNDABOUT CON PATHFINDING");
@@ -944,12 +952,12 @@ namespace PG
 
                 GridNode currentNode = grid.nodesGrid[currentPosX, currentPosY];
                 path.Add(currentNode);
-                if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
+                if ((currentNode.usage == Usage.road || currentNode.usage == Usage.point) && currentNode.roadType != RoadType.Bridge)
                 {
                     // Check for roundabout ends that could result in a corner and not a straight road.
                     // If from the merging node, advancing in the original dir we don't find another roundabout node, that means that we would create a corner
                     List<Direction> mergingNodeNeighbours = GetNeighboursData(currentPosX, currentPosY).neighbours;
-                    if (mergingNodeNeighbours.Count == 1 && currentNode.isRoundabout)
+                    if (mergingNodeNeighbours.Count == 1 && currentNode.roadType == RoadType.Roundabout)
                     {
                         int nextPosX = startX + dir[0] * (i + 1);
                         int nextPosY = startY + dir[1] * (i + 1);
@@ -958,7 +966,7 @@ namespace PG
                             return null;
 
                         GridNode nextNode = grid.nodesGrid[nextPosX, nextPosY];
-                        if (!nextNode.isRoundabout)
+                        if (nextNode.roadType != RoadType.Roundabout)
                             return null;
                     }
 

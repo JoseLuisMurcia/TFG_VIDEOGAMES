@@ -287,7 +287,7 @@ namespace PG
             int newY = node.gridY + movementOffset[1];
 
             GridNode connectionNode = Grid.Instance.nodesGrid[newX, newY];
-            if (connectionNode != null && connectionNode.isRoundabout)
+            if (connectionNode != null && connectionNode.roadType == RoadType.Roundabout)
                 return true;
 
             return false;
