@@ -48,7 +48,7 @@ namespace PG
             }
             if (TryGetComponent(out bridgePlacer))
             {
-                bridgePlacer.SetBridgePrefabs(bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight, roadDictionary);
+                bridgePlacer.SetBridgePrefabs(bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight, roadDictionary, updatedNodes);
             }
         }
 
@@ -754,7 +754,6 @@ namespace PG
             }
             return false;
         }
-
         public int[] GetIntDirectionToNode(GridNode actualNode, GridNode newNode)
         {
             Direction direction = GetDirectionBasedOnPos(actualNode, newNode);
@@ -842,7 +841,6 @@ namespace PG
                         updatedNodes.Add(node);
                         if (node.usage != Usage.point)
                             node.usage = Usage.road;
-                        var key = new Vector2Int(node.gridX, node.gridY);
 
                     }
                     visualizer.MarkCornerDecorationNodes(path[path.Count - 1]);
@@ -922,8 +920,8 @@ namespace PG
             // REMEMBER TO UNMARK THOSE!!
             // AND THEIR NEIGHBOURS
             ShouldBeEliminated(currentNode, 30);
-
-            //Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
+            Debug.LogError("UNA CARRETERA HA SIDO BORRADA");
+            SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
         }
         private void CreateSpheresInPath(List<GridNode> path)
         {

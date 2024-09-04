@@ -12,6 +12,7 @@ namespace PG
     {
         private GameObject bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight;
         private Dictionary<Vector2Int, GameObject> roadDictionary;
+        private List<GridNode> updatedNodes;
 
         // Returns true if a bridge is spawned
         // Returns false if not
@@ -41,6 +42,9 @@ namespace PG
                     break;
             }
 
+            // TODO: Descomentar
+            //if (!spawnBridge) return false;
+
             // Segun el numero de vecinos se actúa de forma distinta
             // Cuando spawneamos un puente tenemos 2 casos segun la direccion que enfoquemos.
             // 1 - Puede que no haya vecinos en esa direccion, por lo que tenemos que expandir y ver si encontramos un nuevo camino
@@ -48,16 +52,16 @@ namespace PG
 
             // Guardamos los paths validos que ha generado en las direccions donde no habia vecinos y lo procesamos.
             // Basta con que falle una sola direccion para que se aborte el intento de spawnear un bridge.
-            Dictionary<Direction, List<GridNode>> bridgeDictionary = new Dictionary<Direction, List<GridNode>>();
+            Dictionary<Direction, PathResult> bridgeDictionary = new Dictionary<Direction, PathResult>();
 
             // Procesar las direcciones en las que no hay camino (Aquí no entra si tiene 4 vecinos ya)
             List<Direction> directionsToExplore = RoadPlacer.Instance.GetAllDirections().Except(neighbours).ToList();
             foreach (Direction direction in directionsToExplore)
             {
-                List<GridNode> path = FindPath(node, direction);
-                if (path == null) return false;
+                PathResult pathResult = FindPath(node, direction);
+                if (pathResult == null) return false;
 
-                bridgeDictionary[direction] = path;
+                bridgeDictionary[direction] = pathResult;
             }
 
             // Procesar las direcciones en las que sí hay camino (vecinos)
@@ -65,17 +69,63 @@ namespace PG
             if (!neighboursAreValid) return false;
 
             // Si hemos llegado hasta aquí, el puente se va a spawnear
-            // Primero hay que procesar los nodos de los paths de cada direccion (si es que hay)
-
-            // Luego se spawnean los assets como si tuvieramos ya 4 vecinos
             bool isHorizontal = true;
-            spawnBridge = true;
-            if (spawnBridge)
+
+            // Procesar los nodos de paths generados donde no habia vecinos.
+            if (bridgeDictionary.Keys.Count > 0)
+                ProcessPathNodes(bridgeDictionary);
+
+            // Spawnear assets
+            SpawnBridge(node, isHorizontal);
+            return true;
+        }
+        private void ProcessPathNodes(Dictionary<Direction, PathResult> bridgeDictionary)
+        {
+            // Crear camino con los nodos recibidos
+
+            // La unica diferencia que hay entre un PathType y otro es que en
+            // Straight conozco la direccion y es constante
+            // En Pathfinding la direccion hay que calcularla en cada iteracion
+            // Revisar el bug de pathfinding, la direccion no se actualiza?¿
+            // Afecta a que los surrounding no se marcan bien, es lo unico que utiliza la direction
+            foreach (Direction direction in bridgeDictionary.Keys)
             {
-                SpawnBridge(node, isHorizontal);
-                return true;
+                List<GridNode> path = bridgeDictionary[direction].Path;
+                PathType pathType = bridgeDictionary[direction].PathType;
+                Visualizer.Instance.MarkCornerDecorationNodes(path[0]);
+                Direction currentDirection = direction;
+
+                for (int i = 1; i < path.Count; i++)
+                {
+                    GridNode node = path[i];
+
+                    // Check for direction change in path when pathfinding generated path
+                    if (pathType == PathType.Pathfinding)
+                    {
+                        GridNode nextNode = path[i + 1];
+                        Direction newDirection = RoadPlacer.Instance.GetDirectionBasedOnPos(node, nextNode);
+                        if (currentDirection != newDirection)
+                        {
+                            Visualizer.Instance.MarkCornerDecorationNodes(node);
+                            currentDirection = newDirection;
+                        }
+                    }
+
+                    SpawnSphere(node.worldPosition, Color.cyan, 2f, 3f);
+                    int x = node.gridX; int y = node.gridY;
+                    int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(direction);
+                    Visualizer.Instance.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
+                    if (node.roadType == RoadType.Roundabout)
+                    {
+                        SpawnSphere(node.worldPosition, Color.magenta, 2f, 4f);
+                        Debug.LogWarning("NOS HEMOS UNIDO A UNA ROUNDABOUT CON GO STRAIGHT EN UN BRIDGE");
+                    }
+                    node.occupied = true;
+                    updatedNodes.Add(node);
+                    if (node.usage != Usage.point)
+                        node.usage = Usage.road;
+                }
             }
-            return false;
         }
         private void SpawnBridge(GridNode bridgeNode, bool isHorizontal)
         {
@@ -161,16 +211,16 @@ namespace PG
             }
             return true;
         }
-        private List<GridNode> FindPath(GridNode startingNode, Direction direction)
+        private PathResult FindPath(GridNode startingNode, Direction direction)
         {
             List<GridNode> path = FindPathInDirection(startingNode, direction);
             if (path != null)
             {
                 // Going straight
-                return path;
+                return new PathResult(path, PathType.Direct); ;
             }
             // Pathfinding
-            return FindPathWithPathfinding(startingNode, direction);
+            return new PathResult(FindPathWithPathfinding(startingNode, direction), PathType.Pathfinding);
         }
         private List<GridNode> FindPathInDirection(GridNode startingNode, Direction direction)
         {
@@ -221,6 +271,14 @@ namespace PG
         {
             return new List<Direction> { Direction.back, Direction.forward };
         }
+        private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+        {
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.parent = transform;
+            startSphere.transform.localScale = Vector3.one * size;
+            startSphere.transform.position = pos + Vector3.up * 3f * offset;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
+        }
         private Quaternion GetSlantRotation(Direction direction)
         {
             // If the slant is positioned to X direction from the bridge, return Y direction
@@ -247,7 +305,8 @@ namespace PG
             GameObject _slantFlatHigh,
             GameObject _slantFlatHigh2,
             GameObject _straight,
-            Dictionary<Vector2Int, GameObject> _roadDictionary)
+            Dictionary<Vector2Int, GameObject> _roadDictionary,
+            List<GridNode> _updatedNodes)
         {
             bridge = _bridge;
             slantCurve = _slantCurve;
@@ -257,6 +316,25 @@ namespace PG
             slantFlatHigh2 = _slantFlatHigh2;
             straight = _straight;
             roadDictionary = _roadDictionary;
+            updatedNodes = _updatedNodes;
+        }
+
+        public enum PathType
+        {
+            Direct,
+            Pathfinding
+        }
+
+        public class PathResult
+        {
+            public List<GridNode> Path { get; set; }
+            public PathType PathType { get; set; }
+
+            public PathResult(List<GridNode> path, PathType pathType)
+            {
+                Path = path;
+                PathType = pathType;
+            }
         }
     }
 }
