@@ -103,10 +103,6 @@ namespace PG
                     if (currentNode.occupied && currentNode.roadType != RoadType.Roundabout && currentNode.roadType != RoadType.Bridge)
                     {
                         Vector2Int key = new Vector2Int(i, j);
-                        if (roadDictionary.ContainsKey(key) && roadDictionary[key].name == "Intersection_4_way(Clone)" && currentNode.roadType == RoadType.Roundabout)
-                        {
-                            Debug.LogWarning("GENTUZOO");
-                        }
                         Quaternion rotation = Quaternion.identity;
                         switch (data.neighbours.Count)
                         {
@@ -234,8 +230,7 @@ namespace PG
                         intersectionPlacer.HandleIntersection(node, neighbours);
                         break;
                     case 4:
-                        if (!bridgePlacer.SpawnBridge(node, neighbours))
-                            intersectionPlacer.HandleIntersection(node, neighbours);
+                        intersectionPlacer.HandleIntersection(node, neighbours);
                         break;
                     default:
                         break;
@@ -700,7 +695,7 @@ namespace PG
                             visualizer.UnmarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
                             currentNode.occupied = false;
                             currentNode.usage = Usage.empty;
-                            if (visualDebug) SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
+                            SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
                             updatedNodes.Add(currentNode);
                             if (currentNode.roadType == RoadType.Roundabout)
                             {
@@ -920,8 +915,8 @@ namespace PG
             // REMEMBER TO UNMARK THOSE!!
             // AND THEIR NEIGHBOURS
             ShouldBeEliminated(currentNode, 30);
-            Debug.LogError("UNA CARRETERA HA SIDO BORRADA");
-            SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
+            Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
+            //SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
         }
         private void CreateSpheresInPath(List<GridNode> path)
         {
@@ -1003,13 +998,18 @@ namespace PG
                     if (!OutOfGrid(newX, newY))
                     {
                         List<Direction> neighboursDir = GetNeighboursData(newX, newY).neighbours;
+                        GridNode neighbourNode = Grid.Instance.nodesGrid[newX, newY];
 
                         // 1) Intersection found too close
-                        if (neighboursDir.Count == 3)
+                        if (neighboursDir.Count >= 3)
                             return false;
 
                         // 2) Bending found
                         if (!(neighboursDir.Contains(Direction.left) && neighboursDir.Contains(Direction.right)) && !(neighboursDir.Contains(Direction.forward) && neighboursDir.Contains(Direction.back)))
+                            return false;
+
+                        // Do not merge too close to a bridge
+                        if (neighbourNode.roadType == RoadType.Bridge)
                             return false;
                     }
                 }

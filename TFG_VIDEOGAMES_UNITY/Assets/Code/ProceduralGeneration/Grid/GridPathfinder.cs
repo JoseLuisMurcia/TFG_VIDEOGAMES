@@ -11,7 +11,7 @@ namespace PG
         {
             instance = this;
         }
-        public List<GridNode> FindPath(GridNode startNode, GridNode targetNode)
+        public List<GridNode> FindPath(GridNode startNode, GridNode targetNode, List<GridNode> forbiddenNodes = null)
         {
             bool pathSuccess = false;
             startNode.gCost = 0;
@@ -31,7 +31,12 @@ namespace PG
 
                 foreach (GridNode neighbour in Grid.Instance.GetNeighboursInLine(currentNode))
                 {
-                    if(neighbour != targetNode)
+                    if (forbiddenNodes != null && forbiddenNodes.Contains(neighbour))
+                    {
+                        continue;
+                    }
+
+                    if (neighbour != targetNode)
                     {
                         if (MovementInvalid(currentNode, neighbour, targetNode))
                             continue;

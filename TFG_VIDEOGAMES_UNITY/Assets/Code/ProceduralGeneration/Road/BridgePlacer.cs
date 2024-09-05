@@ -1,9 +1,7 @@
 using PG;
-using System.Collections;
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace PG
@@ -24,7 +22,7 @@ namespace PG
             // Calcular probabilidad de spawnear bridge segun region
             Region roadRegion = node.regionType;
             bool spawnBridge;
-            float randomValue = Random.value;
+            float randomValue = UnityEngine.Random.value;
             switch (roadRegion)
             {
                 // TODO Ajustar probabilidades
@@ -69,7 +67,7 @@ namespace PG
             if (!neighboursAreValid) return false;
 
             // Si hemos llegado hasta aquí, el puente se va a spawnear
-            bool isHorizontal = true;
+            bool isHorizontal = UnityEngine.Random.value > 0.5f ;
 
             // Procesar los nodos de paths generados donde no habia vecinos.
             if (bridgeDictionary.Keys.Count > 0)
@@ -100,7 +98,7 @@ namespace PG
                     GridNode node = path[i];
 
                     // Check for direction change in path when pathfinding generated path
-                    if (pathType == PathType.Pathfinding)
+                    if (pathType == PathType.Pathfinding && (i + 1 < path.Count))
                     {
                         GridNode nextNode = path[i + 1];
                         Direction newDirection = RoadPlacer.Instance.GetDirectionBasedOnPos(node, nextNode);
@@ -111,7 +109,8 @@ namespace PG
                         }
                     }
 
-                    SpawnSphere(node.worldPosition, Color.cyan, 2f, 3f);
+                    Color debugColor = pathType == PathType.Pathfinding ? Color.cyan : Color.blue;
+                    //SpawnSphere(node.worldPosition, debugColor, 2f, 3f);
                     int x = node.gridX; int y = node.gridY;
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(direction);
                     Visualizer.Instance.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
@@ -162,29 +161,18 @@ namespace PG
                 roadDictionary[slantKey] = Instantiate(slantCurve, slantPosition, slantRotation, transform);
             }
         }
-        private bool CheckAllDirections(GridNode startingNode)
-        {
-            // These is the minimum number of nodes that are checked FROM the starting node in all directions
-            int minNodesToCheck = 3;
-            foreach (Direction direction in RoadPlacer.Instance.GetAllDirections())
-            {
-                if (!IsPathFree(startingNode, direction, minNodesToCheck))
-                    return false;
-            }
-            return true;
-        }
         private bool CheckDirections(GridNode startingNode, List<Direction> directions)
         {
             // These is the minimum number of nodes that are checked FROM the starting node in all directions
             int minNodesToCheck = 3;
             foreach (Direction direction in directions)
             {
-                if (!IsPathFree(startingNode, direction, minNodesToCheck))
+                if (!AdvanceInDirection(startingNode, direction, minNodesToCheck, IsDirectionFeasible))
                     return false;
             }
             return true;
         }
-        private bool IsPathFree(GridNode startingNode, Direction direction, int numNodes)
+        private bool AdvanceInDirection(GridNode startingNode, Direction direction, int numNodes, Func<GridNode, List<Direction>, bool> condition)
         {
             int startX = startingNode.gridX;
             int startY = startingNode.gridY;
@@ -204,15 +192,56 @@ namespace PG
                 List<Direction> currentNeighbours = RoadPlacer.Instance.GetNeighboursData(currentPosX, currentPosY).neighbours;
 
                 // Check the feasability of the node
-                if (currentNode.roadType == RoadType.Roundabout || currentNeighbours.Count > 2 || currentNeighbours.Count == 1 || IsCornerNode(currentNeighbours ))
+                if (!condition(currentNode, currentNeighbours))
                     return false;
 
                 i++;
             }
             return true;
         }
+        private List<GridNode> GetNodesInDirection(GridNode startingNode, Direction direction, int numNodes)
+        {
+            int startX = startingNode.gridX;
+            int startY = startingNode.gridY;
+            int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+            int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(direction);
+            List<GridNode> nodes = new List<GridNode> { startingNode };
+
+            int i = 1;
+            while (i <= numNodes)
+            {
+                int currentPosX = startX + dir[0] * i;
+                int currentPosY = startY + dir[1] * i;
+
+                if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                    return null;
+
+                GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+
+                if (currentNode.occupied)
+                    return null;
+
+                nodes.Add(currentNode);
+
+                if (i == numNodes)
+                    return nodes;
+
+                i++;
+            }
+            return null;
+        }
+        private bool IsDirectionFeasible(GridNode currentNode, List<Direction> currentNeighbours)
+        {
+            return currentNode.roadType != RoadType.Roundabout &&
+                   currentNode.roadType != RoadType.Bridge &&
+                   currentNeighbours.Count == 2 &&
+                   !IsCornerNode(currentNeighbours);
+        }
         private PathResult FindPath(GridNode startingNode, Direction direction)
         {
+            // First check if there's at least enough space in the required direction
+            if (GetNodesInDirection(startingNode, direction, 3) == null) return null;
+
             List<GridNode> path = FindPathInDirection(startingNode, direction);
             if (path != null)
             {
@@ -220,7 +249,12 @@ namespace PG
                 return new PathResult(path, PathType.Direct); ;
             }
             // Pathfinding
-            return new PathResult(FindPathWithPathfinding(startingNode, direction), PathType.Pathfinding);
+            path = FindPathWithPathfinding(startingNode, direction);
+            if (path != null)
+            {
+                return new PathResult(path, PathType.Pathfinding);
+            }
+            return null;
         }
         private List<GridNode> FindPathInDirection(GridNode startingNode, Direction direction)
         {
@@ -228,9 +262,18 @@ namespace PG
         }
         private List<GridNode> FindPathWithPathfinding(GridNode startingNode, Direction direction)
         {
+            // Find good starting node
+            // It needs to be at least 3 nodes away from the bridge because the algorithm might turn really soon
+            // Get the node 3 nodes away from the bridge
+            List<GridNode> offsetNodes = GetNodesInDirection(startingNode, direction, 5);
+            if (offsetNodes == null) { return null; }
+
+            // Set the last node from offset nodes as the starting node
+            startingNode = offsetNodes.Last();
+            offsetNodes.RemoveAt(offsetNodes.Count - 1);
             // Create path with pathfinder
             int i = 0;
-            List<GridNode> shuffledNodes = Visualizer.Instance.pointNodes.OrderBy(x => Random.value).ToList();
+            List<GridNode> shuffledNodes = Visualizer.Instance.pointNodes.OrderBy(x => UnityEngine.Random.value).ToList();
             while (i < shuffledNodes.Count)
             {
                 GridNode targetNode = shuffledNodes[i];
@@ -239,10 +282,13 @@ namespace PG
                     i++;
                     continue;
                 }
-                List<GridNode> path = GridPathfinder.instance.FindPath(startingNode, targetNode);
+                List<GridNode> path = GridPathfinder.instance.FindPath(startingNode, targetNode, offsetNodes);
                 if (path != null)
-                    return path;
-
+                {
+                    // Add the path after the initial offset nodes to ensure quality
+                    offsetNodes.AddRange(path);
+                    return offsetNodes;
+                }
                 // Path not found, try with another target node
                 i++;
             }
