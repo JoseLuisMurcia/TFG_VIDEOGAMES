@@ -48,7 +48,10 @@ namespace PG
                     }
                    
 
-                    float newMovementCostToNeighbour = currentNode.gCost + GetDistanceHeuristic(currentNode, neighbour) + AddCostIfDirectionChanges(currentNode, neighbour);
+                    float newMovementCostToNeighbour = currentNode.gCost 
+                        + GetDistanceHeuristic(currentNode, neighbour) 
+                        + AddCostIfDirectionChanges(currentNode, neighbour) 
+                        + AddCostIfIntersectionClose(targetNode, neighbour);
                     if (newMovementCostToNeighbour < neighbour.gCost || !openSet.Contains(neighbour))
                     {
                         neighbour.gCost = newMovementCostToNeighbour;
@@ -114,6 +117,35 @@ namespace PG
 
             int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(dirX, dirY);
             return Visualizer.Instance.EnoughSpace(endX, endY, neighbourIncrement[0], neighbourIncrement[1], targetNode); 
+        }
+        private int AddCostIfIntersectionClose(GridNode targetNode, GridNode neighbour)
+        {
+            if (targetNode == neighbour) return 0;
+
+            // Add cost if an intersection is detected near a certain distance from this neighbour
+            int cost = 0;
+            int distance = 4;
+            foreach (Direction direction in RoadPlacer.Instance.GetAllDirections())
+            {
+                // From the neighbour, explore neighbours to find intersections
+                int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
+                for (int i = 1; i <= distance; i++)
+                {
+                    int newX = neighbour.gridX + offset[0] * i;
+                    int newY = neighbour.gridY + offset[1] * i;
+
+                    if (!Grid.Instance.OutOfGrid(newX, newY))
+                    {
+                        List<Direction> neighboursDir = RoadPlacer.Instance.GetNeighboursData(newX, newY).neighbours;
+                        GridNode neighbourNode = Grid.Instance.nodesGrid[newX, newY];
+
+                        if (neighboursDir.Count >= 3)
+                            cost += 20;
+                    }
+                }
+            }
+            // If lateral changes to vertical, or viceversa, change
+            return 0;
         }
         private int AddCostIfDirectionChanges(GridNode currentNode, GridNode neighbour)
         {

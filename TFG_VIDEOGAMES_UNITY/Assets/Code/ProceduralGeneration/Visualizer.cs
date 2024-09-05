@@ -244,44 +244,27 @@ namespace PG
         public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement, GridNode targetNode)
         {
             int i = 1;
-            while (i <= neighboursOffset)
+            while (i <= 2)
             {
                 int incrementedXPos = posX + xIncrement * i;
-                int decreasedXPos = posX - xIncrement * i;
                 int incrementedYPos = posY + yIncrement * i;
+                int decreasedXPos = posX - xIncrement * i;
                 int decreasedYPos = posY - yIncrement * i;
 
                 if (!OutOfGrid(incrementedXPos, incrementedYPos))
                 {
-                    // Hay que detectar el caso de que el nearbyRoad sea nuestro nodoTarget, en ese caso
-                    // La busqueda se ha acabado
-                    if (TargetReached(incrementedXPos, incrementedYPos, targetNode))
-                        return true;
-
                     if (NearbyRoad(incrementedXPos, incrementedYPos))
                         return false;
 
                 }
                 if (!OutOfGrid(decreasedXPos, decreasedYPos))
                 {
-                    if (TargetReached(decreasedXPos, decreasedYPos, targetNode))
-                        return true;
-
                     if (NearbyRoad(decreasedXPos, decreasedYPos))
                         return false;
-
                 }
                 i++;
             }
             return true;
-        }
-        private bool TargetReached(int x, int y, GridNode targetNode)
-        {
-            GridNode newNode = grid.nodesGrid[x, y];
-            if (newNode == targetNode)
-                return true;
-
-            return false;
         }
         public bool EnoughSpace(int posX, int posY, int xIncrement, int yIncrement)
         {
@@ -338,19 +321,37 @@ namespace PG
         {
             for (int i = 1; i <= decorationOffset; i++)
             {
-                if (!OutOfGrid(posX + xIncrement * i, posY + yIncrement * i))
+                int incrementedX = posX + xIncrement * i;
+                int incrementedY = posY + yIncrement * i;
+                if (!OutOfGrid(incrementedX, incrementedY) && !IsDecorationShared(posX, posY, xIncrement, yIncrement, i + 1))
                 {
-                    GridNode increasedNode = grid.nodesGrid[posX + xIncrement * i, posY + yIncrement * i];
+                    GridNode increasedNode = grid.nodesGrid[incrementedX, incrementedY];
                     RemoveNodeFromDecoration(increasedNode);
                 }
 
-                if (!OutOfGrid(posX - xIncrement * i, posY - yIncrement * i))
+                int decrementedX = posX - xIncrement * i;
+                int decrementedY = posY - yIncrement * i;
+                if (!OutOfGrid(decrementedX, decrementedY) && !IsDecorationShared(posX, posY, -xIncrement, -yIncrement, i + 1))
                 {
-                    GridNode decreasedNode = grid.nodesGrid[posX - xIncrement * i, posY - yIncrement * i];
+                    GridNode decreasedNode = grid.nodesGrid[decrementedX, decrementedY];
                     RemoveNodeFromDecoration(decreasedNode);
                 }
 
             }
+        }
+        // Método necesario para que no borren nodos qué deben estar marcados como decoration
+        private bool IsDecorationShared(int posX, int posY, int xIncrement, int yIncrement, int index)
+        {
+            int newX = posX + (xIncrement * index);
+            int newY = posY + (yIncrement * index);
+
+            if (OutOfGrid(newX, newX)) return false;
+
+            GridNode newNode = grid.nodesGrid[newX, newY];
+            if (newNode.occupied) 
+                return true;
+
+            return false;
         }
         public void MarkCornerDecorationNodes(GridNode node)
         {
@@ -378,7 +379,7 @@ namespace PG
             int y = node.gridY;
             foreach (Vector2Int position in positions)
             {
-                if (OutOfGrid(x + position.x, y + position.y))
+                if (OutOfGrid(x + position.x, y + position.y) || IsDecorationShared(x, y, position.x, position.y, 2))
                     continue;
 
                 GridNode neighbour = grid.nodesGrid[x + position.x, y + position.y];

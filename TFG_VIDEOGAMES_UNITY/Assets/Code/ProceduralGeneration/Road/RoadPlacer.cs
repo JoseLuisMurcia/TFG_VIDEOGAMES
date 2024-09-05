@@ -163,9 +163,12 @@ namespace PG
                 NeighboursData data = GetNeighboursData(node.gridX, node.gridY);
                 List<Direction> neighbours = data.neighbours;
                 Vector2Int key = new Vector2Int(gridX, gridY);
+
+                if (node.roadType == RoadType.Bridge) continue;
+
                 if (roadDictionary.ContainsKey(key))
                 {
-                    if (node.roadType == RoadType.Bridge || (node.roadType == RoadType.Roundabout && roadDictionary[key].name != "End(Clone)"))
+                    if ((node.roadType == RoadType.Roundabout && roadDictionary[key].name != "End(Clone)"))
                         continue;
 
                     Destroy(roadDictionary[key]);
@@ -302,6 +305,12 @@ namespace PG
                         switch (data.neighbours.Count)
                         {
                             case 2:
+                                // Slants
+                                if (currentNode.roadType == RoadType.Bridge)
+                                {
+                                    Instantiate(sidewalk, currentNode.worldPosition - Vector3.up * .1f, Quaternion.identity, transform);
+                                    break;
+                                }
                                 // If corner and not straight
                                 if (!(neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
                                 {
@@ -691,12 +700,14 @@ namespace PG
                             nextNode = pathToEliminate[i + 1];
                             Direction newDirection = GetDirectionBasedOnPos(currentNode, nextNode);
                             if (direction != newDirection)
+                            {
                                 visualizer.UnmarkCornerDecorationNodes(currentNode);
+                                direction = newDirection;
+                            }
                             visualizer.UnmarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
                             currentNode.occupied = false;
                             currentNode.usage = Usage.empty;
                             SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
-                            updatedNodes.Add(currentNode);
                             if (currentNode.roadType == RoadType.Roundabout)
                             {
                                 SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 4f);
@@ -707,6 +718,7 @@ namespace PG
                         {
                             visualizer.MarkCornerDecorationNodes(currentNode);
                         }
+                        updatedNodes.Add(currentNode);
 
                     }
                     return true;
@@ -916,7 +928,7 @@ namespace PG
             // AND THEIR NEIGHBOURS
             ShouldBeEliminated(currentNode, 30);
             Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
-            //SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
+            SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
         }
         private void CreateSpheresInPath(List<GridNode> path)
         {

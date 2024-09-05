@@ -23,22 +23,28 @@ namespace PG
             // Comprobar viabilidad de la rotonda
             endPos = Vector2Int.zero;
             bool is3Way = neighbours.Count == 3;
-            bool isRoundaboutFeasible;
+            bool isRoundaboutFeasible = false;
             List<GridNode> path = null;
             Direction direction = Direction.zero;
+            bool hasOrphanNeighbour = CheckOrphanNeighbours(node, neighbours);
+
             bool hasRoundaboutNearby = CheckNearbyRoundabouts(node.gridX, node.gridY);
             bool hasEnoughSpace = CheckFreeDistance(node.gridX, node.gridY, neighbours);
-            if (is3Way)
+            if (!hasOrphanNeighbour)
             {
-                // La dirección en la que hay que comprobar disponibilidad
-                direction = RoadPlacer.Instance.GetAllDirections().Except(neighbours).FirstOrDefault();
-                path = GoStraight(direction, node.gridX, node.gridY);
-                isRoundaboutFeasible = (path != null && !hasRoundaboutNearby && hasEnoughSpace) ? true : false;
+                if (is3Way)
+                {
+                    // La dirección en la que hay que comprobar disponibilidad
+                    direction = RoadPlacer.Instance.GetAllDirections().Except(neighbours).FirstOrDefault();
+                    path = GoStraight(direction, node.gridX, node.gridY);
+                    isRoundaboutFeasible = (path != null && !hasRoundaboutNearby && hasEnoughSpace) ? true : false;
+                }
+                else
+                {
+                    isRoundaboutFeasible = !hasRoundaboutNearby && hasEnoughSpace && !Was3WayRoundabout(node.gridX, node.gridY, neighbours);
+                }
             }
-            else
-            {
-                isRoundaboutFeasible = !hasRoundaboutNearby && hasEnoughSpace && !Was3WayRoundabout(node.gridX, node.gridY, neighbours);
-            }
+            
 
             // Calcular probabilidad de spawnear rotonda
             Region roadRegion = node.regionType;
@@ -76,6 +82,61 @@ namespace PG
                 // Determine rotation for intersection
                 Quaternion intersectionRotation = is3Way ? GetRotationFromNeighbours(neighbours) : Quaternion.identity;
                 SpawnIntersection(node, intersectionRotation, is3Way);
+            }
+        }
+        private bool CheckOrphanNeighbours(GridNode node, List<Direction> neighbours)
+        {
+            foreach (Direction direction in neighbours) 
+            {
+                if (HasOrphanNeighbour(node, direction))
+                    return true;
+            }
+            return false;
+        }
+        private bool HasOrphanNeighbour(GridNode startingNode, Direction originalDirection)
+        {
+            int startX = startingNode.gridX;
+            int startY = startingNode.gridY;
+            int[] dir;
+
+            Direction currentDirection = originalDirection;
+            GridNode currentNode = startingNode;
+            while (true)
+            {
+                dir = RoadPlacer.Instance.DirectionToInt(currentDirection);
+
+                int currentPosX = currentNode.gridX + dir[0];
+                int currentPosY = currentNode.gridY + dir[1];
+
+                if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                    return false;
+
+                currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+                List<Direction> currentNeighbours = RoadPlacer.Instance.GetNeighboursData(currentPosX, currentPosY).neighbours;
+
+                // Has orphan neighbour
+                if (currentNeighbours.Count < 2)
+                    return true;
+
+                // Arrived to an intersection
+                if (currentNeighbours.Count > 2)
+                    return false;
+
+                // Cuando tiene 2 vecinos, mirarlos para saber en que direccion avanzar
+                foreach (Direction neighbour in currentNeighbours)
+                {
+                    // This is the neighbour behind the current direction
+                    if (RoadPlacer.Instance.GetOppositeDir(neighbour) == currentDirection)
+                        continue;
+
+                    // New Direction 
+                    if (neighbour != currentDirection)
+                    {
+                        currentDirection = neighbour;
+                        break;
+                    }
+                }
+
             }
         }
         private bool CheckNearbyRoundabouts(int startX, int startY)

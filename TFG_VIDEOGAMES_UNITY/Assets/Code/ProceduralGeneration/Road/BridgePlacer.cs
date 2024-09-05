@@ -11,6 +11,7 @@ namespace PG
         private GameObject bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight;
         private Dictionary<Vector2Int, GameObject> roadDictionary;
         private List<GridNode> updatedNodes;
+        private ColorGenerator colorGenerator;
 
         // Returns true if a bridge is spawned
         // Returns false if not
@@ -52,6 +53,10 @@ namespace PG
             // Basta con que falle una sola direccion para que se aborte el intento de spawnear un bridge.
             Dictionary<Direction, PathResult> bridgeDictionary = new Dictionary<Direction, PathResult>();
 
+            // Procesar las direcciones en las que sí hay camino (vecinos)
+            bool neighboursAreValid = CheckDirections(node, neighbours);
+            if (!neighboursAreValid) return false;
+
             // Procesar las direcciones en las que no hay camino (Aquí no entra si tiene 4 vecinos ya)
             List<Direction> directionsToExplore = RoadPlacer.Instance.GetAllDirections().Except(neighbours).ToList();
             foreach (Direction direction in directionsToExplore)
@@ -61,13 +66,9 @@ namespace PG
 
                 bridgeDictionary[direction] = pathResult;
             }
-
-            // Procesar las direcciones en las que sí hay camino (vecinos)
-            bool neighboursAreValid = CheckDirections(node, neighbours);
-            if (!neighboursAreValid) return false;
-
+     
             // Si hemos llegado hasta aquí, el puente se va a spawnear
-            bool isHorizontal = UnityEngine.Random.value > 0.5f ;
+            bool isHorizontal = UnityEngine.Random.value > 0.5f;
 
             // Procesar los nodos de paths generados donde no habia vecinos.
             if (bridgeDictionary.Keys.Count > 0)
@@ -84,15 +85,15 @@ namespace PG
             // La unica diferencia que hay entre un PathType y otro es que en
             // Straight conozco la direccion y es constante
             // En Pathfinding la direccion hay que calcularla en cada iteracion
-            // Revisar el bug de pathfinding, la direccion no se actualiza?¿
             // Afecta a que los surrounding no se marcan bien, es lo unico que utiliza la direction
-            foreach (Direction direction in bridgeDictionary.Keys)
+            foreach (Direction originalDirection in bridgeDictionary.Keys)
             {
-                List<GridNode> path = bridgeDictionary[direction].Path;
-                PathType pathType = bridgeDictionary[direction].PathType;
+                List<GridNode> path = bridgeDictionary[originalDirection].Path;
+                PathType pathType = bridgeDictionary[originalDirection].PathType;
                 Visualizer.Instance.MarkCornerDecorationNodes(path[0]);
-                Direction currentDirection = direction;
+                Direction currentDirection = originalDirection;
 
+                Color directionColor = colorGenerator.GetNextColor();
                 for (int i = 1; i < path.Count; i++)
                 {
                     GridNode node = path[i];
@@ -110,13 +111,13 @@ namespace PG
                     }
 
                     Color debugColor = pathType == PathType.Pathfinding ? Color.cyan : Color.blue;
-                    //SpawnSphere(node.worldPosition, debugColor, 2f, 3f);
+                    if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, directionColor, 2f, 1.5f);
                     int x = node.gridX; int y = node.gridY;
-                    int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(direction);
+                    int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(currentDirection);
                     Visualizer.Instance.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
                     if (node.roadType == RoadType.Roundabout)
                     {
-                        SpawnSphere(node.worldPosition, Color.magenta, 2f, 4f);
+                        SpawnSphere(node.worldPosition, Color.magenta, 2f, 2f);
                         Debug.LogWarning("NOS HEMOS UNIDO A UNA ROUNDABOUT CON GO STRAIGHT EN UN BRIDGE");
                     }
                     node.occupied = true;
@@ -164,9 +165,14 @@ namespace PG
         private bool CheckDirections(GridNode startingNode, List<Direction> directions)
         {
             // These is the minimum number of nodes that are checked FROM the starting node in all directions
-            int minNodesToCheck = 3;
+            int minNodesToCheck = 5;
             foreach (Direction direction in directions)
             {
+                // Check if any neighbour available ends in a single node
+                if (HasOrphanNeighbour(startingNode, direction))
+                    return false;
+
+                // Check if there's enough space available to spawn the bridge
                 if (!AdvanceInDirection(startingNode, direction, minNodesToCheck, IsDirectionFeasible))
                     return false;
             }
@@ -198,6 +204,52 @@ namespace PG
                 i++;
             }
             return true;
+        }
+        private bool HasOrphanNeighbour(GridNode startingNode, Direction originalDirection)
+        {
+            int startX = startingNode.gridX;
+            int startY = startingNode.gridY;
+            int[] dir;
+
+            Direction currentDirection = originalDirection;
+            GridNode currentNode = startingNode;
+            while (true)
+            {
+                dir = RoadPlacer.Instance.DirectionToInt(currentDirection);
+
+                int currentPosX = currentNode.gridX + dir[0];
+                int currentPosY = currentNode.gridY + dir[1];
+
+                if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                    return false;
+
+                currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+                List<Direction> currentNeighbours = RoadPlacer.Instance.GetNeighboursData(currentPosX, currentPosY).neighbours;
+
+                // Has orphan neighbour
+                if (currentNeighbours.Count < 2)
+                    return true;
+
+                // Arrived to an intersection
+                if (currentNeighbours.Count > 2)
+                    return false;
+
+                // Cuando tiene 2 vecinos, mirarlos para saber en que direccion avanzar
+                foreach (Direction neighbour in currentNeighbours)
+                {
+                    // This is the neighbour behind the current direction
+                    if (RoadPlacer.Instance.GetOppositeDir(neighbour) == currentDirection)
+                        continue;
+
+                    // New Direction 
+                    if (neighbour != currentDirection)
+                    {
+                        currentDirection = neighbour;
+                        break;
+                    }
+                }
+
+            }
         }
         private List<GridNode> GetNodesInDirection(GridNode startingNode, Direction direction, int numNodes)
         {
@@ -268,8 +320,10 @@ namespace PG
             List<GridNode> offsetNodes = GetNodesInDirection(startingNode, direction, 5);
             if (offsetNodes == null) { return null; }
 
-            // Set the last node from offset nodes as the starting node
+            // Set the last node from offset nodes as the starting node and check if its appropiate
             startingNode = offsetNodes.Last();
+            if (!RoadPlacer.Instance.CheckMergingNodeTerms(startingNode)) { return null; };
+
             offsetNodes.RemoveAt(offsetNodes.Count - 1);
             // Create path with pathfinder
             int i = 0;
@@ -363,6 +417,7 @@ namespace PG
             straight = _straight;
             roadDictionary = _roadDictionary;
             updatedNodes = _updatedNodes;
+            colorGenerator = new ColorGenerator();
         }
 
         public enum PathType
@@ -370,7 +425,31 @@ namespace PG
             Direct,
             Pathfinding
         }
+        public class ColorGenerator
+        {
+            private int colorIndex = 0;
 
+            // Array of predefined colors or you can generate random ones
+            private Color[] colors = new Color[]
+            {
+                Color.red,
+                Color.green,
+                Color.blue,
+                Color.yellow,
+                Color.magenta,
+                Color.cyan,
+                Color.white,
+                Color.black
+            };
+
+            // Method to return a different color each time it's called
+            public Color GetNextColor()
+            {
+                Color nextColor = colors[colorIndex];
+                colorIndex = (colorIndex + 1) % colors.Length;  // Cycle through the colors
+                return nextColor;
+            }
+        }
         public class PathResult
         {
             public List<GridNode> Path { get; set; }

@@ -94,6 +94,7 @@ public class Road : MonoBehaviour
 
         if (laneReferencePoints.Count - 1 < 0)
         {
+            SpawnSphere(transform.position, Color.gray, 5f, 1f);
             Debug.LogError("NO TIENE LANEREFERENCEPOINTS WTF");
         }
         if (Vector3.Distance(trafficLight.transform.position, laneReferencePoints[0]) < Vector3.Distance(trafficLight.transform.position, laneReferencePoints[laneReferencePoints.Count - 1]))
@@ -306,6 +307,14 @@ public class Road : MonoBehaviour
         List<Vector3> localPoints = pathCreator.bezierPath.GetAnchorPoints();
         foreach (Vector3 localPoint in localPoints)
             laneReferencePoints.Add(transform.TransformPoint(localPoint));
+    }
+    private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform;
+        startSphere.transform.localScale = Vector3.one * size;
+        startSphere.transform.position = pos + Vector3.up * 3f * offset;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
     }
 }
 
