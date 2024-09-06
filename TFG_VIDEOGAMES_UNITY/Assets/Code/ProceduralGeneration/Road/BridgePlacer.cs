@@ -11,7 +11,6 @@ namespace PG
         private GameObject bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight;
         private Dictionary<Vector2Int, GameObject> roadDictionary;
         private List<GridNode> updatedNodes;
-        private ColorGenerator colorGenerator;
 
         // Returns true if a bridge is spawned
         // Returns false if not
@@ -93,7 +92,6 @@ namespace PG
                 Visualizer.Instance.MarkCornerDecorationNodes(path[0]);
                 Direction currentDirection = originalDirection;
 
-                Color directionColor = colorGenerator.GetNextColor();
                 for (int i = 1; i < path.Count; i++)
                 {
                     GridNode node = path[i];
@@ -110,8 +108,8 @@ namespace PG
                         }
                     }
 
-                    Color debugColor = pathType == PathType.Pathfinding ? Color.cyan : Color.blue;
-                    //if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, directionColor, 2f, 1.5f);
+                    //Color debugColor = pathType == PathType.Pathfinding ? Color.cyan : Color.blue;
+                    //if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, debugColor, 2f, 1.5f);
                     int x = node.gridX; int y = node.gridY;
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(currentDirection);
                     Visualizer.Instance.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
@@ -417,38 +415,12 @@ namespace PG
             straight = _straight;
             roadDictionary = _roadDictionary;
             updatedNodes = _updatedNodes;
-            colorGenerator = new ColorGenerator();
         }
 
         public enum PathType
         {
             Direct,
             Pathfinding
-        }
-        public class ColorGenerator
-        {
-            private int colorIndex = 0;
-
-            // Array of predefined colors or you can generate random ones
-            private Color[] colors = new Color[]
-            {
-                Color.red,
-                Color.green,
-                Color.blue,
-                Color.yellow,
-                Color.magenta,
-                Color.cyan,
-                Color.white,
-                Color.black
-            };
-
-            // Method to return a different color each time it's called
-            public Color GetNextColor()
-            {
-                Color nextColor = colors[colorIndex];
-                colorIndex = (colorIndex + 1) % colors.Length;  // Cycle through the colors
-                return nextColor;
-            }
         }
         public class PathResult
         {

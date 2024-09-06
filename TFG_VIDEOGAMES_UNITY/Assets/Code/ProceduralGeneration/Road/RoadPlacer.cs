@@ -1,12 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.UIElements;
-using UnityEngine.XR;
-
 
 namespace PG
 {
@@ -468,17 +462,16 @@ namespace PG
             // Here check if we have a bridge at the beggining or the end
             if (entryRoad.typeOfRoad == TypeOfRoad.Slant && exitRoad.typeOfRoad == TypeOfRoad.Slant)
             {
-                SpawnSphere(entryRoad.transform.position, Color.yellow, 3f, 1f);
-                SpawnSphere(exitRoad.transform.position, Color.green, 3f, 1f);
-                unifiedStraight = HandleUnionBetweenBridges(entryRoad, exitRoad, unifiedStraight);
+                unifiedStraight = HandleUnionBetweenBridges(unifiedStraight, directions);
                 split = new StraightSplit(new List<Straight>(), new Dictionary<Vector2Int, GameObject>());
             }
             else
             {
+                // If no union between bridges, split the straight
                 split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions);
             }
-            // Create a straight perfectly scaled and centered
 
+            // Create a straight perfectly scaled and centered
             if (split.dividedStraights.Count <= 1)
             {
                 unifiedStraight.SetCenterPosition();
@@ -487,11 +480,15 @@ namespace PG
                 {
                     rotation = Quaternion.Euler(0, 90, 0);
                 }
-                GameObject straightGO = Instantiate(straight, unifiedStraight.center, rotation, transform);
+
+                // Spawn prefab
+                Vector3 straightPosition = unifiedStraight.gridNodes.First().roadType == RoadType.Bridge ? unifiedStraight.center + Vector3.up * 2f : unifiedStraight.center;
+                GameObject straightGO = Instantiate(straight, straightPosition, rotation, transform);
                 Vector3 newScale = new Vector3(4f * unifiedStraight.gridNodes.Count, 4f, 4f);
                 straightGO.transform.localScale = newScale;
                 unifiedStraight.gameObject = straightGO;
                 unifiedStraight.position = new Vector2Int(x, y);
+
                 // Adjust points for car navigation
                 Road road = straightGO.GetComponent<Road>();
                 if (road)
@@ -517,6 +514,7 @@ namespace PG
                     {
                         Debug.LogError("SE PUDRIO");
                     }
+
                     // Spawn gameobject
                     dividedStraight.SetCenterPosition();
                     Quaternion rotation = Quaternion.identity;
@@ -528,6 +526,7 @@ namespace PG
                     Vector3 newScale = new Vector3(4f * dividedStraight.gridNodes.Count, 4f, 4f);
                     straightGO.transform.localScale = newScale;
                     dividedStraight.gameObject = straightGO;
+
                     // Adjust points for car navigation
                     Road road = straightGO.GetComponent<Road>();
                     if (road)
@@ -556,22 +555,54 @@ namespace PG
 
             return split;
         }
-        private Straight HandleUnionBetweenBridges(Road entryRoad, Road exitRoad, Straight unifiedStraight)
+        private Straight HandleUnionBetweenBridges(Straight unifiedStraight, List<Direction> directions)
         {
-            Straight unifiedBridge = new Straight();
             // Crear una straight que unifique los nodos que ocupa el slant tambien
-            // entryRoad.nodes + unifiedStraight + exitRoad.nodes
+            List<GridNode> unifiedNodes = unifiedStraight.gridNodes;
+
+            // Get the nodes from the entryRoad and from the exitRoad
+            GridNode firstUnifiedNode = unifiedStraight.gridNodes.FirstOrDefault();
+            GridNode lastUnifiedNode = unifiedStraight.gridNodes.Last();
+
+            int[] roadDirection = GetIntDirectionToNode(firstUnifiedNode, lastUnifiedNode);
+
+            // Add the nodes from the entry slant and delete the slantPrefab
+            for (int i = 1; i <= 2; i++)
+            {
+                int newX = firstUnifiedNode.gridX - roadDirection[0] * i;
+                int newY = firstUnifiedNode.gridY - roadDirection[1] * i;
+                DestroyRoadOnPosition(newX, newY);
+
+                GridNode slantNode = Grid.Instance.nodesGrid[newX, newY];
+                unifiedNodes.Add(slantNode);
+            }
+
+            // Add the nodes from the exit slant and delete the slantPrefab
+            for (int i = 1; i <= 2; i++)
+            {
+                int newX = lastUnifiedNode.gridX + roadDirection[0] * i;
+                int newY = lastUnifiedNode.gridY + roadDirection[1] * i;
+                DestroyRoadOnPosition(newX, newY);
+
+                GridNode slantNode = Grid.Instance.nodesGrid[newX, newY];
+                unifiedNodes.Add(slantNode);
+            }
+
+            // Sort the unifiedNodes list
+            if (directions.Contains(Direction.forward) || directions.Contains(Direction.back))
+            {
+                unifiedNodes = unifiedNodes.OrderByDescending(x => x.gridY).ToList();
+            }
+            else
+            {
+                unifiedNodes = unifiedNodes.OrderBy(x => x.gridX).ToList();
+            }
 
             // Marcar todos esos nodos como RoadType = Bridge
-
-            // Eliminar los GO del slant del dictionary
-
-            // No es necesario instanciar las nuevas rectas donde se borran los slant
+            unifiedNodes.ForEach(x => x.roadType = RoadType.Bridge);
 
             // Hacer que con lo que devuelva este metodo no se llame a HandleUnifiedStraight
-
-            // Devolver un unifiedStraight
-            return unifiedBridge;
+            return unifiedStraight;
         }
         private Road GetRoadFromPosition(int x, int y)
         {
@@ -591,13 +622,11 @@ namespace PG
         {
             foreach (Vector2Int key in gameObjectsToRemove)
             {
-                if (roadDictionary[key].name == "Slant_Curve(Clone)")
+                if (roadDictionary.ContainsKey(key))
                 {
-                    Debug.LogError("no se borra esto wey");
-                    continue;
+                    Destroy(roadDictionary[key]);
+                    roadDictionary.Remove(key);
                 }
-                Destroy(roadDictionary[key]);
-                roadDictionary.Remove(key);
             }
         }
         // This method, should return the node if it is not out of bounds and it is a straight, not an intersection nor bend.
