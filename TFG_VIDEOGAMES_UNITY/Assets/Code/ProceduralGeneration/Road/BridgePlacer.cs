@@ -111,7 +111,7 @@ namespace PG
                     }
 
                     Color debugColor = pathType == PathType.Pathfinding ? Color.cyan : Color.blue;
-                    if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, directionColor, 2f, 1.5f);
+                    //if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, directionColor, 2f, 1.5f);
                     int x = node.gridX; int y = node.gridY;
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(currentDirection);
                     Visualizer.Instance.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);

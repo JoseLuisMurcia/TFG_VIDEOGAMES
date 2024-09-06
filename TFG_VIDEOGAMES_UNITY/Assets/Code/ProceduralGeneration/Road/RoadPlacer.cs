@@ -463,7 +463,20 @@ namespace PG
                 sortedNodes = unifiedStraight.gridNodes.OrderBy(x => x.gridX).ToList();
             }
             unifiedStraight.gridNodes = sortedNodes;
-            StraightSplit split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions);
+
+            StraightSplit split;
+            // Here check if we have a bridge at the beggining or the end
+            if (entryRoad.typeOfRoad == TypeOfRoad.Slant && exitRoad.typeOfRoad == TypeOfRoad.Slant)
+            {
+                SpawnSphere(entryRoad.transform.position, Color.yellow, 3f, 1f);
+                SpawnSphere(exitRoad.transform.position, Color.green, 3f, 1f);
+                unifiedStraight = HandleUnionBetweenBridges(entryRoad, exitRoad, unifiedStraight);
+                split = new StraightSplit(new List<Straight>(), new Dictionary<Vector2Int, GameObject>());
+            }
+            else
+            {
+                split = straightSplitter.HandleUnifiedStraight(unifiedStraight, directions);
+            }
             // Create a straight perfectly scaled and centered
 
             if (split.dividedStraights.Count <= 1)
@@ -542,6 +555,23 @@ namespace PG
             }
 
             return split;
+        }
+        private Straight HandleUnionBetweenBridges(Road entryRoad, Road exitRoad, Straight unifiedStraight)
+        {
+            Straight unifiedBridge = new Straight();
+            // Crear una straight que unifique los nodos que ocupa el slant tambien
+            // entryRoad.nodes + unifiedStraight + exitRoad.nodes
+
+            // Marcar todos esos nodos como RoadType = Bridge
+
+            // Eliminar los GO del slant del dictionary
+
+            // No es necesario instanciar las nuevas rectas donde se borran los slant
+
+            // Hacer que con lo que devuelva este metodo no se llame a HandleUnifiedStraight
+
+            // Devolver un unifiedStraight
+            return unifiedBridge;
         }
         private Road GetRoadFromPosition(int x, int y)
         {
