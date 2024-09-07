@@ -139,13 +139,18 @@ namespace PG
                         List<Direction> neighboursDir = RoadPlacer.Instance.GetNeighboursData(newX, newY).neighbours;
                         GridNode neighbourNode = Grid.Instance.nodesGrid[newX, newY];
 
-                        if (neighboursDir.Count >= 3)
+                        if (neighboursDir.Count == 2)
+                        {
                             cost += 20;
+                        }
+                        else if (neighboursDir.Count >= 3)
+                        {
+                            cost += 30;
+                        }
                     }
                 }
             }
-            // If lateral changes to vertical, or viceversa, change
-            return 0;
+            return cost;
         }
         private int AddCostIfDirectionChanges(GridNode currentNode, GridNode neighbour)
         {

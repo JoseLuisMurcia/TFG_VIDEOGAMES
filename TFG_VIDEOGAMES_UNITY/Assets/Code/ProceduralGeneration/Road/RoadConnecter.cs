@@ -116,6 +116,7 @@ public class RoadConnecter : MonoBehaviour
         {
             if (road.typeOfRoad == TypeOfRoad.Bridge)
             {
+                road.lanes.Clear();
                 Bridge bridge = (Bridge)road;
                 foreach (Lane lowerLane in bridge.lowerLanes)
                 {
@@ -1795,7 +1796,7 @@ public class RoadConnecter : MonoBehaviour
     private void CreateDebugRays(Vector3[] rayPositions)
     {
         foreach (Vector3 ray in rayPositions)
-            Debug.DrawLine(ray - Vector3.up * 5f, ray + Vector3.up * 5f, Color.red, 50f);
+            Debug.DrawLine(ray + Vector3.down * 5f, ray + Vector3.up * 5f, Color.red, 50f);
     }
 
     public Node FindEndNode(Vector3 worldPoint)

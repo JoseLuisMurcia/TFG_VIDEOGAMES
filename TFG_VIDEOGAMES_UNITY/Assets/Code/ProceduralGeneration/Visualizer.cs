@@ -345,7 +345,8 @@ namespace PG
             int newX = posX + (xIncrement * index);
             int newY = posY + (yIncrement * index);
 
-            if (OutOfGrid(newX, newX)) return false;
+            if (OutOfGrid(newX, newX)) 
+                return false;
 
             GridNode newNode = grid.nodesGrid[newX, newY];
             if (newNode.occupied) 

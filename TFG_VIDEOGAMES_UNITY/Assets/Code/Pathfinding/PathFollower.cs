@@ -318,7 +318,8 @@ public class PathFollower : MonoBehaviour
         else
         {
             path = null;
-            SpawnSpheres(_startNode.worldPosition, _endNode.worldPosition);
+            SpawnSphere(_startNode.worldPosition, Color.cyan, 3f, 3f);
+            SpawnSphere(_endNode.worldPosition, Color.magenta, 3f, 3f);
             Debug.Log("Path not found for car: " + gameObject.name);
         }
     }
@@ -361,6 +362,14 @@ public class PathFollower : MonoBehaviour
             SpawnSpheres(_startNode.worldPosition, _endNode.worldPosition);
             Debug.LogError("Lane swap not found for car: " + gameObject.name);
         }
+    }
+    private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+    {
+        GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        startSphere.transform.parent = transform;
+        startSphere.transform.localScale = Vector3.one * size;
+        startSphere.transform.position = pos + Vector3.up * 3f * offset;
+        startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
     }
     private void SpawnSpheres(Vector3 _startNode, Vector3 _endNode)
     {

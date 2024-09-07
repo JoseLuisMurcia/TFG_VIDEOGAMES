@@ -20,6 +20,7 @@ public class PedestrianColorChanger : MonoBehaviour
         sphere.transform.parent = transform.parent;
         sphere.transform.position = transform.position + Vector3.up * 5f;
         debugSphereRenderer = sphere.GetComponent<Renderer>();
+        sphere.SetActive(false);
     }
 
     public void SetColor(TrafficLightState newColor)

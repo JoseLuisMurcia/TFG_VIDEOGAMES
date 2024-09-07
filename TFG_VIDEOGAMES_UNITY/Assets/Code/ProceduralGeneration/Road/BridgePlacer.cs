@@ -2,6 +2,7 @@ using PG;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace PG
@@ -11,6 +12,8 @@ namespace PG
         private GameObject bridge, slantCurve, slantCurve2, slantFlat, slantFlatHigh, slantFlatHigh2, straight;
         private Dictionary<Vector2Int, GameObject> roadDictionary;
         private List<GridNode> updatedNodes;
+        private List<Color> colorList = new List<Color> { Color.red, Color.blue, Color.cyan, Color.gray, Color.black, Color.white, Color.magenta, Color.green, Color.yellow };
+        private int colorIndex = 0;
 
         // Returns true if a bridge is spawned
         // Returns false if not
@@ -92,6 +95,33 @@ namespace PG
                 Visualizer.Instance.MarkCornerDecorationNodes(path[0]);
                 Direction currentDirection = originalDirection;
 
+                if (pathType == PathType.Pathfinding)
+                {
+                    Vector3 firstNode = path.First().worldPosition;
+                    Vector3 lastNode = path.Last().worldPosition;
+                    Vector3 rayOrigin = firstNode + Vector3.up * 4f * 3f;
+                    Vector3 rayDestination = lastNode + Vector3.up * 3f * 3f;
+                    Debug.DrawRay(rayOrigin, (rayDestination-rayOrigin), Color.gray, 500f);
+                    SpawnSphere(firstNode, Color.black, 4f, 3.5f);
+                    SpawnSphere(lastNode, Color.white, 3f, 3f);
+                }
+                else
+                {
+                    Vector3 firstNode = path.First().worldPosition;
+                    Vector3 lastNode = path.Last().worldPosition;
+                    Vector3 rayOrigin = firstNode + Vector3.up * 4f * 3f;
+                    Vector3 rayDestination = lastNode + Vector3.up * 3f * 3f;
+                    Debug.DrawRay(rayOrigin, (rayDestination - rayOrigin), Color.red, 500f);
+                    SpawnSphere(firstNode, Color.red, 4f, 2.5f);
+                    SpawnSphere(lastNode, Color.magenta, 3f, 2f);
+                }
+
+                Color debugColor = Color.blue;
+                if (pathType == PathType.Pathfinding)
+                {
+                    debugColor = colorList[colorIndex];
+                    colorIndex = (colorIndex + 1) % colorList.Count;
+                }
                 for (int i = 1; i < path.Count; i++)
                 {
                     GridNode node = path[i];
@@ -107,9 +137,9 @@ namespace PG
                             currentDirection = newDirection;
                         }
                     }
+                    if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, debugColor, 2f, 1.5f);
 
-                    //Color debugColor = pathType == PathType.Pathfinding ? Color.cyan : Color.blue;
-                    //if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, debugColor, 2f, 1.5f);
+
                     int x = node.gridX; int y = node.gridY;
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(currentDirection);
                     Visualizer.Instance.MarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
@@ -133,7 +163,6 @@ namespace PG
             Quaternion bridgeRotation = isHorizontal ? Quaternion.Euler(0, 90, 0) : Quaternion.identity;
             DeleteGameObjectIfExistent(bridgeKey);
             roadDictionary[bridgeKey] = Instantiate(bridge, bridgeNode.worldPosition, bridgeRotation, transform);
-
             // Instantiate slants in the bridge orientation
             foreach (Direction direction in isHorizontal ? GetHorizontalDirections() : GetVerticalDirections())
             {
@@ -197,7 +226,9 @@ namespace PG
 
                 // Check the feasability of the node
                 if (!condition(currentNode, currentNeighbours))
+                {
                     return false;
+                }
 
                 i++;
             }
@@ -313,9 +344,10 @@ namespace PG
         private List<GridNode> FindPathWithPathfinding(GridNode startingNode, Direction direction)
         {
             // Find good starting node
-            // It needs to be at least 3 nodes away from the bridge because the algorithm might turn really soon
-            // Get the node 3 nodes away from the bridge
-            List<GridNode> offsetNodes = GetNodesInDirection(startingNode, direction, 5);
+            // It needs to be at least X nodes away from the bridge because the algorithm might turn really soon
+            // Get the node X nodes away from the bridge
+            int minNodesApart = UnityEngine.Random.Range(4, 8);
+            List<GridNode> offsetNodes = GetNodesInDirection(startingNode, direction, minNodesApart);
             if (offsetNodes == null) { return null; }
 
             // Set the last node from offset nodes as the starting node and check if its appropiate
