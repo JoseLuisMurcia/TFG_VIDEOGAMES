@@ -766,7 +766,7 @@ namespace PG
                             visualizer.UnmarkSurroundingNodes(x, y, neighbourIncrement[0], neighbourIncrement[1]);
                             currentNode.occupied = false;
                             currentNode.usage = Usage.empty;
-                            SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
+                            //SpawnSphere(currentNode.worldPosition, Color.black, 3f, 2f);
                             if (currentNode.roadType == RoadType.Roundabout)
                             {
                                 SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 4f);
@@ -986,8 +986,8 @@ namespace PG
             // REMEMBER TO UNMARK THOSE!!
             // AND THEIR NEIGHBOURS
             ShouldBeEliminated(currentNode, 30);
-            Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
-            SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
+            //Debug.LogWarning("UNA CARRETERA HA SIDO BORRADA");
+            //SpawnSphere(currentNode.worldPosition, Color.black, 3f, 5f);
         }
         private void CreateSpheresInPath(List<GridNode> path)
         {

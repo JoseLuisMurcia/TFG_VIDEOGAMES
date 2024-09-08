@@ -194,7 +194,7 @@ namespace PG
             await roadConnecter.ConnectRoads(roadAssets);
             generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
-            //navMeshGenerator.BakeNavMesh();
+            navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

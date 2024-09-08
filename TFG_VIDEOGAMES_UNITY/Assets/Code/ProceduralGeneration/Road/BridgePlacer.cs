@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using static PG.BridgePlacer;
 
 namespace PG
 {
@@ -95,33 +96,14 @@ namespace PG
                 Visualizer.Instance.MarkCornerDecorationNodes(path[0]);
                 Direction currentDirection = originalDirection;
 
-                if (pathType == PathType.Pathfinding)
-                {
-                    Vector3 firstNode = path.First().worldPosition;
-                    Vector3 lastNode = path.Last().worldPosition;
-                    Vector3 rayOrigin = firstNode + Vector3.up * 4f * 3f;
-                    Vector3 rayDestination = lastNode + Vector3.up * 3f * 3f;
-                    Debug.DrawRay(rayOrigin, (rayDestination-rayOrigin), Color.gray, 500f);
-                    SpawnSphere(firstNode, Color.black, 4f, 3.5f);
-                    SpawnSphere(lastNode, Color.white, 3f, 3f);
-                }
-                else
-                {
-                    Vector3 firstNode = path.First().worldPosition;
-                    Vector3 lastNode = path.Last().worldPosition;
-                    Vector3 rayOrigin = firstNode + Vector3.up * 4f * 3f;
-                    Vector3 rayDestination = lastNode + Vector3.up * 3f * 3f;
-                    Debug.DrawRay(rayOrigin, (rayDestination - rayOrigin), Color.red, 500f);
-                    SpawnSphere(firstNode, Color.red, 4f, 2.5f);
-                    SpawnSphere(lastNode, Color.magenta, 3f, 2f);
-                }
+                //DebugPath(path, pathType);
 
-                Color debugColor = Color.blue;
-                if (pathType == PathType.Pathfinding)
-                {
-                    debugColor = colorList[colorIndex];
-                    colorIndex = (colorIndex + 1) % colorList.Count;
-                }
+                //Color debugColor = Color.blue;
+                //if (pathType == PathType.Pathfinding)
+                //{
+                //    debugColor = colorList[colorIndex];
+                //    colorIndex = (colorIndex + 1) % colorList.Count;
+                //}
                 for (int i = 1; i < path.Count; i++)
                 {
                     GridNode node = path[i];
@@ -137,8 +119,7 @@ namespace PG
                             currentDirection = newDirection;
                         }
                     }
-                    if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, debugColor, 2f, 1.5f);
-
+                    //if (pathType == PathType.Pathfinding) SpawnSphere(node.worldPosition, debugColor, 2f, 1.5f);
 
                     int x = node.gridX; int y = node.gridY;
                     int[] neighbourIncrement = Visualizer.Instance.GetLateralIncrementOnDirection(currentDirection);
@@ -400,6 +381,25 @@ namespace PG
         private List<Direction> GetVerticalDirections()
         {
             return new List<Direction> { Direction.back, Direction.forward };
+        }
+        private void DebugPath(List<GridNode> path, PathType pathType)
+        {
+            Vector3 firstNode = path.First().worldPosition;
+            Vector3 lastNode = path.Last().worldPosition;
+            Vector3 rayOrigin = firstNode + Vector3.up * 4f * 3f;
+            Vector3 rayDestination = lastNode + Vector3.up * 3f * 3f;
+            if (pathType == PathType.Pathfinding)
+            {
+                Debug.DrawRay(rayOrigin, (rayDestination - rayOrigin), Color.gray, 500f);
+                SpawnSphere(firstNode, Color.black, 4f, 3.5f);
+                SpawnSphere(lastNode, Color.white, 3f, 3f);
+            }
+            else
+            {
+                Debug.DrawRay(rayOrigin, (rayDestination - rayOrigin), Color.red, 500f);
+                SpawnSphere(firstNode, Color.red, 4f, 2.5f);
+                SpawnSphere(lastNode, Color.magenta, 3f, 2f);
+            }
         }
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
