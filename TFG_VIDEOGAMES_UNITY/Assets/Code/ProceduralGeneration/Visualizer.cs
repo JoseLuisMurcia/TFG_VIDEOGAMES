@@ -8,6 +8,7 @@ namespace PG
     {
         [HideInInspector] public RoadPlacer roadPlacer;
         [HideInInspector] private RoadConnecter roadConnecter;
+        [HideInInspector] private BuildingPlacer buildingPlacer;
         private LSystemGenerator lsystem;
         private DecorationPlacer decorationPlacer;
         private GenerationUI generationUI;
@@ -45,6 +46,7 @@ namespace PG
             lsystem = GetComponent<LSystemGenerator>();
             roadPlacer = GetComponent<RoadPlacer>();
             roadConnecter = GetComponent<RoadConnecter>();
+            buildingPlacer = GetComponent<BuildingPlacer>();
             decorationPlacer = GetComponent<DecorationPlacer>();
             generationUI = GetComponent<GenerationUI>();
         }
@@ -194,7 +196,8 @@ namespace PG
             await roadConnecter.ConnectRoads(roadAssets);
             generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
-            navMeshGenerator.BakeNavMesh();
+            buildingPlacer.PlaceBuildings(grid);
+            //navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

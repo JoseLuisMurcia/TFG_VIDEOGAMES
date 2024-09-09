@@ -85,6 +85,9 @@ namespace PG
                             case Usage.decoration:
                                 Gizmos.color = Color.gray;
                                 break;
+                            case Usage.building:
+                                Gizmos.color = Color.cyan;
+                                break;
                             default:
                                 break;
                         }
@@ -214,7 +217,8 @@ namespace PG
         empty,
         road,
         point,
-        decoration
+        decoration,
+        building
     }
 
     enum DebugMode
