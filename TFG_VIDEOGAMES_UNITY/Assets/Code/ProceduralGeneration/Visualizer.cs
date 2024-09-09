@@ -195,7 +195,7 @@ namespace PG
             List<GameObject> roadAssets = roadPlacer.PlaceRoadAssets(grid, this);
             await roadConnecter.ConnectRoads(roadAssets);
             generationUI.OnCityCreated();
-            //decorationPlacer.PlaceStructuresAroundRoad();
+            decorationPlacer.PlaceStructuresAroundRoad();
             buildingPlacer.PlaceBuildings(grid);
             //navMeshGenerator.BakeNavMesh();
         }

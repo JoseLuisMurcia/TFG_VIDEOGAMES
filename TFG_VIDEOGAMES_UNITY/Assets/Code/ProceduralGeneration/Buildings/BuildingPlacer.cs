@@ -8,10 +8,14 @@ namespace PG
     public class BuildingPlacer : MonoBehaviour
     {
         private Grid grid = null;
+        [SerializeField] private List<Building> mainBuildings;
+        [SerializeField] private List<Building> residentialBuildings;
+        [SerializeField] private List<Building> gangBuildings;
         public void PlaceBuildings(Grid _grid)
         {
             grid = _grid;
             FindBuildingNodes();
+            InstantiateBuildings();
         }
 
         private void FindBuildingNodes()
@@ -59,6 +63,10 @@ namespace PG
 
                 }
             }
+        }
+        private void InstantiateBuildings()
+        {
+
         }
         private bool HasDecorationNeighbour(GridNode node)
         {
