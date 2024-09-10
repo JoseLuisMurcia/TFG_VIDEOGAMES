@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2370574251801724825}
   - component: {fileID: 504702161176015699}
   - component: {fileID: 4655805972761871909}
+  - component: {fileID: 7237330021263943103}
   m_Layer: 14
   m_Name: house_type12
   m_TagString: Untagged
@@ -100,3 +101,19 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -5932170902081455270, guid: 581a49f81dd08824c8215a18522383d7, type: 3}
+--- !u!114 &7237330021263943103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2018161844437062278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f8d9189d03195f4bb27f4a190d15a69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingInfo:
+    prefab: {fileID: 2018161844437062278}
+    xValue: 2
+    yValue: 1
