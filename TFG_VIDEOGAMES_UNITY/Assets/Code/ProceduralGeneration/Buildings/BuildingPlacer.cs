@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static PG.Building;
 
 namespace PG
 {
@@ -11,6 +12,7 @@ namespace PG
         [SerializeField] private List<Building> mainBuildings;
         [SerializeField] private List<Building> residentialBuildings;
         [SerializeField] private List<Building> gangBuildings;
+        private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         public void PlaceBuildings(Grid _grid)
         {
             grid = _grid;
@@ -35,6 +37,7 @@ namespace PG
                     if (HasDecorationNeighbour(currentNode))
                     {
                         currentNode.usage = Usage.building;
+                        buildingNodes.Add(new Vector2Int(i, j), currentNode);
                         continue;
                     }
 
@@ -59,6 +62,7 @@ namespace PG
                     if (nodeMeetsRoadInAllDirections)
                     {
                         currentNode.usage = Usage.building;
+                        buildingNodes.Add(new Vector2Int(i, j), currentNode);
                     }
 
                 }
@@ -66,7 +70,96 @@ namespace PG
         }
         private void InstantiateBuildings()
         {
+            foreach (Vector2Int key in buildingNodes.Keys)
+            {
+                GridNode currentNode = buildingNodes[key];
 
+                if (currentNode.occupied) continue;
+
+                Region selectedRegion = currentNode.regionType;
+                List<Building> availableBuildings = null;
+
+                switch (selectedRegion)
+                {
+                    case Region.Main:
+                        availableBuildings = mainBuildings;
+                        break;
+                    case Region.Residential:
+                        availableBuildings = residentialBuildings;
+                        break;
+                    case Region.Suburbs:
+                        availableBuildings = gangBuildings;
+                        break;
+                    default:
+                        break;
+                }
+
+                Building selectedBuilding = availableBuildings[Random.Range(0, availableBuildings.Count)];
+                BuildingInfo buildingInfo = selectedBuilding.buildingInfo;
+
+                if (CanPlaceBuilding(key, buildingInfo))
+                {
+                    // Mark nodes as occupied
+                    MarkNodesAsOccupied(key, buildingInfo);
+
+                    // Calculate the average position for the prefab
+                    Vector3 averagePosition = CalculateAveragePosition(key, buildingInfo);
+
+                    // Instantiate the building prefab
+                    Instantiate(selectedBuilding.gameObject, averagePosition, Quaternion.identity);
+                }
+            }
+        }
+        private void MarkNodesAsOccupied(Vector2Int startPos, BuildingInfo buildingInfo)
+        {
+            for (int x = 0; x < buildingInfo.xValue; x++)
+            {
+                for (int y = 0; y < buildingInfo.yValue; y++)
+                {
+                    Vector2Int nodePos = new Vector2Int(startPos.x + x, startPos.y + y);
+                    if (buildingNodes.ContainsKey(nodePos))
+                    {
+                        buildingNodes[nodePos].occupied = true; // Mark nodes as occupied
+                    }
+                }
+            }
+        }
+        private Vector3 CalculateAveragePosition(Vector2Int startNodeKey, BuildingInfo buildingInfo)
+        {
+            // Get the average position of all nodes the building will occupy
+            Vector3 totalPosition = Vector3.zero;
+            int nodeCount = 0;
+
+            for (int x = 0; x < buildingInfo.xValue; x++)
+            {
+                for (int y = 0; y < buildingInfo.yValue; y++)
+                {
+                    Vector2Int newNodeKey = new Vector2Int(startNodeKey.x + x, startNodeKey.y + y);
+                    if (buildingNodes.ContainsKey(newNodeKey))
+                    {
+                        GridNode node = buildingNodes[newNodeKey];
+                        totalPosition += node.worldPosition;
+                        nodeCount++;
+                    }
+                }
+            }
+
+            return totalPosition / nodeCount; // Return the averaged position
+        }
+        private bool CanPlaceBuilding(Vector2Int startNode, BuildingInfo buildingInfo)
+        {
+            for (int x = 0; x < buildingInfo.xValue; x++)
+            {
+                for (int y = 0; y < buildingInfo.yValue; y++)
+                {
+                    Vector2Int checkPos = new Vector2Int(startNode.x + x, startNode.y + y);
+                    if (!buildingNodes.ContainsKey(checkPos) || buildingNodes[checkPos].occupied)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         private bool HasDecorationNeighbour(GridNode node)
         {
