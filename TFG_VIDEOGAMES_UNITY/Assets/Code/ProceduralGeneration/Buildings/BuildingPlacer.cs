@@ -9,9 +9,8 @@ namespace PG
     public class BuildingPlacer : MonoBehaviour
     {
         private Grid grid = null;
-        [SerializeField] private List<Building> mainBuildings;
-        [SerializeField] private List<Building> residentialBuildings;
-        [SerializeField] private List<Building> gangBuildings;
+        [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings;
+        [SerializeField] private GameObject gangFloor, residentialFloor, mainFloor;
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         public void PlaceBuildings(Grid _grid)
         {
@@ -78,17 +77,21 @@ namespace PG
 
                 Region selectedRegion = currentNode.regionType;
                 List<Building> availableBuildings = null;
+                GameObject availableFloor = null;
 
                 switch (selectedRegion)
                 {
                     case Region.Main:
                         availableBuildings = mainBuildings;
+                        availableFloor = mainFloor;
                         break;
                     case Region.Residential:
                         availableBuildings = residentialBuildings;
+                        availableFloor = residentialFloor;
                         break;
                     case Region.Suburbs:
                         availableBuildings = gangBuildings;
+                        availableFloor = gangFloor;
                         break;
                     default:
                         break;
@@ -107,6 +110,10 @@ namespace PG
 
                     // Instantiate the building prefab
                     Instantiate(selectedBuilding.gameObject, averagePosition, Quaternion.identity);
+                }
+                else
+                {
+                    Instantiate(availableFloor, currentNode.worldPosition, Quaternion.identity);
                 }
             }
         }

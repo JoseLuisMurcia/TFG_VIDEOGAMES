@@ -14,7 +14,9 @@ namespace PG
         [SerializeField]
         private GameObject trafficLights;
         [SerializeField]
-        private GameObject stopSignal, yieldSignal, roundaboutSignal, sidewalk;
+        private GameObject stopSignal, yieldSignal, roundaboutSignal;
+        [SerializeField]
+        private GameObject gangSidewalk, residentialSidewalk, mainSidewalk;
         #endregion
 
         private Grid grid;
@@ -294,6 +296,22 @@ namespace PG
                     GridNode currentNode = grid.nodesGrid[i, j];
                     NeighboursData data = GetNeighboursData(i, j);
                     List<Direction> neighbours = data.neighbours;
+
+                    GameObject _sidewalk = null;
+                    switch (currentNode.regionType)
+                    {
+                        case Region.Main:
+                            _sidewalk = mainSidewalk;
+                            break;
+                        case Region.Residential:
+                            _sidewalk = residentialSidewalk;
+                            break;
+                        case Region.Suburbs:
+                            _sidewalk = gangSidewalk;
+                            break;
+                        default:
+                            break;
+                    }
                     if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
                     {
                         switch (data.neighbours.Count)
@@ -302,13 +320,13 @@ namespace PG
                                 // Slants
                                 if (currentNode.roadType == RoadType.Bridge)
                                 {
-                                    Instantiate(sidewalk, currentNode.worldPosition - Vector3.up * .1f, Quaternion.identity, transform);
+                                    Instantiate(_sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
                                     break;
                                 }
                                 // If corner and not straight
                                 if (!(neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
                                 {
-                                    Instantiate(sidewalk, currentNode.worldPosition - Vector3.up * .1f, Quaternion.identity, transform);
+                                    Instantiate(_sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
                                 }
                                 break;
 
@@ -368,7 +386,7 @@ namespace PG
                     }
                     else if (currentNode.usage == Usage.decoration)
                     {
-                        Instantiate(sidewalk, currentNode.worldPosition - Vector3.up * .1f, Quaternion.identity, transform);
+                        Instantiate(_sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
                     }
                 }
             }

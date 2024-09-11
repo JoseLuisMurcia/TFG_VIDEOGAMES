@@ -197,7 +197,7 @@ namespace PG
             generationUI.OnCityCreated();
             //decorationPlacer.PlaceStructuresAroundRoad();
             buildingPlacer.PlaceBuildings(grid);
-            //navMeshGenerator.BakeNavMesh();
+            navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)
