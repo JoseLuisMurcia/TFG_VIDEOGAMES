@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace PG
 {
@@ -16,7 +18,7 @@ namespace PG
         [SerializeField]
         private GameObject stopSignal, yieldSignal, roundaboutSignal;
         [SerializeField]
-        private GameObject gangSidewalk, residentialSidewalk, mainSidewalk;
+        private GameObject gangSidewalk, residentialSidewalk, mainSidewalk, cornerResidentialSidewalk;
         #endregion
 
         private Grid grid;
@@ -318,6 +320,7 @@ namespace PG
                         {
                             case 2:
                                 // Slants
+                                // TODO: Este caso jodido
                                 if (currentNode.roadType == RoadType.Bridge)
                                 {
                                     Instantiate(_sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
@@ -386,7 +389,44 @@ namespace PG
                     }
                     else if (currentNode.usage == Usage.decoration)
                     {
-                        Instantiate(_sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
+                        Quaternion rotation = Quaternion.identity;
+                        // TODO: GET ROTATION
+
+                        // Not residential
+                        if (currentNode.regionType != Region.Residential)
+                        {
+                            Instantiate(_sidewalk, currentNode.worldPosition, Quaternion.identity, transform);
+                            continue;
+                        }
+
+                        // Residential
+                        List<Direction> decorationNeighbours = GetDecorationNeighbours(i, j).neighbours;
+                        // If straight
+                        if ((decorationNeighbours.Contains(Direction.left) && decorationNeighbours.Contains(Direction.right)) 
+                            || (decorationNeighbours.Contains(Direction.forward) && decorationNeighbours.Contains(Direction.back)))
+                        {
+                            if (decorationNeighbours.Contains(Direction.left) || decorationNeighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                        }
+                        else // Corner
+                        {
+                            if (decorationNeighbours.Contains(Direction.left) && decorationNeighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, 180, 0);
+                            }
+                            else if (decorationNeighbours.Contains(Direction.left) && decorationNeighbours.Contains(Direction.forward))
+                            {
+                                rotation = Quaternion.Euler(0, -90, 0);
+                            }
+                            else if (decorationNeighbours.Contains(Direction.back) && decorationNeighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            Instantiate(cornerResidentialSidewalk, currentNode.worldPosition, rotation, transform);
+                        }
                     }
                 }
             }
@@ -892,6 +932,34 @@ namespace PG
             if (posY - 1 >= 0)
             {
                 if (grid.nodesGrid[posX, posY - 1].occupied) // Down
+                    data.neighbours.Add(Direction.back);
+            }
+            return data;
+        }
+        private NeighboursData GetDecorationNeighbours(int posX, int posY)
+        {
+            NeighboursData data = new NeighboursData();
+            int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
+            if (posX + 1 < limitX)
+            {
+                if (grid.nodesGrid[posX + 1, posY].usage == Usage.decoration) // Right
+                    data.neighbours.Add(Direction.right);
+            }
+            if (posX - 1 >= 0)
+            {
+                if (grid.nodesGrid[posX - 1, posY].usage == Usage.decoration) // Left
+                    data.neighbours.Add(Direction.left);
+            }
+
+            if (posY + 1 < limitY)
+            {
+                if (grid.nodesGrid[posX, posY + 1].usage == Usage.decoration) // Up
+                    data.neighbours.Add(Direction.forward);
+            }
+
+            if (posY - 1 >= 0)
+            {
+                if (grid.nodesGrid[posX, posY - 1].usage == Usage.decoration) // Down
                     data.neighbours.Add(Direction.back);
             }
             return data;
