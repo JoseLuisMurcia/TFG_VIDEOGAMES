@@ -10,7 +10,6 @@ namespace PG
         [HideInInspector] private RoadConnecter roadConnecter;
         [HideInInspector] private BuildingPlacer buildingPlacer;
         private LSystemGenerator lsystem;
-        private DecorationPlacer decorationPlacer;
         private GenerationUI generationUI;
         [HideInInspector] public List<GridNode> pointNodes = new List<GridNode>();
         [HideInInspector] public List<GridNode> surroundingNodes = new List<GridNode>();
@@ -47,7 +46,6 @@ namespace PG
             roadPlacer = GetComponent<RoadPlacer>();
             roadConnecter = GetComponent<RoadConnecter>();
             buildingPlacer = GetComponent<BuildingPlacer>();
-            decorationPlacer = GetComponent<DecorationPlacer>();
             generationUI = GetComponent<GenerationUI>();
         }
         void Start()
@@ -195,9 +193,8 @@ namespace PG
             List<GameObject> roadAssets = roadPlacer.PlaceRoadAssets(grid, this);
             await roadConnecter.ConnectRoads(roadAssets);
             generationUI.OnCityCreated();
-            //decorationPlacer.PlaceStructuresAroundRoad();
             buildingPlacer.PlaceBuildings(grid);
-            navMeshGenerator.BakeNavMesh();
+            //navMeshGenerator.BakeNavMesh();
         }
 
         private void DrawLine(int startX, int startY, int endX, int endY, int dirX, int dirY)

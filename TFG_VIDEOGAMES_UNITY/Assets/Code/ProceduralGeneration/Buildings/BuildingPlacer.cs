@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using static PG.Building;
 
@@ -100,16 +101,32 @@ namespace PG
                 Building selectedBuilding = availableBuildings[Random.Range(0, availableBuildings.Count)];
                 BuildingInfo buildingInfo = selectedBuilding.buildingInfo;
 
-                if (CanPlaceBuilding(key, buildingInfo))
+                // Calculate the rotation
+                Quaternion rotation = CalculateRotation(key, buildingInfo);
+                int width = buildingInfo.xValue;
+                int height = buildingInfo.yValue;
+
+                // The necessary rotation can influence the nodes to select
+                if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
+                {
+                    width = buildingInfo.yValue;
+                    height = buildingInfo.xValue;
+                }
+                else
+                {
+                    Debug.Log("yo si tengo 180");
+                }
+
+                if (CanPlaceBuilding(key, width, height))
                 {
                     // Mark nodes as occupied
-                    MarkNodesAsOccupied(key, buildingInfo);
+                    MarkNodesAsOccupied(key, width, height);
 
                     // Calculate the average position for the prefab
-                    Vector3 averagePosition = CalculateAveragePosition(key, buildingInfo);
+                    Vector3 averagePosition = CalculateAveragePosition(key, width, height);
 
                     // Instantiate the building prefab
-                    Instantiate(selectedBuilding.gameObject, averagePosition, Quaternion.identity);
+                    Instantiate(selectedBuilding.gameObject, averagePosition, rotation);
                 }
                 else
                 {
@@ -117,11 +134,11 @@ namespace PG
                 }
             }
         }
-        private void MarkNodesAsOccupied(Vector2Int startPos, BuildingInfo buildingInfo)
+        private void MarkNodesAsOccupied(Vector2Int startPos, int width, int height)
         {
-            for (int x = 0; x < buildingInfo.xValue; x++)
+            for (int x = 0; x < width; x++)
             {
-                for (int y = 0; y < buildingInfo.yValue; y++)
+                for (int y = 0; y < height; y++)
                 {
                     Vector2Int nodePos = new Vector2Int(startPos.x + x, startPos.y + y);
                     if (buildingNodes.ContainsKey(nodePos))
@@ -131,15 +148,15 @@ namespace PG
                 }
             }
         }
-        private Vector3 CalculateAveragePosition(Vector2Int startNodeKey, BuildingInfo buildingInfo)
+        private Vector3 CalculateAveragePosition(Vector2Int startNodeKey, int width, int height)
         {
             // Get the average position of all nodes the building will occupy
             Vector3 totalPosition = Vector3.zero;
             int nodeCount = 0;
 
-            for (int x = 0; x < buildingInfo.xValue; x++)
+            for (int x = 0; x < width; x++)
             {
-                for (int y = 0; y < buildingInfo.yValue; y++)
+                for (int y = 0; y < height; y++)
                 {
                     Vector2Int newNodeKey = new Vector2Int(startNodeKey.x + x, startNodeKey.y + y);
                     if (buildingNodes.ContainsKey(newNodeKey))
@@ -153,11 +170,63 @@ namespace PG
 
             return totalPosition / nodeCount; // Return the averaged position
         }
-        private bool CanPlaceBuilding(Vector2Int startNode, BuildingInfo buildingInfo)
+        private Quaternion CalculateRotation(Vector2Int key, BuildingInfo buildingInfo)
         {
-            for (int x = 0; x < buildingInfo.xValue; x++)
+            int bestDistance = int.MaxValue;
+            GridNode node = grid.nodesGrid[key.x, key.y];
+            Direction bestDirection = Direction.zero;
+
+            foreach (Direction direction in RoadPlacer.Instance.GetAllDirections())
             {
-                for (int y = 0; y < buildingInfo.yValue; y++)
+                int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
+                int i = 0;
+                bool roadNotFound = true;
+
+                while (roadNotFound)
+                {
+                    // If we've already found a road for another direction and our distance for the current direction is greater, abort
+                    if (bestDirection != Direction.zero && i > bestDistance)
+                        break;
+
+                    // Calculate new pos
+                    int x = node.gridX + offset[0] * i;
+                    int y = node.gridY + offset[1] * i;
+
+                    if (Grid.Instance.OutOfGrid(x, y))
+                        break;
+
+                    // Check if newNode is road
+                    GridNode newNode = grid.nodesGrid[x, y];
+                    if (newNode.usage == Usage.road || newNode.usage == Usage.point)
+                    {
+                        roadNotFound = false;
+                        bestDistance = i;
+                        bestDirection = direction;
+                    }
+                    i++;
+                }
+                
+            }
+            switch (bestDirection)
+            {
+                case Direction.left:
+                    return Quaternion.Euler(0, 90, 0);
+                case Direction.right:
+                    return Quaternion.Euler(0, -90, 0);
+                case Direction.forward:
+                    return Quaternion.Euler(0, 180, 0);
+                case Direction.back:
+                case Direction.zero:
+                default:
+                    return Quaternion.identity;
+            }
+            
+        }
+        private bool CanPlaceBuilding(Vector2Int startNode, int width, int height)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
                 {
                     Vector2Int checkPos = new Vector2Int(startNode.x + x, startNode.y + y);
                     if (!buildingNodes.ContainsKey(checkPos) || buildingNodes[checkPos].occupied)
