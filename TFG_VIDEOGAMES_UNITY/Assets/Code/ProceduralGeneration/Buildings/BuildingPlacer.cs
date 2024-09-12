@@ -112,10 +112,6 @@ namespace PG
                     width = buildingInfo.yValue;
                     height = buildingInfo.xValue;
                 }
-                else
-                {
-                    Debug.Log("yo si tengo 180");
-                }
 
                 if (CanPlaceBuilding(key, width, height))
                 {
