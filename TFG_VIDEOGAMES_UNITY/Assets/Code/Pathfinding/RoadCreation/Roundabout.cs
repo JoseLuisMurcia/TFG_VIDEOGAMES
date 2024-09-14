@@ -36,6 +36,8 @@ public class Roundabout : Road
 
         foreach (Transform child in transform)
         {
+            if (child.gameObject.name == "road_roundaboutBarrier") continue;
+
             child.gameObject.SetActive(false);
         }
     }
