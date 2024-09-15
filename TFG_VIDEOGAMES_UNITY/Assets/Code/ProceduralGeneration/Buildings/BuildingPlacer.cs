@@ -13,10 +13,16 @@ namespace PG
         [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings;
         [SerializeField] private GameObject gangFloor, residentialFloor, mainFloor;
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
+        private RegionNodeGrouper regionNodeGrouper;
+        private void Start()
+        {
+            regionNodeGrouper = new RegionNodeGrouper();
+        }
         public void PlaceBuildings(Grid _grid)
         {
             grid = _grid;
             FindBuildingNodes();
+            regionNodeGrouper.GroupConnectedNodes(buildingNodes.Values.ToList());
             InstantiateBuildings();
         }
 
@@ -70,6 +76,7 @@ namespace PG
         }
         private void InstantiateBuildings()
         {
+            return;
             foreach (Vector2Int key in buildingNodes.Keys)
             {
                 GridNode currentNode = buildingNodes[key];
