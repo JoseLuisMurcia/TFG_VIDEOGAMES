@@ -111,6 +111,23 @@ namespace PG
                             default:
                                 break;
                         }
+                    }
+                    else if (debugMode == DebugMode.Region)
+                    {
+                        switch (n.regionType)
+                        {
+                            case Region.Main:
+                                Gizmos.color = Color.cyan;
+                                break;
+                            case Region.Residential:
+                                Gizmos.color = Color.green;
+                                break;
+                            case Region.Suburbs:
+                                Gizmos.color = Color.red;
+                                break;
+                            default:
+                                break;
+                        }
 
                     }
                     Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
@@ -225,6 +242,7 @@ namespace PG
     {
         Allocation,
         RoadType,
+        Region,
         Disabled
     }
 }

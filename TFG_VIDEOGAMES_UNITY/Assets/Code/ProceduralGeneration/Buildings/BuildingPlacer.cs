@@ -12,20 +12,233 @@ namespace PG
         private Grid grid = null;
         [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings;
         [SerializeField] private GameObject gangFloor, residentialFloor, mainFloor;
+        [SerializeField] private GameObject gangSidewalk, residentialSidewalk, mainSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk;
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
+        private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
         private void Start()
         {
             regionNodeGrouper = new RegionNodeGrouper();
         }
-        public void PlaceBuildings(Grid _grid)
+        public void PlaceBuildings(Grid _grid, Dictionary<Vector2Int, GameObject> roadDictionary)
         {
             grid = _grid;
-            FindBuildingNodes();
-            regionNodeGrouper.GroupConnectedNodes(buildingNodes.Values.ToList());
-            InstantiateBuildings();
-        }
 
+            // Find the nodes suitable for placing buildings
+            FindBuildingNodes();
+
+            // Combine building and decoration nodes into one list
+            List<GridNode> buildingAndSidewalkNodes = new List<GridNode>(buildingNodes.Values);
+            buildingAndSidewalkNodes.AddRange(decorationNodes.Values);
+
+            // Group connected nodes based on regions
+            regionNodeGrouper.GroupConnectedNodes(buildingAndSidewalkNodes);
+
+            // Place sidewalks based on road data
+            PlaceSidewalks(roadDictionary);
+
+            // Instantiate buildings
+            // InstantiateBuildings();
+        }
+        private void PlaceSidewalks(Dictionary<Vector2Int, GameObject> roadDictionary)
+        {
+            Dictionary<Vector2Int, GameObject> sidewalksDictionary = new Dictionary<Vector2Int, GameObject>();
+            // Sidewalk creation
+            for (int i = 0; i < grid.gridSizeX; i++)
+            {
+                for (int j = 0; j < grid.gridSizeY; j++)
+                {
+                    GridNode currentNode = grid.nodesGrid[i, j];
+                    NeighboursData data = GetNeighboursData(i, j);
+                    List<Direction> neighbours = data.neighbours;
+                    Vector2Int key = new Vector2Int(i, j);
+
+                    GameObject _sidewalk = null;
+                    switch (currentNode.regionType)
+                    {
+                        case Region.Main:
+                            _sidewalk = mainSidewalk;
+                            break;
+                        case Region.Residential:
+                            _sidewalk = residentialSidewalk;
+                            break;
+                        case Region.Suburbs:
+                            _sidewalk = gangSidewalk;
+                            break;
+                        default:
+                            break;
+                    }
+                    if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
+                    {
+                        switch (data.neighbours.Count)
+                        {
+                            case 2:
+                                // Slants
+                                // En este caso hay que unir los que están debajo del puente en el nodo slant
+                                GameObject selectedSidewalk = currentNode.regionType == Region.Residential ? flatResidentialSidewalk : _sidewalk;
+
+                                if (currentNode.roadType == RoadType.Bridge)
+                                {
+                                    GameObject sidewalkGO = Instantiate(selectedSidewalk, currentNode.worldPosition, Quaternion.identity, transform);
+                                    sidewalksDictionary.Add(key, sidewalkGO);
+                                    break;
+                                }
+                                // If corner and not straight
+                                if (!(neighbours.Contains(Direction.left) && neighbours.Contains(Direction.right)) || (neighbours.Contains(Direction.forward) && neighbours.Contains(Direction.back)))
+                                {
+                                    Instantiate(selectedSidewalk, currentNode.worldPosition, Quaternion.identity, transform);
+                                }
+                                break;
+                        }
+                    }
+                    else if (currentNode.usage == Usage.decoration)
+                    {
+                        Quaternion rotation = Quaternion.identity;
+                        // Not residential
+                        if (currentNode.regionType != Region.Residential)
+                        {
+                            Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                            continue;
+                        }
+
+                        // Residential
+                        List<Direction> decorationNeighbours = GetDecorationNeighbours(i, j).neighbours;
+
+                        // If 3 way
+                        if (decorationNeighbours.Count == 3)
+                        {
+                            if (!decorationNeighbours.Contains(Direction.forward))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            else if (!decorationNeighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 180, 0);
+                            }
+                            else if (!decorationNeighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, -90, 0);
+                            }
+
+                            Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition, rotation, transform);
+                            continue;
+                        }
+
+                        // If straight
+                        if ((decorationNeighbours.Contains(Direction.left) && decorationNeighbours.Contains(Direction.right))
+                            || (decorationNeighbours.Contains(Direction.forward) && decorationNeighbours.Contains(Direction.back)))
+                        {
+                            if (decorationNeighbours.Contains(Direction.left) || decorationNeighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                        }
+                        else // Corner
+                        {
+                            if (decorationNeighbours.Contains(Direction.left) && decorationNeighbours.Contains(Direction.back))
+                            {
+                                rotation = Quaternion.Euler(0, 180, 0);
+                            }
+                            else if (decorationNeighbours.Contains(Direction.left) && decorationNeighbours.Contains(Direction.forward))
+                            {
+                                rotation = Quaternion.Euler(0, -90, 0);
+                            }
+                            else if (decorationNeighbours.Contains(Direction.back) && decorationNeighbours.Contains(Direction.right))
+                            {
+                                rotation = Quaternion.Euler(0, 90, 0);
+                            }
+                            GameObject sidewalkGO = Instantiate(cornerResidentialSidewalk, currentNode.worldPosition, rotation, transform);
+                            sidewalksDictionary.Add(key, sidewalkGO);
+                        }
+                    }
+                }
+            }
+
+            // Look for the bridge slant nodes in sidewalks in residential nodes
+            foreach (Vector2Int key in sidewalksDictionary.Keys)
+            {
+                var currentNode = grid.nodesGrid[key.x, key.y];
+                if (currentNode.roadType != RoadType.Bridge || currentNode.regionType != Region.Residential || !roadDictionary.ContainsKey(key)) continue;
+
+                // We've found the slant node
+                // Delete prefab underneath and neighbours depending on horizontal or vertical bridge
+                bool isHorizontal = IsHorizontalBridge(key.x, key.y);
+                if (isHorizontal)
+                {
+                    // If horizontal delete vertical
+                    Destroy(sidewalksDictionary[key]);
+                    Vector2Int positiveVerticalKey = new Vector2Int(key.x, key.y + 1);
+                    Vector2Int negativeVerticalKey = new Vector2Int(key.x, key.y - 1);
+                    if (sidewalksDictionary.ContainsKey(positiveVerticalKey)) Destroy(sidewalksDictionary[positiveVerticalKey]);
+                    if (sidewalksDictionary.ContainsKey(negativeVerticalKey)) Destroy(sidewalksDictionary[negativeVerticalKey]);
+
+                    Instantiate(residentialSidewalk, currentNode.worldPosition, Quaternion.identity, transform);
+                    // Esta en la izquierda si a la derecha esta el nodo central del bridge
+                    bool isLeft = roadDictionary.ContainsKey(new Vector2Int(key.x + 1, key.y));
+                    Quaternion rotation = isLeft ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
+                    Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition + Vector3.forward * 4f, rotation, transform);
+                    Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition - Vector3.forward * 4f, rotation, transform);
+                }
+                else
+                {
+                    // If vertical delete horizontal
+                    Destroy(sidewalksDictionary[key]);
+                    Vector2Int positiveHorizontalKey = new Vector2Int(key.x + 1, key.y);
+                    Vector2Int negativeHorizontalKey = new Vector2Int(key.x - 1, key.y);
+                    if (sidewalksDictionary.ContainsKey(positiveHorizontalKey)) Destroy(sidewalksDictionary[positiveHorizontalKey]);
+                    if (sidewalksDictionary.ContainsKey(negativeHorizontalKey)) Destroy(sidewalksDictionary[negativeHorizontalKey]);
+
+                    Instantiate(residentialSidewalk, currentNode.worldPosition, Quaternion.Euler(0f, 90f, 0f), transform);
+                    // Esta arriba si abajo esta el nodo central del bridge
+                    bool isUp = roadDictionary.ContainsKey(new Vector2Int(key.x, key.y - 1));
+                    Quaternion rotation = isUp ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
+                    Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition + Vector3.right * 4f, rotation, transform);
+                    Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition - Vector3.right * 4f, rotation, transform);
+
+                }
+
+            }
+        }
+        private NeighboursData GetDecorationNeighbours(int posX, int posY)
+        {
+            NeighboursData data = new NeighboursData();
+            int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
+            if (posX + 1 < limitX)
+            {
+                if (grid.nodesGrid[posX + 1, posY].usage == Usage.decoration) // Right
+                    data.neighbours.Add(Direction.right);
+            }
+            if (posX - 1 >= 0)
+            {
+                if (grid.nodesGrid[posX - 1, posY].usage == Usage.decoration) // Left
+                    data.neighbours.Add(Direction.left);
+            }
+
+            if (posY + 1 < limitY)
+            {
+                if (grid.nodesGrid[posX, posY + 1].usage == Usage.decoration) // Up
+                    data.neighbours.Add(Direction.forward);
+            }
+
+            if (posY - 1 >= 0)
+            {
+                if (grid.nodesGrid[posX, posY - 1].usage == Usage.decoration) // Down
+                    data.neighbours.Add(Direction.back);
+            }
+            return data;
+        }
+        private bool IsHorizontalBridge(int slantX, int slantY)
+        {
+            // We know that bridges are a list of 5 nodes marked as bridges either horizontally or vertically
+            // Advancing positive X should always find either the center node or the last node from the slant IF its horizontal
+            int newX = slantX + 1;
+            int newY = slantY;
+            if (grid.nodesGrid[newX, newY].roadType == RoadType.Bridge)
+                return true;
+
+            return false;
+        }
         private void FindBuildingNodes()
         {
             int gridSizeX = grid.gridSizeX;
@@ -36,6 +249,9 @@ namespace PG
                 for (int j = 0; j < gridSizeY; j++)
                 {
                     GridNode currentNode = grid.nodesGrid[i, j];
+                    if (currentNode.usage == Usage.decoration)
+                        decorationNodes.Add(new Vector2Int(i, j), currentNode);
+
                     if (currentNode.usage != Usage.empty)
                         continue;
 
@@ -76,7 +292,6 @@ namespace PG
         }
         private void InstantiateBuildings()
         {
-            return;
             foreach (Vector2Int key in buildingNodes.Keys)
             {
                 GridNode currentNode = buildingNodes[key];

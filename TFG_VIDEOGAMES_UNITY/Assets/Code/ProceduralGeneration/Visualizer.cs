@@ -190,10 +190,10 @@ namespace PG
                 }
             }
             new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
-            List<GameObject> roadAssets = roadPlacer.PlaceRoadAssets(grid, this);
-            await roadConnecter.ConnectRoads(roadAssets);
+            Dictionary<Vector2Int, GameObject> roadDictionary = roadPlacer.PlaceRoadAssets(grid, this);
+            await roadConnecter.ConnectRoads(roadDictionary.Values.ToList());
             generationUI.OnCityCreated();
-            buildingPlacer.PlaceBuildings(grid);
+            buildingPlacer.PlaceBuildings(grid, roadDictionary);
             //navMeshGenerator.BakeNavMesh();
         }
 
