@@ -12,7 +12,7 @@ namespace PG
         private Grid grid = null;
         [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings;
         [SerializeField] private GameObject gangFloor, residentialFloor, mainFloor;
-        [SerializeField] private GameObject gangSidewalk, residentialSidewalk, mainSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk;
+        [SerializeField] private GameObject gangSidewalk, residentialSidewalk, mainSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk, fourWayResidentialSidewalk;
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
@@ -32,13 +32,13 @@ namespace PG
             buildingAndSidewalkNodes.AddRange(decorationNodes.Values);
 
             // Group connected nodes based on regions
-            regionNodeGrouper.GroupConnectedNodes(buildingAndSidewalkNodes);
+            regionNodeGrouper.GroupConnectedNodes(buildingAndSidewalkNodes, this);
 
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 
             // Instantiate buildings
-            // InstantiateBuildings();
+            InstantiateBuildings();
         }
         private void PlaceSidewalks(Dictionary<Vector2Int, GameObject> roadDictionary)
         {
@@ -121,6 +121,11 @@ namespace PG
                             }
 
                             Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition, rotation, transform);
+                            continue;
+                        }
+                        else if (decorationNeighbours.Count == 4) // If 4 way
+                        {
+                            Instantiate(fourWayResidentialSidewalk, currentNode.worldPosition, rotation, transform);
                             continue;
                         }
 
@@ -296,7 +301,7 @@ namespace PG
             {
                 GridNode currentNode = buildingNodes[key];
 
-                if (currentNode.occupied) continue;
+                if (currentNode.occupied || currentNode.usage == Usage.decoration) continue;
 
                 Region selectedRegion = currentNode.regionType;
                 List<Building> availableBuildings = null;
@@ -447,7 +452,7 @@ namespace PG
                 for (int y = 0; y < height; y++)
                 {
                     Vector2Int checkPos = new Vector2Int(startNode.x + x, startNode.y + y);
-                    if (!buildingNodes.ContainsKey(checkPos) || buildingNodes[checkPos].occupied)
+                    if (!buildingNodes.ContainsKey(checkPos) || buildingNodes[checkPos].occupied || buildingNodes[checkPos].usage == Usage.decoration)
                     {
                         return false;
                     }
@@ -459,7 +464,7 @@ namespace PG
         {
             return grid.GetNeighbours(node).Any(x => x.usage == Usage.decoration);
         }
-        private NeighboursData GetNeighboursData(int posX, int posY)
+        public NeighboursData GetNeighboursData(int posX, int posY)
         {
             NeighboursData data = new NeighboursData();
             int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
@@ -491,7 +496,7 @@ namespace PG
         {
             return node.usage == Usage.empty || node.usage == Usage.building || node.usage == Usage.decoration;
         }
-        private bool AdvanceUntilRoad(Direction direction, int startX, int startY)
+        public bool AdvanceUntilRoad(Direction direction, int startX, int startY)
         {
             int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
 

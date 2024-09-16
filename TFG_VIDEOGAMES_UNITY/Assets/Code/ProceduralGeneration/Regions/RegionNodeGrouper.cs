@@ -9,11 +9,8 @@ namespace PG
     {
         private List<Color> colorList = new List<Color> { Color.red, Color.blue, Color.cyan, Color.gray, Color.black, Color.white, Color.magenta, Color.green, Color.yellow };
         private int colorIndex = 0;
-        public List<List<GridNode>> GroupConnectedNodes(List<GridNode> allNodes)
+        public void GroupConnectedNodes(List<GridNode> allNodes, BuildingPlacer buildingPlacer)
         {
-            // This will hold all the groups of connected nodes
-            List<List<GridNode>> groupedNodes = new List<List<GridNode>>();
-
             // Keep track of visited nodes
             HashSet<GridNode> visited = new HashSet<GridNode>();
 
@@ -28,14 +25,15 @@ namespace PG
                 List<GridNode> currentGroup = new List<GridNode>();
                 DFS(node, allNodes, visited, currentGroup);
 
+                // Check if the group is not on open to the outside
+                if (!IsInteriorGroup(currentGroup, buildingPlacer)) continue;
+
                 // Set region for the group
                 SetRegionTypeForGroup(currentGroup);
 
-                // Add the group of connected nodes to the result
-                groupedNodes.Add(currentGroup);
+                // Divide the groupedRegion to mark new decoration nodes in between if possible
+                if(currentGroup.First().regionType == Region.Residential) DivideAndMarkGroup(currentGroup, 4, 4);
             }
-
-            return groupedNodes;
         }
         private void DFS(GridNode node, List<GridNode> allNodes, HashSet<GridNode> visited, List<GridNode> currentGroup)
         {
@@ -125,6 +123,98 @@ namespace PG
 
             // Assign the primaryRegion to all nodes in the group
             group.ForEach(x => x.regionType = primaryRegion);
+        }
+
+        public void DivideAndMarkGroup(List<GridNode> group, int minWidth, int minHeight)
+        {
+            // Find the bounding box of the group of nodes
+            int minX = group.Min(n => n.gridX);
+            int maxX = group.Max(n => n.gridX);
+            int minY = group.Min(n => n.gridY);
+            int maxY = group.Max(n => n.gridY);
+
+            // Calculate width and height of the group
+            int width = maxX - minX + 1;
+            int height = maxY - minY + 1;
+
+            // If the group size is already smaller than the minimum, we can't split it anymore
+            if (width <= minWidth && height <= minHeight)
+                return;
+
+            // Decide how to split: horizontal or vertical
+            if (width > minWidth)
+            {
+                // Split vertically
+                int splitX = minX + width / 2; // split in the middle
+                MarkVerticalDivision(splitX, minY, maxY, group);
+
+                // Divide each half recursively
+                List<GridNode> leftHalf = group.Where(n => n.gridX < splitX).ToList();
+                List<GridNode> rightHalf = group.Where(n => n.gridX >= splitX).ToList();
+                DivideAndMarkGroup(leftHalf, minWidth, minHeight);
+                DivideAndMarkGroup(rightHalf, minWidth, minHeight);
+            }
+            else if (height > minHeight)
+            {
+                // Split horizontally
+                int splitY = minY + height / 2; // split in the middle
+                MarkHorizontalDivision(splitY, minX, maxX, group);
+
+                // Divide each half recursively
+                List<GridNode> topHalf = group.Where(n => n.gridY >= splitY).ToList();
+                List<GridNode> bottomHalf = group.Where(n => n.gridY < splitY).ToList();
+                DivideAndMarkGroup(topHalf, minWidth, minHeight);
+                DivideAndMarkGroup(bottomHalf, minWidth, minHeight);
+            }
+        }
+
+        private void MarkVerticalDivision(int splitX, int minY, int maxY, List<GridNode> group)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                GridNode node = group.FirstOrDefault(n => n.gridX == splitX && n.gridY == y);
+                if (node != null)
+                {
+                    node.usage = Usage.decoration;  // Mark the node as a sidewalk
+                }
+            }
+        }
+
+        private void MarkHorizontalDivision(int splitY, int minX, int maxX, List<GridNode> group)
+        {
+            for (int x = minX; x <= maxX; x++)
+            {
+                GridNode node = group.FirstOrDefault(n => n.gridX == x && n.gridY == splitY);
+                if (node != null)
+                {
+                    node.usage = Usage.decoration;  // Mark the node as a sidewalk
+                }
+            }
+        }
+        private bool IsInteriorGroup(List<GridNode> group, BuildingPlacer buildingPlacer)
+        {
+            foreach (GridNode node in group)
+            {
+                if (node.usage == Usage.decoration) continue;
+
+                // Check directions for building nodes
+                List<Direction> neighbours = buildingPlacer.GetNeighboursData(node.gridX, node.gridY).neighbours;
+
+                if (neighbours.Count < 4)
+                    return false;
+
+                // Explore all the neighbours that are empty
+                foreach (Direction direction in neighbours)
+                {
+                    // See if they are between roads (should spawn building)
+                    bool nodeMeetsRoad = buildingPlacer.AdvanceUntilRoad(direction, node.gridX, node.gridY);
+                    if (!nodeMeetsRoad)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
