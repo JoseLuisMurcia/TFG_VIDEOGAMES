@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,8 +47,12 @@ namespace PG
                 if (currentGroup.First().regionType == Region.Residential) 
                 {
                     currentGroup.RemoveAll(x => x.usage == Usage.decoration);
-                    if (currentGroup.Count > 0) 
-                        DivideAndMarkGroup(currentGroup, 4, 4);
+                    if (currentGroup.Count > 0)
+                    {
+                        int minWidth = UnityEngine.Random.Range(4, 7);
+                        int minHeight = UnityEngine.Random.Range(4, 7);
+                        DivideAndMarkGroup(currentGroup, minWidth, minHeight, true);
+                    }
                 }
             }
         }
@@ -109,8 +114,10 @@ namespace PG
             group.ForEach(x => x.regionType = primaryRegion);
         }
 
-        public void DivideAndMarkGroup(List<GridNode> group, int minWidth, int minHeight)
+        public void DivideAndMarkGroup(List<GridNode> group, int minWidth, int minHeight, bool firstIteration = false)
         {
+            if (!firstIteration && ShouldSkipDivision()) return;
+
             // Find the bounding box of the group of nodes
             int minX = group.Min(n => n.gridX);
             int maxX = group.Max(n => n.gridX);
@@ -138,7 +145,7 @@ namespace PG
 
                     // Subdivide only after marking the division
                     DivideAndMarkGroup(group.Where(n => n.gridX < splitX).ToList(), minWidth, minHeight);
-                    DivideAndMarkGroup(group.Where(n => n.gridX >= splitX).ToList(), minWidth, minHeight);
+                    DivideAndMarkGroup(group.Where(n => n.gridX > splitX).ToList(), minWidth, minHeight);
                 }
             }
             else if (height > minHeight)
@@ -152,20 +159,34 @@ namespace PG
                     MarkDivision(splitY, minX, maxX, group, false);
 
                     // Subdivide only after marking the division
-                    DivideAndMarkGroup(group.Where(n => n.gridY >= splitY).ToList(), minWidth, minHeight);
+                    DivideAndMarkGroup(group.Where(n => n.gridY > splitY).ToList(), minWidth, minHeight);
                     DivideAndMarkGroup(group.Where(n => n.gridY < splitY).ToList(), minWidth, minHeight);
                 }
             }
         }
+        // Helper method: Adds variation to the min dimension (width or height)
+        private int VaryMinDimension(int originalMin)
+        {
+            int variation = UnityEngine.Random.Range(-1, 2); // Vary by -1, 0, or +1
+            return Math.Max(1, originalMin + variation); // Ensure the minimum is at least 1
+        }
 
+        // Helper method: Random chance to skip dividing the group
+        private bool ShouldSkipDivision()
+        {
+            return UnityEngine.Random.value < 0.1f; // 10% chance to skip division
+        }
         private bool CanMarkDivision(int split, int min, int max, List<GridNode> group, int minDistance, bool isVertical)
         {
+            minDistance = 2;
             for (int i = min; i <= max; i++)
             {
                 for (int offset = -minDistance; offset <= minDistance; offset++)
                 {
-                    GridNode nearbyNode = group.FirstOrDefault(n =>
-                        (isVertical ? n.gridX == split + offset && n.gridY == i : n.gridY == split + offset && n.gridX == i));
+                    int posX = isVertical ? split + offset: i;
+                    int posY = isVertical ? i : split + offset;
+                    GridNode nearbyNode = Grid.Instance.nodesGrid[posX, posY];
+
                     if (nearbyNode != null && nearbyNode.usage == Usage.decoration)
                         return false;
                 }
@@ -182,7 +203,6 @@ namespace PG
                 GridNode node = group.FirstOrDefault(n => isVertical ? n.gridX == split && n.gridY == i : n.gridY == split && n.gridX == i);
                 if (node != null)
                 {
-                    SpawnSphere(node.worldPosition, debugColor, 2f, 1.5f);
                     node.usage = Usage.decoration;
                 }
             }
