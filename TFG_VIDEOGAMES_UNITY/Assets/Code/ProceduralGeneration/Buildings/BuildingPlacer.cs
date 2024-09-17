@@ -297,6 +297,7 @@ namespace PG
         }
         private void InstantiateBuildings()
         {
+            return;
             foreach (Vector2Int key in buildingNodes.Keys)
             {
                 GridNode currentNode = buildingNodes[key];
