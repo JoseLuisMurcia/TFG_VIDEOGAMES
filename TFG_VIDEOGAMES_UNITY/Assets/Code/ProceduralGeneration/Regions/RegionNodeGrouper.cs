@@ -32,7 +32,11 @@ namespace PG
                 SetRegionTypeForGroup(currentGroup);
 
                 // Divide the groupedRegion to mark new decoration nodes in between if possible
-                if(currentGroup.First().regionType == Region.Residential) DivideAndMarkGroup(currentGroup, 4, 4);
+                if (currentGroup.First().regionType == Region.Residential) 
+                {
+                    currentGroup.RemoveAll(x => x.usage == Usage.decoration);
+                    DivideAndMarkGroup(currentGroup, 4, 4);
+                }
             }
         }
         private void DFS(GridNode node, List<GridNode> allNodes, HashSet<GridNode> visited, List<GridNode> currentGroup)
@@ -146,7 +150,10 @@ namespace PG
             {
                 // Split vertically
                 int splitX = minX + width / 2; // split in the middle
-                MarkVerticalDivision(splitX, minY, maxY, group);
+                if (CanMarkVerticalDivision(splitX, minY, maxY, group, minWidth)) // New check
+                {
+                    MarkVerticalDivision(splitX, minY, maxY, group);
+                }
 
                 // Divide each half recursively
                 List<GridNode> leftHalf = group.Where(n => n.gridX < splitX).ToList();
@@ -158,7 +165,10 @@ namespace PG
             {
                 // Split horizontally
                 int splitY = minY + height / 2; // split in the middle
-                MarkHorizontalDivision(splitY, minX, maxX, group);
+                if (CanMarkHorizontalDivision(splitY, minX, maxX, group, minHeight)) // New check
+                {
+                    MarkHorizontalDivision(splitY, minX, maxX, group);
+                }
 
                 // Divide each half recursively
                 List<GridNode> topHalf = group.Where(n => n.gridY >= splitY).ToList();
@@ -167,7 +177,38 @@ namespace PG
                 DivideAndMarkGroup(bottomHalf, minWidth, minHeight);
             }
         }
-
+        private bool CanMarkVerticalDivision(int splitX, int minY, int maxY, List<GridNode> group, int minWidth)
+        {
+            // Check horizontally within minWidth distance to avoid overlapping divisions
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int offset = -minWidth; offset <= minWidth; offset++) // minWidth distance check
+                {
+                    GridNode nearbyNode = group.FirstOrDefault(n => n.gridX == splitX + offset && n.gridY == y);
+                    if (nearbyNode != null && nearbyNode.usage == Usage.decoration)
+                    {
+                        return false; // Found a decoration node within the restricted range
+                    }
+                }
+            }
+            return true;
+        }
+        private bool CanMarkHorizontalDivision(int splitY, int minX, int maxX, List<GridNode> group, int minHeight)
+        {
+            // Check vertically within minHeight distance to avoid overlapping divisions
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int offset = -minHeight; offset <= minHeight; offset++) // minHeight distance check
+                {
+                    GridNode nearbyNode = group.FirstOrDefault(n => n.gridX == x && n.gridY == splitY + offset);
+                    if (nearbyNode != null && nearbyNode.usage == Usage.decoration)
+                    {
+                        return false; // Found a decoration node within the restricted range
+                    }
+                }
+            }
+            return true;
+        }
         private void MarkVerticalDivision(int splitX, int minY, int maxY, List<GridNode> group)
         {
             for (int y = minY; y <= maxY; y++)
