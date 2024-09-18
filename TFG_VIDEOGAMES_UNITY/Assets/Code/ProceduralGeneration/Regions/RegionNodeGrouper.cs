@@ -128,6 +128,10 @@ namespace PG
             int width = maxX - minX + 1;
             int height = maxY - minY + 1;
 
+            // Introduce variation in minWidth and minHeight
+            minWidth = VaryMinDimension(minWidth);
+            minHeight = VaryMinDimension(minHeight);
+
             // If the group size is already smaller than the minimum, we can't split it anymore
             if (width <= minWidth && height <= minHeight)
                 return;
@@ -168,7 +172,7 @@ namespace PG
         private int VaryMinDimension(int originalMin)
         {
             int variation = UnityEngine.Random.Range(-1, 2); // Vary by -1, 0, or +1
-            return Math.Max(1, originalMin + variation); // Ensure the minimum is at least 1
+            return Math.Max(2, originalMin + variation); // Ensure the minimum is at least 2
         }
 
         // Helper method: Random chance to skip dividing the group

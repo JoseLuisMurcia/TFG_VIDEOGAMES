@@ -43,6 +43,7 @@ namespace PG
         private void PlaceSidewalks(Dictionary<Vector2Int, GameObject> roadDictionary)
         {
             Dictionary<Vector2Int, GameObject> sidewalksDictionary = new Dictionary<Vector2Int, GameObject>();
+            Dictionary<Vector2Int, GameObject> threeWaysDictionary = new Dictionary<Vector2Int, GameObject>();
             // Sidewalk creation
             for (int i = 0; i < grid.gridSizeX; i++)
             {
@@ -120,7 +121,8 @@ namespace PG
                                 rotation = Quaternion.Euler(0, -90, 0);
                             }
 
-                            Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition, rotation, transform);
+                            GameObject sidewalkGO = Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition, rotation, transform);
+                            threeWaysDictionary.Add(key, sidewalkGO);
                             continue;
                         }
                         else if (decorationNeighbours.Count == 4) // If 4 way
@@ -202,6 +204,12 @@ namespace PG
                     Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition - Vector3.right * 4f, rotation, transform);
 
                 }
+
+            }
+
+            // Process the three way residential nodes to see if there are sidewalks to substitute with the normal 2 way
+            foreach (Vector2Int key in threeWaysDictionary.Keys)
+            {
 
             }
         }
