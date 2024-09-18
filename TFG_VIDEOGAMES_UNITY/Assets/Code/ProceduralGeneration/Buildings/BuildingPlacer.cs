@@ -237,12 +237,20 @@ namespace PG
 
                         // If we are in the long scenario (corner-3way-3way...corner) iterate
                         int i = 1;
+                        GridNode currentNode = grid.nodesGrid[key.x, key.y];
                         while (true)
                         {
                             currentPosX = key.x + dir[0] * i;
                             currentPosY = key.y + dir[1] * i;
-                            newPosKey = new Vector2Int(currentPosX, currentPosY);
-                            GridNode currentNode = grid.nodesGrid[currentPosX, currentPosY];
+                            newPosKey = new Vector2Int(currentPosX, currentPosY);                           
+                            try 
+                            { 
+                                currentNode = grid.nodesGrid[currentPosX, currentPosY];
+                            }
+                            catch (System.Exception ex)
+                            {
+                                Debug.LogError("End of world reached: " + ex.Message);
+                            }
                             List<Direction> decorationNeighbours = GetUsageNeighbours(currentPosX, currentPosY, new List<Usage>() { Usage.decoration });
 
                             // We've reached a corner or empty space or current node is a straight
@@ -255,16 +263,42 @@ namespace PG
                             if (threeWaysDictionary.ContainsKey(newPosKey))
                             {
                                 Destroy(threeWaysDictionary[newPosKey]);
-                                Quaternion rotation = Quaternion.identity;
-                                if (oppositeDirection == Direction.left || oppositeDirection == Direction.right)
+                                // Identificar si debería ser corner o no
+                                // Si avanzo en estad direccion y no hay sidewalk, debe ser corner
+                                currentPosX = key.x + dir[0] * (i+1);
+                                currentPosY = key.y + dir[1] * (i+1);
+                                if (!Grid.Instance.OutOfGrid(currentPosX, currentPosY)) 
                                 {
-                                    rotation = Quaternion.Euler(0, 90, 0);
+                                    GridNode newNode = grid.nodesGrid[currentPosX, currentPosY];
+                                    if (newNode.usage != Usage.decoration)
+                                    {
+                                        Quaternion cornerRotation = Quaternion.identity;
+                                        if (roadNeighbours.Contains(Direction.left) && roadNeighbours.Contains(Direction.back))
+                                        {
+                                            cornerRotation = Quaternion.Euler(0, 180, 0);
+                                        }
+                                        else if (roadNeighbours.Contains(Direction.left) && roadNeighbours.Contains(Direction.forward))
+                                        {
+                                            cornerRotation = Quaternion.Euler(0, -90, 0);
+                                        }
+                                        else if (roadNeighbours.Contains(Direction.back) && roadNeighbours.Contains(Direction.right))
+                                        {
+                                            cornerRotation = Quaternion.Euler(0, 90, 0);
+                                        }
+                                        Instantiate(cornerResidentialSidewalk, currentNode.worldPosition, cornerRotation, transform);
+                                    }
+                                    else
+                                    {
+                                        Quaternion rotation = Quaternion.identity;
+                                        if (oppositeDirection == Direction.left || oppositeDirection == Direction.right)
+                                        {
+                                            rotation = Quaternion.Euler(0, 90, 0);
+                                        }
+                                        Instantiate(residentialSidewalk, currentNode.worldPosition, rotation, transform);
+                                    }
                                 }
-                                Instantiate(residentialSidewalk, currentNode.worldPosition, rotation, transform);
-                                SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 1.5f);
-
+                                // TODO: Caso extremo donde el 3 way a eliminar está en el borde del mapa?
                             }
-
 
                             i++;
                         }
