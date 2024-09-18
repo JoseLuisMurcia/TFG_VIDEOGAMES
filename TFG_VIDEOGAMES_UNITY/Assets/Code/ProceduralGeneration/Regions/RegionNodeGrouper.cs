@@ -44,16 +44,30 @@ namespace PG
                 SetRegionTypeForGroup(currentGroup);
 
                 // Divide the groupedRegion to mark new decoration nodes in between if possible
-                if (currentGroup.First().regionType == Region.Residential) 
+                int minWidth;
+                int minHeight;
+                switch (currentGroup.First().regionType)
                 {
-                    currentGroup.RemoveAll(x => x.usage == Usage.decoration);
-                    if (currentGroup.Count > 0)
-                    {
-                        int minWidth = UnityEngine.Random.Range(4, 7);
-                        int minHeight = UnityEngine.Random.Range(4, 7);
-                        DivideAndMarkGroup(currentGroup, minWidth, minHeight, true);
-                    }
+                    case Region.Main:
+                        minWidth = UnityEngine.Random.Range(7, 8);
+                        minHeight = UnityEngine.Random.Range(7, 8);
+                        break;
+                    case Region.Residential:
+                        minWidth = UnityEngine.Random.Range(4, 7);
+                        minHeight = UnityEngine.Random.Range(4, 7);
+                        break;
+                    case Region.Suburbs:
+                    default:
+                        minWidth = UnityEngine.Random.Range(6, 8);
+                        minHeight = UnityEngine.Random.Range(6, 8);
+                        break;
                 }
+                currentGroup.RemoveAll(x => x.usage == Usage.decoration);
+                if (currentGroup.Count > 0)
+                {
+                    DivideAndMarkGroup(currentGroup, minWidth, minHeight, true);
+                }
+
             }
         }
         private void DFS(GridNode node, List<GridNode> allNodes, HashSet<GridNode> visited, List<GridNode> currentGroup)
@@ -187,7 +201,7 @@ namespace PG
             {
                 for (int offset = -minDistance; offset <= minDistance; offset++)
                 {
-                    int posX = isVertical ? split + offset: i;
+                    int posX = isVertical ? split + offset : i;
                     int posY = isVertical ? i : split + offset;
                     GridNode nearbyNode = Grid.Instance.nodesGrid[posX, posY];
 
@@ -218,7 +232,7 @@ namespace PG
                 if (node.usage == Usage.decoration) continue;
 
                 // Check directions for building nodes
-                List<Direction> neighbours = buildingPlacer.GetNeighboursData(node.gridX, node.gridY).neighbours;
+                List<Direction> neighbours = buildingPlacer.GetUsageNeighbours(node.gridX, node.gridY, new List<Usage>() { Usage.empty, Usage.building, Usage.decoration }); ;
 
                 if (neighbours.Count < 4)
                     return false;

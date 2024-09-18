@@ -16,6 +16,13 @@ namespace PG
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
+        private static readonly Vector2Int[] cornerDirections = new Vector2Int[]
+        {
+            new Vector2Int(1, -1),  // Up + Left
+            new Vector2Int(1, 1),  // Up + Right
+            new Vector2Int(-1, -1),  // Down + Left
+            new Vector2Int(-1, 1)  // Down + Right
+        };
         private void Start()
         {
             regionNodeGrouper = new RegionNodeGrouper();
@@ -44,14 +51,14 @@ namespace PG
         {
             Dictionary<Vector2Int, GameObject> sidewalksDictionary = new Dictionary<Vector2Int, GameObject>();
             Dictionary<Vector2Int, GameObject> threeWaysDictionary = new Dictionary<Vector2Int, GameObject>();
+            Dictionary<Vector2Int, GameObject> cornerSidewalksDictionary = new Dictionary<Vector2Int, GameObject>();
             // Sidewalk creation
             for (int i = 0; i < grid.gridSizeX; i++)
             {
                 for (int j = 0; j < grid.gridSizeY; j++)
                 {
                     GridNode currentNode = grid.nodesGrid[i, j];
-                    NeighboursData data = GetNeighboursData(i, j);
-                    List<Direction> neighbours = data.neighbours;
+                    List<Direction> neighbours = GetUsageNeighbours(i, j, new List<Usage>() { Usage.empty, Usage.building, Usage.decoration });
                     Vector2Int key = new Vector2Int(i, j);
 
                     GameObject _sidewalk = null;
@@ -71,7 +78,7 @@ namespace PG
                     }
                     if (currentNode.usage == Usage.road || currentNode.usage == Usage.point)
                     {
-                        switch (data.neighbours.Count)
+                        switch (neighbours.Count)
                         {
                             case 2:
                                 // Slants
@@ -157,6 +164,7 @@ namespace PG
                             }
                             GameObject sidewalkGO = Instantiate(cornerResidentialSidewalk, currentNode.worldPosition, rotation, transform);
                             sidewalksDictionary.Add(key, sidewalkGO);
+                            cornerSidewalksDictionary.Add(key, sidewalkGO);
                         }
                     }
                 }
@@ -165,6 +173,7 @@ namespace PG
             // Look for the bridge slant nodes in sidewalks in residential nodes
             foreach (Vector2Int key in sidewalksDictionary.Keys)
             {
+                break;
                 var currentNode = grid.nodesGrid[key.x, key.y];
                 if (currentNode.roadType != RoadType.Bridge || currentNode.regionType != Region.Residential || !roadDictionary.ContainsKey(key)) continue;
 
@@ -208,9 +217,66 @@ namespace PG
             }
 
             // Process the three way residential nodes to see if there are sidewalks to substitute with the normal 2 way
-            foreach (Vector2Int key in threeWaysDictionary.Keys)
+            foreach (Vector2Int key in cornerSidewalksDictionary.Keys)
             {
+                List<Direction> roadNeighbours = GetUsageNeighbours(key.x, key.y, new List<Usage>() { Usage.road });
+                if (roadNeighbours.Count == 2)
+                {
+                    // Get the right opposite direction to look for 3 ways                  
+                    // The right opposite direction will be the one where there's not a corner residential sidewalk prefab
+                    foreach (Direction roadDirection in roadNeighbours)
+                    {
+                        Direction oppositeDirection = RoadPlacer.Instance.GetOppositeDir(roadDirection);
+                        int[] dir = RoadPlacer.Instance.DirectionToInt(oppositeDirection);
+                        // Check if the first neighbour is a 3way, only if it is we should iterate in a straight line
+                        int currentPosX = key.x + dir[0];
+                        int currentPosY = key.y + dir[1];
+                        Vector2Int newPosKey = new Vector2Int(currentPosX, currentPosY);
+                        if (!threeWaysDictionary.ContainsKey(newPosKey))
+                            continue;
 
+                        // If we are in the long scenario (corner-3way-3way...corner) iterate
+                        int i = 1;
+                        while (true)
+                        {
+                            currentPosX = key.x + dir[0] * i;
+                            currentPosY = key.y + dir[1] * i;
+                            newPosKey = new Vector2Int(currentPosX, currentPosY);
+                            GridNode currentNode = grid.nodesGrid[currentPosX, currentPosY];
+                            List<Direction> decorationNeighbours = GetUsageNeighbours(currentPosX, currentPosY, new List<Usage>() { Usage.decoration });
+
+                            // We've reached a corner or empty space or current node is a straight
+                            if (IsStraight(decorationNeighbours) || cornerSidewalksDictionary.ContainsKey(newPosKey) || currentNode.usage != Usage.decoration)
+                            {
+                                break;
+                            }
+
+                            // Check if current node is a threeWay, we should delete it and spawn either a corner or a straight
+                            if (threeWaysDictionary.ContainsKey(newPosKey))
+                            {
+                                Destroy(threeWaysDictionary[newPosKey]);
+                                Quaternion rotation = Quaternion.identity;
+                                if (oppositeDirection == Direction.left || oppositeDirection == Direction.right)
+                                {
+                                    rotation = Quaternion.Euler(0, 90, 0);
+                                }
+                                Instantiate(residentialSidewalk, currentNode.worldPosition, rotation, transform);
+                                SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 1.5f);
+
+                            }
+
+
+                            i++;
+                        }
+
+                    }
+                    // Once you've identified that, advance in that direction destroying the 3 way prefab and spawning the straight one until we reach a corner sidewalk
+
+                    // Special scenario with only one problematic prefab
+                    // We either delete the bottom part or the top one
+                    // If we delete the top part (3way) we need to spawn a normal 2 way instead
+                    // If we delete the bottom part, we need to delete the bottom corners and the top 3 way, then replace the top with 2 ways
+                }
             }
         }
         private NeighboursData GetDecorationNeighbours(int posX, int posY)
@@ -277,7 +343,7 @@ namespace PG
                     }
 
                     // If no decoration neighbour, check directions
-                    List<Direction> neighbours = GetNeighboursData(i, j).neighbours;
+                    List<Direction> neighbours = GetUsageNeighbours(i, j, new List<Usage>() { Usage.empty, Usage.building, Usage.decoration });
 
                     if (neighbours.Count < 4)
                         continue;
@@ -437,7 +503,7 @@ namespace PG
                     }
                     i++;
                 }
-                
+
             }
             switch (bestDirection)
             {
@@ -452,7 +518,7 @@ namespace PG
                 default:
                     return Quaternion.identity;
             }
-            
+
         }
         private bool CanPlaceBuilding(Vector2Int startNode, int width, int height)
         {
@@ -473,37 +539,33 @@ namespace PG
         {
             return grid.GetNeighbours(node).Any(x => x.usage == Usage.decoration);
         }
-        public NeighboursData GetNeighboursData(int posX, int posY)
+        public List<Direction> GetUsageNeighbours(int posX, int posY, List<Usage> usages)
         {
-            NeighboursData data = new NeighboursData();
+            List<Direction> neighbours = new List<Direction>();
             int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
             if (posX + 1 < limitX)
             {
-                if (CanPlaceBuilding(grid.nodesGrid[posX + 1, posY])) // Right
-                    data.neighbours.Add(Direction.right);
+                if (usages.Contains(grid.nodesGrid[posX + 1, posY].usage)) // Right
+                    neighbours.Add(Direction.right);
             }
             if (posX - 1 >= 0)
             {
-                if (CanPlaceBuilding(grid.nodesGrid[posX - 1, posY])) // Left
-                    data.neighbours.Add(Direction.left);
+                if (usages.Contains(grid.nodesGrid[posX - 1, posY].usage)) // Left
+                    neighbours.Add(Direction.left);
             }
 
             if (posY + 1 < limitY)
             {
-                if (CanPlaceBuilding(grid.nodesGrid[posX, posY + 1])) // Up
-                    data.neighbours.Add(Direction.forward);
+                if (usages.Contains(grid.nodesGrid[posX, posY + 1].usage)) // Up
+                    neighbours.Add(Direction.forward);
             }
 
             if (posY - 1 >= 0)
             {
-                if (CanPlaceBuilding(grid.nodesGrid[posX, posY - 1])) // Down
-                    data.neighbours.Add(Direction.back);
+                if (usages.Contains(grid.nodesGrid[posX, posY - 1].usage)) // Down
+                    neighbours.Add(Direction.back);
             }
-            return data;
-        }
-        private bool CanPlaceBuilding(GridNode node)
-        {
-            return node.usage == Usage.empty || node.usage == Usage.building || node.usage == Usage.decoration;
+            return neighbours;
         }
         public bool AdvanceUntilRoad(Direction direction, int startX, int startY)
         {
@@ -526,6 +588,38 @@ namespace PG
 
                 i++;
             }
+        }
+        private bool IsStraight(List<Direction> directions)
+        {
+            if (directions.Count != 2) return false;
+
+            if (directions.Contains(Direction.left) && directions.Contains(Direction.right)) return true;
+
+            if (directions.Contains(Direction.back) && directions.Contains(Direction.forward)) return true;
+
+            return false;
+        }
+        // Este método es necesario para separar los 3 ways residenciales problemáticos de los normales
+        private bool HasCornerDecorationNeighbour(int x, int y)
+        {
+            foreach (Vector2Int direction in cornerDirections)
+            {
+                int newX = x + direction[0];
+                int newY = y + direction[1];
+
+                if (grid.OutOfGrid(newX, newY)) continue;
+
+                if (grid.nodesGrid[newX, newY].usage == Usage.decoration)
+                    return true;
+            }
+            return true;
+        }
+        private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+        {
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.localScale = Vector3.one * size;
+            startSphere.transform.position = pos + Vector3.up * 3f * offset;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
     }
 }
