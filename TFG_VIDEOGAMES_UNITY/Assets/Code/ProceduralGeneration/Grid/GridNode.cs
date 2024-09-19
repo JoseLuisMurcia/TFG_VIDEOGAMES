@@ -22,6 +22,7 @@ namespace PG
         public VoronoiRegion voronoiRegion = null;
         public readonly List<GridNode> neighbours = new List<GridNode>();
         public RoadType roadType = RoadType.Default; // Used by roadPlacer and its helpers
+        public bool isAlley = false;
         public GridNode(Vector3 _worldPos, int _gridX, int _gridY)
         {
             worldPosition = _worldPos;

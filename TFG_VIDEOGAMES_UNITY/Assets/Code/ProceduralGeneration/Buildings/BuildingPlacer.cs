@@ -10,9 +10,10 @@ namespace PG
     public class BuildingPlacer : MonoBehaviour
     {
         private Grid grid = null;
-        [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings;
+        [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings, smallResidentialBuildings;
         [SerializeField] private GameObject gangFloor, residentialFloor, mainFloor;
-        [SerializeField] private GameObject gangSidewalk, residentialSidewalk, mainSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk, fourWayResidentialSidewalk;
+        [SerializeField] private GameObject  residentialSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk, fourWayResidentialSidewalk;
+        [SerializeField] private GameObject gangSidewalk, gangAlleySidewalk, mainSidewalk, mainAlleySidewalk;
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
@@ -62,16 +63,19 @@ namespace PG
                     Vector2Int key = new Vector2Int(i, j);
 
                     GameObject _sidewalk = null;
+                    GameObject _alleySidewalk = null;
                     switch (currentNode.regionType)
                     {
                         case Region.Main:
                             _sidewalk = mainSidewalk;
+                            _alleySidewalk = mainAlleySidewalk;
                             break;
                         case Region.Residential:
                             _sidewalk = residentialSidewalk;
                             break;
                         case Region.Suburbs:
                             _sidewalk = gangSidewalk;
+                            _alleySidewalk = gangAlleySidewalk;
                             break;
                         default:
                             break;
@@ -105,7 +109,16 @@ namespace PG
                         // Not residential
                         if (currentNode.regionType != Region.Residential)
                         {
-                            GameObject sidewalkGO = Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                            GameObject sidewalkGO;
+                            if (currentNode.isAlley)
+                            {
+                                sidewalkGO = Instantiate(_alleySidewalk, currentNode.worldPosition, rotation, transform);
+                            }
+                            else
+                            {
+                                sidewalkGO = Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                            }
+
                             sidewalksDictionary.Add(key, sidewalkGO);
                             continue;
                         }
@@ -404,54 +417,92 @@ namespace PG
                 if (currentNode.occupied || currentNode.usage == Usage.decoration) continue;
 
                 Region selectedRegion = currentNode.regionType;
-                List<Building> availableBuildings = null;
+                List<Building> regionBuildings = null;
                 GameObject availableFloor = null;
 
                 switch (selectedRegion)
                 {
                     case Region.Main:
-                        availableBuildings = mainBuildings;
+                        regionBuildings = mainBuildings;
                         availableFloor = mainFloor;
                         break;
                     case Region.Residential:
-                        availableBuildings = residentialBuildings;
+                        regionBuildings = residentialBuildings;
                         availableFloor = residentialFloor;
                         break;
                     case Region.Suburbs:
-                        availableBuildings = gangBuildings;
+                        regionBuildings = gangBuildings;
                         availableFloor = gangFloor;
                         break;
                     default:
                         break;
                 }
 
-                Building selectedBuilding = availableBuildings[Random.Range(0, availableBuildings.Count)];
-                BuildingInfo buildingInfo = selectedBuilding.buildingInfo;
+                // Track attempted buildings to avoid duplicates
+                HashSet<Building> attemptedBuildings = new HashSet<Building>();
+                List<Building> availableBuildings = regionBuildings.ToList();
+                List<Building> availableSmallBuildings = smallResidentialBuildings.ToList();
+                bool buildingPlaced = false;
+                int maxAttempts = 5;
 
-                // Calculate the rotation
-                Quaternion rotation = CalculateRotation(key, buildingInfo);
-                int width = buildingInfo.xValue;
-                int height = buildingInfo.yValue;
-
-                // The necessary rotation can influence the nodes to select
-                if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
+                for (int attempt = 0; attempt < maxAttempts && !buildingPlaced; attempt++)
                 {
-                    width = buildingInfo.yValue;
-                    height = buildingInfo.xValue;
+                    Building selectedBuilding = null;
+
+                    // Create a temporary list to hold available buildings to choose from
+                    List<Building> buildingsToChooseFrom = (attempt > 0 && selectedRegion == Region.Residential)
+                        ? availableSmallBuildings
+                        : availableBuildings;
+
+                    // Randomly pick a building that hasn't been attempted yet
+                    if (buildingsToChooseFrom.Count == 0)
+                        break;
+
+                    selectedBuilding = buildingsToChooseFrom[Random.Range(0, buildingsToChooseFrom.Count)];
+
+                    // If we've already tried this building, skip it
+                    if (attemptedBuildings.Contains(selectedBuilding))
+                        continue;
+
+                    // Store the attempted building to prevent retries
+                    attemptedBuildings.Add(selectedBuilding);
+
+                    // Since we're working with copies of the original lists, we don't need to remove the building
+                    // from the original availableBuildings or availableSmallBuildings collections, only from our local copy
+                    buildingsToChooseFrom.Remove(selectedBuilding);
+
+
+                    BuildingInfo buildingInfo = selectedBuilding.buildingInfo;
+
+                    // Calculate the rotation
+                    Quaternion rotation = CalculateRotation(key, buildingInfo);
+                    int width = buildingInfo.xValue;
+                    int height = buildingInfo.yValue;
+
+                    // The necessary rotation can influence the nodes to select
+                    if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
+                    {
+                        width = buildingInfo.yValue;
+                        height = buildingInfo.xValue;
+                    }
+
+                    if (CanPlaceBuilding(key, width, height))
+                    {
+                        // Mark nodes as occupied
+                        MarkNodesAsOccupied(key, width, height);
+
+                        // Calculate the average position for the prefab
+                        Vector3 averagePosition = CalculateAveragePosition(key, width, height);
+
+                        // Instantiate the building prefab
+                        Instantiate(selectedBuilding.gameObject, averagePosition, rotation);
+
+                        buildingPlaced = true;  // Successfully placed a building, exit the loop
+                    }
                 }
 
-                if (CanPlaceBuilding(key, width, height))
-                {
-                    // Mark nodes as occupied
-                    MarkNodesAsOccupied(key, width, height);
-
-                    // Calculate the average position for the prefab
-                    Vector3 averagePosition = CalculateAveragePosition(key, width, height);
-
-                    // Instantiate the building prefab
-                    Instantiate(selectedBuilding.gameObject, averagePosition, rotation);
-                }
-                else
+                // If no building was placed after the attempts, instantiate the floor
+                if (!buildingPlaced)
                 {
                     Instantiate(availableFloor, currentNode.worldPosition, Quaternion.identity);
                 }

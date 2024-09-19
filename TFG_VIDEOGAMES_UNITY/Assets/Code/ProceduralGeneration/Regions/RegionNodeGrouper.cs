@@ -222,6 +222,7 @@ namespace PG
                 if (node != null)
                 {
                     node.usage = Usage.decoration;
+                    node.isAlley = true; ;
                 }
             }
         }
