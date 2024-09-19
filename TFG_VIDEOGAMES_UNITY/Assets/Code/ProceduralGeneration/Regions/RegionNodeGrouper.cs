@@ -10,7 +10,7 @@ namespace PG
     {
         private List<Color> colorList = new List<Color> { Color.red, Color.blue, Color.cyan, Color.gray, Color.black, Color.white, Color.magenta, Color.green, Color.yellow };
         private int colorIndex = 0;
-        private static readonly Vector2Int[] directions = new Vector2Int[] // Reuse directions globally
+        private static readonly Vector2Int[] directions = new Vector2Int[] // Reuse directions globally    
         {
             new Vector2Int(1, 0),  // Right
             new Vector2Int(-1, 0), // Left
@@ -21,6 +21,7 @@ namespace PG
             new Vector2Int(-1, -1),  // Down + Left
             new Vector2Int(-1, 1)  // Down + Right
         };
+        private VoronoiGeneration voronoiGeneration;
         public void GroupConnectedNodes(List<GridNode> allNodes, BuildingPlacer buildingPlacer)
         {
             // Keep track of visited nodes
@@ -225,6 +226,58 @@ namespace PG
                     node.isAlley = true; ;
                 }
             }
+        }
+        private bool IsConcaveShape(List<GridNode> group)
+        {
+            // Get boundary nodes of the group
+            List<GridNode> boundaryNodes = GetBoundaryNodes(group);
+
+            // Use the cross product to determine concavity.
+            // For each boundary node, compare the angle between neighboring edges.
+            for (int i = 0; i < boundaryNodes.Count; i++)
+            {
+                Vector2 prev = new Vector2(boundaryNodes[(i - 1 + boundaryNodes.Count) % boundaryNodes.Count].gridX, boundaryNodes[(i - 1 + boundaryNodes.Count) % boundaryNodes.Count].gridY);
+                Vector2 curr = new Vector2(boundaryNodes[i].gridX, boundaryNodes[i].gridY);
+                Vector2 next = new Vector2(boundaryNodes[(i + 1) % boundaryNodes.Count].gridX, boundaryNodes[(i + 1) % boundaryNodes.Count].gridY);
+
+                // Calculate the cross product of vectors (prev -> curr) and (curr -> next)
+                Vector2 dir1 = curr - prev;
+                Vector2 dir2 = next - curr;
+
+                float crossProduct = dir1.x * dir2.y - dir1.y * dir2.x;
+
+                // If the cross product is negative, we found a concave corner
+                if (crossProduct < 0)
+                {
+                    return true; // Shape is concave
+                }
+            }
+
+            return false; // Shape is convex
+        }
+
+        private List<GridNode> GetBoundaryNodes(List<GridNode> group)
+        {
+            List<GridNode> boundaryNodes = new List<GridNode>();
+            HashSet<GridNode> groupSet = new HashSet<GridNode>(group); // For fast lookup
+
+            foreach (GridNode node in group)
+            {
+                // Check if the node has any neighbor that is not part of the group
+                List<GridNode> neighbors = Grid.Instance.GetNeighboursInLine(node, new List<Usage>() { Usage.decoration }); // You will need to implement GetNeighbors()
+
+                foreach (GridNode neighbor in neighbors)
+                {
+                    if (!groupSet.Contains(neighbor))
+                    {
+                        // This node is on the boundary
+                        boundaryNodes.Add(node);
+                        break;
+                    }
+                }
+            }
+
+            return boundaryNodes;
         }
         private bool IsInteriorGroup(List<GridNode> group, BuildingPlacer buildingPlacer)
         {

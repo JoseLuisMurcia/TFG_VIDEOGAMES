@@ -218,6 +218,34 @@ namespace PG
 
             return neighbours;
         }
+        public List<GridNode> GetNeighboursInLine(GridNode node, List<Usage> usages)
+        {
+            List<GridNode> neighbours = new List<GridNode>();
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    if (x == 0 && y == 0)
+                        continue;
+
+                    int checkX = node.gridX + x;
+                    int checkY = node.gridY + y;
+
+                    if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
+                    {
+                        if (x == 0 && y != 0 || x != 0 && y == 0)
+                        {
+                            var neighbour = nodesGrid[checkX, checkY];
+                            if (usages.Contains(neighbour.usage))
+                                neighbours.Add(neighbour);
+                        }
+                    }
+                }
+            }
+
+            return neighbours;
+        }
 
         public void Reset()
         {
