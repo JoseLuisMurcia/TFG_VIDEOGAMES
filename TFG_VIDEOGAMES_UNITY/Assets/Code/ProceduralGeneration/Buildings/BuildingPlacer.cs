@@ -105,12 +105,13 @@ namespace PG
                         // Not residential
                         if (currentNode.regionType != Region.Residential)
                         {
-                            Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                            GameObject sidewalkGO = Instantiate(_sidewalk, currentNode.worldPosition, rotation, transform);
+                            sidewalksDictionary.Add(key, sidewalkGO);
                             continue;
                         }
 
                         // Residential
-                        List<Direction> decorationNeighbours = GetDecorationNeighbours(i, j).neighbours;
+                        List<Direction> decorationNeighbours = GetUsageNeighbours(i, j, new List<Usage>() { Usage.decoration} );
 
                         // If 3 way
                         if (decorationNeighbours.Count == 3)
@@ -173,9 +174,16 @@ namespace PG
             // Look for the bridge slant nodes in sidewalks in residential nodes
             foreach (Vector2Int key in sidewalksDictionary.Keys)
             {
-                break;
                 var currentNode = grid.nodesGrid[key.x, key.y];
                 if (currentNode.roadType != RoadType.Bridge || currentNode.regionType != Region.Residential || !roadDictionary.ContainsKey(key)) continue;
+
+                // Discard straight roads (this happens when the bridge is merged to another bridge)
+                GameObject roadPrefab = roadDictionary[key];
+                Road road;
+                if (roadPrefab.TryGetComponent(out road))
+                {
+                    if (road.typeOfRoad == TypeOfRoad.Straight) continue;
+                }
 
                 // We've found the slant node
                 // Delete prefab underneath and neighbours depending on horizontal or vertical bridge
@@ -186,6 +194,10 @@ namespace PG
                     Destroy(sidewalksDictionary[key]);
                     Vector2Int positiveVerticalKey = new Vector2Int(key.x, key.y + 1);
                     Vector2Int negativeVerticalKey = new Vector2Int(key.x, key.y - 1);
+                    GridNode negativeNode = grid.nodesGrid[negativeVerticalKey.x, negativeVerticalKey.y];
+
+                    if (negativeNode.regionType != Region.Residential) continue;
+
                     if (sidewalksDictionary.ContainsKey(positiveVerticalKey)) Destroy(sidewalksDictionary[positiveVerticalKey]);
                     if (sidewalksDictionary.ContainsKey(negativeVerticalKey)) Destroy(sidewalksDictionary[negativeVerticalKey]);
 
@@ -194,7 +206,9 @@ namespace PG
                     bool isLeft = roadDictionary.ContainsKey(new Vector2Int(key.x + 1, key.y));
                     Quaternion rotation = isLeft ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
                     Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition + Vector3.forward * 4f, rotation, transform);
+                    //SpawnSphere(currentNode.worldPosition + Vector3.forward * 4f, Color.magenta, 2f, 2f);
                     Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition - Vector3.forward * 4f, rotation, transform);
+                    //SpawnSphere(currentNode.worldPosition - Vector3.forward * 4f, Color.cyan, 2f, 2f);
                 }
                 else
                 {
@@ -202,6 +216,10 @@ namespace PG
                     Destroy(sidewalksDictionary[key]);
                     Vector2Int positiveHorizontalKey = new Vector2Int(key.x + 1, key.y);
                     Vector2Int negativeHorizontalKey = new Vector2Int(key.x - 1, key.y);
+                    GridNode negativeNode = grid.nodesGrid[negativeHorizontalKey.x, negativeHorizontalKey.y];
+
+                    if (negativeNode.regionType != Region.Residential) continue;
+
                     if (sidewalksDictionary.ContainsKey(positiveHorizontalKey)) Destroy(sidewalksDictionary[positiveHorizontalKey]);
                     if (sidewalksDictionary.ContainsKey(negativeHorizontalKey)) Destroy(sidewalksDictionary[negativeHorizontalKey]);
 
@@ -210,7 +228,9 @@ namespace PG
                     bool isUp = roadDictionary.ContainsKey(new Vector2Int(key.x, key.y - 1));
                     Quaternion rotation = isUp ? Quaternion.Euler(0f, -90f, 0f) : Quaternion.Euler(0f, 90f, 0f);
                     Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition + Vector3.right * 4f, rotation, transform);
+                    //SpawnSphere(currentNode.worldPosition + Vector3.right * 4f, Color.red, 2f, 2f);
                     Instantiate(threeWayResidentialSidewalk, currentNode.worldPosition - Vector3.right * 4f, rotation, transform);
+                    //SpawnSphere(currentNode.worldPosition - Vector3.right * 4f, Color.blue, 2f, 2f);
 
                 }
 
@@ -313,34 +333,6 @@ namespace PG
                 }
             }
         }
-        private NeighboursData GetDecorationNeighbours(int posX, int posY)
-        {
-            NeighboursData data = new NeighboursData();
-            int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
-            if (posX + 1 < limitX)
-            {
-                if (grid.nodesGrid[posX + 1, posY].usage == Usage.decoration) // Right
-                    data.neighbours.Add(Direction.right);
-            }
-            if (posX - 1 >= 0)
-            {
-                if (grid.nodesGrid[posX - 1, posY].usage == Usage.decoration) // Left
-                    data.neighbours.Add(Direction.left);
-            }
-
-            if (posY + 1 < limitY)
-            {
-                if (grid.nodesGrid[posX, posY + 1].usage == Usage.decoration) // Up
-                    data.neighbours.Add(Direction.forward);
-            }
-
-            if (posY - 1 >= 0)
-            {
-                if (grid.nodesGrid[posX, posY - 1].usage == Usage.decoration) // Down
-                    data.neighbours.Add(Direction.back);
-            }
-            return data;
-        }
         private bool IsHorizontalBridge(int slantX, int slantY)
         {
             // We know that bridges are a list of 5 nodes marked as bridges either horizontally or vertically
@@ -405,7 +397,6 @@ namespace PG
         }
         private void InstantiateBuildings()
         {
-            return;
             foreach (Vector2Int key in buildingNodes.Keys)
             {
                 GridNode currentNode = buildingNodes[key];
