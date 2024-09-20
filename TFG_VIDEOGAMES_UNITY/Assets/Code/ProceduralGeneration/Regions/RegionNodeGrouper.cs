@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace PG
@@ -10,6 +11,7 @@ namespace PG
     {
         private List<Color> colorList = new List<Color> { Color.red, Color.blue, Color.cyan, Color.gray, Color.black, Color.white, Color.magenta, Color.green, Color.yellow };
         private int colorIndex = 0;
+        private BuildingPlacer buildingPlacer;
         private static readonly Vector2Int[] directions = new Vector2Int[] // Reuse directions globally    
         {
             new Vector2Int(1, 0),  // Right
@@ -23,6 +25,7 @@ namespace PG
         };
         public void GroupConnectedNodes(List<GridNode> allNodes, BuildingPlacer buildingPlacer)
         {
+            this.buildingPlacer = buildingPlacer;
             // Keep track of visited nodes
             HashSet<GridNode> visited = new HashSet<GridNode>();
 
@@ -38,7 +41,7 @@ namespace PG
                 DFS(node, allNodes, visited, currentGroup);
 
                 // Check if the group is not on open to the outside
-                if (!IsInteriorGroup(currentGroup, buildingPlacer)) continue;
+                if (!IsInteriorGroup(currentGroup)) continue;
 
                 // Set region for the group
                 SetRegionTypeForGroup(currentGroup);
@@ -65,6 +68,7 @@ namespace PG
                 currentGroup.RemoveAll(x => x.usage == Usage.decoration);
                 if (currentGroup.Count > 0)
                 {
+                    IsConcaveShape(currentGroup);
                     DivideAndMarkGroup(currentGroup, minWidth, minHeight, true);
                 }
 
@@ -235,9 +239,12 @@ namespace PG
             // For each boundary node, compare the angle between neighboring edges.
             for (int i = 0; i < boundaryNodes.Count; i++)
             {
-                Vector2 prev = new Vector2(boundaryNodes[(i - 1 + boundaryNodes.Count) % boundaryNodes.Count].gridX, boundaryNodes[(i - 1 + boundaryNodes.Count) % boundaryNodes.Count].gridY);
-                Vector2 curr = new Vector2(boundaryNodes[i].gridX, boundaryNodes[i].gridY);
-                Vector2 next = new Vector2(boundaryNodes[(i + 1) % boundaryNodes.Count].gridX, boundaryNodes[(i + 1) % boundaryNodes.Count].gridY);
+                GridNode prevNode = boundaryNodes[(i - 1 + boundaryNodes.Count) % boundaryNodes.Count];
+                GridNode currNode = boundaryNodes[i];
+                GridNode nextNode = boundaryNodes[(i + 1) % boundaryNodes.Count];
+                Vector2 prev = new Vector2(prevNode.gridX, prevNode.gridY);
+                Vector2 curr = new Vector2(currNode.gridX, currNode.gridY);
+                Vector2 next = new Vector2(nextNode.gridX, nextNode.gridY);
 
                 // Calculate the cross product of vectors (prev -> curr) and (curr -> next)
                 Vector2 dir1 = curr - prev;
@@ -248,6 +255,9 @@ namespace PG
                 // If the cross product is negative, we found a concave corner
                 if (crossProduct < 0)
                 {
+                    SpawnSphere(prevNode.worldPosition, Color.red, 2f, 2f);
+                    SpawnSphere(currNode.worldPosition, Color.cyan, 2f, 2f);
+                    SpawnSphere(nextNode.worldPosition, Color.yellow, 2f, 2f);
                     return true; // Shape is concave
                 }
             }
@@ -263,22 +273,59 @@ namespace PG
             foreach (GridNode node in group)
             {
                 // Check if the node has any neighbor that is not part of the group
-                List<GridNode> neighbors = Grid.Instance.GetNeighboursInLine(node, new List<Usage>() { Usage.decoration }); // You will need to implement GetNeighbors()
+                List<GridNode> neighbors = Grid.Instance.GetNeighbours(node, new List<Usage>() { Usage.decoration }); // You will need to implement GetNeighbors()
 
                 foreach (GridNode neighbor in neighbors)
                 {
                     if (!groupSet.Contains(neighbor))
                     {
-                        // This node is on the boundary
+                        // This node is on the boundary                      
                         boundaryNodes.Add(node);
                         break;
                     }
                 }
             }
+            // I need to sort them as if I was looping the boundaries, advancing in the proper direction each time
 
-            return boundaryNodes;
+            // Sort the boundary nodes first by GridX, then by GridY
+            return boundaryNodes
+                .OrderBy(node => node.gridX)    // First, order by GridX
+                .ThenBy(node => node.gridY)     // Then, by GridY
+                .ToList();                      // Return as a sorted list
         }
-        private bool IsInteriorGroup(List<GridNode> group, BuildingPlacer buildingPlacer)
+        private List<GridNode> SortBoundaryNodes(List<GridNode> group)
+        {
+            List<GridNode> sortedGroup = new List<GridNode>();
+            GridNode node = sortedGroup.Find(x => Grid.Instance.GetNeighbours(x, new List<Usage>() { Usage.building }).Count == 2);           
+            // Definir qué hacer cuando el nodo tenga 1 vecino, 2 vecinos, 3 vecinos
+
+            // Poner variable a false cuando para un nodo, no queden movimientos disponibles que no impliquen visitar nodos contenidos en addedNodes
+            bool hasNodesLeft = true;
+            HashSet<GridNode> addedNodes = new HashSet<GridNode>();
+
+            while (hasNodesLeft)
+            {
+                List<Direction> directionsAvailable = buildingPlacer.GetUsageNeighbours(node.gridX, node.gridY, new List<Usage>() { Usage.decoration });
+                // El caso base sería tener 2 directions disponibles
+
+                // Caso alerta es cuando hay 3 directions, ahí la direccion a tomar puede ser decisiva sobre la precision del resultado.
+                // Comprobar los nodos vecinos cuando haya 3 directions, uno debería estar ya añadido (el previo) de los 2 restantes, elegir el que implique cambio de direccion. Siempre comprobando que no lleve a callejon sin salida
+
+                // Metodo para una vez elegida una direccion caso 3 directions. Avanzar recto hasta llegar a ultimo nodo antes de decoration, ahí comprobar si es callejon sin salida
+
+                // Una vez tenemos 3 vecinos, puede ser que aun girando, cerremos el circulo y cerremos un camino de 1 que era válido, ahi es donde tenemos que devolver la seleccion actual, creando un nuevo grupo, luego se deberá procesar el resto
+            }
+
+            // En caso de estar en 1 vecino, que hacemos? No se puede ordenar ya que hay que volver atrás.
+
+            // Para 2 vecinos, avanzar con la direccion actual
+
+            // Para 3 probablemente haya que girar
+
+
+            return sortedGroup;
+        }
+        private bool IsInteriorGroup(List<GridNode> group)
         {
             foreach (GridNode node in group)
             {
