@@ -21,7 +21,6 @@ namespace PG
             new Vector2Int(-1, -1),  // Down + Left
             new Vector2Int(-1, 1)  // Down + Right
         };
-        private VoronoiGeneration voronoiGeneration;
         public void GroupConnectedNodes(List<GridNode> allNodes, BuildingPlacer buildingPlacer)
         {
             // Keep track of visited nodes

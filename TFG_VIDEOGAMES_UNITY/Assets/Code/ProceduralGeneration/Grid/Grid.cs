@@ -11,6 +11,7 @@ namespace PG
         public Vector2 gridWorldSize;
         public float nodeRadius;
         public GridNode[,] nodesGrid;
+        public Vector3 worldBottomLeft = Vector3.zero;
 
         public float nodeDiameter;
         public int gridSizeX, gridSizeY;
@@ -41,7 +42,7 @@ namespace PG
         void CreateGrid()
         {
             nodesGrid = new GridNode[gridSizeX, gridSizeY];
-            Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
+            worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
             voronoiGenerator.worldBottomLeft = worldBottomLeft;
             for (int x = 0; x < gridSizeX; x++)
             {
