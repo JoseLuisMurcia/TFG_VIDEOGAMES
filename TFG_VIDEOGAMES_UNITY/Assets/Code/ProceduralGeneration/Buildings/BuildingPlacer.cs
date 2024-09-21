@@ -644,6 +644,34 @@ namespace PG
             }
             return neighbours;
         }
+        public List<GridNode> GetUsageNeighbourNodes(int posX, int posY, List<Usage> usages)
+        {
+            List<GridNode> neighbours = new List<GridNode>();
+            int limitX = grid.gridSizeX; int limitY = grid.gridSizeY;
+            if (posX + 1 < limitX)
+            {
+                if (usages.Contains(grid.nodesGrid[posX + 1, posY].usage)) // Right
+                    neighbours.Add(grid.nodesGrid[posX + 1, posY]);
+            }
+            if (posX - 1 >= 0)
+            {
+                if (usages.Contains(grid.nodesGrid[posX - 1, posY].usage)) // Left
+                    neighbours.Add(grid.nodesGrid[posX - 1, posY]);
+            }
+
+            if (posY + 1 < limitY)
+            {
+                if (usages.Contains(grid.nodesGrid[posX, posY + 1].usage)) // Up
+                    neighbours.Add(grid.nodesGrid[posX, posY + 1]);
+            }
+
+            if (posY - 1 >= 0)
+            {
+                if (usages.Contains(grid.nodesGrid[posX, posY - 1].usage)) // Down
+                    neighbours.Add(grid.nodesGrid[posX, posY - 1]);
+            }
+            return neighbours;
+        }
         public bool AdvanceUntilRoad(Direction direction, int startX, int startY)
         {
             int[] dir = RoadPlacer.Instance.DirectionToInt(direction);

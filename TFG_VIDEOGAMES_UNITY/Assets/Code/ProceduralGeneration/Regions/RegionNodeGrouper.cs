@@ -286,26 +286,92 @@ namespace PG
                 }
             }
             // I need to sort them as if I was looping the boundaries, advancing in the proper direction each time
-
-            // Sort the boundary nodes first by GridX, then by GridY
-            return boundaryNodes
-                .OrderBy(node => node.gridX)    // First, order by GridX
-                .ThenBy(node => node.gridY)     // Then, by GridY
-                .ToList();                      // Return as a sorted list
+            List<GridNode> sortedNodes = SortBoundaryNodes(boundaryNodes);
+            // TODO: Comparar si el tamaño original ha cambiado
+            if (sortedNodes.Count != boundaryNodes.Count)
+            {
+                Debug.Log("sortedNodes: " + sortedNodes.Count + ", boundaryNodes: " + boundaryNodes.Count);
+                List<GridNode> missingNodes = boundaryNodes.Except(sortedNodes).ToList();
+                foreach (var missingNode in missingNodes)
+                {
+                    SpawnSphere(missingNode.worldPosition, Color.black, 2f, 2f);
+                }
+            }
+            return sortedNodes;
         }
         private List<GridNode> SortBoundaryNodes(List<GridNode> group)
         {
             List<GridNode> sortedGroup = new List<GridNode>();
-            GridNode node = sortedGroup.Find(x => Grid.Instance.GetNeighbours(x, new List<Usage>() { Usage.building }).Count == 2);           
-            // Definir qué hacer cuando el nodo tenga 1 vecino, 2 vecinos, 3 vecinos
+            // Crear HashSet para comprobar más rapido los nodos del conjunto total
+            HashSet<GridNode> boundaryNodes = new HashSet<GridNode>(group);
+            // El nodo inicial tiene que estar mejor definido
+            GridNode node = group.Find(x => Grid.Instance.GetNeighboursInLine(x, new List<Usage>() { Usage.building }).Count == 2);
+            if (node == null) { return group; }
 
-            // Poner variable a false cuando para un nodo, no queden movimientos disponibles que no impliquen visitar nodos contenidos en addedNodes
-            bool hasNodesLeft = true;
+            // Crear HashSet para comprobar más rapido los nodos ya añadidos
             HashSet<GridNode> addedNodes = new HashSet<GridNode>();
 
-            while (hasNodesLeft)
+            while (true)
             {
-                List<Direction> directionsAvailable = buildingPlacer.GetUsageNeighbours(node.gridX, node.gridY, new List<Usage>() { Usage.decoration });
+                // Añado el nodo actual a las listas
+                sortedGroup.Add(node);
+                addedNodes.Add(node);
+
+                // Primero recupero todos los nodos vecinos building
+                List<GridNode> nodesAvailable = buildingPlacer.GetUsageNeighbourNodes(node.gridX, node.gridY, new List<Usage>() { Usage.building });
+                // Los filtro para quedarme solo aquellos que sean boundary
+                nodesAvailable = nodesAvailable.FindAll(x => boundaryNodes.Contains(x));
+                // Ahora los filtro por direccions disponibles y no añadidas
+                List<Direction> directionsAvailable = new List<Direction>();
+                foreach (GridNode neighbour in nodesAvailable) 
+                {
+                    directionsAvailable.Add(RoadPlacer.Instance.GetDirectionBasedOnPos(node, neighbour));
+                }              
+                directionsAvailable = GetNotContainedNodesInDirections(directionsAvailable, node.gridX, node.gridY, addedNodes);
+
+                // Ya tenemos todas las direcciones disponibles excluyendo nodos ya contenidos
+                Direction currentDir;
+                int currentX = node.gridX;
+                int currentY = node.gridY;
+                if (directionsAvailable.Count == 0)
+                {
+                    // Terminar iteración
+                    break;
+                }
+                else if (directionsAvailable.Count == 1)
+                {
+                    currentDir = directionsAvailable.First();
+                    node = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                }
+                else if (directionsAvailable.Count == 2)
+                {
+                    List<Direction> directionsMeetExit = new List<Direction>();
+                    foreach (Direction directionAvailable in directionsAvailable)
+                    {
+                        if (DirectionMeetsNoExit(currentX, currentY, directionAvailable, addedNodes))
+                        {
+                            directionsMeetExit.Add(directionAvailable);
+                        }
+                    }
+                    if (directionsMeetExit.Count > 0) 
+                    {
+                        // Quitar de las direcciones disponibles la direccion que lleva a un callejon
+                        directionsAvailable.Except(directionsMeetExit);
+                        currentDir = directionsAvailable.First();
+                        node = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                    }
+                    else
+                    {
+                        currentDir = directionsAvailable.First();
+                        node = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                    }
+
+                }
+                else if (directionsAvailable.Count > 2)
+                {
+                    Debug.LogWarning("3 neighbours available, hehe wtf");
+                    break;
+                }
                 // El caso base sería tener 2 directions disponibles
 
                 // Caso alerta es cuando hay 3 directions, ahí la direccion a tomar puede ser decisiva sobre la precision del resultado.
@@ -315,13 +381,6 @@ namespace PG
 
                 // Una vez tenemos 3 vecinos, puede ser que aun girando, cerremos el circulo y cerremos un camino de 1 que era válido, ahi es donde tenemos que devolver la seleccion actual, creando un nuevo grupo, luego se deberá procesar el resto
             }
-
-            // En caso de estar en 1 vecino, que hacemos? No se puede ordenar ya que hay que volver atrás.
-
-            // Para 2 vecinos, avanzar con la direccion actual
-
-            // Para 3 probablemente haya que girar
-
 
             return sortedGroup;
         }
@@ -349,6 +408,81 @@ namespace PG
             }
             return true;
         }
+        private GridNode GetNodeInDirection(int startX, int startY, Direction direction, int iterationIncrement)
+        {
+            int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
+            int newX = startX + offset[0] * iterationIncrement;
+            int newY = startY + offset[1] * iterationIncrement;
+
+            if (Grid.Instance.OutOfGrid(newX, newY))
+                return null;
+
+            return Grid.Instance.nodesGrid[newX, newY];
+        }
+        private bool DirectionMeetsNoExit(int startX, int startY, Direction direction, HashSet<GridNode> addedNodes)
+        {
+            int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
+            int i = 1;
+            while (true)
+            {
+                int newX = startX + offset[0] * i;
+                int newY = startY + offset[1] * i;
+
+                if (Grid.Instance.OutOfGrid(newX, newY))
+                    return false;
+
+                var currentNode = Grid.Instance.nodesGrid[newX, newY];
+                if (currentNode.usage == Usage.building)
+                {
+                    // Check if next node in direction is decoration
+                    newX = startX + offset[0] * (i + 1);
+                    newY = startY + offset[1] * (i + 1);
+                    var nextNode = Grid.Instance.nodesGrid[newX, newY];
+                    if (nextNode.usage == Usage.decoration)
+                    {
+                        // Necesito identificar si este nodo es un final sin salida o si puede girar
+                        List<GridNode> nodesAvailable = buildingPlacer.GetUsageNeighbourNodes(currentNode.gridX, currentNode.gridY, new List<Usage>() { Usage.building });
+                        nodesAvailable = nodesAvailable.FindAll(x => !addedNodes.Contains(x));
+
+                        if (nodesAvailable.Count == 0)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }                  
+                }
+                else
+                {
+                    return false;
+                }
+                i++;
+            }     
+        }
+        private List<Direction> GetNotContainedNodesInDirections(List<Direction> directions, int startX, int startY, HashSet<GridNode> addedNodes)
+        {
+            List<Direction> directionsAvailable = new List<Direction>();
+            foreach (Direction direction in directions)
+            {
+                int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+
+                int currentPosX = startX + dir[0];
+                int currentPosY = startY + dir[1];
+
+                if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                    continue;
+
+                GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+                if (currentNode.usage == Usage.building && !addedNodes.Contains(currentNode))
+                {
+                    directionsAvailable.Add(direction);
+                }
+            }
+            return directionsAvailable;
+        }
+
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
