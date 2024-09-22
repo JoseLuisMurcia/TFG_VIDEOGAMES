@@ -33,6 +33,10 @@ namespace PG
             new Vector2Int(-1, -1),  // Down + Left
             new Vector2Int(-1, 1)  // Down + Right
         };
+        private static readonly Direction[] directionsEnum = new Direction[]
+        {
+            Direction.left, Direction.right, Direction.back, Direction.forward
+        };
         public void GroupConnectedNodes(List<GridNode> allNodes, BuildingPlacer buildingPlacer)
         {
             this.buildingPlacer = buildingPlacer;
@@ -80,15 +84,9 @@ namespace PG
                 {
                     SortedNodesResult result = GetBoundaryNodes(currentGroup);
                     shortColorIndex = 0;
-                    foreach (var group in result.sortedNodesLists)
+                    for (int i = 0; i < result.wholeNodesLists.Count; i++)
                     {
-                        DivideAndMarkGroup(group, minWidth, minHeight, true);
-                        Color debugColor = shortColorList[shortColorIndex];
-                        shortColorIndex = (shortColorIndex + 1) % shortColorList.Count;
-                        foreach (var sortedNode in group)
-                        {                           
-                            SpawnSphere(sortedNode.worldPosition, debugColor, 1f, 2f);
-                        }
+                        DivideAndMarkGroup(result.wholeNodesLists[i], minWidth, minHeight, true, result.wholeNodesLists[i].Count, result.sortedNodesLists[i]);
                     }
                 }
 
@@ -151,21 +149,32 @@ namespace PG
             // Assign the primaryRegion to all nodes in the group
             group.ForEach(x => x.regionType = primaryRegion);
         }
-
-        public void DivideAndMarkGroup(List<GridNode> group, int minWidth, int minHeight, bool firstIteration = false)
+        public void DivideAndMarkGroup(List<GridNode> group, int minWidth, int minHeight, bool firstIteration = false, int numNodes = 0, List<GridNode> boundaries = null)
         {
+            if (group.Count == 0) return;
+
             // Find the bounding box of the group of nodes
             int minX = group.Min(n => n.gridX);
             int maxX = group.Max(n => n.gridX);
             int minY = group.Min(n => n.gridY);
             int maxY = group.Max(n => n.gridY);
 
-            if (!firstIteration && ShouldSkipDivision(minX, maxX, minY, maxY)) return;
+            if (!firstIteration && ShouldSkipDivision(minX, maxX, minY, maxY))
+            {
+                SpawnSphere(new Vector3(
+                    group.Average(node => node.worldPosition.x),
+                    group.Average(node => node.worldPosition.y),
+                    group.Average(node => node.worldPosition.z)
+                ), Color.blue, 3f, 4f);
+                Debug.Log("skip division: " + "minX: " + minX + ", maxX: " + maxX + ", minY: " + minY + ", maxY: " + maxY);
+                return;
+            }
 
+            bool hasMarked = false;
             bool isConcaveShape = false;
             if (firstIteration)
             {
-                isConcaveShape = IsConcaveShape(group);
+                isConcaveShape = IsConcaveShape(boundaries);
             }
             // Calculate width and height of the group
             int width = maxX - minX + 1;
@@ -177,39 +186,92 @@ namespace PG
 
             // If the group size is already smaller than the minimum, we can't split it anymore
             if (width <= minWidth && height <= minHeight)
+            {
                 return;
+            }
+
+            int maxRetries = 5;
 
             // Decide how to split: horizontal or vertical
             if (width > minWidth)
             {
-                int splitX = minX + width / 2;
-
-                // Only continue subdivision if we can mark a valid vertical division
-                if (CanMarkDivision(splitX, minY, maxY, group, minWidth, true))
+                for (int attempt = 0; attempt < maxRetries; attempt++)
                 {
-                    // Mark the division
-                    MarkDivision(splitX, minY, maxY, group, true);
+                    // Vary the splitX position, offsetting randomly around the middle
+                    int splitX = minX + (int)((width / 2) * UnityEngine.Random.Range(0.8f, 1.2f));
 
-                    // Subdivide only after marking the division
-                    DivideAndMarkGroup(group.Where(n => n.gridX < splitX).ToList(), minWidth, minHeight);
-                    DivideAndMarkGroup(group.Where(n => n.gridX > splitX).ToList(), minWidth, minHeight);
+                    // Try marking a vertical division
+                    if (CanMarkDivision(splitX, minY, maxY, group, minWidth, true))
+                    {
+                        hasMarked = true;
+                        MarkDivision(splitX, minY, maxY, group, true);
+
+                        // Subdivide only after marking the division
+                        DivideAndMarkGroup(group.Where(n => n.gridX < splitX).ToList(), minWidth, minHeight);
+                        DivideAndMarkGroup(group.Where(n => n.gridX > splitX).ToList(), minWidth, minHeight);
+                        break; // Break the loop if successful
+                    }
                 }
             }
             else if (height > minHeight)
             {
-                int splitY = minY + height / 2;
-
-                // Only continue subdivision if we can mark a valid horizontal division
-                if (CanMarkDivision(splitY, minX, maxX, group, minHeight, false))
+                for (int attempt = 0; attempt < maxRetries; attempt++)
                 {
-                    // Mark the division
-                    MarkDivision(splitY, minX, maxX, group, false);
+                    //int splitY = minY + height / 2;
+                    int splitY = minY + (int)((height / 2) * UnityEngine.Random.Range(0.8f, 1.2f));
 
-                    // Subdivide only after marking the division
-                    DivideAndMarkGroup(group.Where(n => n.gridY > splitY).ToList(), minWidth, minHeight);
-                    DivideAndMarkGroup(group.Where(n => n.gridY < splitY).ToList(), minWidth, minHeight);
+                    // Only continue subdivision if we can mark a valid horizontal division
+                    if (CanMarkDivision(splitY, minX, maxX, group, minHeight, false))
+                    {
+                        hasMarked = true;
+                        MarkDivision(splitY, minX, maxX, group, false);
+
+                        // Subdivide only after marking the division
+                        DivideAndMarkGroup(group.Where(n => n.gridY > splitY).ToList(), minWidth, minHeight);
+                        DivideAndMarkGroup(group.Where(n => n.gridY < splitY).ToList(), minWidth, minHeight);
+                        break;
+                    }
                 }
+
             }
+
+            if (firstIteration && !hasMarked && (numNodes == group.Count))
+            {
+                // The division has failed for the whole group, should we retry?
+                SpawnSphere(group.First().worldPosition, Color.red, 3f, 4f);
+
+                // Act
+                if (numNodes > 20)
+                {
+                    TraceRandomLines(group, boundaries);
+                }
+
+            }
+        }
+        // New method to randomly trace lines within the group
+        private void TraceRandomLines(List<GridNode> group, List<GridNode> boundaries)
+        {
+            int maxTraceAttempts = 10; // Max random traces to try
+            for (int i = 0; i < maxTraceAttempts; i++)
+            {
+                bool traceHorizontal = UnityEngine.Random.value > 0.5f; // Randomly choose horizontal or vertical trace
+                GridNode randomNode = group[UnityEngine.Random.Range(0, group.Count)]; // Pick a random starting node
+
+                // Encontrar la direccion para avanzar
+
+                // Mientras avanza comprobar requisitos en cada nodo
+
+                // Una vez todo esta okay, marcar el camino en direccion como válido, devolver lista nodos marcados para agilizar?¿
+
+                // Trace horizontal line
+                //MarkDivision(x, minY, maxY, group, true); // Try marking
+                return;
+            }
+        }
+        private bool IsDecorationNodeAt(int x, int y)
+        {
+            GridNode node = Grid.Instance.nodesGrid[x, y];
+            return node != null && node.usage == Usage.decoration;
         }
         // Helper method: Adds variation to the min dimension (width or height)
         private int VaryMinDimension(int originalMin)
@@ -223,7 +285,7 @@ namespace PG
         {
             int xDif = Mathf.Abs(maxX - minX);
             int yDif = Mathf.Abs(maxY - minY);
-            if (xDif > 16 || yDif > 16)
+            if (xDif > 14 || yDif > 14)
             {
                 return false;
             }
@@ -231,13 +293,13 @@ namespace PG
             {
                 return UnityEngine.Random.value < 0.3f;
             }
-            else if (xDif > 6 || yDif > 6)
+            else if (xDif > 5 || yDif > 5)
             {
                 return UnityEngine.Random.value < 0.5f;
             }
 
             return false;
-        }                               
+        }
         private bool CanMarkDivision(int split, int min, int max, List<GridNode> group, int minDistance, bool isVertical)
         {
             minDistance = 2;
@@ -294,16 +356,15 @@ namespace PG
                 // If the cross product is negative, we found a concave corner
                 if (crossProduct < 0)
                 {
-                    SpawnSphere(prevNode.worldPosition, Color.black, 3f, 4f);
-                    SpawnSphere(currNode.worldPosition, Color.white, 3f, 4f);
-                    SpawnSphere(nextNode.worldPosition, Color.gray, 3f, 4f);
+                    //SpawnSphere(prevNode.worldPosition, Color.black, 3f, 4f);
+                    //SpawnSphere(currNode.worldPosition, Color.white, 3f, 4f);
+                    //SpawnSphere(nextNode.worldPosition, Color.gray, 3f, 4f);
                     return true; // Shape is concave
                 }
             }
 
             return false; // Shape is convex
         }
-
         private SortedNodesResult GetBoundaryNodes(List<GridNode> group)
         {
             // This stores all the different lists sorted
@@ -333,6 +394,7 @@ namespace PG
             // I need to sort them as if I was looping the boundaries, advancing in the proper direction each time
             List<GridNode> sortedNodes = SortBoundaryNodes(boundaryNodes);
             sortedNodesLists.Add(sortedNodes);
+            wholeNodesLists.Add(GetWholeNodesFromBoundaries(boundaryNodes, group));
             // Comparar si el tamaño original ha cambiado, la forma puede que requiera dividir el grupo en N partes
             if ((sortedNodes.Count != boundaryNodes.Count) && sortedNodes.Count > 0)
             {
@@ -346,21 +408,34 @@ namespace PG
                     {
                         sortedNodes = SortMissingNodes(missingNodes);
                         sortedNodesLists.Add(sortedNodes);
+                        wholeNodesLists.Add(GetWholeNodesFromBoundaries(sortedNodes, group));
                         if (missingNodes.Count == sortedNodes.Count)
                             break;
 
                         // Remove the added group from remaining nodes to process
-                        missingNodes = missingNodes.Except(sortedNodes).ToList();  
-                        
+                        missingNodes = missingNodes.Except(sortedNodes).ToList();
+
                         // If there are enough to keep dividing, keep doing it
                         if (missingNodes.Count > 6)
                             continue;
 
                         break;
                     }
-                }            
+                }
             }
             return sortedNodesResult;
+        }
+        private List<GridNode> GetWholeNodesFromBoundaries(List<GridNode> boundaryNodes, List<GridNode> allNodes)
+        {
+            List<GridNode> wholeNodes = new List<GridNode>();
+            var boundaryNodesHashSet = new HashSet<GridNode>(boundaryNodes);
+            foreach (var node in allNodes)
+            {
+                if (IsNodeContainedInBoundaries(node, boundaryNodesHashSet))
+                    wholeNodes.Add(node);
+            }
+
+            return wholeNodes;
         }
         private List<GridNode> SortMissingNodes(List<GridNode> group)
         {
@@ -655,6 +730,33 @@ namespace PG
             }
             return true;
         }
+        private bool IsNodeContainedInBoundaries(GridNode node, HashSet<GridNode> boundaries)
+        {
+            // Check all directions
+            int startX = node.gridX;
+            int startY = node.gridY;
+            foreach (Direction direction in directionsEnum)
+            {
+                int i = 1;
+                while (true)
+                {
+                    GridNode newNode = GetNodeInDirection(startX, startY, direction, i);
+                    if (newNode == null)
+                        break;
+
+                    if (newNode.usage == Usage.building && boundaries.Contains(newNode))
+                        return true;
+
+                    if (newNode.usage == Usage.decoration || newNode.usage == Usage.road)
+                        break;
+
+                    i++;
+                }
+
+            }
+
+            return false;
+        }
         private GridNode GetNodeInDirection(int startX, int startY, Direction direction, int iterationIncrement)
         {
             int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
@@ -850,7 +952,6 @@ namespace PG
             }
             return directionsAvailable;
         }
-
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {
             GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -870,7 +971,6 @@ namespace PG
         {
             return new List<Direction>() { Direction.back, Direction.forward };
         }
-
         public class SortedNodesResult
         {
             public List<List<GridNode>> sortedNodesLists = new List<List<GridNode>>();
@@ -881,7 +981,7 @@ namespace PG
                 this.sortedNodesLists = sortedNodesLists;
                 this.wholeNodesLists = wholeNodesLists;
             }
-        }      
+        }
     }
 }
 
