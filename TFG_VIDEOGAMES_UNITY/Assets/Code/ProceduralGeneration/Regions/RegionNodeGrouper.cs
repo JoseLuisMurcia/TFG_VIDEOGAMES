@@ -26,7 +26,7 @@ namespace PG
             new Vector2Int(-1, -1),  // Down + Left
             new Vector2Int(-1, 1)  // Down + Right
         };
-        private static readonly Vector2Int[] cornerDirections = new Vector2Int[]  
+        private static readonly Vector2Int[] cornerDirections = new Vector2Int[]
         {
             new Vector2Int(1, -1),  // Up + Left
             new Vector2Int(1, 1),  // Up + Right
@@ -78,8 +78,18 @@ namespace PG
                 currentGroup.RemoveAll(x => x.usage == Usage.decoration);
                 if (currentGroup.Count > 0)
                 {
-                    IsConcaveShape(currentGroup);
-                    //DivideAndMarkGroup(currentGroup, minWidth, minHeight, true);
+                    SortedNodesResult result = GetBoundaryNodes(currentGroup);
+                    shortColorIndex = 0;
+                    foreach (var group in result.sortedNodesLists)
+                    {
+                        DivideAndMarkGroup(group, minWidth, minHeight, true);
+                        Color debugColor = shortColorList[shortColorIndex];
+                        shortColorIndex = (shortColorIndex + 1) % shortColorList.Count;
+                        foreach (var sortedNode in group)
+                        {                           
+                            SpawnSphere(sortedNode.worldPosition, debugColor, 1f, 2f);
+                        }
+                    }
                 }
 
             }
@@ -144,14 +154,19 @@ namespace PG
 
         public void DivideAndMarkGroup(List<GridNode> group, int minWidth, int minHeight, bool firstIteration = false)
         {
-            if (!firstIteration && ShouldSkipDivision()) return;
-
             // Find the bounding box of the group of nodes
             int minX = group.Min(n => n.gridX);
             int maxX = group.Max(n => n.gridX);
             int minY = group.Min(n => n.gridY);
             int maxY = group.Max(n => n.gridY);
 
+            if (!firstIteration && ShouldSkipDivision(minX, maxX, minY, maxY)) return;
+
+            bool isConcaveShape = false;
+            if (firstIteration)
+            {
+                isConcaveShape = IsConcaveShape(group);
+            }
             // Calculate width and height of the group
             int width = maxX - minX + 1;
             int height = maxY - minY + 1;
@@ -204,10 +219,25 @@ namespace PG
         }
 
         // Helper method: Random chance to skip dividing the group
-        private bool ShouldSkipDivision()
+        private bool ShouldSkipDivision(int minX, int maxX, int minY, int maxY)
         {
-            return UnityEngine.Random.value < 0.1f; // 10% chance to skip division
-        }
+            int xDif = Mathf.Abs(maxX - minX);
+            int yDif = Mathf.Abs(maxY - minY);
+            if (xDif > 16 || yDif > 16)
+            {
+                return false;
+            }
+            else if (xDif > 10 || yDif > 10)
+            {
+                return UnityEngine.Random.value < 0.3f;
+            }
+            else if (xDif > 6 || yDif > 6)
+            {
+                return UnityEngine.Random.value < 0.5f;
+            }
+
+            return false;
+        }                               
         private bool CanMarkDivision(int split, int min, int max, List<GridNode> group, int minDistance, bool isVertical)
         {
             minDistance = 2;
@@ -236,14 +266,13 @@ namespace PG
                 if (node != null)
                 {
                     node.usage = Usage.decoration;
-                    node.isAlley = true; ;
+                    node.isAlley = true;
                 }
             }
         }
         private bool IsConcaveShape(List<GridNode> group)
         {
-            // Get boundary nodes of the group
-            List<GridNode> boundaryNodes = GetBoundaryNodes(group);
+            List<GridNode> boundaryNodes = group;
 
             // Use the cross product to determine concavity.
             // For each boundary node, compare the angle between neighboring edges.
@@ -265,9 +294,9 @@ namespace PG
                 // If the cross product is negative, we found a concave corner
                 if (crossProduct < 0)
                 {
-                    //SpawnSphere(prevNode.worldPosition, Color.black, 3f, 4f);
-                    //SpawnSphere(currNode.worldPosition, Color.white, 3f, 4f);
-                    //SpawnSphere(nextNode.worldPosition, Color.gray, 3f, 4f);
+                    SpawnSphere(prevNode.worldPosition, Color.black, 3f, 4f);
+                    SpawnSphere(currNode.worldPosition, Color.white, 3f, 4f);
+                    SpawnSphere(nextNode.worldPosition, Color.gray, 3f, 4f);
                     return true; // Shape is concave
                 }
             }
@@ -275,10 +304,16 @@ namespace PG
             return false; // Shape is convex
         }
 
-        private List<GridNode> GetBoundaryNodes(List<GridNode> group)
+        private SortedNodesResult GetBoundaryNodes(List<GridNode> group)
         {
+            // This stores all the different lists sorted
+            List<List<GridNode>> sortedNodesLists = new List<List<GridNode>>();
+            List<List<GridNode>> wholeNodesLists = new List<List<GridNode>>();
+            SortedNodesResult sortedNodesResult = new SortedNodesResult(sortedNodesLists, wholeNodesLists);
+
+            // List that stores all the boundaryNodes
             List<GridNode> boundaryNodes = new List<GridNode>();
-            HashSet<GridNode> groupSet = new HashSet<GridNode>(group); // For fast lookup
+            HashSet<GridNode> groupSet = new HashSet<GridNode>(group);
 
             foreach (GridNode node in group)
             {
@@ -297,26 +332,110 @@ namespace PG
             }
             // I need to sort them as if I was looping the boundaries, advancing in the proper direction each time
             List<GridNode> sortedNodes = SortBoundaryNodes(boundaryNodes);
-            // TODO: Comparar si el tamaño original ha cambiado
+            sortedNodesLists.Add(sortedNodes);
+            // Comparar si el tamaño original ha cambiado, la forma puede que requiera dividir el grupo en N partes
             if ((sortedNodes.Count != boundaryNodes.Count) && sortedNodes.Count > 0)
             {
                 // Let's remove the wrong missing nodes and re process them ;)
                 List<GridNode> missingNodes = boundaryNodes.Except(sortedNodes).ToList();
-                foreach (var missingNode in GetSortableNodes(missingNodes))
+                // Now we have all the different missingNodes unsorted, we need to process them N times until there are none left
+                missingNodes = GetSortableMissingNodes(missingNodes);
+                if (missingNodes.Count > 6)
                 {
-                    SpawnSphere(missingNode.worldPosition, Color.blue, 1f, 1.5f);
-                }
-                // Nodes properly sorted :)
-                //SpawnSphere(sortedNodes.First().worldPosition, Color.magenta, 1f, 4f);
-                //shortColorIndex = 0;
-                //foreach (var sortedNode in sortedNodes)
-                //{
-                //    Color debugColor = shortColorList[shortColorIndex];
-                //    shortColorIndex = (shortColorIndex + 1) % shortColorList.Count;
-                //    SpawnSphere(sortedNode.worldPosition, debugColor, 1f, 2f);
-                //}
+                    while (true)
+                    {
+                        sortedNodes = SortMissingNodes(missingNodes);
+                        sortedNodesLists.Add(sortedNodes);
+                        if (missingNodes.Count == sortedNodes.Count)
+                            break;
+
+                        // Remove the added group from remaining nodes to process
+                        missingNodes = missingNodes.Except(sortedNodes).ToList();  
+                        
+                        // If there are enough to keep dividing, keep doing it
+                        if (missingNodes.Count > 6)
+                            continue;
+
+                        break;
+                    }
+                }            
             }
-            return sortedNodes;
+            return sortedNodesResult;
+        }
+        private List<GridNode> SortMissingNodes(List<GridNode> group)
+        {
+            List<GridNode> sortedGroup = new List<GridNode>();
+            HashSet<GridNode> boundaryNodes = new HashSet<GridNode>(group);
+            GridNode currentNode = GetStartingNodeForSortingBoundaries(group);
+            if (currentNode == null)
+            {
+                SpawnSphere(group.First().worldPosition, Color.white, 2f, 6f);
+                return group;
+            }
+
+            // Crear HashSet para comprobar más rapido los nodos ya añadidos
+            HashSet<GridNode> addedNodes = new HashSet<GridNode>();
+            Direction currentDir = Direction.zero;
+
+            while (true)
+            {
+                // Añado el nodo actual a las listas
+                sortedGroup.Add(currentNode);
+                addedNodes.Add(currentNode);
+
+                // Primero recupero todos los nodos vecinos building
+                List<GridNode> nodesAvailable = buildingPlacer.GetUsageNeighbourNodes(currentNode.gridX, currentNode.gridY, new List<Usage>() { Usage.building });
+                // Los filtro para quedarme solo aquellos que sean boundary
+                nodesAvailable = nodesAvailable.FindAll(x => boundaryNodes.Contains(x));
+                // Ahora los filtro por direccions disponibles y no añadidas
+                List<Direction> directionsAvailable = new List<Direction>();
+                foreach (GridNode neighbour in nodesAvailable)
+                {
+                    directionsAvailable.Add(RoadPlacer.Instance.GetDirectionBasedOnPos(currentNode, neighbour));
+                }
+                directionsAvailable = GetNotContainedNodesInDirections(directionsAvailable, currentNode.gridX, currentNode.gridY, addedNodes);
+
+                // Ya tenemos todas las direcciones disponibles excluyendo nodos ya contenidos
+                int currentX = currentNode.gridX;
+                int currentY = currentNode.gridY;
+                if (directionsAvailable.Count == 0)
+                {
+                    // Terminar iteración
+                    break;
+                }
+                else if (directionsAvailable.Count == 1)
+                {
+                    currentDir = directionsAvailable.First();
+                    currentNode = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                }
+                else if (directionsAvailable.Count == 2)
+                {
+                    int penultimateId = sortedGroup.Count - 2;
+                    GridNode lastNodeAdded = penultimateId > 0 ? sortedGroup[sortedGroup.Count - 2] : currentNode;
+                    currentDir = GetCorrectDirectionFromList(currentNode, lastNodeAdded, directionsAvailable);
+                    if (currentDir == Direction.zero)
+                    {
+                        SpawnSphere(sortedGroup.First().worldPosition, Color.cyan, 2f, 3f);
+                        sortedGroup.ForEach(x => SpawnSphere(x.worldPosition, Color.green, 2f, 2f));
+                    }
+                    currentNode = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                }
+                else if (directionsAvailable.Count > 2)
+                {
+                    bool isHorizontal = directionsAvailable.Contains(Direction.left) && directionsAvailable.Contains(Direction.right);
+                    if (isHorizontal)
+                    {
+                        currentDir = directionsAvailable.First(x => x == Direction.left || x == Direction.right);
+                    }
+                    else
+                    {
+                        currentDir = directionsAvailable.First(x => x == Direction.back || x == Direction.forward);
+                    }
+                    currentNode = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                }
+            }
+
+            return sortedGroup;
         }
         private List<GridNode> SortBoundaryNodes(List<GridNode> group)
         {
@@ -371,8 +490,11 @@ namespace PG
             {
                 if (reserveNode == null)
                 {
-                    SpawnSphere(group.First().worldPosition, Color.white, 2f, 6f);
-                    return group;
+                    group = group.OrderBy(node => node.gridX)
+                        .ThenBy(node => node.gridY)
+                        .ToList();
+
+                    currentNode = group.First();
                 }
                 else
                 {
@@ -473,6 +595,42 @@ namespace PG
 
             return sortedGroup;
         }
+        private GridNode GetStartingNodeForSortingBoundaries(List<GridNode> boundaryNodes)
+        {
+            foreach (GridNode node in boundaryNodes)
+            {
+                int numHorizontal = 0;
+                foreach (var horizontalNeighbour in Grid.Instance.GetNeighboursInHorizontal(node, new List<Usage>() { Usage.building }))
+                {
+                    if (boundaryNodes.Contains(horizontalNeighbour))
+                        numHorizontal++;
+                }
+                int numVertical = 0;
+                foreach (var verticalNeighbour in Grid.Instance.GetNeighboursInVertical(node, new List<Usage>() { Usage.building }))
+                {
+                    if (boundaryNodes.Contains(verticalNeighbour))
+                        numVertical++;
+                }
+                if ((numHorizontal == 0 && numVertical == 2) || (numHorizontal == 2 && numVertical == 0))
+                {
+                    //SpawnSphere(node.worldPosition, Color.magenta, 2f, 1f);
+                    // Comprobar que no es callejon
+                    // Si no es callejon, puede tirar a una de las direcciones en las que no tiene vecinos y encontrar un building (no boundary)
+                    List<Direction> directions = numHorizontal == 0 ? new List<Direction>() { Direction.left, Direction.right } : new List<Direction>() { Direction.back, Direction.forward };
+
+                    foreach (Direction dir in directions)
+                    {
+                        GridNode neighbour = GetNodeInDirection(node.gridX, node.gridY, dir, 1);
+                        if (neighbour.usage == Usage.building)
+                        {
+                            //SpawnSphere(node.worldPosition, Color.red, 2f, 2f);
+                            return node;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
         private bool IsInteriorGroup(List<GridNode> group)
         {
             foreach (GridNode node in group)
@@ -553,18 +711,18 @@ namespace PG
             SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 5f);
             return Direction.zero;
         }
-        private List<GridNode> GetSortableNodes(List<GridNode> nodes)
+        private List<GridNode> GetSortableMissingNodes(List<GridNode> nodes)
         {
             List<GridNode> sortableNodes = new List<GridNode>();
 
             // Let's check for decoration nodes
-            foreach(GridNode node in nodes)
+            foreach (GridNode node in nodes)
             {
                 // Si tiene nodos decoration a cada lado horizontal o vertical, eliminar
 
                 // Horizontal
                 int numHorizontal = 0;
-                foreach(Direction hDirection in GetHorizontalDirections())
+                foreach (Direction hDirection in GetHorizontalDirections())
                 {
                     GridNode newNode = GetNodeInDirection(node.gridX, node.gridY, hDirection, 1);
                     if (newNode.usage == Usage.decoration)
@@ -579,11 +737,11 @@ namespace PG
                     if (newNode.usage == Usage.decoration)
                         numVertical++;
                 }
-            
 
-                if (!(numHorizontal == 0 && numVertical == 2) 
-                    && !(numHorizontal == 2 && numVertical == 0) 
-                    && (numHorizontal + numVertical < 3) 
+
+                if (!(numHorizontal == 0 && numVertical == 2)
+                    && !(numHorizontal == 2 && numVertical == 0)
+                    && (numHorizontal + numVertical < 3)
                     && !IsTightCorner(node.gridX, node.gridY, numHorizontal, numVertical))
                     sortableNodes.Add(node);
             }
@@ -659,7 +817,7 @@ namespace PG
                         if (buildingNeighbours.Count == 1)
                         {
                             return true;
-                        }                       
+                        }
                         return false;
                     }
                 }
@@ -712,6 +870,18 @@ namespace PG
         {
             return new List<Direction>() { Direction.back, Direction.forward };
         }
+
+        public class SortedNodesResult
+        {
+            public List<List<GridNode>> sortedNodesLists = new List<List<GridNode>>();
+            public List<List<GridNode>> wholeNodesLists = new List<List<GridNode>>();
+
+            public SortedNodesResult(List<List<GridNode>> sortedNodesLists, List<List<GridNode>> wholeNodesLists)
+            {
+                this.sortedNodesLists = sortedNodesLists;
+                this.wholeNodesLists = wholeNodesLists;
+            }
+        }      
     }
 }
 
