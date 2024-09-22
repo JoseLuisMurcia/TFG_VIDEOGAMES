@@ -15,12 +15,19 @@ namespace PG
         private int colorIndex = 0;
         private int shortColorIndex = 0;
         private BuildingPlacer buildingPlacer;
-        private static readonly Vector2Int[] directions = new Vector2Int[] // Reuse directions globally    
+        private static readonly Vector2Int[] directions = new Vector2Int[]
         {
             new Vector2Int(1, 0),  // Right
             new Vector2Int(-1, 0), // Left
             new Vector2Int(0, 1),  // Up
             new Vector2Int(0, -1), // Down
+            new Vector2Int(1, -1),  // Up + Left
+            new Vector2Int(1, 1),  // Up + Right
+            new Vector2Int(-1, -1),  // Down + Left
+            new Vector2Int(-1, 1)  // Down + Right
+        };
+        private static readonly Vector2Int[] cornerDirections = new Vector2Int[]  
+        {
             new Vector2Int(1, -1),  // Up + Left
             new Vector2Int(1, 1),  // Up + Right
             new Vector2Int(-1, -1),  // Down + Left
@@ -258,9 +265,9 @@ namespace PG
                 // If the cross product is negative, we found a concave corner
                 if (crossProduct < 0)
                 {
-                    SpawnSphere(prevNode.worldPosition, Color.black, 3f, 4f);
-                    SpawnSphere(currNode.worldPosition, Color.white, 3f, 4f);
-                    SpawnSphere(nextNode.worldPosition, Color.gray, 3f, 4f);
+                    //SpawnSphere(prevNode.worldPosition, Color.black, 3f, 4f);
+                    //SpawnSphere(currNode.worldPosition, Color.white, 3f, 4f);
+                    //SpawnSphere(nextNode.worldPosition, Color.gray, 3f, 4f);
                     return true; // Shape is concave
                 }
             }
@@ -300,14 +307,14 @@ namespace PG
                     SpawnSphere(missingNode.worldPosition, Color.blue, 1f, 1.5f);
                 }
                 // Nodes properly sorted :)
-                SpawnSphere(sortedNodes.First().worldPosition, Color.magenta, 1f, 4f);
-                shortColorIndex = 0;
-                foreach (var sortedNode in sortedNodes)
-                {
-                    Color debugColor = shortColorList[shortColorIndex];
-                    shortColorIndex = (shortColorIndex + 1) % shortColorList.Count;
-                    SpawnSphere(sortedNode.worldPosition, debugColor, 1f, 2f);
-                }
+                //SpawnSphere(sortedNodes.First().worldPosition, Color.magenta, 1f, 4f);
+                //shortColorIndex = 0;
+                //foreach (var sortedNode in sortedNodes)
+                //{
+                //    Color debugColor = shortColorList[shortColorIndex];
+                //    shortColorIndex = (shortColorIndex + 1) % shortColorList.Count;
+                //    SpawnSphere(sortedNode.worldPosition, debugColor, 1f, 2f);
+                //}
             }
             return sortedNodes;
         }
@@ -364,11 +371,7 @@ namespace PG
             {
                 if (reserveNode == null)
                 {
-                    SpawnSphere(new Vector3(
-                        group.Average(node => node.worldPosition.x),
-                        group.Average(node => node.worldPosition.y),
-                        group.Average(node => node.worldPosition.z)
-                    ), Color.white, 2f, 4f);
+                    SpawnSphere(group.First().worldPosition, Color.white, 2f, 6f);
                     return group;
                 }
                 else
@@ -411,14 +414,21 @@ namespace PG
                 else if (directionsAvailable.Count == 1)
                 {
                     currentDir = directionsAvailable.First();
-                    currentNode = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                    if (!DirectionMeetsNoExit(currentX, currentY, currentDir, boundaryNodes))
+                    {
+                        currentNode = GetNodeInDirection(currentX, currentY, currentDir, 1);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 else if (directionsAvailable.Count == 2)
                 {
                     List<Direction> directionsMeetExit = new List<Direction>();
                     foreach (Direction directionAvailable in directionsAvailable)
                     {
-                        if (DirectionMeetsNoExit(currentX, currentY, directionAvailable))
+                        if (DirectionMeetsNoExit(currentX, currentY, directionAvailable, boundaryNodes))
                         {
                             directionsMeetExit.Add(directionAvailable);
                         }
@@ -498,6 +508,16 @@ namespace PG
 
             return Grid.Instance.nodesGrid[newX, newY];
         }
+        private GridNode GetNodeInDirection(int startX, int startY, Vector2Int offset, int iterationIncrement)
+        {
+            int newX = startX + offset.x * iterationIncrement;
+            int newY = startY + offset.y * iterationIncrement;
+
+            if (Grid.Instance.OutOfGrid(newX, newY))
+                return null;
+
+            return Grid.Instance.nodesGrid[newX, newY];
+        }
         private Direction GetCorrectDirectionFromList(GridNode currentNode, GridNode previousNode, List<Direction> availableDirections)
         {
             int currentX = currentNode.gridX;
@@ -559,14 +579,36 @@ namespace PG
                     if (newNode.usage == Usage.decoration)
                         numVertical++;
                 }
+            
 
-                if (!(numHorizontal == 0 && numVertical == 2) && !(numHorizontal == 2 && numVertical == 0) && (numHorizontal + numVertical < 3))
+                if (!(numHorizontal == 0 && numVertical == 2) 
+                    && !(numHorizontal == 2 && numVertical == 0) 
+                    && (numHorizontal + numVertical < 3) 
+                    && !IsTightCorner(node.gridX, node.gridY, numHorizontal, numVertical))
                     sortableNodes.Add(node);
             }
 
             return sortableNodes;
         }
-        private bool DirectionMeetsNoExit(int startX, int startY, Direction direction)
+        private bool IsTightCorner(int numHorizontal, int numVertical, int x, int y)
+        {
+            if (numHorizontal != 1 || numVertical != 1)
+                return false;
+
+            // Check the corners, 3 corner decoration neighbours, return true
+            int numCornerNeighbours = 0;
+            foreach (Vector2Int offset in cornerDirections)
+            {
+                GridNode cornerNeighbour = GetNodeInDirection(x, y, offset, 1);
+                if (cornerNeighbour.usage == Usage.decoration)
+                    numCornerNeighbours++;
+            }
+            if (numCornerNeighbours > 3)
+                return true;
+
+            return false;
+        }
+        private bool DirectionMeetsNoExit(int startX, int startY, Direction direction, HashSet<GridNode> boundaryNodes)
         {
             int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
             int i = 1;
@@ -581,26 +623,49 @@ namespace PG
                 var currentNode = Grid.Instance.nodesGrid[newX, newY];
                 if (currentNode.usage == Usage.building)
                 {
+                    // Check if it has more than one building neighbour, then it's not a straight
+                    List<GridNode> buildingNeighbours = buildingPlacer.GetUsageNeighbourNodes(currentNode.gridX, currentNode.gridY, new List<Usage>() { Usage.building });
+                    List<GridNode> newBoundaryNodes = new List<GridNode>();
+                    foreach (var buildingNeighbour in buildingNeighbours)
+                    {
+                        if (boundaryNodes.Contains(buildingNeighbour))
+                            newBoundaryNodes.Add(buildingNeighbour);
+                    }
+                    if (newBoundaryNodes.Count >= 2)
+                    {
+                        List<Direction> decorationDirections = IsHorizontal(direction) ? GetVerticalDirections() : GetHorizontalDirections();
+
+                        int numDecoration = 0;
+                        foreach (Direction decorationDirection in decorationDirections)
+                        {
+                            if (GetNodeInDirection(newX, newY, decorationDirection, 1).usage == Usage.decoration)
+                            {
+                                numDecoration++;
+                            }
+                        }
+                        if (numDecoration == 2)
+                            return true;
+
+                        return false;
+                    }
+
                     // Check if next node in direction is decoration
                     newX = startX + offset[0] * (i + 1);
                     newY = startY + offset[1] * (i + 1);
                     var nextNode = Grid.Instance.nodesGrid[newX, newY];
                     if (nextNode.usage == Usage.decoration)
                     {
-                        // Necesito identificar si este nodo es un final sin salida o si puede girar
-                        List<GridNode> nodesAvailable = buildingPlacer.GetUsageNeighbourNodes(currentNode.gridX, currentNode.gridY, new List<Usage>() { Usage.building });
-                        if (nodesAvailable.Count == 1)
+                        // Necesito identificar si el current node previo al decoration es un final sin salida o si puede girar
+                        if (buildingNeighbours.Count == 1)
                         {
                             return true;
-                        }
-                        else
-                        {
-                            return false;
-                        }
+                        }                       
+                        return false;
                     }
                 }
                 else
                 {
+                    SpawnSphere(currentNode.worldPosition, Color.red, 2f, 4f);
                     return false;
                 }
                 i++;
