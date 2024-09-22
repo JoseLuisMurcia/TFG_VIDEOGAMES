@@ -124,7 +124,7 @@ namespace PG
 
             // Add cost if an intersection is detected near a certain distance from this neighbour
             int cost = 0;
-            int distance = 4;
+            int distance = 5;
             foreach (Direction direction in RoadPlacer.Instance.GetAllDirections())
             {
                 // From the neighbour, explore neighbours to find intersections
