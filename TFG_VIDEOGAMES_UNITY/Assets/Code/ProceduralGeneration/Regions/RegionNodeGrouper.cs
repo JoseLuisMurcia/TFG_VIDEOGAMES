@@ -161,11 +161,11 @@ namespace PG
 
             if (!firstIteration && ShouldSkipDivision(minX, maxX, minY, maxY))
             {
-                SpawnSphere(new Vector3(
-                    group.Average(node => node.worldPosition.x),
-                    group.Average(node => node.worldPosition.y),
-                    group.Average(node => node.worldPosition.z)
-                ), Color.blue, 3f, 4f);
+                //SpawnSphere(new Vector3(
+                //    group.Average(node => node.worldPosition.x),
+                //    group.Average(node => node.worldPosition.y),
+                //    group.Average(node => node.worldPosition.z)
+                //), Color.blue, 3f, 4f);
                 Debug.Log("skip division: " + "minX: " + minX + ", maxX: " + maxX + ", minY: " + minY + ", maxY: " + maxY);
                 return;
             }
@@ -238,7 +238,7 @@ namespace PG
             if (firstIteration && !hasMarked && (numNodes == group.Count))
             {
                 // The division has failed for the whole group, should we retry?
-                SpawnSphere(group.First().worldPosition, Color.red, 3f, 4f);
+                //SpawnSphere(group.First().worldPosition, Color.red, 3f, 4f);
 
                 // Act
                 if (numNodes > 20)
@@ -251,7 +251,7 @@ namespace PG
         // New method to randomly trace lines within the group
         private void TraceRandomLines(List<GridNode> group, List<GridNode> boundaries)
         {
-            int maxTraceAttempts = 10; // Max random traces to try
+            int maxTraceAttempts = Mathf.Max(10, group.Count/ 11); // Max random traces to try
             HashSet<GridNode> boundariesHash = new HashSet<GridNode>(boundaries);
 
             // HashSet where I'll remove the non valid nodes
@@ -282,7 +282,7 @@ namespace PG
                 if (directionsAvailable.Count > 1)
                 {
                     Debug.LogError("Nodo boundary con más de 1 direccion disponible");
-                    SpawnSphere(randomNode.worldPosition, Color.green, 2f, 4f);
+                    SpawnSphere(randomNode.worldPosition, Color.green, 2f, 8f);
                 }
                 // Comprobar si avanzar en la direccion disponible es viable, comprobar vecinos Decoration cerca
                 Direction chosenDir = directionsAvailable.First();
@@ -290,9 +290,9 @@ namespace PG
 
                 if (path != null)
                 {
-                    SpawnSphere(randomNode.worldPosition, Color.green, 2f, 5f);
                     path.ForEach(x =>
                     {
+                        //SpawnSphere(x.worldPosition, Color.green, 2f, 2f);
                         x.usage = Usage.decoration;
                         x.isAlley = true;
                     });
@@ -475,7 +475,7 @@ namespace PG
             GridNode currentNode = GetStartingNodeForSortingBoundaries(group);
             if (currentNode == null)
             {
-                SpawnSphere(group.First().worldPosition, Color.white, 2f, 6f);
+                //SpawnSphere(group.First().worldPosition, Color.white, 2f, 6f);
                 return group;
             }
 
@@ -665,6 +665,8 @@ namespace PG
                     {
                         // Quitar de las direcciones disponibles la direccion que lleva a un callejon
                         directionsAvailable = directionsAvailable.Except(directionsMeetExit).ToList();
+                        if (directionsAvailable.Count == 0)
+                            break;
                         currentDir = directionsAvailable.First();
                         currentNode = GetNodeInDirection(currentX, currentY, currentDir, 1);
                     }
@@ -841,12 +843,11 @@ namespace PG
             {
                 return RoadPlacer.Instance.GetDirectionBasedOnPos(previousNode, currentNode);
             }
-            SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 5f);
+            //SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 5f);
             return Direction.zero;
         }
         private bool HasOnlyHorizontalOrVerticalNeighbours(GridNode node, HashSet<GridNode> boundaries)
         {
-
             int numHorizontal = 0;
             foreach (Direction hDirection in GetHorizontalDirections())
             {
@@ -990,7 +991,7 @@ namespace PG
                 }
                 else
                 {
-                    SpawnSphere(currentNode.worldPosition, Color.red, 2f, 4f);
+                    //SpawnSphere(currentNode.worldPosition, Color.red, 2f, 4f);
                     return false;
                 }
                 i++;
@@ -998,11 +999,11 @@ namespace PG
         }
         private List<GridNode> DirectionMeetsDecoration(int startX, int startY, Direction direction)
         {
-            List<GridNode> path = new List<GridNode>();
+            List<GridNode> path = new List<GridNode>() { Grid.Instance.nodesGrid[startX, startY] };
             int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
             int i = 1;
             int minDecorationDist = 2;
-            List<Direction> decorationDirections = IsHorizontal(direction) ? GetHorizontalDirections() : GetVerticalDirections();
+            List<Direction> decorationDirections = IsHorizontal(direction) ? GetVerticalDirections() : GetHorizontalDirections();
             while (true)
             {
                 int newX = startX + offset[0] * i;
@@ -1014,14 +1015,14 @@ namespace PG
                 var currentNode = Grid.Instance.nodesGrid[newX, newY];
                 if (currentNode.usage == Usage.building)
                 {
+                    //SpawnSphere(currentNode.worldPosition, Color.green, 2f, 2f);
                     // Check that there are no decoration neighbours near
-                    for (int j = -minDecorationDist; j <= minDecorationDist; j++)
+                    for (int j = 1; j <= minDecorationDist; j++)
                     {
-                        if (j == 0) continue;
-
                         foreach (var decorationDirection in decorationDirections)
                         {
                             GridNode decorationNode = GetNodeInDirection(newX, newY, decorationDirection, j);
+                            //SpawnSphere(decorationNode.worldPosition, Color.yellow, 2f, 2f);
                             if (decorationNode == null || decorationNode.usage == Usage.decoration)
                                 return null;
                         }
@@ -1033,9 +1034,19 @@ namespace PG
                     newY = startY + offset[1] * (i + 1);
                     var nextNode = Grid.Instance.nodesGrid[newX, newY];
                     if (nextNode.usage == Usage.decoration)
-                    {
-                        path.Add(nextNode);
-                        return path;
+                    {                       
+                        // It could be an alley created by this algorithm
+                        if (nextNode.isAlley && UnityEngine.Random.value < .4f)
+                        {
+                            // Skip with 40% percent change
+                            // Increment index to skip the alleyNode
+                            path.Add(nextNode);
+                            i++;
+                        }
+                        else
+                        {
+                            return path;
+                        }
                     }
                 }
                 else
