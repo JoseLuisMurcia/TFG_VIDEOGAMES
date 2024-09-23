@@ -252,20 +252,51 @@ namespace PG
         private void TraceRandomLines(List<GridNode> group, List<GridNode> boundaries)
         {
             int maxTraceAttempts = 10; // Max random traces to try
+            HashSet<GridNode> boundariesHash = new HashSet<GridNode>(boundaries);
+
+            // HashSet where I'll remove the non valid nodes
+            List<GridNode> candidates = boundaries.FindAll(x => HasOnlyHorizontalOrVerticalNeighbours(x, boundariesHash));
             for (int i = 0; i < maxTraceAttempts; i++)
             {
-                bool traceHorizontal = UnityEngine.Random.value > 0.5f; // Randomly choose horizontal or vertical trace
-                GridNode randomNode = group[UnityEngine.Random.Range(0, group.Count)]; // Pick a random starting node
+                if (candidates.Count <= 0) return;
+
+                // Pick a random starting node
+                GridNode randomNode = null;
+                int elemId = UnityEngine.Random.Range(0, candidates.Count);
+                randomNode = candidates[elemId];
+                candidates.RemoveAt(elemId);
+
+                if (randomNode == null) return;
 
                 // Encontrar la direccion para avanzar
+                List<GridNode> nodesAvailable = buildingPlacer.GetUsageNeighbourNodes(randomNode.gridX, randomNode.gridY, new List<Usage>() { Usage.building });
+                nodesAvailable = nodesAvailable.FindAll(x => !boundariesHash.Contains(x));
+                List<Direction> directionsAvailable = new List<Direction>();
+                foreach (GridNode neighbour in nodesAvailable)
+                {
+                    directionsAvailable.Add(RoadPlacer.Instance.GetDirectionBasedOnPos(randomNode, neighbour));
+                }
 
-                // Mientras avanza comprobar requisitos en cada nodo
+                if (directionsAvailable.Count <= 0) break;
 
-                // Una vez todo esta okay, marcar el camino en direccion como válido, devolver lista nodos marcados para agilizar?¿
+                if (directionsAvailable.Count > 1)
+                {
+                    Debug.LogError("Nodo boundary con más de 1 direccion disponible");
+                    SpawnSphere(randomNode.worldPosition, Color.green, 2f, 4f);
+                }
+                // Comprobar si avanzar en la direccion disponible es viable, comprobar vecinos Decoration cerca
+                Direction chosenDir = directionsAvailable.First();
+                List<GridNode> path = DirectionMeetsDecoration(randomNode.gridX, randomNode.gridY, chosenDir);
 
-                // Trace horizontal line
-                //MarkDivision(x, minY, maxY, group, true); // Try marking
-                return;
+                if (path != null)
+                {
+                    SpawnSphere(randomNode.worldPosition, Color.green, 2f, 5f);
+                    path.ForEach(x =>
+                    {
+                        x.usage = Usage.decoration;
+                        x.isAlley = true;
+                    });
+                }
             }
         }
         private bool IsDecorationNodeAt(int x, int y)
@@ -813,6 +844,40 @@ namespace PG
             SpawnSphere(currentNode.worldPosition, Color.blue, 2f, 5f);
             return Direction.zero;
         }
+        private bool HasOnlyHorizontalOrVerticalNeighbours(GridNode node, HashSet<GridNode> boundaries)
+        {
+
+            int numHorizontal = 0;
+            foreach (Direction hDirection in GetHorizontalDirections())
+            {
+                GridNode newNode = GetNodeInDirection(node.gridX, node.gridY, hDirection, 1);
+                if (newNode.usage == Usage.building && boundaries.Contains(newNode))
+                    numHorizontal++;
+            }
+
+            int numVertical = 0;
+            foreach (Direction vDirection in GetVerticalDirections())
+            {
+                GridNode newNode = GetNodeInDirection(node.gridX, node.gridY, vDirection, 1);
+                if (newNode.usage == Usage.building && boundaries.Contains(newNode))
+                    numVertical++;
+            }
+
+            if ((numHorizontal == 0 && numVertical == 2) || (numHorizontal == 2 && numVertical == 0)) return true;
+
+            return false;
+
+            // Count horizontal and vertical neighbors
+            numHorizontal = GetHorizontalDirections()
+                .Select(dir => GetNodeInDirection(node.gridX, node.gridY, dir, 1))
+                .Count(newNode => newNode.usage == Usage.building && boundaries.Contains(newNode));
+
+            numVertical = GetVerticalDirections()
+                .Select(dir => GetNodeInDirection(node.gridX, node.gridY, dir, 1))
+                .Count(newNode => newNode.usage == Usage.building && boundaries.Contains(newNode));
+
+            return (numHorizontal == 2 && numVertical == 0) || (numHorizontal == 0 && numVertical == 2);
+        }
         private List<GridNode> GetSortableMissingNodes(List<GridNode> nodes)
         {
             List<GridNode> sortableNodes = new List<GridNode>();
@@ -927,6 +992,55 @@ namespace PG
                 {
                     SpawnSphere(currentNode.worldPosition, Color.red, 2f, 4f);
                     return false;
+                }
+                i++;
+            }
+        }
+        private List<GridNode> DirectionMeetsDecoration(int startX, int startY, Direction direction)
+        {
+            List<GridNode> path = new List<GridNode>();
+            int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
+            int i = 1;
+            int minDecorationDist = 2;
+            List<Direction> decorationDirections = IsHorizontal(direction) ? GetHorizontalDirections() : GetVerticalDirections();
+            while (true)
+            {
+                int newX = startX + offset[0] * i;
+                int newY = startY + offset[1] * i;
+
+                if (Grid.Instance.OutOfGrid(newX, newY))
+                    return null;
+
+                var currentNode = Grid.Instance.nodesGrid[newX, newY];
+                if (currentNode.usage == Usage.building)
+                {
+                    // Check that there are no decoration neighbours near
+                    for (int j = -minDecorationDist; j <= minDecorationDist; j++)
+                    {
+                        if (j == 0) continue;
+
+                        foreach (var decorationDirection in decorationDirections)
+                        {
+                            GridNode decorationNode = GetNodeInDirection(newX, newY, decorationDirection, j);
+                            if (decorationNode == null || decorationNode.usage == Usage.decoration)
+                                return null;
+                        }
+                    }
+
+                    path.Add(currentNode);
+                    // Check if next node in direction is decoration
+                    newX = startX + offset[0] * (i + 1);
+                    newY = startY + offset[1] * (i + 1);
+                    var nextNode = Grid.Instance.nodesGrid[newX, newY];
+                    if (nextNode.usage == Usage.decoration)
+                    {
+                        path.Add(nextNode);
+                        return path;
+                    }
+                }
+                else
+                {
+                    return null;
                 }
                 i++;
             }
