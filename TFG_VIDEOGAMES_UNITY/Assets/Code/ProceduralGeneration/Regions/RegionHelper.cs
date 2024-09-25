@@ -7,11 +7,9 @@ namespace PG
 {
     public class RegionHelper
     {
-        public Vector2Int DownLeft = Vector2Int.zero;
-        public Vector2Int DownRight = Vector2Int.zero;
-        public Vector2Int UpLeft = Vector2Int.zero;
-        public Vector2Int UpRight = Vector2Int.zero;
-
+        private List<VoronoiRegion> regions;
+        private List<VoronoiRegion> mainRegions;
+        private List<VoronoiRegion> gangRegions;
         /* ALGORITHM 
          * 1 - Define parameters:
          * Range for districts size (min 100 nodes, max 200)
@@ -23,8 +21,54 @@ namespace PG
          */
         public void SetRegions(List<VoronoiRegion> regions)
         {
+            this.regions = regions;
             CreateMainDistrict(regions);
-            CreateSuburbs(regions);
+            CreateGangDistrict(regions);
+        }
+        public void AdjustRegions()
+        {
+            // Find the boundaries of the road network
+            List<GridNode> boundaries = new List<GridNode>();
+            List<Usage> decorationUsage = new List<Usage>() { Usage.decoration };
+            for (int i = 0; i < Grid.Instance.gridSizeX; i++)
+            {
+                for (int j = 0; j < Grid.Instance.gridSizeY; j++)
+                {
+                    GridNode currentNode = Grid.Instance.nodesGrid[i, j];
+                    
+                    if (currentNode.usage != Usage.empty)
+                        continue;
+
+                    // Check if it has a decorationNeighbour
+                    // Caso esquina, que direccion coge el nodo hacia neighbour?¿
+                    List<GridNode> decorationNeighbours = Grid.Instance.GetNeighbours(currentNode, decorationUsage);
+                    if (decorationNeighbours.Count > 0)
+                    {
+                        List<GridNode> freeNeighbours = Grid.Instance.GetNeighboursInLine(currentNode).Except(decorationNeighbours).ToList();
+                        if (freeNeighbours.Count <= 0)
+                            continue;
+
+                        foreach (GridNode neighbour in freeNeighbours)
+                        {
+                            if (neighbour.usage != Usage.empty && neighbour.usage != Usage.EOW)
+                                continue;
+
+                            Direction direction = RoadPlacer.Instance.GetDirectionBasedOnPos(currentNode, neighbour);
+                            bool directionMeetsEOW = MeetsEndOfWorld(neighbour.gridX, neighbour.gridY, direction);
+                            if (directionMeetsEOW)
+                            {
+                                boundaries.Add(currentNode);
+                                currentNode.usage = Usage.EOW;
+                                break;
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            // With the boundaries, we can check which nodes of the generated regions fall inside
+            // Regenerate to reach a minimum standard
         }
         private void CreateMainDistrict(List<VoronoiRegion> regions)
         {
@@ -37,11 +81,11 @@ namespace PG
             int firstId = Random.Range(0, regions.Count);
 
             // Add adjacent polygons to the main district 
-            List<VoronoiRegion> mainDistrictRegions = new List<VoronoiRegion>
+            mainRegions = new List<VoronoiRegion>
             {
                 regions[firstId]
             };
-            mainDistrictRegions[0].addedToDistrict = true;
+            mainRegions[0].addedToDistrict = true;
             int nodeCount = regions[firstId].nodes.Count;
             bool conditionsMet = false;
 
@@ -50,20 +94,20 @@ namespace PG
             while (!conditionsMet)
             {
                 // Lista que tiene las regiones que se van a comparar para ver cual es mejor elección para el distrito.
-                VoronoiRegion selectedRegion = mainDistrictRegions.Last();
+                VoronoiRegion selectedRegion = mainRegions.Last();
 
                 // Get the best candidate from the current neighbour
-                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, mainDistrictRegions, mainDistrictMaxNodes, nodeCount, Region.Main);
+                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, mainRegions, mainDistrictMaxNodes, nodeCount, Region.Main);
 
                 // Puede ser que la región seleccionada ya no tenga vecinos válidos
                 if (bestNeighbour == null)
                 {
                     // This list holds a COPY of the original regions
-                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(mainDistrictRegions);
+                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(mainRegions);
 
                     // No se sigue ningun criterio para seleccionar candidatos, pero se podría elegir a aquellos que tuvieran más o menos vecinos libres.
                     Debug.LogWarning("Retrying to assign a new region");
-                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, mainDistrictRegions, mainDistrictMaxNodes, nodeCount, Region.Main);
+                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, mainRegions, mainDistrictMaxNodes, nodeCount, Region.Main);
 
                     if (bestNeighbour == null)
                     {
@@ -72,20 +116,20 @@ namespace PG
                     }
                     else
                     {
-                        conditionsMet = AddRegionToDistrict(bestNeighbour, mainDistrictRegions, ref nodeCount, mainDistrictMinNodes);
+                        conditionsMet = AddRegionToDistrict(bestNeighbour, mainRegions, ref nodeCount, mainDistrictMinNodes);
                     }
                 }
                 else
                 {
-                    conditionsMet = AddRegionToDistrict(bestNeighbour, mainDistrictRegions, ref nodeCount, mainDistrictMinNodes);
+                    conditionsMet = AddRegionToDistrict(bestNeighbour, mainRegions, ref nodeCount, mainDistrictMinNodes);
                 }
 
             }
             //Debug.Log("Node count: " + nodeCount);
-            AssignTypeToRegions(mainDistrictRegions, Region.Main);
+            AssignTypeToRegions(mainRegions, Region.Main);
             CheckForIsolatedRegions(regions, Region.Main);
         }
-        private void CreateSuburbs(List<VoronoiRegion> regions)
+        private void CreateGangDistrict(List<VoronoiRegion> regions)
         {
             // Define the suburbs
             int suburbsMinNodes = 1000;
@@ -108,7 +152,7 @@ namespace PG
                     found = true;
             }
             bool conditionsMet = false;
-            List<VoronoiRegion> firstSuburbsDistrictRegions = new List<VoronoiRegion>
+            gangRegions = new List<VoronoiRegion>
             {
                 firstRegion
             };
@@ -116,16 +160,16 @@ namespace PG
             int nodeCount = 0;
             while (!conditionsMet)
             {
-                VoronoiRegion selectedRegion = firstSuburbsDistrictRegions.Last();
+                VoronoiRegion selectedRegion = gangRegions.Last();
 
-                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, firstSuburbsDistrictRegions, suburbsMaxNodes, nodeCount, Region.Suburbs);
+                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, gangRegions, suburbsMaxNodes, nodeCount, Region.Suburbs);
 
                 if (bestNeighbour == null)
                 {
-                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(firstSuburbsDistrictRegions);
+                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(gangRegions);
 
                     Debug.LogWarning("Retrying to assign a new region");
-                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, firstSuburbsDistrictRegions, suburbsMaxNodes, nodeCount, Region.Main);
+                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, gangRegions, suburbsMaxNodes, nodeCount, Region.Main);
 
                     if (bestNeighbour == null)
                     {
@@ -134,17 +178,17 @@ namespace PG
                     }
                     else
                     {
-                        conditionsMet = AddRegionToDistrict(bestNeighbour, firstSuburbsDistrictRegions, ref nodeCount, suburbsMinNodes);
+                        conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, suburbsMinNodes);
                     }
                 }
                 else
                 {
-                    conditionsMet = AddRegionToDistrict(bestNeighbour, firstSuburbsDistrictRegions, ref nodeCount, suburbsMinNodes);
+                    conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, suburbsMinNodes);
                 }
 
             }
             //Debug.Log("Node count: " + nodeCount);
-            AssignTypeToRegions(firstSuburbsDistrictRegions, Region.Suburbs);
+            AssignTypeToRegions(gangRegions, Region.Suburbs);
             CheckForIsolatedRegions(regions, Region.Suburbs);
         }
         private void AssignTypeToRegions(List<VoronoiRegion> regions, Region regionType)
@@ -332,6 +376,26 @@ namespace PG
             if (nodeCount + region.nodes.Count > maxNodes)
                 return false;
             return true;
+        }
+        private bool MeetsEndOfWorld(int startX, int startY, Direction direction)
+        {           
+            int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+
+            int i = 1;
+            while (true)
+            {
+                int currentPosX = startX + dir[0] * i;
+                int currentPosY = startY + dir[1] * i;
+
+                if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                    return true;
+
+                GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+                if (currentNode.usage != Usage.empty || currentNode.usage != Usage.EOW)
+                    return false;
+
+                i++;
+            }
         }
     }
 

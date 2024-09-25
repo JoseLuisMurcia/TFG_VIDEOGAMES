@@ -89,6 +89,9 @@ namespace PG
                             case Usage.building:
                                 Gizmos.color = Color.cyan;
                                 break;
+                            case Usage.EOW:
+                                Gizmos.color = Color.green;
+                                break;
                             default:
                                 break;
                         }
@@ -161,33 +164,6 @@ namespace PG
                     if (nodesGrid[checkX, checkY] != null)
                     {
                         neighbours.Add(nodesGrid[checkX, checkY]);
-                    }
-                }
-            }
-
-            return neighbours;
-        }
-
-        public List<GridNode> GetNeighbours(GridNode node)
-        {
-            List<GridNode> neighbours = new List<GridNode>();
-
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    if (x == 0 && y == 0)
-                        continue;
-
-                    int checkX = node.gridX + x;
-                    int checkY = node.gridY + y;
-
-                    if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
-                    {
-                        if (nodesGrid[checkX, checkY] != null)
-                        {
-                            neighbours.Add(nodesGrid[checkX, checkY]);
-                        }
                     }
                 }
             }
@@ -348,7 +324,8 @@ namespace PG
         road,
         point,
         decoration,
-        building
+        building,
+        EOW
     }
 
     enum DebugMode

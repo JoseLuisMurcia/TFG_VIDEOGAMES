@@ -189,11 +189,19 @@ namespace PG
                         break;
                 }
             }
-            new RegionHelper().SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
+
+            // Set regions
+            RegionHelper regionHelper = new RegionHelper();
+            regionHelper.SetRegions(grid.voronoiGenerator.GetVoronoiRegions());
+            // Create road prefabs and perfect road network
             Dictionary<Vector2Int, GameObject> roadDictionary = roadPlacer.PlaceRoadAssets(grid, this);
+            // Create road nodes used by cars and connect roads
             await roadConnecter.ConnectRoads(roadDictionary.Values.ToList());
-            generationUI.OnCityCreated();
+            // Adjust the voronoi regions to the generated road network
+            regionHelper.AdjustRegions();
+            // Place sidewalks and buildings
             buildingPlacer.PlaceBuildings(grid, roadDictionary);
+            generationUI.OnCityCreated();
             //navMeshGenerator.BakeNavMesh();
         }
 

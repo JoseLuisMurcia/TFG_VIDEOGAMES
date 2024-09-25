@@ -596,6 +596,9 @@ namespace PG
             {
                 if (reserveNode == null)
                 {
+                    if (group.Count == 0)
+                        return group;
+
                     group = group.OrderBy(node => node.gridX)
                         .ThenBy(node => node.gridY)
                         .ToList();

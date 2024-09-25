@@ -42,6 +42,7 @@ namespace PG
             // Group connected nodes based on regions
             regionNodeGrouper.GroupConnectedNodes(buildingAndSidewalkNodes, this);
 
+            return;
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 
@@ -613,7 +614,7 @@ namespace PG
         }
         private bool HasDecorationNeighbour(GridNode node)
         {
-            return grid.GetNeighbours(node).Any(x => x.usage == Usage.decoration);
+            return grid.GetNeighbours(node, new List<Usage>() { Usage.decoration }).Count > 0;
         }
         public List<Direction> GetUsageNeighbours(int posX, int posY, List<Usage> usages)
         {
