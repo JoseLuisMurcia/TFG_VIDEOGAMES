@@ -199,6 +199,7 @@ namespace PG
             await roadConnecter.ConnectRoads(roadDictionary.Values.ToList());
             // Adjust the voronoi regions to the generated road network
             regionHelper.AdjustRegions();
+            return;
             // Place sidewalks and buildings
             buildingPlacer.PlaceBuildings(grid, roadDictionary);
             generationUI.OnCityCreated();

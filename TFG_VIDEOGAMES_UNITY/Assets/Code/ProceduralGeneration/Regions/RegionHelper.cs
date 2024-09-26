@@ -10,6 +10,8 @@ namespace PG
         private List<VoronoiRegion> regions;
         private List<VoronoiRegion> mainRegions;
         private List<VoronoiRegion> gangRegions;
+        private HashSet<GridNode> boundaries;
+        private static List<Direction> allDirections = new List<Direction>() { Direction.left, Direction.right, Direction.back, Direction.forward };
         /* ALGORITHM 
          * 1 - Define parameters:
          * Range for districts size (min 100 nodes, max 200)
@@ -28,8 +30,9 @@ namespace PG
         public void AdjustRegions()
         {
             // Find the boundaries of the road network
-            List<GridNode> boundaries = new List<GridNode>();
+            boundaries = new HashSet<GridNode>();
             List<Usage> decorationUsage = new List<Usage>() { Usage.decoration };
+            List<Usage> emptyUsage = new List<Usage>() { Usage.empty, Usage.EOW };
             for (int i = 0; i < Grid.Instance.gridSizeX; i++)
             {
                 for (int j = 0; j < Grid.Instance.gridSizeY; j++)
@@ -40,19 +43,26 @@ namespace PG
                         continue;
 
                     // Check if it has a decorationNeighbour
-                    // Caso esquina, que direccion coge el nodo hacia neighbour?¿
                     List<GridNode> decorationNeighbours = Grid.Instance.GetNeighbours(currentNode, decorationUsage);
                     if (decorationNeighbours.Count > 0)
                     {
-                        List<GridNode> freeNeighbours = Grid.Instance.GetNeighboursInLine(currentNode).Except(decorationNeighbours).ToList();
+                        List<GridNode> allNeighbours = Grid.Instance.GetNeighboursInLine(currentNode);
+                        // Check if this node is already a boundary
+                        if (allNeighbours.Count < 4)
+                        {
+                            boundaries.Add(currentNode);
+                            currentNode.usage = Usage.EOW;
+                            continue;
+                        }
+                        // Get empty or EOW neighbours
+                        List<GridNode> availableNeighbours = Grid.Instance.GetNeighboursInLine(currentNode, emptyUsage);
+                        List<GridNode> freeNeighbours = availableNeighbours.Except(decorationNeighbours).ToList();
                         if (freeNeighbours.Count <= 0)
                             continue;
 
+                        // Advance in the direction of the neighbours until EOW
                         foreach (GridNode neighbour in freeNeighbours)
                         {
-                            if (neighbour.usage != Usage.empty && neighbour.usage != Usage.EOW)
-                                continue;
-
                             Direction direction = RoadPlacer.Instance.GetDirectionBasedOnPos(currentNode, neighbour);
                             bool directionMeetsEOW = MeetsEndOfWorld(neighbour.gridX, neighbour.gridY, direction);
                             if (directionMeetsEOW)
@@ -66,8 +76,40 @@ namespace PG
 
                 }
             }
+            // Reattempt
+            foreach (GridNode boundary in boundaries)
+            {
+                // Let's find decoration nodes from the boundaries
+                List<GridNode> decorationNeighbours = Grid.Instance.GetNeighboursInLine(boundary, decorationUsage);
+                foreach (GridNode decorationNeighbour in decorationNeighbours)
+                {
+                    Direction dirToNeighbour = RoadPlacer.Instance.GetDirectionBasedOnPos(boundary, decorationNeighbour);
+                    Direction oppositeDir = RoadPlacer.Instance.GetOppositeDir(dirToNeighbour);
+
+                    if (MeetsDecoration(boundary.gridX, boundary.gridY, oppositeDir))
+                    {
+                        break;
+                    }
+                }           
+            }
+
 
             // With the boundaries, we can check which nodes of the generated regions fall inside
+            for (int i = 0; i < Grid.Instance.gridSizeX; i++)
+            {
+                for (int j = 0; j < Grid.Instance.gridSizeY; j++)
+                {
+                    GridNode currentNode = Grid.Instance.nodesGrid[i, j];
+                    if (boundaries.Contains(currentNode))
+                        continue;
+
+                    if (IsContainedInBoundaries(currentNode))
+                    {
+                        Vector3 rayOrigin = currentNode.worldPosition + Vector3.up * 20f;
+                        Debug.DrawRay(rayOrigin, Vector3.down * 30f, Color.black, 50f);
+                    }
+                }
+            }
             // Regenerate to reach a minimum standard
         }
         private void CreateMainDistrict(List<VoronoiRegion> regions)
@@ -378,24 +420,100 @@ namespace PG
             return true;
         }
         private bool MeetsEndOfWorld(int startX, int startY, Direction direction)
-        {           
+        {
+            Vector2Int key = new Vector2Int(startX, startY);
             int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
 
-            int i = 1;
+            int currentPosX = startX;
+            int currentPosY = startY;
+
             while (true)
             {
-                int currentPosX = startX + dir[0] * i;
-                int currentPosY = startY + dir[1] * i;
+                currentPosX += dir[0];
+                currentPosY += dir[1];
 
+                // Check if the current position is out of the grid
                 if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
                     return true;
 
+                // Get the current grid node
                 GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
-                if (currentNode.usage != Usage.empty || currentNode.usage != Usage.EOW)
-                    return false;
 
-                i++;
+                if (currentNode.usage == Usage.EOW)
+                    return true;
+
+                if (currentNode.usage == Usage.empty)
+                    continue;
+                
+                return false;
             }
+        }
+        private bool MeetsDecoration(int startX, int startY, Direction direction)
+        {
+            int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+
+            int currentPosX = startX;
+            int currentPosY = startY;
+
+            while (true)
+            {
+                currentPosX += dir[0];
+                currentPosY += dir[1];
+
+                // Check if the current position is out of the grid
+                if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                    return true;
+
+                // Get the current grid node
+                GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+
+                if (currentNode.usage == Usage.EOW)
+                    return true;
+
+                if (currentNode.usage == Usage.empty)
+                {
+                    var decorationNeighbours = Grid.Instance.GetNeighboursInLine(currentNode, new List<Usage>() { Usage.decoration });
+                    if (decorationNeighbours.Count > 0)
+                    {
+                        boundaries.Add(currentNode);
+                        currentNode.usage = Usage.EOW;
+                    }
+                    continue;
+                }
+
+                return false;
+            }
+        }
+        private bool IsContainedInBoundaries(GridNode startNode)
+        {
+            // A node is contained in boundaries if it meets a boundary node in all 4 directions     
+            foreach (Direction direction in allDirections)
+            {
+                // Init pos  
+                int currentPosX = startNode.gridX;
+                int currentPosY = startNode.gridY;
+                int[] dir = RoadPlacer.Instance.DirectionToInt(direction);
+
+                // Advance in direction
+                while (true)
+                {
+                    currentPosX += dir[0];
+                    currentPosY += dir[1];
+
+                    // Check if the current position is out of the grid
+                    if (Grid.Instance.OutOfGrid(currentPosX, currentPosY))
+                        return false;
+
+                    // Get the current grid node
+                    GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
+
+                    // If contained, check next direction
+                    if (boundaries.Contains(currentNode))
+                        break;
+                }
+            }
+            // If this part is reached, all directions lead to boundaries
+            return true;
         }
     }
 
