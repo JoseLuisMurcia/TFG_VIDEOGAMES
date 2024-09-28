@@ -7,11 +7,26 @@ namespace PG
 {
     public class RegionHelper
     {
+        private Dictionary<int, VoronoiRegion> regionsDictionary = new Dictionary<int, VoronoiRegion>();
         private List<VoronoiRegion> regions;
         private List<VoronoiRegion> mainRegions;
         private List<VoronoiRegion> gangRegions;
         private HashSet<GridNode> boundaries;
-        private static List<Direction> allDirections = new List<Direction>() { Direction.left, Direction.right, Direction.back, Direction.forward };
+        private HashSet<GridNode> boundariesToAdd;
+
+        // Used in the first part of the algorithm
+        private int mainDistrictMinNodes = 4000;
+        private int mainDistrictMaxNodes = 6000;
+        private int gangDistrictMinNodes = 2000;
+        private int gangDistrictMaxNodes = 3000;
+
+        // Used after roads have been created
+        private float mainDistrictMinPercentage = 25f;
+        private float mainDistrictMaxPercentage = 30f;
+        private float gangDistrictMinPercentage = 10f;
+        private float gangDistrictMaxPercentage = 15f;
+        int totalNodesContained = 0;
+
         /* ALGORITHM 
          * 1 - Define parameters:
          * Range for districts size (min 100 nodes, max 200)
@@ -20,9 +35,16 @@ namespace PG
          * Do the process until the requirements are met, and then, make all those nodes belong to the main city district
          * 3 - Repeat 2 for the suburbs, keep in mind that it should not be conected to the main city district
          * 4 - Every other node should be residential
+         * 5 - After road creation, AdjustRegions() is called to check which nodes fall inside the boundaries of the road network. 
+         * We need to remove or add polygons (VoronoiRegions) in order to reach a certain percentage.
+         * That way we are in real control of the generation.
          */
         public void SetRegions(List<VoronoiRegion> regions)
         {
+            foreach (VoronoiRegion region in regions)
+            {
+                regionsDictionary.Add(region.id, region);
+            }
             this.regions = regions;
             CreateMainDistrict(regions);
             CreateGangDistrict(regions);
@@ -77,6 +99,7 @@ namespace PG
                 }
             }
             // Reattempt
+            boundariesToAdd = new HashSet<GridNode>();
             foreach (GridNode boundary in boundaries)
             {
                 // Let's find decoration nodes from the boundaries
@@ -92,9 +115,15 @@ namespace PG
                     }
                 }           
             }
+            foreach (GridNode boundary in boundariesToAdd)
+            {
+                boundaries.Add(boundary);
+            }
+            boundariesToAdd.Clear();
 
 
-            // With the boundaries, we can check which nodes of the generated regions fall inside
+            // With the boundaries, we can check which nodes fall inside the boundaries
+            totalNodesContained = 0;
             for (int i = 0; i < Grid.Instance.gridSizeX; i++)
             {
                 for (int j = 0; j < Grid.Instance.gridSizeY; j++)
@@ -105,19 +134,134 @@ namespace PG
 
                     if (IsContainedInBoundaries(currentNode))
                     {
-                        Vector3 rayOrigin = currentNode.worldPosition + Vector3.up * 20f;
-                        Debug.DrawRay(rayOrigin, Vector3.down * 30f, Color.black, 50f);
+                        totalNodesContained++;
+                        currentNode.isContained = true;
+                        regionsDictionary[currentNode.voronoiRegion.id].nodesContained.Add(currentNode);
                     }
                 }
             }
-            // Regenerate to reach a minimum standard
+
+            // Iterate the regions in the main district to check if the minimum amount of nodes is reached
+            int totalMainNodesContained = 0;
+            
+            foreach (var region in mainRegions)
+            {
+                totalMainNodesContained += region.nodesContained.Count;
+            }
+            float percentageMainContained = ((float)totalMainNodesContained / (float)totalNodesContained) * 100f;
+            Debug.Log("[BEFORE] totalNodesContained: " + totalNodesContained + ", totalMainNodesContained: " + totalMainNodesContained + ", percentage: " + percentageMainContained + "%");
+            if (percentageMainContained < mainDistrictMinPercentage)
+            {
+                // Add more regions if there are not enough nodes
+                ExpandMainRegion(percentageMainContained, totalMainNodesContained);
+            }
+            else if (percentageMainContained > mainDistrictMaxPercentage)
+            {
+                // Remove regions if we've exceeded the maximum percentage
+                ContractMainRegion(percentageMainContained, totalMainNodesContained);
+            }
+            totalMainNodesContained = 0;
+            foreach (var region in mainRegions)
+            {
+                totalMainNodesContained += region.nodesContained.Count;
+            }
+            percentageMainContained = ((float)totalMainNodesContained / (float)totalNodesContained) * 100f;
+            Debug.Log("[AFTER] totalNodesContained: " + totalNodesContained + ", totalMainNodesContained: " + totalMainNodesContained + ", percentage: " + percentageMainContained + "%");
+
         }
+        private void ExpandMainRegion(float percentageMainContained, float totalMainNodesContained)
+        {
+            /* Add regions to the mainRegions list */
+
+            // Look for the neighbours with less neighbours availabe (close gaps) and select them as the next region to add
+
+            // Iterate until the percentage is met
+            while (percentageMainContained < mainDistrictMinPercentage)
+            {
+                // Find the next candidate region to add: a neighboring region of the main district
+                VoronoiRegion nextRegion = null;
+                int fewestNeighbours = int.MaxValue;
+
+                foreach (var region in mainRegions)
+                {
+                    foreach (var neighbour in region.neighbourRegions)
+                    {
+                        // Ignore regions that are already in the main district
+                        if (neighbour.addedToDistrict) continue;
+
+                        // Check if the neighbor has fewer neighboring regions, to "close gaps"
+                        int neighbourCount = neighbour.neighbourRegions.Count(n => !n.addedToDistrict);
+                        if (neighbourCount < fewestNeighbours && IsSizeOk(mainDistrictMaxPercentage, percentageMainContained, neighbour))
+                        {
+                            fewestNeighbours = neighbourCount;
+                            nextRegion = neighbour;
+                        }
+                    }
+                }
+
+                // If no neighboring region was found to expand the main region, we should break to avoid an infinite loop
+                if (nextRegion == null)
+                {
+                    Debug.LogWarning("No more regions available to expand the main district.");
+                }
+
+                // Add the selected neighboring region to the main district
+                nextRegion.addedToDistrict = true;
+                mainRegions.Add(nextRegion);
+                SpawnSphere(nextRegion.centre, Color.blue, 2f, 6f);
+                totalMainNodesContained += nextRegion.nodesContained.Count;
+
+                AssignTypeToRegion(nextRegion, Region.Main);
+                // Recalculate the percentage of main district nodes contained
+                percentageMainContained = ((float)totalMainNodesContained / (float)totalNodesContained) * 100f;
+            }
+        }
+        private void ContractMainRegion(float percentageMainContained, int totalMainNodesContained)
+        {
+            // While the percentage of nodes contained in the main district is above the maximum threshold
+            while (percentageMainContained > mainDistrictMaxPercentage)
+            {
+                // Find the next candidate region to remove: a region that has the fewest connections to other mainRegions
+                VoronoiRegion regionToRemove = null;
+                int fewestNeighbours = int.MaxValue;
+
+                foreach (var region in mainRegions)
+                {
+                    // Count the number of neighbors that are still in the main district
+                    int neighbourCount = region.neighbourRegions.Count(n => n.addedToDistrict);
+
+                    // Prioritize regions with fewer neighbors in the district (i.e., "peripheral" regions)
+                    if (neighbourCount < fewestNeighbours)
+                    {
+                        fewestNeighbours = neighbourCount;
+                        regionToRemove = region;
+                    }
+                }
+
+                // If no region is found (which is unlikely), break the loop to avoid infinite loops
+                if (regionToRemove == null)
+                {
+                    Debug.LogWarning("No more regions available to contract from the main district.");
+                    break;
+                }
+
+                // Remove the region from the main district
+                regionToRemove.addedToDistrict = false;
+                mainRegions.Remove(regionToRemove);
+                SpawnSphere(regionToRemove.centre, Color.red, 2f, 6f);
+                totalMainNodesContained -= regionToRemove.nodesContained.Count;
+
+                AssignTypeToRegion(regionToRemove, Region.Residential);
+                // Recalculate the percentage of main district nodes contained
+                percentageMainContained = ((float)totalMainNodesContained / (float)totalNodesContained) * 100f;
+
+                Debug.Log($"Removed region {regionToRemove.id} from main district. New percentage: {percentageMainContained}%");
+            }
+        }
+
         private void CreateMainDistrict(List<VoronoiRegion> regions)
         {
             /* Define the main city district */
-            // Create params
-            int mainDistrictMinNodes = 4000;
-            int mainDistrictMaxNodes = 8000;
 
             // Select the first polygon
             int firstId = Random.Range(0, regions.Count);
@@ -173,9 +317,8 @@ namespace PG
         }
         private void CreateGangDistrict(List<VoronoiRegion> regions)
         {
-            // Define the suburbs
-            int suburbsMinNodes = 1000;
-            int suburbsMaxNodes = 2000;
+            /* Define the suburbs */
+
             List<VoronoiRegion> freeRegions = new List<VoronoiRegion>();
             foreach (VoronoiRegion region in regions)
             {
@@ -204,14 +347,14 @@ namespace PG
             {
                 VoronoiRegion selectedRegion = gangRegions.Last();
 
-                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, gangRegions, suburbsMaxNodes, nodeCount, Region.Suburbs);
+                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, gangRegions, gangDistrictMinNodes, nodeCount, Region.Suburbs);
 
                 if (bestNeighbour == null)
                 {
                     List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(gangRegions);
 
                     Debug.LogWarning("Retrying to assign a new region");
-                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, gangRegions, suburbsMaxNodes, nodeCount, Region.Main);
+                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, gangRegions, gangDistrictMaxNodes, nodeCount, Region.Main);
 
                     if (bestNeighbour == null)
                     {
@@ -220,12 +363,12 @@ namespace PG
                     }
                     else
                     {
-                        conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, suburbsMinNodes);
+                        conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, gangDistrictMinNodes);
                     }
                 }
                 else
                 {
-                    conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, suburbsMinNodes);
+                    conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, gangDistrictMinNodes);
                 }
 
             }
@@ -323,6 +466,32 @@ namespace PG
             }
             return bestNeighbour;
         }
+        private VoronoiRegion SelectBestNeighbour(VoronoiRegion selectedRegion, List<VoronoiRegion> districtRegionList, float maxPercentage, float currentPercentage, Region regionType)
+        {
+            VoronoiRegion bestNeighbour = null;
+            List<VoronoiRegion> neighbourRegions = regionType == Region.Main ? GetValidMainNeighbours(selectedRegion) : GetValidSuburbsNeighbours(selectedRegion);
+
+            int bestHits = -1;
+
+            foreach (VoronoiRegion candidate in neighbourRegions)
+            {
+                int currentHits = 0;
+                foreach (VoronoiRegion addedRegion in districtRegionList)
+                {
+                    if (addedRegion.neighbourRegions.Contains(candidate))
+                    {
+                        currentHits++;
+                    }
+                }
+
+                if (currentHits > bestHits && IsSizeOk(maxPercentage, currentPercentage, candidate))
+                {
+                    bestNeighbour = candidate;
+                    bestHits = currentHits;
+                }
+            }
+            return bestNeighbour;
+        }
         private List<VoronoiRegion> GetAddedRegionsWithValidNeighbours(List<VoronoiRegion> addedRegions)
         {
             List<VoronoiRegion> regionsWithValidNeighbours = new List<VoronoiRegion>();
@@ -349,7 +518,7 @@ namespace PG
             int maxAttempts = 5;
             for (int currentAttempt = 0; currentAttempt < maxAttempts && bestNeighbour == null; currentAttempt++)
             {
-                Debug.Log("Current Attempt: " + currentAttempt);
+                //Debug.Log("Current Attempt: " + currentAttempt);
                 var selectedRegionCopy = regionsWithValidNeighbours[Random.Range(0, regionsWithValidNeighbours.Count)];
                 var selectedRegion = regions.Find(region => region.id == selectedRegionCopy.id);
                 bestNeighbour = SelectBestNeighbour(selectedRegion, addedDistrictRegions, maxNodes, nodeCount, regionType);
@@ -419,6 +588,17 @@ namespace PG
                 return false;
             return true;
         }
+        private bool IsSizeOk(float maxPercentage, float currentPercentage, VoronoiRegion region)
+        {
+            float newPercentage = currentPercentage + GetPercentageContained(region);
+            if (newPercentage > maxPercentage)
+                return false;
+            return true;
+        }
+        private float GetPercentageContained(VoronoiRegion region)
+        {
+            return ((float)region.nodesContained.Count / (float)totalNodesContained) * 100f;
+        }
         private bool MeetsEndOfWorld(int startX, int startY, Direction direction)
         {
             Vector2Int key = new Vector2Int(startX, startY);
@@ -475,7 +655,7 @@ namespace PG
                     var decorationNeighbours = Grid.Instance.GetNeighboursInLine(currentNode, new List<Usage>() { Usage.decoration });
                     if (decorationNeighbours.Count > 0)
                     {
-                        boundaries.Add(currentNode);
+                        boundariesToAdd.Add(currentNode);
                         currentNode.usage = Usage.EOW;
                     }
                     continue;
@@ -486,8 +666,15 @@ namespace PG
         }
         private bool IsContainedInBoundaries(GridNode startNode)
         {
+            // Get the grid size
+            int gridSizeX = Grid.Instance.gridSizeX;
+            int gridSizeY = Grid.Instance.gridSizeY;
+
+            // Determine the direction checking order based on node's position
+            List<Direction> checkOrder = GetDirectionCheckOrder(startNode, gridSizeX, gridSizeY);
+
             // A node is contained in boundaries if it meets a boundary node in all 4 directions     
-            foreach (Direction direction in allDirections)
+            foreach (Direction direction in checkOrder)
             {
                 // Init pos  
                 int currentPosX = startNode.gridX;
@@ -507,13 +694,50 @@ namespace PG
                     // Get the current grid node
                     GridNode currentNode = Grid.Instance.nodesGrid[currentPosX, currentPosY];
 
-                    // If contained, check next direction
+                    // If contained, check the next direction
                     if (boundaries.Contains(currentNode))
                         break;
                 }
             }
             // If this part is reached, all directions lead to boundaries
             return true;
+        }
+        private List<Direction> GetDirectionCheckOrder(GridNode node, int gridSizeX, int gridSizeY)
+        {
+            List<Direction> directions = new List<Direction>();
+
+            // Determine whether the node is closer to the left or right edge of the grid
+            if (node.gridX < gridSizeX / 2)
+            {
+                directions.Add(Direction.left);  // Closer to the left side, check left first
+                directions.Add(Direction.right); // Check right later
+            }
+            else
+            {
+                directions.Add(Direction.right); // Closer to the right side, check right first
+                directions.Add(Direction.left);  // Check left later
+            }
+
+            // Determine whether the node is closer to the top or bottom edge of the grid
+            if (node.gridY < gridSizeY / 2)
+            {
+                directions.Add(Direction.back);  // Closer to the bottom side, check down first
+                directions.Add(Direction.forward);    // Check up later
+            }
+            else
+            {
+                directions.Add(Direction.forward);    // Closer to the top side, check up first
+                directions.Add(Direction.back);  // Check down later
+            }
+
+            return directions;
+        }
+        private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
+        {
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.localScale = Vector3.one * size;
+            startSphere.transform.position = pos + Vector3.up * 3f * offset;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
     }
 

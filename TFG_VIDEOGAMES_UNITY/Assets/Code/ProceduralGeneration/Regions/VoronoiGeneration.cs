@@ -253,6 +253,7 @@ namespace PG
     {
         public Color color { set; get; }
         public List<GridNode> nodes = new List<GridNode>();
+        public List<GridNode> nodesContained = new List<GridNode>();
         public HashSet<VoronoiRegion> neighbourRegions = new HashSet<VoronoiRegion>();
         public Vector2 point;
         public Region regionType = Region.Residential;

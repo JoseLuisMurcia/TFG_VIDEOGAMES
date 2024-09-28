@@ -13538,7 +13538,7 @@ MonoBehaviour:
   nodeDiameter: 0
   gridSizeX: 0
   gridSizeY: 0
-  debugMode: 0
+  debugMode: 3
   voronoiGenerator: {fileID: 0}
 --- !u!114 &1575517318
 MonoBehaviour:
@@ -13553,9 +13553,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   size: 600
-  regionAmount: 40
+  regionAmount: 60
   worldBottomLeft: {x: 0, y: 0, z: 0}
-  debugType: 0
+  debugType: 2
   lloydRelaxation: 1
   relaxationIterations: 10
 --- !u!114 &1575517320
@@ -23078,6 +23078,10 @@ PrefabInstance:
     - target: {fileID: 6892683440715274868, guid: 0bd91d8fafb664548ae6a39aa82fe318, type: 3}
       propertyPath: m_Name
       value: BuildingGeneratorInput
+      objectReference: {fileID: 0}
+    - target: {fileID: 6892683440715274868, guid: 0bd91d8fafb664548ae6a39aa82fe318, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0bd91d8fafb664548ae6a39aa82fe318, type: 3}
