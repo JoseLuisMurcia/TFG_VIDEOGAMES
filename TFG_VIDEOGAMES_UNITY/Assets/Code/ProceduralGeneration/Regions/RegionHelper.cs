@@ -17,14 +17,12 @@ namespace PG
         // Used in the first part of the algorithm
         private int mainDistrictMinNodes = 4000;
         private int mainDistrictMaxNodes = 6000;
-        private int gangDistrictMinNodes = 2000;
-        private int gangDistrictMaxNodes = 3000;
 
         // Used after roads have been created
         private float mainDistrictMinPercentage = 25f;
         private float mainDistrictMaxPercentage = 30f;
-        private float gangDistrictMinPercentage = 10f;
-        private float gangDistrictMaxPercentage = 15f;
+        private float gangDistrictMinPercentage = 15f;
+        private float gangDistrictMaxPercentage = 20f;
         int totalNodesContained = 0;
 
         /* ALGORITHM 
@@ -47,7 +45,7 @@ namespace PG
             }
             this.regions = regions;
             CreateMainDistrict(regions);
-            CreateGangDistrict(regions);
+            //CreateGangDistrict(regions);
         }
         public void AdjustRegions()
         {
@@ -168,6 +166,17 @@ namespace PG
             percentageMainContained = ((float)totalMainNodesContained / (float)totalNodesContained) * 100f;
             Debug.Log("[AFTER] totalNodesContained: " + totalNodesContained + ", totalMainNodesContained: " + totalMainNodesContained + ", percentage: " + percentageMainContained + "%");
 
+
+            // Create the gang district after the main has been created
+            CreateGangDistrict(regions);
+            int totalGangNodesContained = 0;
+            float percentageGangContained = 0f;
+            foreach (var region in gangRegions)
+            {
+                totalGangNodesContained += region.nodesContained.Count;
+            }
+            percentageGangContained = ((float)totalGangNodesContained / (float)totalNodesContained) * 100f;
+            Debug.Log("totalNodesContained: " + totalNodesContained + ", totalGangNodesContained: " + totalGangNodesContained + ", percentage: " + percentageGangContained + "%");
         }
         private void ExpandMainRegion(float percentageMainContained, float totalMainNodesContained)
         {
@@ -187,7 +196,7 @@ namespace PG
                     foreach (var neighbour in region.neighbourRegions)
                     {
                         // Ignore regions that are already in the main district
-                        if (neighbour.addedToDistrict) continue;
+                        if (neighbour.addedToDistrict || !HasContainedNodes(neighbour)) continue;
 
                         // Check if the neighbor has fewer neighboring regions, to "close gaps"
                         int neighbourCount = neighbour.neighbourRegions.Count(n => !n.addedToDistrict);
@@ -203,6 +212,7 @@ namespace PG
                 if (nextRegion == null)
                 {
                     Debug.LogWarning("No more regions available to expand the main district.");
+                    break;
                 }
 
                 // Add the selected neighboring region to the main district
@@ -258,7 +268,6 @@ namespace PG
                 Debug.Log($"Removed region {regionToRemove.id} from main district. New percentage: {percentageMainContained}%");
             }
         }
-
         private void CreateMainDistrict(List<VoronoiRegion> regions)
         {
             /* Define the main city district */
@@ -317,8 +326,7 @@ namespace PG
         }
         private void CreateGangDistrict(List<VoronoiRegion> regions)
         {
-            /* Define the suburbs */
-
+            // List of free (not added to any district) regions
             List<VoronoiRegion> freeRegions = new List<VoronoiRegion>();
             foreach (VoronoiRegion region in regions)
             {
@@ -326,56 +334,115 @@ namespace PG
                     freeRegions.Add(region);
             }
 
-            bool found = false;
-            VoronoiRegion firstRegion = null;
-            //Debug.Log("CreateSuburbs");
-            while (!found)
-            {
-                int firstId = Random.Range(0, freeRegions.Count);
-                firstRegion = freeRegions[firstId];
-                if (IsRegionAwayFromType(firstRegion, 2, Region.Main))
-                    found = true;
-            }
-            bool conditionsMet = false;
-            gangRegions = new List<VoronoiRegion>
-            {
-                firstRegion
-            };
+            // Initialize the gang district regions list
+            gangRegions = new List<VoronoiRegion>();
 
-            int nodeCount = 0;
-            while (!conditionsMet)
+            // Find an initial region that is far enough from the main district
+            VoronoiRegion initialRegion = null;
+            foreach (var region in freeRegions)
             {
-                VoronoiRegion selectedRegion = gangRegions.Last();
-
-                VoronoiRegion bestNeighbour = SelectBestNeighbour(selectedRegion, gangRegions, gangDistrictMinNodes, nodeCount, Region.Suburbs);
-
-                if (bestNeighbour == null)
+                if (IsRegionAwayFromType(region, 2, Region.Main) && HasContainedNodes(region))
                 {
-                    List<VoronoiRegion> regionsWithValidNeighbours = GetAddedRegionsWithValidNeighbours(gangRegions);
+                    initialRegion = region;
+                    break;
+                }
+            }
 
-                    Debug.LogWarning("Retrying to assign a new region");
-                    bestNeighbour = SelectBestNeighbourFromList(regions, regionsWithValidNeighbours, gangRegions, gangDistrictMaxNodes, nodeCount, Region.Main);
+            // If no valid initial region is found, return
+            if (initialRegion == null)
+            {
+                Debug.LogWarning("No suitable starting region found for the gang district.");
+                return;
+            }
 
-                    if (bestNeighbour == null)
+            // Add the initial region to the gang district
+            initialRegion.addedToDistrict = true;
+            gangRegions.Add(initialRegion);
+            freeRegions.Remove(initialRegion);
+
+            // Initialize variables for tracking gang district size
+            float percentageGangContained = 0f;
+            int totalGangNodesContained = initialRegion.nodesContained.Count;
+            percentageGangContained = ((float)totalGangNodesContained / (float)totalNodesContained) * 100f;
+
+            // Set of regions that are neighbors of the current gangRegions
+            HashSet<VoronoiRegion> candidateRegions = new HashSet<VoronoiRegion>();
+
+            // Add the neighbors of the initial region to the candidate list
+            foreach (var neighbor in initialRegion.neighbourRegions)
+            {
+                if (!neighbor.addedToDistrict)
+                {
+                    candidateRegions.Add(neighbor);
+                }
+            }
+
+            // While the percentage hasn't been met, keep expanding the gang district
+            while (percentageGangContained < gangDistrictMinPercentage)
+            {
+                VoronoiRegion bestCandidate = null;
+                int minFreeNeighbours = int.MaxValue; // Track the minimum number of free neighbors
+
+                // Iterate over the candidate regions to find the best one
+                foreach (var candidate in candidateRegions)
+                {
+                    // Count how many of the candidate's neighbors are still free
+                    int freeNeighboursCount = 0;
+                    foreach (var neighbourOfNeighbour in candidate.neighbourRegions)
                     {
-                        Debug.LogError("NO BEST CANDIDATE FOUND, ABORTING EXECUTION");
-                        break;
+                        if (!neighbourOfNeighbour.addedToDistrict && IsRegionAwayFromType(candidate, 1, Region.Main))
+                        {
+                            freeNeighboursCount++;
+                        }
                     }
-                    else
+
+                    // Keep track of the candidate with the fewest free neighbors
+                    if (freeNeighboursCount < minFreeNeighbours && freeNeighboursCount > 0 && HasContainedNodes(candidate))
                     {
-                        conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, gangDistrictMinNodes);
+                        minFreeNeighbours = freeNeighboursCount;
+                        bestCandidate = candidate;
                     }
                 }
-                else
+
+                // If no best candidate was found, stop (no valid expansions)
+                if (bestCandidate == null)
                 {
-                    conditionsMet = AddRegionToDistrict(bestNeighbour, gangRegions, ref nodeCount, gangDistrictMinNodes);
+                    Debug.LogWarning("Unable to reach the target percentage for gang district. No valid expansion found.");
+                    break;
                 }
 
+                // Add the best candidate to the gang district
+                bestCandidate.addedToDistrict = true;
+                gangRegions.Add(bestCandidate);
+                freeRegions.Remove(bestCandidate);
+
+                // Update the total gang nodes and percentage
+                totalGangNodesContained += bestCandidate.nodesContained.Count;
+                percentageGangContained = ((float)totalGangNodesContained / (float)totalNodesContained) * 100f;
+
+                Debug.Log($"Added region {bestCandidate.id} to gang district. New percentage: {percentageGangContained}%");
+
+                // Remove the best candidate from the candidate list
+                candidateRegions.Remove(bestCandidate);
+
+                // Add its neighbors to the candidate list if they are free and meet the distance criteria
+                foreach (var neighbour in bestCandidate.neighbourRegions)
+                {
+                    if (!neighbour.addedToDistrict && IsRegionAwayFromType(neighbour, 2, Region.Main))
+                    {
+                        candidateRegions.Add(neighbour);
+                    }
+                }
+
+                // Check if we've reached the target percentage
+                if (percentageGangContained >= gangDistrictMinPercentage)
+                    break;
             }
-            //Debug.Log("Node count: " + nodeCount);
+
+            // Assign the gang district type to the regions
             AssignTypeToRegions(gangRegions, Region.Suburbs);
-            CheckForIsolatedRegions(regions, Region.Suburbs);
         }
+
         private void AssignTypeToRegions(List<VoronoiRegion> regions, Region regionType)
         {
             foreach (VoronoiRegion region in regions)
@@ -459,32 +526,6 @@ namespace PG
                 }
 
                 if (currentHits > bestHits && IsSizeOk(maxNodes, currentNodes, candidate))
-                {
-                    bestNeighbour = candidate;
-                    bestHits = currentHits;
-                }
-            }
-            return bestNeighbour;
-        }
-        private VoronoiRegion SelectBestNeighbour(VoronoiRegion selectedRegion, List<VoronoiRegion> districtRegionList, float maxPercentage, float currentPercentage, Region regionType)
-        {
-            VoronoiRegion bestNeighbour = null;
-            List<VoronoiRegion> neighbourRegions = regionType == Region.Main ? GetValidMainNeighbours(selectedRegion) : GetValidSuburbsNeighbours(selectedRegion);
-
-            int bestHits = -1;
-
-            foreach (VoronoiRegion candidate in neighbourRegions)
-            {
-                int currentHits = 0;
-                foreach (VoronoiRegion addedRegion in districtRegionList)
-                {
-                    if (addedRegion.neighbourRegions.Contains(candidate))
-                    {
-                        currentHits++;
-                    }
-                }
-
-                if (currentHits > bestHits && IsSizeOk(maxPercentage, currentPercentage, candidate))
                 {
                     bestNeighbour = candidate;
                     bestHits = currentHits;
@@ -598,6 +639,10 @@ namespace PG
         private float GetPercentageContained(VoronoiRegion region)
         {
             return ((float)region.nodesContained.Count / (float)totalNodesContained) * 100f;
+        }
+        private bool HasContainedNodes(VoronoiRegion region)
+        {
+            return region.nodesContained.Count > 0;
         }
         private bool MeetsEndOfWorld(int startX, int startY, Direction direction)
         {
