@@ -121,10 +121,10 @@ namespace PG
                         switch (n.regionType)
                         {
                             case Region.Main:
-                                Gizmos.color = Color.cyan;
+                                Gizmos.color = Color.green;
                                 break;
                             case Region.Residential:
-                                Gizmos.color = Color.green;
+                                Gizmos.color = Color.yellow;
                                 break;
                             case Region.Suburbs:
                                 Gizmos.color = Color.red;

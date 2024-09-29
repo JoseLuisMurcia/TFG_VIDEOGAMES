@@ -42,7 +42,6 @@ namespace PG
             // Group connected nodes based on regions
             regionNodeGrouper.GroupConnectedNodes(buildingAndSidewalkNodes, this);
 
-            return;
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 

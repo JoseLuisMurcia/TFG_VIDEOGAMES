@@ -227,7 +227,7 @@ namespace PG
                 // Add the selected neighboring region to the main district
                 nextRegion.addedToDistrict = true;
                 mainRegions.Add(nextRegion);
-                SpawnSphere(nextRegion.centre, Color.blue, 2f, 6f);
+                //SpawnSphere(nextRegion.centre, Color.blue, 2f, 6f);
                 totalMainNodesContained += nextRegion.nodesContained.Count;
 
                 AssignTypeToRegion(nextRegion, Region.Main);
@@ -267,14 +267,14 @@ namespace PG
                 // Remove the region from the main district
                 regionToRemove.addedToDistrict = false;
                 mainRegions.Remove(regionToRemove);
-                SpawnSphere(regionToRemove.centre, Color.red, 2f, 6f);
+                //SpawnSphere(regionToRemove.centre, Color.red, 2f, 6f);
                 totalMainNodesContained -= regionToRemove.nodesContained.Count;
 
                 AssignTypeToRegion(regionToRemove, Region.Residential);
                 // Recalculate the percentage of main district nodes contained
                 percentageMainContained = ((float)totalMainNodesContained / (float)totalNodesContained) * 100f;
 
-                Debug.Log($"Removed region {regionToRemove.id} from main district. New percentage: {percentageMainContained}%");
+                //Debug.Log($"Removed region {regionToRemove.id} from main district. New percentage: {percentageMainContained}%");
             }
         }
         private void CreateMainDistrict(List<VoronoiRegion> regions)
@@ -445,7 +445,7 @@ namespace PG
                     totalGangNodesContained += bestCandidate.nodesContained.Count;
                     percentageGangContained = ((float)totalGangNodesContained / (float)totalNodesContained) * 100f;
 
-                    Debug.Log($"Added region {bestCandidate.id} to gang district. New percentage: {percentageGangContained}%");
+                    //Debug.Log($"Added region {bestCandidate.id} to gang district. New percentage: {percentageGangContained}%");
 
                     // Remove the best candidate from the candidate list
                     candidateRegions.Remove(bestCandidate);
@@ -488,7 +488,7 @@ namespace PG
             if (districtGenerated)
             {
                 AssignTypeToRegions(gangRegions, Region.Suburbs);
-                Debug.Log("Gang district generation successful.");
+                //Debug.Log("Gang district generation successful.");
             }
             else
             {

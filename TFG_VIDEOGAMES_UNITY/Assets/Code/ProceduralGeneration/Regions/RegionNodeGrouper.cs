@@ -166,7 +166,7 @@ namespace PG
                 //    group.Average(node => node.worldPosition.y),
                 //    group.Average(node => node.worldPosition.z)
                 //), Color.blue, 3f, 4f);
-                Debug.Log("skip division: " + "minX: " + minX + ", maxX: " + maxX + ", minY: " + minY + ", maxY: " + maxY);
+                //Debug.Log("skip division: " + "minX: " + minX + ", maxX: " + maxX + ", minY: " + minY + ", maxY: " + maxY);
                 return;
             }
 
