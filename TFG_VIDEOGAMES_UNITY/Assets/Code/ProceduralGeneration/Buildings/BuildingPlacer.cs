@@ -17,6 +17,8 @@ namespace PG
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
+
+        [HideInInspector] public List<GridNode> sidewalkGridNodes = new List<GridNode>();
         private static readonly Vector2Int[] cornerDirections = new Vector2Int[]
         {
             new Vector2Int(1, -1),  // Up + Left
@@ -105,6 +107,7 @@ namespace PG
                     }
                     else if (currentNode.usage == Usage.decoration)
                     {
+                        sidewalkGridNodes.Add(currentNode);
                         Quaternion rotation = Quaternion.identity;
                         // Not residential
                         if (currentNode.regionType != Region.Residential)

@@ -149,6 +149,40 @@ namespace PG
 
             return false;
         }
+        public GridNode GetClosestNodeToPosition(Vector3 worldPosition)
+        {
+            // Calculate the difference between the world position and the bottom-left corner of the grid
+            Vector3 offset = worldPosition - worldBottomLeft;
+
+            // Convert the world position into grid coordinates (float)
+            float percentX = offset.x / gridWorldSize.x;
+            float percentY = offset.z / gridWorldSize.y;
+
+            // Clamp the percent values to ensure they are within the grid bounds
+            percentX = Mathf.Clamp01(percentX);
+            percentY = Mathf.Clamp01(percentY);
+
+            // Convert the percentage back into grid coordinates (integers)
+            int x = Mathf.FloorToInt((gridSizeX) * percentX);
+            int y = Mathf.FloorToInt((gridSizeY) * percentY);
+
+            if (x >= gridSizeX || x < 0 || y >= gridSizeY || y < 0)
+                return null;
+
+            // Get the closest node from the grid
+            GridNode closestNode = nodesGrid[x, y];
+            
+            // Optionally, check if the worldPosition is within the node's radius
+            float distanceToNode = Vector3.Distance(worldPosition, closestNode.worldPosition);
+            if (distanceToNode <= nodeRadius)
+            {
+                // The world position is within the radius of the grid node
+                return closestNode;
+            }
+
+            // If it's not within the radius, return null or handle it accordingly
+            return null;
+        }
 
         public List<GridNode> GetNeighboursForVoronoi(GridNode node)
         {

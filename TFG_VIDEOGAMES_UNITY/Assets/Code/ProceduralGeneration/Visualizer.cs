@@ -9,6 +9,7 @@ namespace PG
         [HideInInspector] public RoadPlacer roadPlacer;
         [HideInInspector] private RoadConnecter roadConnecter;
         [HideInInspector] private BuildingPlacer buildingPlacer;
+        [HideInInspector] private PropPlacer propPlacer;
         private LSystemGenerator lsystem;
         private GenerationUI generationUI;
         [HideInInspector] public List<GridNode> pointNodes = new List<GridNode>();
@@ -46,6 +47,7 @@ namespace PG
             roadPlacer = GetComponent<RoadPlacer>();
             roadConnecter = GetComponent<RoadConnecter>();
             buildingPlacer = GetComponent<BuildingPlacer>();
+            propPlacer = GetComponent<PropPlacer>();
             generationUI = GetComponent<GenerationUI>();
         }
         void Start()
@@ -201,6 +203,8 @@ namespace PG
             regionHelper.AdjustRegions();
             // Place sidewalks and buildings
             buildingPlacer.PlaceBuildings(grid, roadDictionary);
+            // Place props
+            propPlacer.PlaceProps(buildingPlacer);
             generationUI.OnCityCreated();
             //navMeshGenerator.BakeNavMesh();
         }
