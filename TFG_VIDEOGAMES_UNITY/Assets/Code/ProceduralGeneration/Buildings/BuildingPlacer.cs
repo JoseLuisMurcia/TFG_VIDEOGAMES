@@ -12,11 +12,12 @@ namespace PG
         private Grid grid = null;
         [SerializeField] private List<Building> gangBuildings, residentialBuildings, mainBuildings, smallResidentialBuildings;
         [SerializeField] private GameObject gangFloor, residentialFloor, mainFloor;
-        [SerializeField] private GameObject  residentialSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk, fourWayResidentialSidewalk;
+        [SerializeField] private GameObject residentialSidewalk, cornerResidentialSidewalk, flatResidentialSidewalk, threeWayResidentialSidewalk, fourWayResidentialSidewalk;
         [SerializeField] private GameObject gangSidewalk, gangAlleySidewalk, mainSidewalk, mainAlleySidewalk;
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
+        [SerializeField] private PerlinNoiseGenerator perlinGeneratorPrefab;
 
         [HideInInspector] public List<GridNode> sidewalkGridNodes = new List<GridNode>();
         private static readonly Vector2Int[] cornerDirections = new Vector2Int[]
@@ -47,6 +48,24 @@ namespace PG
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 
+            foreach (var block in regionNodeGrouper.suburbsBlocks)
+            {
+                block.RemoveWhere(x => x.isAlley);
+                PerlinNoiseGenerator generator = Instantiate(perlinGeneratorPrefab);
+
+                int minX = block.Min(x => x.gridX);
+                int maxX = block.Max(x => x.gridX);
+                int minY = block.Min(x => x.gridY);
+                int maxY = block.Max(x => x.gridY);
+                generator.GenerateNoise(maxX - minX, maxY - minY, block);
+                //HashSet<HashSet<GridNode>> splitBlock = SplitGangBlock(block);
+                //foreach (var node in block)
+                //{
+                //    //SpawnSphere(node.worldPosition, Color.green, 2f, 2f);
+                //}
+            }
+
+            return;
             // Instantiate buildings
             InstantiateBuildings();
         }
@@ -127,7 +146,7 @@ namespace PG
                         }
 
                         // Residential
-                        List<Direction> decorationNeighbours = GetUsageNeighbours(i, j, new List<Usage>() { Usage.decoration} );
+                        List<Direction> decorationNeighbours = GetUsageNeighbours(i, j, new List<Usage>() { Usage.decoration });
 
                         // If 3 way
                         if (decorationNeighbours.Count == 3)
@@ -278,9 +297,9 @@ namespace PG
                         {
                             currentPosX = key.x + dir[0] * i;
                             currentPosY = key.y + dir[1] * i;
-                            newPosKey = new Vector2Int(currentPosX, currentPosY);                           
-                            try 
-                            { 
+                            newPosKey = new Vector2Int(currentPosX, currentPosY);
+                            try
+                            {
                                 currentNode = grid.nodesGrid[currentPosX, currentPosY];
                             }
                             catch (System.Exception ex)
@@ -301,9 +320,9 @@ namespace PG
                                 Destroy(threeWaysDictionary[newPosKey]);
                                 // Identificar si debería ser corner o no
                                 // Si avanzo en estad direccion y no hay sidewalk, debe ser corner
-                                currentPosX = key.x + dir[0] * (i+1);
-                                currentPosY = key.y + dir[1] * (i+1);
-                                if (!Grid.Instance.OutOfGrid(currentPosX, currentPosY)) 
+                                currentPosX = key.x + dir[0] * (i + 1);
+                                currentPosY = key.y + dir[1] * (i + 1);
+                                if (!Grid.Instance.OutOfGrid(currentPosX, currentPosY))
                                 {
                                     GridNode newNode = grid.nodesGrid[currentPosX, currentPosY];
                                     if (newNode.usage != Usage.decoration)
@@ -720,6 +739,27 @@ namespace PG
                     return true;
             }
             return true;
+        }
+        private HashSet<HashSet<GridNode>> SplitGangBlock(HashSet<GridNode> block)
+        {
+            HashSet<HashSet<GridNode>> splitBlocks = new HashSet<HashSet<GridNode>>();
+            // Find out if it's horizontal or vertical
+            int minX = block.Min(x => x.gridX);
+            int maxX = block.Max(x => x.gridX);
+            int minY = block.Min(x => x.gridY);
+            int maxY = block.Max(x => x.gridY);
+
+            if ((maxX - minX) < 2 || (maxY - minY) < 2)
+            {
+                SpawnSphere(new Vector3(
+                    block.Average(node => node.worldPosition.x),
+                    block.Average(node => node.worldPosition.y),
+                    block.Average(node => node.worldPosition.z)
+                ), Color.blue, 3f, 4f);
+                return new HashSet<HashSet<GridNode>>();
+            }
+
+            return splitBlocks;
         }
         private void SpawnSphere(Vector3 pos, Color color, float offset, float size)
         {

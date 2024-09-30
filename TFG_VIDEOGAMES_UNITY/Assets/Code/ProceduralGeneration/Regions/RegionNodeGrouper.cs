@@ -15,6 +15,7 @@ namespace PG
         private int colorIndex = 0;
         private int shortColorIndex = 0;
         private BuildingPlacer buildingPlacer;
+        public HashSet<HashSet<GridNode>> suburbsBlocks = new HashSet<HashSet<GridNode>>();
         private static readonly Vector2Int[] directions = new Vector2Int[]
         {
             new Vector2Int(1, 0),  // Right
@@ -86,6 +87,10 @@ namespace PG
                     shortColorIndex = 0;
                     for (int i = 0; i < result.wholeNodesLists.Count; i++)
                     {
+                        if (result.wholeNodesLists[i].Count > 0 && result.wholeNodesLists[i].First().regionType == Region.Suburbs)
+                        {
+                            suburbsBlocks.Add(new HashSet<GridNode>(result.wholeNodesLists[i]));
+                        }
                         DivideAndMarkGroup(result.wholeNodesLists[i], minWidth, minHeight, true, result.wholeNodesLists[i].Count, result.sortedNodesLists[i]);
                     }
                 }

@@ -13,8 +13,8 @@ namespace PG
         public int perlinGridStepSizeX = 4;
         public int perlinGridStepSizeY = 4;
         Texture2D perlinTexture;
-        public static PerlinNoiseGenerator Instance;
-        public void GenerateNoise(int width, int height)
+        [SerializeField] GridSpawner gridSpawner;
+        public void GenerateNoise(int width, int height, HashSet<GridNode> nodes)
         {
             this.width = width;
             this.height = height;
@@ -28,6 +28,11 @@ namespace PG
                 }
             }
             perlinTexture.Apply();
+            gridSpawner = Instantiate(gridSpawner, transform);
+            if (gridSpawner != null)
+            {
+                gridSpawner.SpawnGrid(nodes, this);
+            }
         }
         private Color SampleNoise(int x, int y)
         {
@@ -39,7 +44,7 @@ namespace PG
 
             return perlinColor;
         }
-        public float SampleStepped(int x, int y)
+        private float SampleStepped(int x, int y)
         {
             int gridStepSizeX = width / perlinGridStepSizeX;
             int gridStepSizeY = height / perlinGridStepSizeY;

@@ -9,10 +9,15 @@ namespace PG
         [SerializeField] private List<GameObject> basePrefabs;
         [SerializeField] private List<GameObject> middlePrefabs;
         [SerializeField] private List<GameObject> topPrefabs;
+        private PerlinNoiseGenerator perlinNoiseGenerator;
         private int maxPrefabs = 25;
+        private void Start()
+        {
+            Build();
+        }
         private void Build()
         {
-            float sampledValue = PerlinNoiseGenerator.Instance.PerlinSteppedPosition(transform.position);
+            float sampledValue = perlinNoiseGenerator.PerlinSteppedPosition(transform.position);
 
             int targetPieces = Mathf.FloorToInt(maxPrefabs * (sampledValue));
             targetPieces += Random.Range(-5, 10);
@@ -36,14 +41,19 @@ namespace PG
         private float SpawnPieceLayer(List<GameObject> pieceArray, float inputHeight)
         {
             Transform randomTransform = pieceArray[Random.Range(0, pieceArray.Count)].transform;
-            GameObject clone = Instantiate(randomTransform.gameObject, this.transform.position + new Vector3(0, inputHeight, 0), transform.rotation) as GameObject;
+            GameObject clone = Instantiate(randomTransform.gameObject, transform.position + new Vector3(0, inputHeight, 0), transform.rotation) as GameObject;
             Mesh cloneMesh = clone.GetComponentInChildren<MeshFilter>().mesh;
             Bounds baseBounds = cloneMesh.bounds;
             float heightOffset = baseBounds.size.y;
 
-            clone.transform.SetParent(this.transform);
+            clone.transform.SetParent(transform);
+            clone.transform.localScale *= 4f;
 
-            return heightOffset;
+            return heightOffset*4f;
+        }
+        public void SetPerlinNoiseGenerator(PerlinNoiseGenerator perlinNoiseGenerator)
+        {
+            this.perlinNoiseGenerator = perlinNoiseGenerator;
         }
     }
 }
