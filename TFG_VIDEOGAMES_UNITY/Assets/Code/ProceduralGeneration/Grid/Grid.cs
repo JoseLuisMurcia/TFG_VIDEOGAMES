@@ -136,7 +136,7 @@ namespace PG
                     }
                     Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
                 }
-                
+
             }
         }
 
@@ -171,7 +171,7 @@ namespace PG
 
             // Get the closest node from the grid
             GridNode closestNode = nodesGrid[x, y];
-            
+
             // Optionally, check if the worldPosition is within the node's radius
             float distanceToNode = Vector3.Distance(worldPosition, closestNode.worldPosition);
             if (distanceToNode <= nodeRadius)
@@ -189,7 +189,7 @@ namespace PG
             List<Vector2Int> offsets = new List<Vector2Int> { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(-1, 1) };
             List<GridNode> neighbours = new List<GridNode>();
 
-            foreach(Vector2Int offset in offsets)
+            foreach (Vector2Int offset in offsets)
             {
                 int checkX = node.gridX + offset.x;
                 int checkY = node.gridY + offset.y;
@@ -284,6 +284,51 @@ namespace PG
             }
 
             return neighbours;
+        }
+        public List<Direction> GetNeighbourDirections(GridNode node, List<Usage> usages)
+        {
+            List<Direction> directions = new List<Direction>();
+
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    if (x == 0 && y == 0)
+                        continue;
+
+                    int checkX = node.gridX + x;
+                    int checkY = node.gridY + y;
+
+                    if (checkX >= 0 && checkX < gridSizeX && checkY >= 0 && checkY < gridSizeY)
+                    {
+                        if (x == 0 && y != 0 || x != 0 && y == 0)
+                        {
+                            var neighbour = nodesGrid[checkX, checkY];
+                            if (!usages.Contains(neighbour.usage))
+                                continue;
+
+                            if (checkX == x + 1)
+                            {
+                                directions.Add(Direction.right);
+                            }
+                            else if (checkX == x - 1)
+                            {
+                                directions.Add(Direction.left);
+                            }
+                            else if (checkY == y + 1)
+                            {
+                                directions.Add(Direction.forward);
+                            }
+                            else if (checkY == y - 1)
+                            {
+                                directions.Add(Direction.back);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return directions;
         }
         public List<GridNode> GetNeighboursInHorizontal(GridNode node, List<Usage> usages)
         {

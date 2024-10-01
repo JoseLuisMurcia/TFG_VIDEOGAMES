@@ -50,6 +50,7 @@ namespace PG
 
             foreach (var block in regionNodeGrouper.suburbsBlocks)
             {
+                break;
                 block.RemoveWhere(x => x.isAlley);
                 PerlinNoiseGenerator generator = Instantiate(perlinGeneratorPrefab);
 
