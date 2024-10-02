@@ -307,19 +307,19 @@ namespace PG
                             if (!usages.Contains(neighbour.usage))
                                 continue;
 
-                            if (checkX == x + 1)
+                            if (checkX == node.gridX + 1)
                             {
                                 directions.Add(Direction.right);
                             }
-                            else if (checkX == x - 1)
+                            else if (checkX == node.gridX - 1)
                             {
                                 directions.Add(Direction.left);
                             }
-                            else if (checkY == y + 1)
+                            else if (checkY == node.gridY + 1)
                             {
                                 directions.Add(Direction.forward);
                             }
-                            else if (checkY == y - 1)
+                            else if (checkY == node.gridY - 1)
                             {
                                 directions.Add(Direction.back);
                             }
