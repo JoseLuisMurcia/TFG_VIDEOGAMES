@@ -34,7 +34,6 @@ public class PedestrianIntersectionController : MonoBehaviour
     {
         trafficLightEvents.LightChange(state, subscription);
     }
-
     public void SubscribeToLightChangeEvent(Action<TrafficLightState, bool> func)
     {
         trafficLightEvents.onLightChange += func;

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [ExecuteAlways]
@@ -7,8 +8,28 @@ public class LightingManager : MonoBehaviour
     [SerializeField] private Light DirectionalLight;
     [SerializeField] private LightingPreset Preset;
     //Variables
-    [SerializeField, Range(0, 24)] private float TimeOfDay;
+    private int previousHour;
+    [SerializeField, Range(0, 24)] public float TimeOfDay;
+    public static LightingManager Instance;
 
+    private void Awake()
+    {
+        if (Instance == null)
+            Instance = this;
+    }
+    public event Action<float> onHourChange;
+
+    public void ThrowHourChangeEvent(float hour)
+    {
+        if (onHourChange != null)
+        {
+            onHourChange(hour);
+        }
+    }
+    public void SubscribeToHourChangeEvent(Action<float> func)
+    {
+        onHourChange += func;
+    }
     private void Update()
     {
         if (Preset == null)
@@ -18,16 +39,30 @@ public class LightingManager : MonoBehaviour
         {
             //(Replace with a reference to the game time)
             TimeOfDay += Time.deltaTime;
-            TimeOfDay %= 24;
+            TimeOfDay %= 24;           
             UpdateLighting(TimeOfDay / 24f);
         }
         else
         {
             UpdateLighting(TimeOfDay / 24f);
         }
+        CheckAndEmitHourChange();
     }
+    private void CheckAndEmitHourChange()
+    {
+        // Calculate the current hour by flooring the TimeOfDay value
+        int currentHour = Mathf.FloorToInt(TimeOfDay);
 
+        // If the hour has changed (or wraps around from 23 to 0), emit the event
+        if (currentHour != previousHour)
+        {
+            // Emit the hour change event
+            ThrowHourChangeEvent(currentHour);
 
+            // Update previous hour to the current hour
+            previousHour = currentHour;
+        }
+    }
     private void UpdateLighting(float timePercent)
     {
         //Set ambient and fog
