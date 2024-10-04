@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class LightSwitchController : MonoBehaviour
+public class StreetLampLightController : MonoBehaviour
 {
     [SerializeField] bool isCar = false;
     private Light streetLight;

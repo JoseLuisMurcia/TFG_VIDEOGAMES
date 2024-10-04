@@ -11,6 +11,7 @@ public class LightingManager : MonoBehaviour
     private int previousHour;
     [SerializeField, Range(0, 24)] public float TimeOfDay;
     public static LightingManager Instance;
+    [SerializeField] private float slowingFactor = 1f;
 
     private void Awake()
     {
@@ -37,8 +38,7 @@ public class LightingManager : MonoBehaviour
 
         if (Application.isPlaying)
         {
-            //(Replace with a reference to the game time)
-            TimeOfDay += Time.deltaTime;
+            TimeOfDay += Time.deltaTime * slowingFactor;
             TimeOfDay %= 24;           
             UpdateLighting(TimeOfDay / 24f);
         }

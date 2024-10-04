@@ -66,7 +66,6 @@ namespace PG
                 //}
             }
 
-            return;
             // Instantiate buildings
             InstantiateBuildings();
         }
