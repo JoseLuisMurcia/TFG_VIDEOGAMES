@@ -4,11 +4,10 @@ using UnityEngine;
 
 public class StreetLampLightController : MonoBehaviour
 {
-    [SerializeField] bool isCar = false;
-    private Light streetLight;
+    private Light[] streetLights;
     void Start()
     {
-        streetLight = GetComponent<Light>();
+        streetLights = GetComponentsInChildren<Light>();
         // Subscribe to the hour change events
         if (LightingManager.Instance != null)
         {
@@ -36,10 +35,16 @@ public class StreetLampLightController : MonoBehaviour
     }
     private void SwitchLightsOff()
     {
-        streetLight.enabled = false;
+        foreach (Light light in streetLights)
+        {
+            light.enabled = false;
+        }
     }
     private void SwitchLightsOn()
     {
-        streetLight.enabled = true;
+        foreach (Light light in streetLights)
+        {
+            light.enabled = true;
+        }
     }
 }

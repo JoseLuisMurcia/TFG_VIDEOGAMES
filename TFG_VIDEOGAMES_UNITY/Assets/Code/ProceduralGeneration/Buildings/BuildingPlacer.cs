@@ -65,7 +65,7 @@ namespace PG
                 //    //SpawnSphere(node.worldPosition, Color.green, 2f, 2f);
                 //}
             }
-
+            return;
             // Instantiate buildings
             InstantiateBuildings();
         }

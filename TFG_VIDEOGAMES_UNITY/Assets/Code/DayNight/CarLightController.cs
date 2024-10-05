@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class CarLightController : MonoBehaviour
 {
-    [SerializeField] bool isCar = false;
     private Light[] carLights;
 
     // Randomized times for each car to switch lights
