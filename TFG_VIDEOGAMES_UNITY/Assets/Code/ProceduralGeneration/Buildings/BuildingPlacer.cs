@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using static PG.Building;
 
@@ -65,7 +63,6 @@ namespace PG
                 //    //SpawnSphere(node.worldPosition, Color.green, 2f, 2f);
                 //}
             }
-            return;
             // Instantiate buildings
             InstantiateBuildings();
         }

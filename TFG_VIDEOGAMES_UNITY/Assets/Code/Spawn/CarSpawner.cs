@@ -1,10 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CarSpawner : MonoBehaviour
 {
     [SerializeField] GameObject[] carPrefabs;
+    [SerializeField] GameObject playerCar;
+    [SerializeField] GameObject cameraGameObject;
     [SerializeField] Material[] carMaterials;
     public Dictionary<string, GameObject> carPrefabsDictionary = new Dictionary<string, GameObject>();
 
@@ -114,5 +117,20 @@ public class CarSpawner : MonoBehaviour
     {
         for (int i = 0; i < 100; i++)
             SpawnOneCar();
+    }
+    public void PlayAsCar()
+    {
+        // Spawn player car
+        bool isProcedural = RoadConnecter.Instance != null;
+        Node startNode = isProcedural ? RoadConnecter.Instance.GetRandomNodeInRoads() : WorldGrid.Instance.GetRandomNodeInRoads();
+        Vector3 directionToLookAt = (startNode.neighbours[0].worldPosition - startNode.worldPosition).normalized;
+        Quaternion rotation = Quaternion.LookRotation(directionToLookAt, Vector3.up);
+        Vector3 spawnPos = startNode.worldPosition - directionToLookAt;
+        GameObject instantiatedCar = Instantiate(playerCar, spawnPos, rotation);
+
+        // Enable camera for player
+        var cameraFollow = cameraGameObject.GetComponent<CameraFollow>();
+        cameraFollow.SetTarget(instantiatedCar.transform);
+        cameraFollow.enabled = true;
     }
 }

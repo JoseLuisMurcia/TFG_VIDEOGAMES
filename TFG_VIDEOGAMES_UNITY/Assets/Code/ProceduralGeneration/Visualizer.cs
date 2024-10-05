@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -115,6 +114,8 @@ namespace PG
         // Hay que desplazarse en nodos, en cubitos del grid, luego ya mapeamos a carreteras, nada de posiciones, cubos
         private async void VisualizeSequence(string sequence)
         {
+            generationUI.OnCityCreated();
+            return;
             Stack<AgentParameters> savePoints = new Stack<AgentParameters>();
             int gridTopX = grid.gridSizeX;
             int gridTopY = grid.gridSizeY;
@@ -204,7 +205,7 @@ namespace PG
             // Place sidewalks and buildings
             buildingPlacer.PlaceBuildings(grid, roadDictionary);
             // Place props
-            propPlacer.PlaceProps(buildingPlacer);
+            //propPlacer.PlaceProps(buildingPlacer);
             generationUI.OnCityCreated();
             //navMeshGenerator.BakeNavMesh();
         }
