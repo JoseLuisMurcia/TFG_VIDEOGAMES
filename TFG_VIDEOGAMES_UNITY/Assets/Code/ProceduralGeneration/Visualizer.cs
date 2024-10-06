@@ -114,8 +114,8 @@ namespace PG
         // Hay que desplazarse en nodos, en cubitos del grid, luego ya mapeamos a carreteras, nada de posiciones, cubos
         private async void VisualizeSequence(string sequence)
         {
-            generationUI.OnCityCreated();
-            return;
+            //generationUI.OnCityCreated();
+            //return;
             Stack<AgentParameters> savePoints = new Stack<AgentParameters>();
             int gridTopX = grid.gridSizeX;
             int gridTopY = grid.gridSizeY;

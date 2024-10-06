@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.33612162, g: 0.34973323, b: 0.70902765, a: 1}
+  m_AmbientSkyColor: {r: 0, g: 0.054901965, b: 0.76470596, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 3
+  m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.0040873108, g: 0.0002236252, b: 0.000000057054926, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -4378,7 +4378,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 1
-  m_StaticEditorFlags: 4294967295
+  m_StaticEditorFlags: 4294967294
   m_IsActive: 1
 --- !u!64 &523038906
 MeshCollider:
@@ -4455,7 +4455,7 @@ Transform:
   m_LocalScale: {x: 50, y: 50, z: 50}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &523038910
 MonoBehaviour:
@@ -5517,14 +5517,14 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 0.25725198, g: 0.25725198, b: 0.25725198, a: 1}
+  m_Color: {r: 0.9978822, g: 1, b: 0.9481132, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 0
+    m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -5557,7 +5557,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 2
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
@@ -5575,13 +5575,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
-  m_LocalRotation: {x: -0.024753587, y: 0.95517117, z: 0.2829346, w: 0.0835667}
+  m_LocalRotation: {x: 0.42710862, y: -0.19809853, z: 0.032666948, w: 0.8816281}
   m_LocalPosition: {x: 15, y: 3, z: 0.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 50, y: -30, z: -10}
 --- !u!4 &714693465
 Transform:
   m_ObjectHideFlags: 0
@@ -7533,14 +7533,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9d8ebfb6a0cd194e9c877f9ecb1b56c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSmoothness: 5
-  rotSmoothness: 7
-  moveOffset: {x: 0, y: 3, z: -4}
+  moveSmoothness: 20
+  rotSmoothness: 10
+  moveOffset: {x: 0, y: 2.6, z: -4}
   rotOffset: {x: 0, y: 0.9, z: 0}
   carTarget: {fileID: 626141043}
 --- !u!1 &965868002
@@ -9485,6 +9485,10 @@ PrefabInstance:
     - target: {fileID: 355647666155603531, guid: 1aab72e8bfd11044c9fd5079b08b5a6b, type: 3}
       propertyPath: m_Name
       value: playerCar
+      objectReference: {fileID: 0}
+    - target: {fileID: 355647666155603531, guid: 1aab72e8bfd11044c9fd5079b08b5a6b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 355647666155603537, guid: 1aab72e8bfd11044c9fd5079b08b5a6b, type: 3}
       propertyPath: m_RootOrder
@@ -11865,6 +11869,10 @@ PrefabInstance:
     - target: {fileID: 2865572004310302341, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
       propertyPath: m_Name
       value: Straight
+      objectReference: {fileID: 0}
+    - target: {fileID: 2865572004310302341, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2865572004310302342, guid: df107039bd5d1b14398d745b59ab292e, type: 3}
       propertyPath: m_RootOrder
@@ -16133,7 +16141,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1930974093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16141,14 +16149,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1930974092}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d7f539ea4a422846898ed23ae91b9f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   DirectionalLight: {fileID: 705507994}
   Preset: {fileID: 11400000, guid: a5adabcf90d7f2841955543dfb96081a, type: 2}
-  TimeOfDay: 3.8
+  TimeOfDay: 0
   slowingFactor: 0.1
 --- !u!4 &1930974094
 Transform:
@@ -16162,7 +16170,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1933141713
 PrefabInstance:
