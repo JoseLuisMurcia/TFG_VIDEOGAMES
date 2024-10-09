@@ -15,7 +15,6 @@ namespace PG
         private Dictionary<Vector2Int, GridNode> buildingNodes = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> decorationNodes = new Dictionary<Vector2Int, GridNode>();
         private RegionNodeGrouper regionNodeGrouper;
-        [SerializeField] private PerlinNoiseGenerator perlinGeneratorPrefab;
 
         [HideInInspector] public List<GridNode> sidewalkGridNodes = new List<GridNode>();
         private static readonly Vector2Int[] cornerDirections = new Vector2Int[]
@@ -25,6 +24,14 @@ namespace PG
             new Vector2Int(-1, -1),  // Down + Left
             new Vector2Int(-1, 1)  // Down + Right
         };
+
+        // This dictionary will track the number of times each limited-instance building has been placed
+        private Dictionary<Building, int> limitedBuildingInstances = new Dictionary<Building, int>();
+
+        // Lists of buildings that have limited instances for each region
+        [SerializeField] private List<Building> mainLimitedBuildings;
+        [SerializeField] private List<Building> residentialLimitedBuildings;
+        [SerializeField] private List<Building> gangLimitedBuildings;
         private void Start()
         {
             regionNodeGrouper = new RegionNodeGrouper();
@@ -46,23 +53,6 @@ namespace PG
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 
-            foreach (var block in regionNodeGrouper.suburbsBlocks)
-            {
-                break;
-                block.RemoveWhere(x => x.isAlley);
-                PerlinNoiseGenerator generator = Instantiate(perlinGeneratorPrefab);
-
-                int minX = block.Min(x => x.gridX);
-                int maxX = block.Max(x => x.gridX);
-                int minY = block.Min(x => x.gridY);
-                int maxY = block.Max(x => x.gridY);
-                generator.GenerateNoise(maxX - minX, maxY - minY, block);
-                //HashSet<HashSet<GridNode>> splitBlock = SplitGangBlock(block);
-                //foreach (var node in block)
-                //{
-                //    //SpawnSphere(node.worldPosition, Color.green, 2f, 2f);
-                //}
-            }
             // Instantiate buildings
             InstantiateBuildings();
         }
@@ -437,20 +427,25 @@ namespace PG
 
                 Region selectedRegion = currentNode.regionType;
                 List<Building> regionBuildings = null;
+                // List for special buildings
+                List<Building> regionLimitedBuildings = null;
                 GameObject availableFloor = null;
 
                 switch (selectedRegion)
                 {
                     case Region.Main:
                         regionBuildings = mainBuildings;
+                        regionLimitedBuildings = mainLimitedBuildings;
                         availableFloor = mainFloor;
                         break;
                     case Region.Residential:
                         regionBuildings = residentialBuildings;
+                        regionLimitedBuildings = residentialLimitedBuildings;
                         availableFloor = residentialFloor;
                         break;
                     case Region.Suburbs:
                         regionBuildings = gangBuildings;
+                        regionLimitedBuildings = gangLimitedBuildings;
                         availableFloor = gangFloor;
                         break;
                     default:
@@ -463,6 +458,44 @@ namespace PG
                 List<Building> availableSmallBuildings = smallResidentialBuildings.ToList();
                 bool buildingPlaced = false;
                 int maxAttempts = 5;
+
+                // Try to place limited-instance buildings first
+                foreach (Building limitedBuilding in regionLimitedBuildings)
+                {
+                    BuildingInfo buildingInfo = limitedBuilding.buildingInfo;
+
+                    // Get the current count of instances for this building, or default to zero if not yet tracked
+                    int currentInstances = limitedBuildingInstances.ContainsKey(limitedBuilding) ? limitedBuildingInstances[limitedBuilding] : 0;
+
+                    // If this building has not reached its maxInstances, try to place it
+                    if (currentInstances < buildingInfo.maxInstances)
+                    {
+                        // Calculate rotation and size for placement
+                        Quaternion rotation = CalculateRotation(key, buildingInfo);
+                        int width = buildingInfo.xValue;
+                        int height = buildingInfo.yValue;
+
+                        // Adjust width and height based on rotation
+                        if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
+                        {
+                            width = buildingInfo.yValue;
+                            height = buildingInfo.xValue;
+                        }
+
+                        // Check if it can be placed at the current location
+                        if (CanPlaceBuilding(key, width, height))
+                        {
+                            MarkNodesAsOccupied(key, width, height);
+                            Vector3 averagePosition = CalculateAveragePosition(key, width, height);
+                            Instantiate(limitedBuilding.gameObject, averagePosition, rotation);
+
+                            // Increment the instance count for this building
+                            limitedBuildingInstances[limitedBuilding] = currentInstances + 1;
+                            buildingPlaced = true;
+                            break;  // Exit the loop after placing a limited-instance building
+                        }
+                    }
+                }
 
                 for (int attempt = 0; attempt < maxAttempts && !buildingPlaced; attempt++)
                 {
