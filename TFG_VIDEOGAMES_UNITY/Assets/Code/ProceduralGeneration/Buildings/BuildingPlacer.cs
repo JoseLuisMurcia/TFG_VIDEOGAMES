@@ -32,6 +32,9 @@ namespace PG
         [SerializeField] private List<Building> mainLimitedBuildings;
         [SerializeField] private List<Building> residentialLimitedBuildings;
         [SerializeField] private List<Building> gangLimitedBuildings;
+        // Dictionary to track placed positions for each limited-instance building type
+        private Dictionary<Building, List<Vector3>> placedBuildingPositions = new Dictionary<Building, List<Vector3>>();
+
         private void Start()
         {
             regionNodeGrouper = new RegionNodeGrouper();
@@ -427,8 +430,7 @@ namespace PG
 
                 Region selectedRegion = currentNode.regionType;
                 List<Building> regionBuildings = null;
-                // List for special buildings
-                List<Building> regionLimitedBuildings = null;
+                List<Building> regionLimitedBuildings = null; // New list for buildings with limited instances
                 GameObject availableFloor = null;
 
                 switch (selectedRegion)
@@ -451,87 +453,98 @@ namespace PG
                     default:
                         break;
                 }
+               
+                bool buildingPlaced = false;               
+
+                // Randomly select a subset of limited-instance buildings (e.g., 5 buildings)
+                int limitedSubsetCount = 5; // Number of limited buildings to try each time
+                List<Building> limitedSubset = GetRandomSubset(regionLimitedBuildings, limitedSubsetCount);
+
+                // Sort the subset by size (larger buildings get priority)
+                limitedSubset.Sort((a, b) => (b.buildingInfo.xValue * b.buildingInfo.yValue)
+                                             .CompareTo(a.buildingInfo.xValue * a.buildingInfo.yValue));
+
+                // Try to place limited-instance buildings first
+                foreach (Building limitedBuilding in limitedSubset.ToList()) // Use ToList() to allow safe removal
+                {
+                    BuildingInfo buildingInfo = limitedBuilding.buildingInfo;
+
+                    int currentInstances = limitedBuildingInstances.ContainsKey(limitedBuilding) ? limitedBuildingInstances[limitedBuilding] : 0;
+
+                    // Check if the current building has reached its max instances
+                    if (currentInstances >= buildingInfo.maxInstances)
+                    {
+                        // Remove the building from the regionLimitedBuildings to prevent further attempts
+                        regionLimitedBuildings.Remove(limitedBuilding);
+                        continue; // Move to the next limited building
+                    }
+
+                    Quaternion rotation = CalculateRotation(key, buildingInfo);
+                    int width = buildingInfo.xValue;
+                    int height = buildingInfo.yValue;
+
+                    // Adjust width and height based on rotation
+                    if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
+                    {
+                        width = buildingInfo.yValue;
+                        height = buildingInfo.xValue;
+                    }
+
+                    Vector3 averagePosition = CalculateAveragePosition(key, width, height);
+
+                    if (IsValidLimitedPlacement(limitedBuilding, averagePosition, 25f))
+                    {
+                        if (CanPlaceBuilding(key, width, height))
+                        {
+                            MarkNodesAsOccupied(key, width, height);
+                            Instantiate(limitedBuilding.gameObject, averagePosition, rotation);
+
+                            // Update instance count
+                            limitedBuildingInstances[limitedBuilding] = currentInstances + 1;
+
+                            // Track the position
+                            if (!placedBuildingPositions.ContainsKey(limitedBuilding))
+                            {
+                                placedBuildingPositions[limitedBuilding] = new List<Vector3>();
+                            }
+                            placedBuildingPositions[limitedBuilding].Add(averagePosition);
+
+                            buildingPlaced = true;
+                            break;  // Exit after placing a limited-instance building
+                        }
+                    }
+                }
 
                 // Track attempted buildings to avoid duplicates
                 HashSet<Building> attemptedBuildings = new HashSet<Building>();
                 List<Building> availableBuildings = regionBuildings.ToList();
                 List<Building> availableSmallBuildings = smallResidentialBuildings.ToList();
-                bool buildingPlaced = false;
                 int maxAttempts = 5;
 
-                // Try to place limited-instance buildings first
-                foreach (Building limitedBuilding in regionLimitedBuildings)
-                {
-                    BuildingInfo buildingInfo = limitedBuilding.buildingInfo;
-
-                    // Get the current count of instances for this building, or default to zero if not yet tracked
-                    int currentInstances = limitedBuildingInstances.ContainsKey(limitedBuilding) ? limitedBuildingInstances[limitedBuilding] : 0;
-
-                    // If this building has not reached its maxInstances, try to place it
-                    if (currentInstances < buildingInfo.maxInstances)
-                    {
-                        // Calculate rotation and size for placement
-                        Quaternion rotation = CalculateRotation(key, buildingInfo);
-                        int width = buildingInfo.xValue;
-                        int height = buildingInfo.yValue;
-
-                        // Adjust width and height based on rotation
-                        if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
-                        {
-                            width = buildingInfo.yValue;
-                            height = buildingInfo.xValue;
-                        }
-
-                        // Check if it can be placed at the current location
-                        if (CanPlaceBuilding(key, width, height))
-                        {
-                            MarkNodesAsOccupied(key, width, height);
-                            Vector3 averagePosition = CalculateAveragePosition(key, width, height);
-                            Instantiate(limitedBuilding.gameObject, averagePosition, rotation);
-
-                            // Increment the instance count for this building
-                            limitedBuildingInstances[limitedBuilding] = currentInstances + 1;
-                            buildingPlaced = true;
-                            break;  // Exit the loop after placing a limited-instance building
-                        }
-                    }
-                }
-
+                // If no limited-instance building was placed, proceed with normal building placement
                 for (int attempt = 0; attempt < maxAttempts && !buildingPlaced; attempt++)
                 {
                     Building selectedBuilding = null;
-
-                    // Create a temporary list to hold available buildings to choose from
                     List<Building> buildingsToChooseFrom = (attempt > 0 && selectedRegion == Region.Residential)
                         ? availableSmallBuildings
                         : availableBuildings;
 
-                    // Randomly pick a building that hasn't been attempted yet
                     if (buildingsToChooseFrom.Count == 0)
                         break;
 
                     selectedBuilding = buildingsToChooseFrom[Random.Range(0, buildingsToChooseFrom.Count)];
 
-                    // If we've already tried this building, skip it
                     if (attemptedBuildings.Contains(selectedBuilding))
                         continue;
 
-                    // Store the attempted building to prevent retries
                     attemptedBuildings.Add(selectedBuilding);
-
-                    // Since we're working with copies of the original lists, we don't need to remove the building
-                    // from the original availableBuildings or availableSmallBuildings collections, only from our local copy
                     buildingsToChooseFrom.Remove(selectedBuilding);
 
-
                     BuildingInfo buildingInfo = selectedBuilding.buildingInfo;
-
-                    // Calculate the rotation
                     Quaternion rotation = CalculateRotation(key, buildingInfo);
                     int width = buildingInfo.xValue;
                     int height = buildingInfo.yValue;
 
-                    // The necessary rotation can influence the nodes to select
                     if (rotation.eulerAngles.y != 180f && rotation.eulerAngles.y != 0f)
                     {
                         width = buildingInfo.yValue;
@@ -540,16 +553,10 @@ namespace PG
 
                     if (CanPlaceBuilding(key, width, height))
                     {
-                        // Mark nodes as occupied
                         MarkNodesAsOccupied(key, width, height);
-
-                        // Calculate the average position for the prefab
                         Vector3 averagePosition = CalculateAveragePosition(key, width, height);
-
-                        // Instantiate the building prefab
                         Instantiate(selectedBuilding.gameObject, averagePosition, rotation);
-
-                        buildingPlaced = true;  // Successfully placed a building, exit the loop
+                        buildingPlaced = true;
                     }
                 }
 
@@ -559,6 +566,34 @@ namespace PG
                     Instantiate(availableFloor, currentNode.worldPosition, Quaternion.identity);
                 }
             }
+        }
+
+        // Helper method to get a random subset of buildings
+        private List<Building> GetRandomSubset(List<Building> buildings, int count)
+        {
+            List<Building> shuffled = buildings.OrderBy(b => Random.value).ToList();
+            return shuffled.Take(Mathf.Min(count, buildings.Count)).ToList();
+        }
+        // Method to check if the placement of a limited-instance building is valid based on the minimum distance
+        private bool IsValidLimitedPlacement(Building building, Vector3 position, float minDistance)
+        {
+            // If there are no recorded positions for this building, it's valid by default
+            if (!placedBuildingPositions.ContainsKey(building))
+            {
+                return true;
+            }
+
+            // Check all previously placed positions for this building
+            foreach (Vector3 placedPosition in placedBuildingPositions[building])
+            {
+                // If the distance between the new position and any existing one is less than the minimum, return false
+                if (Vector3.Distance(position, placedPosition) < minDistance)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
         private void MarkNodesAsOccupied(Vector2Int startPos, int width, int height)
         {
@@ -606,15 +641,15 @@ namespace PG
             {
                 int[] offset = RoadPlacer.Instance.DirectionToInt(direction);
                 int i = 0;
-                bool roadNotFound = true;
+                bool decorationNotFound = true;
 
-                while (roadNotFound)
+                while (decorationNotFound)
                 {
-                    // If we've already found a road for another direction and our distance for the current direction is greater, abort
+                    // If we've already found a decoration for another direction and our distance for the current direction is greater, abort
                     if (bestDirection != Direction.zero && i > bestDistance)
                         break;
 
-                    // Calculate new pos
+                    // Calculate new decoration
                     int x = node.gridX + offset[0] * i;
                     int y = node.gridY + offset[1] * i;
 
@@ -623,9 +658,9 @@ namespace PG
 
                     // Check if newNode is road
                     GridNode newNode = grid.nodesGrid[x, y];
-                    if (newNode.usage == Usage.road || newNode.usage == Usage.point)
+                    if (newNode.usage == Usage.decoration)
                     {
-                        roadNotFound = false;
+                        decorationNotFound = false;
                         bestDistance = i;
                         bestDirection = direction;
                     }
