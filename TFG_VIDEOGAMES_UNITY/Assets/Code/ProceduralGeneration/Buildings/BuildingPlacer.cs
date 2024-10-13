@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -34,6 +35,8 @@ namespace PG
         [SerializeField] private List<Building> gangLimitedBuildings;
         // Dictionary to track placed positions for each limited-instance building type
         private Dictionary<Building, List<Vector3>> placedBuildingPositions = new Dictionary<Building, List<Vector3>>();
+        // Dictionary for irregular meshes that are wrongly placed, let's use MeshRenderer to get the real center
+        private Dictionary<GameObject, Vector3> placedLimitedBuildings = new Dictionary<GameObject, Vector3>();
 
         private void Start()
         {
@@ -56,8 +59,12 @@ namespace PG
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 
+            return;
             // Instantiate buildings
             InstantiateBuildings();
+
+            // Correct placing for irregular meshes
+            StartCoroutine(RepositionLimitedBuildings());
         }
         private void PlaceSidewalks(Dictionary<Vector2Int, GameObject> roadDictionary)
         {
@@ -497,8 +504,8 @@ namespace PG
                         if (CanPlaceBuilding(key, width, height))
                         {
                             MarkNodesAsOccupied(key, width, height);
-                            Instantiate(limitedBuilding.gameObject, averagePosition, rotation);
-
+                            var go = Instantiate(limitedBuilding.gameObject, averagePosition, rotation);
+                            placedLimitedBuildings.Add(go, averagePosition);
                             // Update instance count
                             limitedBuildingInstances[limitedBuilding] = currentInstances + 1;
 
@@ -779,6 +786,28 @@ namespace PG
 
                 i++;
             }
+        }
+        private IEnumerator RepositionLimitedBuildings()
+        {
+            yield return new WaitForSeconds(2f);
+            foreach (var go in placedLimitedBuildings.Keys)
+            {
+                var renderer = go.GetComponentInChildren<Renderer>();
+                if (renderer == null)
+                    continue;
+
+                Vector3 realPos = renderer.bounds.center;
+                Vector3 originalPos = placedLimitedBuildings[go];
+                float xOffset = originalPos.x - realPos.x;
+                float zOffset = originalPos.z - realPos.z;
+
+                Vector3 newPos = new Vector3(originalPos.x + xOffset, 0f, originalPos.z + zOffset);
+                go.transform.position = newPos;
+                //SpawnSphere(new Vector3(realPos.x, 0f, realPos.z), Color.blue, 4f, 4f);
+                //SpawnSphere(newPos, Color.green, 4f, 4f);
+                //SpawnSphere(new Vector3(originalPos.x, 0f, originalPos.z), Color.yellow, 5f, 4f);
+            }
+
         }
         private bool IsStraight(List<Direction> directions)
         {
