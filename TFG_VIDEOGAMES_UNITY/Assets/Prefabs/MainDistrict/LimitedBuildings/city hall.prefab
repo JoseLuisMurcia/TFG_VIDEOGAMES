@@ -226,6 +226,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6900365242537502180}
+  - component: {fileID: 544929928068536013}
   m_Layer: 0
   m_Name: city hall
   m_TagString: Untagged
@@ -249,6 +250,23 @@ Transform:
   - {fileID: 835415849240130458}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &544929928068536013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3458521633145553274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f8d9189d03195f4bb27f4a190d15a69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingInfo:
+    prefab: {fileID: 3458521633145553274}
+    maxInstances: 1
+    xValue: 3
+    yValue: 3
 --- !u!1 &4926918650984220578
 GameObject:
   m_ObjectHideFlags: 0
