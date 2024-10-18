@@ -219,6 +219,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2477595353222874890}
+  - component: {fileID: 1345301404101648095}
   m_Layer: 0
   m_Name: post office
   m_TagString: Untagged
@@ -242,6 +243,23 @@ Transform:
   - {fileID: 8039917410854627046}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1345301404101648095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2341956881656009867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f8d9189d03195f4bb27f4a190d15a69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingInfo:
+    prefab: {fileID: 2341956881656009867}
+    maxInstances: 1
+    xValue: 3
+    yValue: 2
 --- !u!1 &2963161929816282613
 GameObject:
   m_ObjectHideFlags: 0

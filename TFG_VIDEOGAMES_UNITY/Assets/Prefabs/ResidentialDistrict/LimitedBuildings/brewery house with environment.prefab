@@ -219,6 +219,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4315778785075736659}
+  - component: {fileID: 3321556639408527692}
   m_Layer: 0
   m_Name: brewery house with environment
   m_TagString: Untagged
@@ -242,6 +243,23 @@ Transform:
   - {fileID: 384377091957728700}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3321556639408527692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2765576659075152123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f8d9189d03195f4bb27f4a190d15a69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  buildingInfo:
+    prefab: {fileID: 2765576659075152123}
+    maxInstances: 1
+    xValue: 3
+    yValue: 3
 --- !u!1 &4673793239716756951
 GameObject:
   m_ObjectHideFlags: 0
