@@ -27,7 +27,6 @@ namespace PG
                     int prefabIndex = Random.Range(0, graffitiPrefabs.Count);
                     GraffitiGameObject selectedPrefab = graffitiPrefabs[prefabIndex];
                     graffitiPrefabs.RemoveAt(prefabIndex);
-
                     // Calculate the random vertical offset within the allowed range.
                     float yOffset = Random.Range(info.yMinOffset, info.yMaxOffset);
 
@@ -70,25 +69,18 @@ namespace PG
             switch (rarity)
             {
                 case Graffiti.Rarity.Low:
-                    spawnProbability = 0.2f; // 20% chance
+                    spawnProbability = 0.8f; // 80% chance
                     break;
                 case Graffiti.Rarity.Medium:
                     spawnProbability = 0.5f; // 50% chance
                     break;
                 case Graffiti.Rarity.High:
-                    spawnProbability = 0.8f; // 80% chance
+                    spawnProbability = 0.2f; // 20% chance
                     break;
             }
 
             // Roll a random value between 0 and 1 and return true if it's less than the spawn probability.
             return Random.value < spawnProbability;
-        }
-        private void SpawnSphere(Vector3 pos, Color color, float size)
-        {
-            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            startSphere.transform.localScale = Vector3.one * size;
-            startSphere.transform.position = pos;
-            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
     }
 }
