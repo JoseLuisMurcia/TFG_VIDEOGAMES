@@ -15,6 +15,7 @@ namespace PG
             public int maxInstances;
             public int xValue;  // How many grid nodes in the X direction
             public int yValue; // How many grid nodes in the Y direction
+            public bool isExterior;
         }
     }
 }

@@ -500,7 +500,7 @@ namespace PG
 
                     if (IsValidLimitedPlacement(limitedBuilding, averagePosition, 25f))
                     {
-                        if (CanPlaceBuilding(key, width, height))
+                        if (CanPlaceBuilding(key, width, height, buildingInfo.isExterior))
                         {
                             MarkNodesAsOccupied(key, width, height);
                             var go = Instantiate(limitedBuilding.gameObject, averagePosition, rotation);
@@ -557,7 +557,7 @@ namespace PG
                         height = buildingInfo.xValue;
                     }
 
-                    if (CanPlaceBuilding(key, width, height))
+                    if (CanPlaceBuilding(key, width, height, false))
                     {
                         MarkNodesAsOccupied(key, width, height);
                         Vector3 averagePosition = CalculateAveragePosition(key, width, height);
@@ -689,8 +689,16 @@ namespace PG
             }
 
         }
-        private bool CanPlaceBuilding(Vector2Int startNode, int width, int height)
+        private bool CanPlaceBuilding(Vector2Int startNode, int width, int height, bool isExterior)
         {
+            if (isExterior)
+            {
+                // Check if startNode is neighbour of a decoration node
+                var decorationNeighbours = Grid.Instance.GetNeighbours(buildingNodes[startNode], new List<Usage> { Usage.decoration });
+                if (decorationNeighbours.Count == 0)
+                    return false;
+            }
+
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
