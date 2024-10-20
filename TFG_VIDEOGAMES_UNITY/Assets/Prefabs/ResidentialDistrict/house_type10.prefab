@@ -27,15 +27,15 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7183505922691619721}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 4, y: 4, z: 4}
+  m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1716233160629863065}
   - {fileID: 8466017358839063069}
   - {fileID: 7576965489668593796}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6869392041211432598
 MeshFilter:
@@ -56,6 +56,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -98,9 +99,17 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7183505922691619721}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 4
+  serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -5925272670212219949, guid: fbbbe087749c9cc428a25d7831b41d04, type: 3}
@@ -118,87 +127,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildingInfo:
     prefab: {fileID: 7183505922691619721}
+    maxInstances: 0
     xValue: 2
     yValue: 2
---- !u!1001 &5750688018622844006
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 7564675454880350515}
-    m_Modifications:
-    - target: {fileID: 3524377690276966610, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_Name
-      value: ResidentialFloor
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
---- !u!4 &1716233160629863065 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6350010327035989759, guid: 434fad04dd2d80249b23a8d77ee2b382, type: 3}
-  m_PrefabInstance: {fileID: 5750688018622844006}
-  m_PrefabAsset: {fileID: 0}
+    isExterior: 0
 --- !u!1001 &6158172811006544522
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 7564675454880350515}
     m_Modifications:
     - target: {fileID: 2309058417259915409, guid: 35ff405e8afe43d42a23b2edc61d1046, type: 3}
@@ -266,6 +204,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 35ff405e8afe43d42a23b2edc61d1046, type: 3}
 --- !u!4 &8466017358839063069 stripped
 Transform:
@@ -277,6 +218,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 7564675454880350515}
     m_Modifications:
     - target: {fileID: 2255878356068345417, guid: 8d2caa51d4dcfe64286b01b71cb48bf8, type: 3}
@@ -340,6 +282,9 @@ PrefabInstance:
       value: 4294967295
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8d2caa51d4dcfe64286b01b71cb48bf8, type: 3}
 --- !u!4 &7576965489668593796 stripped
 Transform:

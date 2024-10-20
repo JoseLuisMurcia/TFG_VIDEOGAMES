@@ -432,8 +432,6 @@ namespace PG
             {
                 GridNode currentNode = buildingNodes[key];
 
-                if (currentNode.occupied || currentNode.usage == Usage.decoration) continue;
-
                 Region selectedRegion = currentNode.regionType;
                 List<Building> regionBuildings = null;
                 List<Building> regionLimitedBuildings = null; // New list for buildings with limited instances
@@ -459,7 +457,13 @@ namespace PG
                     default:
                         break;
                 }
-               
+
+                // If no building was placed after the attempts, instantiate the floor
+                Instantiate(availableFloor, currentNode.worldPosition, Quaternion.identity);
+
+                // If the current node is occupied by other building, ignore
+                if (currentNode.occupied || currentNode.usage == Usage.decoration) continue;
+                       
                 bool buildingPlaced = false;               
 
                 // Randomly select a subset of limited-instance buildings (e.g., 5 buildings)
@@ -566,11 +570,7 @@ namespace PG
                     }
                 }
 
-                // If no building was placed after the attempts, instantiate the floor
-                if (!buildingPlaced)
-                {
-                    Instantiate(availableFloor, currentNode.worldPosition, Quaternion.identity);
-                }
+                
             }
         }
 
