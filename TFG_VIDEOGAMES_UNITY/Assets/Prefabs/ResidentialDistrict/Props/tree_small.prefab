@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4848120950040040626}
   - component: {fileID: 7251652025477554296}
   - component: {fileID: -8623475306579343724}
+  - component: {fileID: 1101864157236652271}
   m_Layer: 14
   m_Name: tree_small
   m_TagString: Untagged
@@ -107,3 +108,20 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8686322683334853813, guid: 3af2baa2808cbe240b6798446ba46fd4, type: 3}
+--- !u!114 &1101864157236652271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9197466892552061357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99f91f7017936f84a9831c461007d79c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  propInfo:
+    maxInstances: -1
+    distanceToInstance: 0
+    isExterior: 0
+    isAlley: 0

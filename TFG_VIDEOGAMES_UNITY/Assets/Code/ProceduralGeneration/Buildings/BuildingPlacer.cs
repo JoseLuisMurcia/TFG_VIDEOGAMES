@@ -59,6 +59,8 @@ namespace PG
             // Place sidewalks based on road data
             PlaceSidewalks(roadDictionary);
 
+            // Return if only sidewalks
+            return;
             // Instantiate buildings
             InstantiateBuildings();
 

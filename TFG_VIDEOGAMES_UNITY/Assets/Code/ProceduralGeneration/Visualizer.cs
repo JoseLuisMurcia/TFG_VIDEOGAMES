@@ -205,7 +205,7 @@ namespace PG
             // Place sidewalks and buildings
             buildingPlacer.PlaceBuildings(grid, roadDictionary);
             // Place props
-            //propPlacer.PlaceProps(buildingPlacer);
+            propPlacer.PlaceProps(buildingPlacer);
             //generationUI.OnCityCreated();
             //navMeshGenerator.BakeNavMesh();
         }
