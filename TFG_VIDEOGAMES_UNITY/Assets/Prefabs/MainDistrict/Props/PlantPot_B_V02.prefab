@@ -93,8 +93,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6575561159340829533}
-  - component: {fileID: 8580636024183777152}
-  - component: {fileID: 9056813574960684841}
+  - component: {fileID: 1628662937669370625}
   m_Layer: 0
   m_Name: PlantPot_B_V02
   m_TagString: Untagged
@@ -111,36 +110,15 @@ Transform:
   m_GameObject: {fileID: 7719223044816827887}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 21.736654, y: -0.15000004, z: 3.8073912}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -13.735353, y: 0.099999905, z: 14.478017}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 589648641974170674}
   - {fileID: 1929787454617820717}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &8580636024183777152
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7719223044816827887}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.094327, y: 0.7641821, z: 1.1120133}
-  m_Center: {x: -0.17686343, y: 0.38320398, z: -0.05600673}
---- !u!114 &9056813574960684841
+--- !u!114 &1628662937669370625
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -156,6 +134,7 @@ MonoBehaviour:
     maxInstances: -1
     distanceToInstance: 0
     isExterior: 0
+    looksToRoad: 0
     isAlley: 0
 --- !u!1 &8179423087057327853
 GameObject:

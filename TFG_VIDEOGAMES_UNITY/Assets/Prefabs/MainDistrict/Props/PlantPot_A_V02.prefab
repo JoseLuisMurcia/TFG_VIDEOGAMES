@@ -177,9 +177,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 67690552183995106}
-  - component: {fileID: 4122191132673121518}
-  - component: {fileID: 3183469719703326490}
-  - component: {fileID: -8078175493028875417}
+  - component: {fileID: 7321554891896863707}
   m_Layer: 0
   m_Name: PlantPot_A_V02
   m_TagString: Untagged
@@ -196,57 +194,15 @@ Transform:
   m_GameObject: {fileID: 8998760725473874134}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 21.736654, y: -0.1500001, z: 3.8073912}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -14.760168, y: 0.09999943, z: 12.699047}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7961220161666442372}
   - {fileID: 1087163964607524453}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &4122191132673121518
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8998760725473874134}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.6069616, y: 0.15898108, z: 1.6029944}
-  m_Center: {x: 0.06, y: 0.06744015, z: -0.04}
---- !u!65 &3183469719703326490
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8998760725473874134}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.23948762, y: 0.9233594, z: 0.19821972}
-  m_Center: {x: -0.07958849, y: 0.45689702, z: 0.14738604}
---- !u!114 &-8078175493028875417
+--- !u!114 &7321554891896863707
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -262,4 +218,5 @@ MonoBehaviour:
     maxInstances: -1
     distanceToInstance: 0
     isExterior: 0
+    looksToRoad: 0
     isAlley: 0

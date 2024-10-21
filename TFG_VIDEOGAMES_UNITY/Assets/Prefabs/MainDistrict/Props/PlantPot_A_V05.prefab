@@ -93,9 +93,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5294582306847236100}
-  - component: {fileID: 3133349509707539339}
-  - component: {fileID: 4302374977760607949}
-  - component: {fileID: 7465487595458676547}
+  - component: {fileID: 2149642404492591353}
   m_Layer: 0
   m_Name: PlantPot_A_V05
   m_TagString: Untagged
@@ -112,57 +110,15 @@ Transform:
   m_GameObject: {fileID: 1970952925406984913}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 21.736654, y: -0.1500001, z: 3.8073912}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -18.19788, y: 0.099999905, z: 12.503997}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1315079988882660251}
   - {fileID: 1698957955446163995}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &3133349509707539339
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1970952925406984913}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.6069616, y: 0.15898108, z: 1.6029944}
-  m_Center: {x: -0.23, y: 0.06744015, z: 0.0039670765}
---- !u!65 &4302374977760607949
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1970952925406984913}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.1451605, y: 0.93515015, z: 0.16874242}
-  m_Center: {x: -0.1739156, y: 0.5099559, z: -0.10906577}
---- !u!114 &7465487595458676547
+--- !u!114 &2149642404492591353
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,6 +134,7 @@ MonoBehaviour:
     maxInstances: -1
     distanceToInstance: 0
     isExterior: 0
+    looksToRoad: 0
     isAlley: 0
 --- !u!1 &4276931081225078195
 GameObject:
