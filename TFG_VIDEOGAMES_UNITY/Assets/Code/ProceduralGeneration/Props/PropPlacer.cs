@@ -43,6 +43,8 @@ namespace PG
         }
         private void PlaceDistrictProps(Dictionary<Vector2Int, GridNode> sidewalkPositions, GameObject[] propPrefabs, Region regionType)
         {
+            if (propPrefabs.Length == 0) return;
+
             nodeRadius = Grid.Instance.nodeRadius;
 
             List<Vector3> propPositions = new List<Vector3>();  // Already placed prop positions
@@ -59,15 +61,15 @@ namespace PG
                 }
 
                 // Generate the first position along the edge of the sidewalk
-                Vector3 startPos = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
+                PlacingResult placingResult = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
 
                 // Queue for active prop placements
                 Queue<Vector3> activeList = new Queue<Vector3>();
-                if (IsValidPosition(startPos, propPositions, sidewalkPositions, regionType))
+                if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
                 {
-                    activeList.Enqueue(startPos);
-                    propPositions.Add(startPos);
-                    PlacePropAtPosition(startPos, propPrefabs);
+                    activeList.Enqueue(placingResult.pos);
+                    propPositions.Add(placingResult.pos);
+                    PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
                 }
 
                 // Mark the sidewalk as processed
@@ -81,15 +83,15 @@ namespace PG
                     // Try to place new props around the current position
                     for (int i = 0; i < maxAttemptsPerPos; i++)
                     {
-                        Vector3 newPos = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
+                        placingResult = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
 
                         // Check if the new position is valid (sidewalk only, no props too close)
-                        if (IsValidPosition(newPos, propPositions, sidewalkPositions, regionType))
+                        if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
                         {
-                            activeList.Enqueue(newPos);
-                            propPositions.Add(newPos);
+                            activeList.Enqueue(placingResult.pos);
+                            propPositions.Add(placingResult.pos);
                             processedSidewalks.Add(new Vector2Int(randomSidewalkNode.gridX, randomSidewalkNode.gridY));
-                            PlacePropAtPosition(newPos, propPrefabs);
+                            PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
                         }
                     }
                 }
@@ -121,19 +123,14 @@ namespace PG
             return sidewalkPositions[randomPos];
         }
 
-        // Helper function to convert a Vector3 world position to its corresponding grid position
-        private Vector2Int GetGridPosition(Vector3 worldPosition)
-        {
-            GridNode node = Grid.Instance.GetClosestNodeToPosition(worldPosition);
-            return new Vector2Int(node.gridX, node.gridY);
-        }
         // Adjusted method to generate a random position on the edge of the sidewalk
-        private Vector3 GenerateRandomPositionAlongSidewalkEdge(GridNode node)
+        private PlacingResult GenerateRandomPositionAlongSidewalkEdge(GridNode node)
         {           
             // Determine the world position of the node and its boundaries
             Vector3 worldPos = node.worldPosition;
 
             Vector3 spawnPos = new Vector3(worldPos.x, worldPos.y, worldPos.z);
+            PlacingResult result;
             var neighbours = Grid.Instance.GetNeighbourDirections(node, new List<Usage> { Usage.decoration });
             float firstOffsetDistance = nodeRadius * Random.Range(.6f, .8f);
             float secondOffsetDistance;
@@ -142,7 +139,7 @@ namespace PG
                 if (AreDirectionsOpposite(neighbours))
                 {
                     secondOffsetDistance = nodeRadius * Random.Range(.0f, .8f);
-                    spawnPos = ApplyOffsets(spawnPos, GetOppositeAxisDirections(neighbours), neighbours, firstOffsetDistance, secondOffsetDistance);
+                    result = ApplyOffsets(spawnPos, GetOppositeAxisDirections(neighbours), neighbours, firstOffsetDistance, secondOffsetDistance);
                 }
                 else
                 {
@@ -158,7 +155,7 @@ namespace PG
                         secondOffsetDistance = nodeRadius * Random.Range(.6f, .8f);
 
                     }
-                    spawnPos = ApplyOffsets(spawnPos, firstDirList, GetOppositeAxisDirections(firstDirList), firstOffsetDistance, secondOffsetDistance);
+                    result = ApplyOffsets(spawnPos, firstDirList, GetOppositeAxisDirections(firstDirList), firstOffsetDistance, secondOffsetDistance);
                 }
             }
             else if (neighbours.Count == 3)
@@ -178,7 +175,7 @@ namespace PG
                     // Restricted
                     secondOffsetDistance = nodeRadius * Random.Range(.6f, .8f);
                 }
-                spawnPos = ApplyOffsets(spawnPos, firstDirList, GetOppositeAxisDirections(firstDirList), firstOffsetDistance, secondOffsetDistance);
+                result = ApplyOffsets(spawnPos, firstDirList, GetOppositeAxisDirections(firstDirList), firstOffsetDistance, secondOffsetDistance);
             }
             else if (neighbours.Count == 4)
             {
@@ -186,25 +183,32 @@ namespace PG
                 secondOffsetDistance = nodeRadius * Random.Range(.6f, .8f);
                 Direction firstDir = RoadPlacer.Instance.GetAllDirections()[Random.Range(0, 4)];
                 List<Direction> firstDirList = new List<Direction> { firstDir };
-                spawnPos = ApplyOffsets(spawnPos, firstDirList, GetOppositeAxisDirections(firstDirList), firstOffsetDistance, secondOffsetDistance);
+                result = ApplyOffsets(spawnPos, firstDirList, GetOppositeAxisDirections(firstDirList), firstOffsetDistance, secondOffsetDistance);
             }
-
+            else
+            {
+                SpawnSphere(spawnPos, Color.red, 5f);
+                Debug.LogWarning("Cuantos neighbours tiene este desgraciado?¿");
+                return new PlacingResult();
+            }
             // Return the calculated position along the edge
-            return spawnPos;
+            return result;
         }
-        private Vector3 ApplyOffsets(Vector3 pos, List<Direction> primaryDirections, List<Direction> secondaryDirections, float primaryDistance, float secondaryDistance)
+        private PlacingResult ApplyOffsets(Vector3 pos, List<Direction> primaryDirections, List<Direction> secondaryDirections, float primaryDistance, float secondaryDistance)
         {
             Direction primaryDir = primaryDirections[Random.Range(0, primaryDirections.Count)];
             Direction secondaryDir = secondaryDirections[Random.Range(0, secondaryDirections.Count)];
 
             int[] primaryOffset = RoadPlacer.Instance.DirectionToInt(primaryDir);
             int[] secondaryOffset = RoadPlacer.Instance.DirectionToInt(secondaryDir);
-
-            return new Vector3(
+            
+            PlacingResult result = new PlacingResult(new Vector3(
                 pos.x + (primaryOffset[0] * primaryDistance) + (secondaryOffset[0] * secondaryDistance),
                 pos.y,
                 pos.z + (primaryOffset[1] * primaryDistance) + (secondaryOffset[1] * secondaryDistance)
-            );
+            ), primaryDir, secondaryDir);
+
+            return result;
         }
         private bool AreDirectionsOpposite(List<Direction> directions)
         {
@@ -293,52 +297,68 @@ namespace PG
         }
 
         // Place a prop at a given position
-        private void PlacePropAtPosition(Vector3 pos, GameObject[] propPrefabs)
+        private void PlacePropAtPosition(PlacingResult result, GridNode node, GameObject[] propPrefabs)
         {
             // Randomly select a prop prefab for variety
             GameObject propPrefab = propPrefabs[Random.Range(0, propPrefabs.Length)];
-            Vector3 spawnPos = new Vector3(pos.x, pos.y, pos.z);
+
+            // Cambiar para que sea iterativo con varios prefabs por seleccionar en caso de fallar por los tipos de nodo y tipos de prefabs
+            Vector3 firstDirVector = RoadPlacer.Instance.DirectionToVector(result.firstDir);
+            Vector3 posInDirection = node.worldPosition + firstDirVector * Grid.Instance.nodeDiameter;
+            GridNode nodeInDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
+            if (nodeInDirection == null)
+            {
+                Debug.LogWarning("Node in direction is null");
+            }
+            else
+            {
+                // Sabiendo el nodo, podemos saber si es building, o road.
+            }
+
+            if (result.firstDir == Direction.left)
+            {
+
+            }
+            else if(result.firstDir == Direction.right)
+            {
+
+            }
+            else if (result.firstDir == Direction.forward)
+            {
+
+            }
+            else if (result.firstDir == Direction.back)
+            {
+
+            }
+            SpawnSphere(node.worldPosition + Vector3.up * 2f, Color.cyan, .8f);
+            Debug.DrawLine(node.worldPosition + Vector3.up * 2f,
+                posInDirection + Vector3.up * 2f, Color.green, 500f);
+            SpawnSphere(posInDirection + Vector3.up * 2f, Color.blue, .8f);
 
             // Instantiate the prop at the given position
-            Instantiate(propPrefab, spawnPos, Quaternion.identity);
+            Instantiate(propPrefab, result.pos, Quaternion.identity);
         }
-
-        // Get a random position from the list of valid sidewalk positions
-        private Vector3 GetRandomSidewalkPosition(Dictionary<Vector2Int, GridNode> sidewalkPositions)
+        private void SpawnSphere(Vector3 pos, Color color, float size)
         {
-            int randomIndex = Random.Range(0, sidewalkPositions.Count);
-            foreach (var sidewalk in sidewalkPositions)
-            {
-                if (randomIndex-- == 0)
-                {
-                    return sidewalk.Value.worldPosition;
-                }
-            }
-            return Vector3.zero;
+            GameObject startSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            startSphere.transform.localScale = Vector3.one * size;
+            startSphere.transform.position = pos;
+            startSphere.GetComponent<Renderer>().material.SetColor("_Color", color);
         }
-        // Get an unprocessed random position from the list of valid sidewalk positions
-        private Vector3 GetRandomUnprocessedSidewalkPosition(Dictionary<Vector2Int, GridNode> sidewalkPositions, HashSet<Vector2Int> processedSidewalks)
+        struct PlacingResult
         {
-            List<Vector2Int> unprocessedPositions = new List<Vector2Int>();
+            public Vector3 pos;
+            public Direction firstDir;
+            public Direction secondDir;
 
-            // Collect all unprocessed sidewalk positions
-            foreach (var sidewalk in sidewalkPositions)
+            public PlacingResult(Vector3 pos, Direction firstDir, Direction secondDir)
             {
-                if (!processedSidewalks.Contains(sidewalk.Key))
-                {
-                    unprocessedPositions.Add(sidewalk.Key);
-                }
+                this.pos = pos;
+                this.firstDir = firstDir;
+                this.secondDir = secondDir;
             }
 
-            // If there are no unprocessed sidewalks, return zero vector
-            if (unprocessedPositions.Count == 0)
-            {
-                return Vector3.zero;
-            }
-
-            // Randomly select one of the unprocessed sidewalk positions
-            Vector2Int randomPos = unprocessedPositions[Random.Range(0, unprocessedPositions.Count)];
-            return sidewalkPositions[randomPos].worldPosition;
         }
     }
 }
