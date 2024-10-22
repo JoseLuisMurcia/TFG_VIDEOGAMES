@@ -12,9 +12,9 @@ namespace PG
         private int maxAttemptsPerPos = 15;
         private float nodeRadius;
 
-        [SerializeField] private GameObject[] mainProps;
-        [SerializeField] private GameObject[] residentialProps;
-        [SerializeField] private GameObject[] gangProps;
+        [SerializeField] private Prop[] mainProps;
+        [SerializeField] private Prop[] residentialProps;
+        [SerializeField] private Prop[] gangProps;
 
         private Dictionary<Vector2Int, GridNode> mainSidewalks = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> residentialSidewalks = new Dictionary<Vector2Int, GridNode>();
@@ -41,7 +41,7 @@ namespace PG
             PlaceDistrictProps(residentialSidewalks, residentialProps, Region.Residential);
             PlaceDistrictProps(gangSidewalks, gangProps, Region.Suburbs);
         }
-        private void PlaceDistrictProps(Dictionary<Vector2Int, GridNode> sidewalkPositions, GameObject[] propPrefabs, Region regionType)
+        private void PlaceDistrictProps(Dictionary<Vector2Int, GridNode> sidewalkPositions, Prop[] propPrefabs, Region regionType)
         {
             if (propPrefabs.Length == 0) return;
 
@@ -297,47 +297,73 @@ namespace PG
         }
 
         // Place a prop at a given position
-        private void PlacePropAtPosition(PlacingResult result, GridNode node, GameObject[] propPrefabs)
+        private void PlacePropAtPosition(PlacingResult result, GridNode node, Prop[] propPrefabs)
         {
-            // Randomly select a prop prefab for variety
-            GameObject propPrefab = propPrefabs[Random.Range(0, propPrefabs.Length)];
+            Vector3 selectedPos = result.pos;
+            Quaternion rotation = Quaternion.identity;
+            const int maxAttempts = 5;
+            Prop prop = null;
+            int attempt = 0;
 
-            // Cambiar para que sea iterativo con varios prefabs por seleccionar en caso de fallar por los tipos de nodo y tipos de prefabs
-            Vector3 firstDirVector = RoadPlacer.Instance.DirectionToVector(result.firstDir);
-            Vector3 posInDirection = node.worldPosition + firstDirVector * Grid.Instance.nodeDiameter;
-            GridNode nodeInDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
-            if (nodeInDirection == null)
+            while (attempt < maxAttempts) 
             {
-                Debug.LogWarning("Node in direction is null");
-            }
-            else
-            {
-                // Sabiendo el nodo, podemos saber si es building, o road.
-            }
+                attempt++;
 
-            if (result.firstDir == Direction.left)
-            {
+                // Randomly select a prop prefab for variety
+                prop = propPrefabs[Random.Range(0, propPrefabs.Length)];
 
-            }
-            else if(result.firstDir == Direction.right)
-            {
+                // Get nodes to the side
+                Vector3 firstDirVector = RoadPlacer.Instance.DirectionToVector(result.firstDir);
+                Vector3 posInDirection = node.worldPosition + firstDirVector * Grid.Instance.nodeDiameter;
+                Vector3 posInOppDirection = node.worldPosition - firstDirVector * Grid.Instance.nodeDiameter;
+                GridNode nodeInDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
+                GridNode nodeInOppDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
+    
+                bool posIsCloseToRoad = false;
+                if (nodeInDirection == null || nodeInOppDirection == null)
+                {
+                    Debug.LogWarning("Node in direction is null");
+                }
+                else
+                {
+                    // Find the node that the selectedPos is closer to
+                    GridNode closerNode = Vector3.Distance(selectedPos, nodeInDirection.worldPosition) < Vector3.Distance(selectedPos, nodeInOppDirection.worldPosition) ? nodeInDirection : nodeInOppDirection;
+                    if (closerNode.usage == Usage.road) 
+                    { 
+                        posIsCloseToRoad = true;
+                        // We could include logic to only instantiate assets that are exterior only
+                        if (prop.propInfo.isInterior) continue;
+                    }
+                    else
+                    {
+                        // We could include logic to only instantiate assets that are interior only
+                        if (prop.propInfo.isExterior) continue;
+                    }
+                }
 
+                // Rotate depending on direction
+                if (result.firstDir == Direction.left)
+                {
+                    rotation = Quaternion.Euler(0f, -90f, 0f);
+                }
+                else if (result.firstDir == Direction.right)
+                {
+                    rotation = Quaternion.Euler(0f, 90f, 0f);
+                }
+                else if (result.firstDir == Direction.forward)
+                {
+                    rotation = Quaternion.Euler(0f, 0f, 0f);
+                }
+                else if (result.firstDir == Direction.back)
+                {
+                    rotation = Quaternion.Euler(0f, 180f, 0f);
+                }
+                break;
             }
-            else if (result.firstDir == Direction.forward)
-            {
-
-            }
-            else if (result.firstDir == Direction.back)
-            {
-
-            }
-            SpawnSphere(node.worldPosition + Vector3.up * 2f, Color.cyan, .8f);
-            Debug.DrawLine(node.worldPosition + Vector3.up * 2f,
-                posInDirection + Vector3.up * 2f, Color.green, 500f);
-            SpawnSphere(posInDirection + Vector3.up * 2f, Color.blue, .8f);
+           
 
             // Instantiate the prop at the given position
-            Instantiate(propPrefab, result.pos, Quaternion.identity);
+            Instantiate(prop, selectedPos, rotation);
         }
         private void SpawnSphere(Vector3 pos, Color color, float size)
         {
