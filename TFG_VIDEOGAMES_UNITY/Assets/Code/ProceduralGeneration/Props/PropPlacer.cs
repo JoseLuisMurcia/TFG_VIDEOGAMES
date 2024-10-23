@@ -9,12 +9,15 @@ namespace PG
     public class PropPlacer : MonoBehaviour
     {
         private float minDistanceBetweenProps = 6f;
-        private int maxAttemptsPerPos = 15;
+        private int maxAttemptsPerPos = 10;
         private float nodeRadius;
 
         [SerializeField] private Prop[] mainProps;
         [SerializeField] private Prop[] residentialProps;
         [SerializeField] private Prop[] gangProps;
+        [SerializeField] private Prop[] mainStreetLamps;
+        [SerializeField] private Prop[] residentialStreetLamps;
+        [SerializeField] private Prop[] gangStreetLamps;
 
         private Dictionary<Vector2Int, GridNode> mainSidewalks = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> residentialSidewalks = new Dictionary<Vector2Int, GridNode>();
@@ -48,7 +51,12 @@ namespace PG
             nodeRadius = Grid.Instance.nodeRadius;
 
             List<Vector3> propPositions = new List<Vector3>();  // Already placed prop positions
+            List<Vector3> streetLampPositions = new List<Vector3>();  // Already placed street lamp positions
             HashSet<Vector2Int> processedSidewalks = new HashSet<Vector2Int>();  // Track processed sidewalks
+
+            int propsCounter = 0;  // Counter for props placed
+            int streetLampFrequency = GetStreetLampFrequency(regionType);  // Frequency of street lamps
+            Prop[] streetLampPrefabs = GetStreetLampPrefabs(regionType);
 
             // Loop until all sidewalk positions have been processed
             while (processedSidewalks.Count < sidewalkPositions.Count)
@@ -65,11 +73,28 @@ namespace PG
 
                 // Queue for active prop placements
                 Queue<Vector3> activeList = new Queue<Vector3>();
-                if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+
+                bool isStreetLamp = (propsCounter % streetLampFrequency == 0);  // Check if it's time to place a street lamp
+
+                // Validate position based on the type of prop (street lamp or regular prop)
+                if (isStreetLamp)
                 {
-                    activeList.Enqueue(placingResult.pos);
-                    propPositions.Add(placingResult.pos);
-                    PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
+                    if (IsValidPositionForStreetLamp(placingResult.pos, propPositions, streetLampPositions, sidewalkPositions, regionType))
+                    {
+                        activeList.Enqueue(placingResult.pos);
+                        propPositions.Add(placingResult.pos);
+                        streetLampPositions.Add(placingResult.pos);
+                        PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);  // Place street lamp
+                    }
+                }
+                else
+                {
+                    if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+                    {
+                        activeList.Enqueue(placingResult.pos);
+                        propPositions.Add(placingResult.pos);
+                        PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);  // Place regular prop
+                    }
                 }
 
                 // Mark the sidewalk as processed
@@ -85,15 +110,31 @@ namespace PG
                     {
                         placingResult = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
 
-                        // Check if the new position is valid (sidewalk only, no props too close)
-                        if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+                        isStreetLamp = (propsCounter % streetLampFrequency == 0);
+
+                        if (isStreetLamp)
                         {
-                            activeList.Enqueue(placingResult.pos);
-                            propPositions.Add(placingResult.pos);
-                            processedSidewalks.Add(new Vector2Int(randomSidewalkNode.gridX, randomSidewalkNode.gridY));
-                            PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
+                            if (IsValidPositionForStreetLamp(placingResult.pos, propPositions, streetLampPositions, sidewalkPositions, regionType))
+                            {
+                                activeList.Enqueue(placingResult.pos);
+                                propPositions.Add(placingResult.pos);
+                                streetLampPositions.Add(placingResult.pos);
+                                PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);
+                            }
                         }
+                        else
+                        {
+                            if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+                            {
+                                activeList.Enqueue(placingResult.pos);
+                                propPositions.Add(placingResult.pos);
+                                PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
+                            }
+                        }
+
+                        
                     }
+                    propsCounter++;
                 }
             }
         }
@@ -279,12 +320,9 @@ namespace PG
         {
             // Ensure it's on a sidewalk
             GridNode belongingNode = Grid.Instance.GetClosestNodeToPosition(newPos);
-            if (belongingNode == null)
+            if (belongingNode == null || belongingNode.regionType != regionType || belongingNode.usage != Usage.decoration)
                 return false;
 
-            // Check if it is a decoration node
-            if (belongingNode.regionType != regionType || belongingNode.usage != Usage.decoration)
-                return false;
 
             // Check if the new position is far enough from other props
             foreach (Vector3 propPos in propPositions)
@@ -294,6 +332,59 @@ namespace PG
             }
 
             return true;
+        }
+        // Check if a street lamp can be placed at a position
+        private bool IsValidPositionForStreetLamp(Vector3 newPos, List<Vector3> propPositions, List<Vector3> streetLampPositions, Dictionary<Vector2Int, GridNode> sidewalkPositions, Region regionType)
+        {
+            GridNode belongingNode = Grid.Instance.GetClosestNodeToPosition(newPos);
+            if (belongingNode == null || belongingNode.regionType != regionType || belongingNode.usage != Usage.decoration)
+                return false;
+
+            // Check distance to other props (small distance allowed, e.g., 1f)
+            foreach (Vector3 propPos in propPositions)
+            {
+                if (Vector3.Distance(newPos, propPos) < 1f)  // Small distance check for props
+                    return false;
+            }
+
+            // Check distance to other street lamps (larger distance required, e.g., 5f)
+            foreach (Vector3 streetLampPos in streetLampPositions)
+            {
+                if (Vector3.Distance(newPos, streetLampPos) < 5f)  // Larger distance check for street lamps
+                    return false;
+            }
+
+            return true;
+        }
+        private int GetStreetLampFrequency(Region regionType)
+        {
+            // Define how often street lamps are placed based on the district
+            switch (regionType)
+            {
+                case Region.Main:
+                    return 3;  // Every 3 props
+                case Region.Residential:
+                    return 4;  // Every 4 props
+                case Region.Suburbs:
+                    return 7;  // Every 7 props
+                default:
+                    return 30;
+            }
+        }
+
+        private Prop[] GetStreetLampPrefabs(Region regionType)
+        {
+            switch (regionType)
+            {
+                case Region.Main:
+                    return mainStreetLamps;
+                case Region.Residential:
+                    return residentialStreetLamps;
+                case Region.Suburbs:
+                    return gangStreetLamps;
+                default:
+                    return null;
+            }
         }
 
         // Place a prop at a given position
@@ -312,6 +403,7 @@ namespace PG
                 // Randomly select a prop prefab for variety
                 prop = propPrefabs[Random.Range(0, propPrefabs.Length)];
 
+                bool posIsCloseToRoad = false;
                 // Get nodes to the side
                 Vector3 firstDirVector = RoadPlacer.Instance.DirectionToVector(result.firstDir);
                 Vector3 posInDirection = node.worldPosition + firstDirVector * Grid.Instance.nodeDiameter;
@@ -319,7 +411,7 @@ namespace PG
                 GridNode nodeInDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
                 GridNode nodeInOppDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
     
-                bool posIsCloseToRoad = false;
+               
                 if (nodeInDirection == null || nodeInOppDirection == null)
                 {
                     Debug.LogWarning("Node in direction is null");
