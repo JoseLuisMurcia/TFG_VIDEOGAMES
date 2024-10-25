@@ -104,6 +104,7 @@ namespace PG
                 while (activeList.Count > 0)
                 {
                     Vector3 currentPos = activeList.Dequeue();
+                    bool propPlaced = false; // Track if a prop is placed in the current cycle
 
                     // Try to place new props around the current position
                     for (int i = 0; i < maxAttemptsPerPos; i++)
@@ -120,6 +121,7 @@ namespace PG
                                 propPositions.Add(placingResult.pos);
                                 streetLampPositions.Add(placingResult.pos);
                                 PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);
+                                propPlaced = true; // Successfully placed a street lamp
                             }
                         }
                         else
@@ -129,12 +131,16 @@ namespace PG
                                 activeList.Enqueue(placingResult.pos);
                                 propPositions.Add(placingResult.pos);
                                 PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
+                                propPlaced = true; // Successfully placed a regular prop
                             }
                         }
 
                         
                     }
-                    propsCounter++;
+                    if (propPlaced)
+                    {
+                        propsCounter++; // Increment after a successful prop placement
+                    }
                 }
             }
         }
@@ -393,17 +399,38 @@ namespace PG
             Vector3 selectedPos = result.pos;
             Quaternion rotation = Quaternion.identity;
             const int maxAttempts = 5;
-            Prop prop = null;
             int attempt = 0;
+
+            // Track props already tried
+            HashSet<Prop> triedProps = new HashSet<Prop>();
+            Prop prop = null;
 
             while (attempt < maxAttempts) 
             {
                 attempt++;
 
-                // Randomly select a prop prefab for variety
-                prop = propPrefabs[Random.Range(0, propPrefabs.Length)];
+                // Select a random prop that hasn't been tried yet in this call
+                do
+                {
+                    prop = propPrefabs[Random.Range(0, propPrefabs.Length)];
+                } 
+                while (triedProps.Contains(prop) && triedProps.Count < propPrefabs.Length);
 
-                bool posIsCloseToRoad = false;
+                
+                // Add the selected prop to the tried set
+                triedProps.Add(prop);
+
+                // Check if the prop is meant to be spawned in an alley node
+                if (prop.propInfo.isAlley)
+                {
+                    // Try another prefab
+                    if (!node.isAlley)
+                        continue;
+
+                    // Spawn prefab on alley
+                    SpawnPrefabBetweenBuildings(prop, result.firstDir, selectedPos);
+                    break;
+                }
                 // Get nodes to the side
                 Vector3 firstDirVector = RoadPlacer.Instance.DirectionToVector(result.firstDir);
                 Vector3 posInDirection = node.worldPosition + firstDirVector * Grid.Instance.nodeDiameter;
@@ -415,46 +442,131 @@ namespace PG
                 if (nodeInDirection == null || nodeInOppDirection == null)
                 {
                     Debug.LogWarning("Node in direction is null");
+                    SpawnSphere(node.worldPosition + Vector3.up * 2f, Color.red, 2.5f);
                 }
                 else
                 {
-                    // Find the node that the selectedPos is closer to
-                    GridNode closerNode = Vector3.Distance(selectedPos, nodeInDirection.worldPosition) < Vector3.Distance(selectedPos, nodeInOppDirection.worldPosition) ? nodeInDirection : nodeInOppDirection;
-                    if (closerNode.usage == Usage.road) 
-                    { 
-                        posIsCloseToRoad = true;
-                        // We could include logic to only instantiate assets that are exterior only
-                        if (prop.propInfo.isInterior) continue;
-                    }
-                    else
+                    if (nodeInDirection.usage == Usage.building && nodeInOppDirection.usage == Usage.building)
                     {
-                        // We could include logic to only instantiate assets that are interior only
-                        if (prop.propInfo.isExterior) continue;
+                        SpawnPrefabBetweenBuildings(prop, result.firstDir, selectedPos);
+                        break;
                     }
-                }
 
-                // Rotate depending on direction
-                if (result.firstDir == Direction.left)
-                {
-                    rotation = Quaternion.Euler(0f, -90f, 0f);
+                    if ((nodeInDirection.usage == Usage.building && nodeInOppDirection.usage == Usage.road) || (nodeInDirection.usage == Usage.road && nodeInOppDirection.usage == Usage.building))
+                    {
+                        // Find the node that the selectedPos is closer to
+                        GridNode closerNode = Vector3.Distance(selectedPos, nodeInDirection.worldPosition) < Vector3.Distance(selectedPos, nodeInOppDirection.worldPosition) ? nodeInDirection : nodeInOppDirection;
+                        if (closerNode.usage == Usage.road)
+                        {
+                            // No instanciar prefab marcados como isInterior cerca de una road
+                            if (prop.propInfo.isInterior) continue;
+
+                            SpawnPrefabBetweenRoadAndBuilding(prop, result.firstDir, selectedPos, true);
+                        }
+                        else
+                        {
+                            // No instanciar prefab marcados como isExterior cerca de un building
+                            if (prop.propInfo.isExterior) continue;
+
+                            SpawnPrefabBetweenRoadAndBuilding(prop, result.firstDir, selectedPos, false);
+                        }
+                        break;
+                    }                   
                 }
-                else if (result.firstDir == Direction.right)
-                {
-                    rotation = Quaternion.Euler(0f, 90f, 0f);
-                }
-                else if (result.firstDir == Direction.forward)
-                {
-                    rotation = Quaternion.Euler(0f, 0f, 0f);
-                }
-                else if (result.firstDir == Direction.back)
-                {
-                    rotation = Quaternion.Euler(0f, 180f, 0f);
-                }
-                break;
+               
             }
-           
+                
+        }
+        private void SpawnPrefabBetweenRoadAndBuilding(Prop prop, Direction firstDir, Vector3 selectedPos, bool isCloseToRoad)
+        {
+            Quaternion rotation = Quaternion.identity;
+            if (isCloseToRoad)
+            {
+                if (prop.propInfo.looksToRoad)
+                {
+                    rotation = firstDir switch
+                    {
+                        Direction.left => Quaternion.Euler(0f, 90f, 0f),
+                        Direction.right => Quaternion.Euler(0f, -90f, 0f),
+                        Direction.forward => Quaternion.Euler(0f, 180f, 0f),
+                        Direction.back => Quaternion.Euler(0f, 0f, 0f),
+                        _ => Quaternion.identity
+                    };
+                }
+                else if (prop.propInfo.looksToSidewalk)
+                {
+                    rotation = firstDir switch
+                    {
+                        Direction.left => Quaternion.Euler(0f, -90f, 0f),
+                        Direction.right => Quaternion.Euler(0f, 90f, 0f),
+                        Direction.forward => Quaternion.Euler(0f, 0f, 0f),
+                        Direction.back => Quaternion.Euler(0f, 180f, 0f),
+                        _ => Quaternion.identity
+                    };
+                }
+                else
+                {
+                    rotation = firstDir switch
+                    {
+                        Direction.left => Quaternion.Euler(0f, -90f, 0f),
+                        Direction.right => Quaternion.Euler(0f, 90f, 0f),
+                        Direction.forward => Quaternion.Euler(0f, 0f, 0f),
+                        Direction.back => Quaternion.Euler(0f, 180f, 0f),
+                        _ => Quaternion.identity
+                    };
+                }
+            }
+            else
+            {
+                if (prop.propInfo.looksToRoad)
+                {
+                    rotation = firstDir switch
+                    {
+                        Direction.left => Quaternion.Euler(0f, 90f, 0f),
+                        Direction.right => Quaternion.Euler(0f, -90f, 0f),
+                        Direction.forward => Quaternion.Euler(0f, 180f, 0f),
+                        Direction.back => Quaternion.Euler(0f, 0f, 0f),
+                        _ => Quaternion.identity
+                    };
+                }
+                else if (prop.propInfo.looksToSidewalk)
+                {
+                    rotation = firstDir switch
+                    {
+                        Direction.left => Quaternion.Euler(0f, -90f, 0f),
+                        Direction.right => Quaternion.Euler(0f, 90f, 0f),
+                        Direction.forward => Quaternion.Euler(0f, 0f, 0f),
+                        Direction.back => Quaternion.Euler(0f, 180f, 0f),
+                        _ => Quaternion.identity
+                    };
+                }
+                else
+                {
+                    rotation = firstDir switch
+                    {
+                        Direction.left => Quaternion.Euler(0f, -90f, 0f),
+                        Direction.right => Quaternion.Euler(0f, 90f, 0f),
+                        Direction.forward => Quaternion.Euler(0f, 0f, 0f),
+                        Direction.back => Quaternion.Euler(0f, 180f, 0f),
+                        _ => Quaternion.identity
+                    };
+                }
+            }
+            Instantiate(prop, selectedPos, rotation);
+        }
+        private void SpawnPrefabBetweenBuildings(Prop prop, Direction firstDir, Vector3 selectedPos)
+        {
+            // Ignorar todas las variables, siempre tiene que mirar hacia el sidewalk
 
-            // Instantiate the prop at the given position
+            // Rotate depending on direction
+            Quaternion rotation = firstDir switch
+            {
+                Direction.left => Quaternion.Euler(0f, -90f, 0f),
+                Direction.right => Quaternion.Euler(0f, 90f, 0f),
+                Direction.forward => Quaternion.Euler(0f, 0f, 0f),
+                Direction.back => Quaternion.Euler(0f, 180f, 0f),
+                _ => Quaternion.identity
+            };
             Instantiate(prop, selectedPos, rotation);
         }
         private void SpawnSphere(Vector3 pos, Color color, float size)

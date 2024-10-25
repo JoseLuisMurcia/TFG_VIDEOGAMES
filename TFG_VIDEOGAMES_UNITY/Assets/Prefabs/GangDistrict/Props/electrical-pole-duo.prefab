@@ -47,14 +47,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   propInfo:
     maxInstances: -1
-    distanceToInstance: 0
-    isExterior: 0
+    isExterior: 1
+    isInterior: 0
+    looksToSidewalk: 0
+    looksToRoad: 0
     isAlley: 0
 --- !u!1 &8114330246018790815
 GameObject:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 4022237252667723436, guid: 61e1d0b4be9e11644aa71972b3faea9d, type: 3}
-  m_PrefabInstance: {fileID: 3414334187116358843}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
@@ -71,8 +73,8 @@ GameObject:
 --- !u!4 &340319067712165440
 Transform:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 4366815797829047318, guid: 61e1d0b4be9e11644aa71972b3faea9d, type: 3}
-  m_PrefabInstance: {fileID: 3414334187116358843}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8114330246018790815}
   serializedVersion: 2
@@ -86,16 +88,16 @@ Transform:
 --- !u!33 &4237933029296125930
 MeshFilter:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 807780688645659571, guid: 61e1d0b4be9e11644aa71972b3faea9d, type: 3}
-  m_PrefabInstance: {fileID: 3414334187116358843}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8114330246018790815}
   m_Mesh: {fileID: -5549291491413323748, guid: 92b5cc52b05464dd780163663449e545, type: 3}
 --- !u!23 &3860135448567644377
 MeshRenderer:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 3229405324208631673, guid: 61e1d0b4be9e11644aa71972b3faea9d, type: 3}
-  m_PrefabInstance: {fileID: 3414334187116358843}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8114330246018790815}
   m_Enabled: 1
@@ -133,61 +135,3 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1001 &3414334187116358843
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 7136162151330429982}
-    m_Modifications:
-    - target: {fileID: 0}
-      propertyPath: m_Name
-      value: electrical-pole-duo
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.y
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -90
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 0}
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 0}
