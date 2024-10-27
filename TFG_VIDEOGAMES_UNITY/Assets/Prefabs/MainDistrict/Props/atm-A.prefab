@@ -47,14 +47,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   propInfo:
     maxInstances: -1
-    distanceToInstance: 0
     isExterior: 0
+    isInterior: 1
+    looksToSidewalk: 0
+    looksToRoad: 0
     isAlley: 0
 --- !u!1 &7315689763028722584
 GameObject:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 1111820442806945392, guid: 96e506f0e8d37fd40a83fa26790d2fde, type: 3}
-  m_PrefabInstance: {fileID: 4272144060654294867}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
@@ -72,8 +74,8 @@ GameObject:
 --- !u!4 &8865509282558687389
 Transform:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 1130734005149913293, guid: 96e506f0e8d37fd40a83fa26790d2fde, type: 3}
-  m_PrefabInstance: {fileID: 4272144060654294867}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7315689763028722584}
   serializedVersion: 2
@@ -87,16 +89,16 @@ Transform:
 --- !u!33 &4821501279383525176
 MeshFilter:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 6391028568643847935, guid: 96e506f0e8d37fd40a83fa26790d2fde, type: 3}
-  m_PrefabInstance: {fileID: 4272144060654294867}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7315689763028722584}
   m_Mesh: {fileID: 8349626882657206959, guid: 78f7ad04e2d6d49bc80c68c0626f8e7a, type: 3}
 --- !u!23 &9107870446372645611
 MeshRenderer:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 4156972098414599130, guid: 96e506f0e8d37fd40a83fa26790d2fde, type: 3}
-  m_PrefabInstance: {fileID: 4272144060654294867}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7315689763028722584}
   m_Enabled: 1
@@ -138,8 +140,8 @@ MeshRenderer:
 --- !u!114 &5908687144087454838
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 5628952513604354583, guid: 96e506f0e8d37fd40a83fa26790d2fde, type: 3}
-  m_PrefabInstance: {fileID: 4272144060654294867}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7315689763028722584}
   m_Enabled: 1
@@ -149,79 +151,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   propInfo:
     maxInstances: -1
-    distanceToInstance: 0
     isExterior: 0
+    isInterior: 0
+    looksToSidewalk: 0
+    looksToRoad: 0
     isAlley: 0
---- !u!1001 &4272144060654294867
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 3112015069006222376}
-    m_Modifications:
-    - target: {fileID: 0}
-      propertyPath: m_Name
-      value: atm-A
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalScale.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalScale.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalScale.z
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.w
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 0}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 0}

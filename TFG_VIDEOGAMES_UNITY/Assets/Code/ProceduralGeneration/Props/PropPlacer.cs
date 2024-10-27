@@ -84,6 +84,7 @@ namespace PG
                         activeList.Enqueue(placingResult.pos);
                         propPositions.Add(placingResult.pos);
                         streetLampPositions.Add(placingResult.pos);
+                        propsCounter++;
                         PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);  // Place street lamp
                     }
                 }
@@ -93,6 +94,7 @@ namespace PG
                     {
                         activeList.Enqueue(placingResult.pos);
                         propPositions.Add(placingResult.pos);
+                        propsCounter++;
                         PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);  // Place regular prop
                     }
                 }
@@ -107,7 +109,7 @@ namespace PG
                     bool propPlaced = false; // Track if a prop is placed in the current cycle
 
                     // Try to place new props around the current position
-                    for (int i = 0; i < maxAttemptsPerPos; i++)
+                    for (int i = 0; i < maxAttemptsPerPos && !propPlaced; i++)
                     {
                         placingResult = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
 
@@ -120,8 +122,9 @@ namespace PG
                                 activeList.Enqueue(placingResult.pos);
                                 propPositions.Add(placingResult.pos);
                                 streetLampPositions.Add(placingResult.pos);
-                                PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);
                                 propPlaced = true; // Successfully placed a street lamp
+                                propsCounter++;
+                                PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);
                             }
                         }
                         else
@@ -130,17 +133,14 @@ namespace PG
                             {
                                 activeList.Enqueue(placingResult.pos);
                                 propPositions.Add(placingResult.pos);
-                                PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
                                 propPlaced = true; // Successfully placed a regular prop
+                                propsCounter++;
+                                PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
                             }
                         }
 
-                        
                     }
-                    if (propPlaced)
-                    {
-                        propsCounter++; // Increment after a successful prop placement
-                    }
+                    
                 }
             }
         }
@@ -349,7 +349,7 @@ namespace PG
             // Check distance to other props (small distance allowed, e.g., 1f)
             foreach (Vector3 propPos in propPositions)
             {
-                if (Vector3.Distance(newPos, propPos) < 1f)  // Small distance check for props
+                if (Vector3.Distance(newPos, propPos) < 1.5f)  // Small distance check for props
                     return false;
             }
 
@@ -416,6 +416,8 @@ namespace PG
                 } 
                 while (triedProps.Contains(prop) && triedProps.Count < propPrefabs.Length);
 
+                if (triedProps.Contains(prop))
+                    break;
                 
                 // Add the selected prop to the tried set
                 triedProps.Add(prop);
@@ -436,13 +438,16 @@ namespace PG
                 Vector3 posInDirection = node.worldPosition + firstDirVector * Grid.Instance.nodeDiameter;
                 Vector3 posInOppDirection = node.worldPosition - firstDirVector * Grid.Instance.nodeDiameter;
                 GridNode nodeInDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
-                GridNode nodeInOppDirection = Grid.Instance.GetClosestNodeToPosition(posInDirection);
+                GridNode nodeInOppDirection = Grid.Instance.GetClosestNodeToPosition(posInOppDirection);
     
                
                 if (nodeInDirection == null || nodeInOppDirection == null)
                 {
                     Debug.LogWarning("Node in direction is null");
                     SpawnSphere(node.worldPosition + Vector3.up * 2f, Color.red, 2.5f);
+
+                    // TODO: Spawnear asset si no es isExterior o isInterior :)
+                    break;
                 }
                 else
                 {
@@ -458,20 +463,33 @@ namespace PG
                         GridNode closerNode = Vector3.Distance(selectedPos, nodeInDirection.worldPosition) < Vector3.Distance(selectedPos, nodeInOppDirection.worldPosition) ? nodeInDirection : nodeInOppDirection;
                         if (closerNode.usage == Usage.road)
                         {
+                            // El prefab se va a instanciar pegado a la carretera
+
                             // No instanciar prefab marcados como isInterior cerca de una road
                             if (prop.propInfo.isInterior) continue;
 
+                            SpawnSphere(selectedPos + Vector3.up * 2f, Color.cyan, 1.5f);
                             SpawnPrefabBetweenRoadAndBuilding(prop, result.firstDir, selectedPos, true);
                         }
                         else
                         {
+                            // El prefab se va a instanciar alejado de la carretera
+
                             // No instanciar prefab marcados como isExterior cerca de un building
                             if (prop.propInfo.isExterior) continue;
 
+                            SpawnSphere(selectedPos + Vector3.up * 2f, Color.blue, 1.5f);
                             SpawnPrefabBetweenRoadAndBuilding(prop, result.firstDir, selectedPos, false);
                         }
+                        // Has been spawned
                         break;
-                    }                   
+                    }
+                    else
+                    {
+                        // Road and road
+                        // No spawning
+                        break;
+                    }
                 }
                
             }
