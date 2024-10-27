@@ -8,7 +8,7 @@ namespace PG
 {
     public class PropPlacer : MonoBehaviour
     {
-        private float minDistanceBetweenProps = 6f;
+        private float minDistanceBetweenProps = 5f;
         private int maxAttemptsPerPos = 10;
         private float nodeRadius;
 
@@ -349,7 +349,7 @@ namespace PG
             // Check distance to other props (small distance allowed, e.g., 1f)
             foreach (Vector3 propPos in propPositions)
             {
-                if (Vector3.Distance(newPos, propPos) < 1.5f)  // Small distance check for props
+                if (Vector3.Distance(newPos, propPos) < 1f)  // Small distance check for props
                     return false;
             }
 
@@ -368,11 +368,11 @@ namespace PG
             switch (regionType)
             {
                 case Region.Main:
-                    return 3;  // Every 3 props
+                    return 2;
                 case Region.Residential:
-                    return 4;  // Every 4 props
+                    return 3;
                 case Region.Suburbs:
-                    return 7;  // Every 7 props
+                    return 4;
                 default:
                     return 30;
             }
@@ -403,6 +403,7 @@ namespace PG
 
             // Track props already tried
             HashSet<Prop> triedProps = new HashSet<Prop>();
+            List<Prop> alleyProps = propPrefabs.Where(x => x.propInfo.isAlley).ToList();
             Prop prop = null;
 
             while (attempt < maxAttempts) 
@@ -423,6 +424,28 @@ namespace PG
                 triedProps.Add(prop);
 
                 // Check if the prop is meant to be spawned in an alley node
+                if (node.isAlley)
+                {
+                    // If prop is alley, spawn it
+                    if (prop.propInfo.isAlley)
+                    {
+                        SpawnPrefabBetweenBuildings(prop, result.firstDir, selectedPos);
+                    }
+                    else
+                    {
+                        // If prop is not alley, decide whether to spawn it                 
+                        if(alleyProps.Count > 0 && Random.value < .15f)
+                        {
+                            // Get random alley prop
+                            prop = alleyProps[Random.Range(0, alleyProps.Count - 1)];
+
+                        }
+                        SpawnPrefabBetweenBuildings(prop, result.firstDir, selectedPos);
+                    }
+                    break;
+                }
+
+                // Never allow an alley prefab to be spawned on normal nodes
                 if (prop.propInfo.isAlley)
                 {
                     // Try another prefab
@@ -453,22 +476,26 @@ namespace PG
                 {
                     if (nodeInDirection.usage == Usage.building && nodeInOppDirection.usage == Usage.building)
                     {
+                        if (prop.propInfo.requiresRoad) continue;
+
                         SpawnPrefabBetweenBuildings(prop, result.firstDir, selectedPos);
                         break;
                     }
 
                     if ((nodeInDirection.usage == Usage.building && nodeInOppDirection.usage == Usage.road) || (nodeInDirection.usage == Usage.road && nodeInOppDirection.usage == Usage.building))
-                    {
+                    {                      
                         // Find the node that the selectedPos is closer to
                         GridNode closerNode = Vector3.Distance(selectedPos, nodeInDirection.worldPosition) < Vector3.Distance(selectedPos, nodeInOppDirection.worldPosition) ? nodeInDirection : nodeInOppDirection;
                         if (closerNode.usage == Usage.road)
                         {
                             // El prefab se va a instanciar pegado a la carretera
 
+                            // No instanciar props que requieran estar pegados a carretera (parada de bus)
+                            if (prop.propInfo.requiresRoad && (closerNode.roadType == RoadType.Roundabout || closerNode.roadType == RoadType.Bridge)) continue;
+
                             // No instanciar prefab marcados como isInterior cerca de una road
                             if (prop.propInfo.isInterior) continue;
 
-                            SpawnSphere(selectedPos + Vector3.up * 2f, Color.cyan, 1.5f);
                             SpawnPrefabBetweenRoadAndBuilding(prop, result.firstDir, selectedPos, true);
                         }
                         else
@@ -478,7 +505,6 @@ namespace PG
                             // No instanciar prefab marcados como isExterior cerca de un building
                             if (prop.propInfo.isExterior) continue;
 
-                            SpawnSphere(selectedPos + Vector3.up * 2f, Color.blue, 1.5f);
                             SpawnPrefabBetweenRoadAndBuilding(prop, result.firstDir, selectedPos, false);
                         }
                         // Has been spawned

@@ -17,6 +17,7 @@ namespace PG
             public bool looksToSidewalk; // If true, the asset will always be rotated to look towards the sidewalk (By default they all look towards the road)
             public bool looksToRoad; // If true and between building and road node, the asset will be rotated to look towards the sidewalk 
             public bool isAlley; // If true, can only be placed on an alley
+            public bool requiresRoad; // If true, it can't be placed next to a bridge or roundabout (bus stops)
         }
     }
 }
