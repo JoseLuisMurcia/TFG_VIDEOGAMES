@@ -67,7 +67,8 @@ public class EntityManager : MonoBehaviour
             return entityPool.Dequeue();
         }
 
+        return null;
         // If pool is empty, instantiate a new entity (prefab can be a car or pedestrian)
-        return Instantiate(/* your prefab here */);
+        //return Instantiate();
     }
 }
