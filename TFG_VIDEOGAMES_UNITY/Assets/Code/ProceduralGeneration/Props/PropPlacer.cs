@@ -18,6 +18,9 @@ namespace PG
         [SerializeField] private Prop[] mainStreetLamps;
         [SerializeField] private Prop[] residentialStreetLamps;
         [SerializeField] private Prop[] gangStreetLamps;
+        [SerializeField] private Prop[] mainGroupProps;
+        [SerializeField] private Prop[] residentialGroupProps;
+        [SerializeField] private Prop[] gangStreetGroupProps;
 
         private Dictionary<Vector2Int, GridNode> mainSidewalks = new Dictionary<Vector2Int, GridNode>();
         private Dictionary<Vector2Int, GridNode> residentialSidewalks = new Dictionary<Vector2Int, GridNode>();
@@ -40,13 +43,13 @@ namespace PG
                         break;
                 }
             });
-            PlaceDistrictProps(mainSidewalks, mainProps, Region.Main);
-            PlaceDistrictProps(residentialSidewalks, residentialProps, Region.Residential);
-            PlaceDistrictProps(gangSidewalks, gangProps, Region.Suburbs);
+            PlaceDistrictProps(mainSidewalks, mainProps, mainGroupProps, Region.Main);
+            PlaceDistrictProps(residentialSidewalks, residentialProps, residentialGroupProps, Region.Residential);
+            PlaceDistrictProps(gangSidewalks, gangProps, gangStreetGroupProps, Region.Suburbs);
         }
-        private void PlaceDistrictProps(Dictionary<Vector2Int, GridNode> sidewalkPositions, Prop[] propPrefabs, Region regionType)
+        private void PlaceDistrictProps(Dictionary<Vector2Int, GridNode> sidewalkPositions, Prop[] propPrefabs, Prop[] groupedPrefabs, Region regionType)
         {
-            if (propPrefabs.Length == 0) return;
+            if (propPrefabs.Length == 0 && groupedPrefabs.Length == 0) return;
 
             nodeRadius = Grid.Instance.nodeRadius;
 
@@ -58,39 +61,59 @@ namespace PG
             int streetLampFrequency = GetStreetLampFrequency(regionType);  // Frequency of street lamps
             Prop[] streetLampPrefabs = GetStreetLampPrefabs(regionType);
 
+            // Track max instances for each grouped prefab
+            Dictionary<Prop, int> groupedPrefabCounts = new Dictionary<Prop, int>();
+            foreach (Prop groupedPrefab in groupedPrefabs)
+            {
+                groupedPrefabCounts[groupedPrefab] = groupedPrefab.propInfo.maxInstances;
+            }
+
             // Loop until all sidewalk positions have been processed
             while (processedSidewalks.Count < sidewalkPositions.Count)
             {
-                // Step 1: Select an unprocessed random sidewalk position to start
                 GridNode randomSidewalkNode = GetRandomUnprocessedSidewalkNode(sidewalkPositions, processedSidewalks);
-                if (randomSidewalkNode == null)
-                {
-                    break; // No more valid unprocessed sidewalks
-                }
+                if (randomSidewalkNode == null) break; // No more valid unprocessed sidewalks
 
-                // Generate the first position along the edge of the sidewalk
                 PlacingResult placingResult = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
-
-                // Queue for active prop placements
                 Queue<Vector3> activeList = new Queue<Vector3>();
 
                 bool isStreetLamp = (propsCounter % streetLampFrequency == 0);  // Check if it's time to place a street lamp
 
-                // Validate position based on the type of prop (street lamp or regular prop)
-                if (isStreetLamp)
+                // Check if we can place a grouped prefab here based on its max instances
+                bool placedGroupedPrefab = false;
+                if (!isStreetLamp)
                 {
-                    if (IsValidPositionForStreetLamp(placingResult.pos, propPositions, streetLampPositions, sidewalkPositions, regionType))
+                    foreach (var kvp in groupedPrefabCounts)
                     {
-                        activeList.Enqueue(placingResult.pos);
-                        propPositions.Add(placingResult.pos);
-                        streetLampPositions.Add(placingResult.pos);
-                        propsCounter++;
-                        PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);  // Place street lamp
+                        Prop groupedPrefab = kvp.Key;
+                        if (kvp.Value > 0 && IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+                        {
+                            PlacePropAtPosition(placingResult, randomSidewalkNode, new[] { groupedPrefab });
+                            activeList.Enqueue(placingResult.pos);
+                            propPositions.Add(placingResult.pos);
+                            groupedPrefabCounts[groupedPrefab]--;  // Decrease instance count
+                            propsCounter++;
+                            placedGroupedPrefab = true;
+                            break;  // Place only one grouped prefab per position
+                        }
                     }
                 }
-                else
+
+                // Place individual props if grouped prefab wasn’t placed
+                if (!placedGroupedPrefab)
                 {
-                    if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+                    if (isStreetLamp)
+                    {
+                        if (IsValidPositionForStreetLamp(placingResult.pos, propPositions, streetLampPositions, sidewalkPositions, regionType))
+                        {
+                            activeList.Enqueue(placingResult.pos);
+                            propPositions.Add(placingResult.pos);
+                            streetLampPositions.Add(placingResult.pos);
+                            propsCounter++;
+                            PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);  // Place street lamp
+                        }
+                    }
+                    else if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
                     {
                         activeList.Enqueue(placingResult.pos);
                         propPositions.Add(placingResult.pos);
@@ -99,51 +122,66 @@ namespace PG
                     }
                 }
 
-                // Mark the sidewalk as processed
                 processedSidewalks.Add(new Vector2Int(randomSidewalkNode.gridX, randomSidewalkNode.gridY));
 
                 // Step 2: Loop through active list and attempt to place more props
                 while (activeList.Count > 0)
                 {
                     Vector3 currentPos = activeList.Dequeue();
-                    bool propPlaced = false; // Track if a prop is placed in the current cycle
+                    bool propPlaced = false;
 
-                    // Try to place new props around the current position
                     for (int i = 0; i < maxAttemptsPerPos && !propPlaced; i++)
                     {
                         placingResult = GenerateRandomPositionAlongSidewalkEdge(randomSidewalkNode);
-
                         isStreetLamp = (propsCounter % streetLampFrequency == 0);
 
-                        if (isStreetLamp)
+                        // Attempt grouped prefab placement again
+                        if (!isStreetLamp && !placedGroupedPrefab)
+                        {
+                            foreach (var kvp in groupedPrefabCounts)
+                            {
+                                Prop groupedPrefab = kvp.Key;
+                                if (kvp.Value > 0 && IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
+                                {
+                                    activeList.Enqueue(placingResult.pos);
+                                    propPositions.Add(placingResult.pos);
+                                    groupedPrefabCounts[groupedPrefab]--;
+                                    PlacePropAtPosition(placingResult, randomSidewalkNode, new[] { groupedPrefab });
+                                    propsCounter++;
+                                    propPlaced = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!propPlaced && isStreetLamp)
                         {
                             if (IsValidPositionForStreetLamp(placingResult.pos, propPositions, streetLampPositions, sidewalkPositions, regionType))
                             {
                                 activeList.Enqueue(placingResult.pos);
                                 propPositions.Add(placingResult.pos);
                                 streetLampPositions.Add(placingResult.pos);
-                                propPlaced = true; // Successfully placed a street lamp
-                                propsCounter++;
                                 PlacePropAtPosition(placingResult, randomSidewalkNode, streetLampPrefabs);
+                                propsCounter++;
+                                propPlaced = true;
                             }
                         }
-                        else
+                        else if (!propPlaced)
                         {
                             if (IsValidPosition(placingResult.pos, propPositions, sidewalkPositions, regionType))
                             {
                                 activeList.Enqueue(placingResult.pos);
                                 propPositions.Add(placingResult.pos);
-                                propPlaced = true; // Successfully placed a regular prop
-                                propsCounter++;
                                 PlacePropAtPosition(placingResult, randomSidewalkNode, propPrefabs);
+                                propsCounter++;
+                                propPlaced = true;
                             }
                         }
-
                     }
-                    
                 }
             }
         }
+
         private GridNode GetRandomUnprocessedSidewalkNode(Dictionary<Vector2Int, GridNode> sidewalkPositions, HashSet<Vector2Int> processedSidewalks)
         {
             List<Vector2Int> unprocessedPositions = new List<Vector2Int>();
