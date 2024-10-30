@@ -60,7 +60,7 @@ namespace PG
             PlaceSidewalks(roadDictionary);
 
             // Return if only sidewalks
-            return;
+            //return;
             // Instantiate buildings
             InstantiateBuildings();
 
