@@ -16,11 +16,13 @@ public class ThirdPersonShooterController : MonoBehaviour
     private ThirdPersonController m_thirdPersonController;
     private StarterAssetsInputs m_starterAssetsInputs;
     private CrosshairController m_crosshairController;
+    private Animator m_animator;
     private void Awake()
     {
         m_starterAssetsInputs = GetComponent<StarterAssetsInputs>();
         m_thirdPersonController = GetComponent<ThirdPersonController>();
         m_crosshairController = GetComponent<CrosshairController>();
+        m_animator = GetComponent<Animator>();
     }
     void Update()
     {
@@ -34,35 +36,46 @@ public class ThirdPersonShooterController : MonoBehaviour
             mouseWorldPosition = raycastHit.point;
             hitTransform = raycastHit.transform;
         }
-        
+        else
+        {
+            debugTransform.position = Camera.main.transform.position + Camera.main.transform.forward * 999f;
+            mouseWorldPosition = Camera.main.transform.position + Camera.main.transform.forward * 999f;
+        }
+
+        // Update crosshair status
+        if (IsShootingTarget(hitTransform))
+        {
+            m_crosshairController.ShowCrosshairHit();
+        }
+        else
+        {
+            m_crosshairController.HideCrosshairHit();
+        }
+
         if (m_starterAssetsInputs.aim)
         {
             m_aimVirtualCamera.gameObject.SetActive(true);
             m_thirdPersonController.SetSensitivity(aimSensitivity);
             m_thirdPersonController.SetRotateOnMove(false);
+            m_animator.SetLayerWeight(1, Mathf.Lerp(m_animator.GetLayerWeight(1), 1f, Time.deltaTime * 10f));
 
             Vector3 worldAimTarget = mouseWorldPosition;
             worldAimTarget.y = transform.position.y;
             Vector3 aimDirection = (worldAimTarget - transform.position).normalized;
 
-            transform.forward = Vector3.Lerp(transform.forward, aimDirection, Time.deltaTime * 20f);
-
-            if (IsPedestrian(hitTransform))
-            {
-                m_crosshairController.ShowCrosshairHit();
-            }
+            transform.forward = Vector3.Lerp(transform.forward, aimDirection, Time.deltaTime * 20f);           
         }
         else
-        {
-            m_crosshairController.HideCrosshairHit();
+        {           
             m_aimVirtualCamera.gameObject.SetActive(false);
             m_thirdPersonController.SetSensitivity(normalSensitivity);
             m_thirdPersonController.SetRotateOnMove(true);
+            m_animator.SetLayerWeight(1, Mathf.Lerp(m_animator.GetLayerWeight(1), 0f, Time.deltaTime * 10f));
         }
 
         if(m_starterAssetsInputs.shoot)
         {
-            if (IsPedestrian(hitTransform))
+            if (IsShootingTarget(hitTransform))
             {
                 m_crosshairController.ShowHitmarker();
             }
@@ -70,9 +83,9 @@ public class ThirdPersonShooterController : MonoBehaviour
         }
     }
 
-    private bool IsPedestrian(Transform hitTransform)
+    private bool IsShootingTarget(Transform hitTransform)
     {
-        if (hitTransform != null && hitTransform.GetComponent<Pedestrian>() != null) 
+        if (hitTransform != null && hitTransform.GetComponent<ShootingTarget>() != null) 
         {
             return true;
         }

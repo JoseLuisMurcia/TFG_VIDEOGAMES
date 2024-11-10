@@ -9,7 +9,7 @@ public class CrosshairController : MonoBehaviour
     [SerializeField] private CanvasGroup crosshairHit;
 
     [Header("Hitmarker details")]
-    [SerializeField] private float fadeDuration = 1.5f;
+    [SerializeField] private float fadeDuration = 1.2f;
     private bool isFading = false;
     private Coroutine fadingCoroutine = null;
     void Start()
