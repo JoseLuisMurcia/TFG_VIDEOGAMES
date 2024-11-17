@@ -15,6 +15,7 @@ public class ThirdPersonShooterController : MonoBehaviour
     [SerializeField] private float aimSensitivity;
     [SerializeField] private LayerMask aimColliderLayerMask = new LayerMask();
     [SerializeField] private Transform debugTransform;
+    [SerializeField] private bool hasGun = false;
 
     private ThirdPersonController m_thirdPersonController;
     private StarterAssetsInputs m_starterAssetsInputs;
@@ -29,6 +30,14 @@ public class ThirdPersonShooterController : MonoBehaviour
     }
     void Update()
     {
+        if (m_starterAssetsInputs.equipGun)
+        {
+            Debug.Log("EQUIP GUN");
+            hasGun = !hasGun;
+            m_animator.SetBool("HasGun", hasGun);
+        }
+        
+
         Vector3 mouseWorldPosition = Vector3.zero;
         Vector2 screenCenterPoint = new Vector2(Screen.width * .5f, Screen.height * .5f);
         Ray ray = Camera.main.ScreenPointToRay(screenCenterPoint);
@@ -80,6 +89,7 @@ public class ThirdPersonShooterController : MonoBehaviour
             aimRigWeight = 0f;
         }
 
+        // SHOOT
         if(m_starterAssetsInputs.shoot)
         {
             if (IsShootingTarget(hitTransform))

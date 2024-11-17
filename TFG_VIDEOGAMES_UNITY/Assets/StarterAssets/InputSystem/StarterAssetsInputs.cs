@@ -14,6 +14,8 @@ namespace StarterAssets
 		public bool sprint;
 		public bool aim;
 		public bool shoot;
+		public bool equipGun;
+		public bool enterCar;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -53,6 +55,14 @@ namespace StarterAssets
         {
             ShootInput(value.isPressed);
         }
+        public void OnEquipGun(InputValue value)
+        {
+            EquipGunInput(value.isPressed);
+        }
+        public void OnEnterCar(InputValue value)
+        {
+            EnterCarInput(value.isPressed);
+        }
 #endif
 
 
@@ -82,6 +92,14 @@ namespace StarterAssets
         public void ShootInput(bool newShootState)
         {
             shoot = newShootState;
+        }
+        public void EquipGunInput(bool newEquipGunState)
+        {
+            equipGun = newEquipGunState;
+        }
+        public void EnterCarInput(bool newEnterCarState)
+        {
+            enterCar = newEnterCarState;
         }
         private void OnApplicationFocus(bool hasFocus)
 		{
