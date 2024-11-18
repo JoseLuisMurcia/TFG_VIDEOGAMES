@@ -16,6 +16,7 @@ public class ThirdPersonShooterController : MonoBehaviour
     [SerializeField] private LayerMask aimColliderLayerMask = new LayerMask();
     [SerializeField] private Transform debugTransform;
     [SerializeField] private bool hasGun = false;
+    [SerializeField] private Transform gunTransform;
 
     private ThirdPersonController m_thirdPersonController;
     private StarterAssetsInputs m_starterAssetsInputs;
@@ -27,6 +28,15 @@ public class ThirdPersonShooterController : MonoBehaviour
         m_thirdPersonController = GetComponent<ThirdPersonController>();
         m_crosshairController = GetComponent<CrosshairController>();
         m_animator = GetComponent<Animator>();
+
+        if (hasGun)
+        {
+            gunTransform.gameObject.SetActive(true);
+        }
+        else
+        {
+            gunTransform.gameObject.SetActive(false);
+        }
     }
     void Update()
     {
@@ -46,51 +56,57 @@ public class ThirdPersonShooterController : MonoBehaviour
             mouseWorldPosition = Camera.main.transform.position + Camera.main.transform.forward * 999f;
         }
 
-        // Update crosshair status
-        if (IsShootingTarget(hitTransform))
-        {
-            m_crosshairController.ShowCrosshairHit();
+
+        if (hasGun)
+        {   
+            bool hasTargetInAim = IsShootingTarget(hitTransform);
+            if (hasTargetInAim)
+            {
+                m_crosshairController.ShowCrosshairHit();
+            }
+            else
+            {
+                m_crosshairController.HideCrosshairHit();
+            }
+
+            if (m_starterAssetsInputs.aim)
+            {
+                // AIM
+                m_aimVirtualCamera.gameObject.SetActive(true);
+                m_thirdPersonController.SetSensitivity(aimSensitivity);
+                m_thirdPersonController.SetRotateOnMove(false);
+                m_animator.SetLayerWeight(1, Mathf.Lerp(m_animator.GetLayerWeight(1), 1f, Time.deltaTime * 10f));
+
+                Vector3 worldAimTarget = mouseWorldPosition;
+                worldAimTarget.y = transform.position.y;
+                Vector3 aimDirection = (worldAimTarget - transform.position).normalized;
+
+                transform.forward = Vector3.Lerp(transform.forward, aimDirection, Time.deltaTime * 20f);
+                aimRigWeight = 1f;
+
+
+                // SHOOT
+                if (m_starterAssetsInputs.shoot)
+                {
+                    if (hasTargetInAim)
+                    {
+                        m_crosshairController.ShowHitmarker();
+                    }
+                    m_starterAssetsInputs.shoot = false;
+                }
+            }
         }
         else
         {
-            m_crosshairController.HideCrosshairHit();
-        }
-
-        if (m_starterAssetsInputs.aim)
-        {
-            // AIM
-            m_aimVirtualCamera.gameObject.SetActive(true);
-            m_thirdPersonController.SetSensitivity(aimSensitivity);
-            m_thirdPersonController.SetRotateOnMove(false);
-            m_animator.SetLayerWeight(1, Mathf.Lerp(m_animator.GetLayerWeight(1), 1f, Time.deltaTime * 10f));
-
-            Vector3 worldAimTarget = mouseWorldPosition;
-            worldAimTarget.y = transform.position.y;
-            Vector3 aimDirection = (worldAimTarget - transform.position).normalized;
-
-            transform.forward = Vector3.Lerp(transform.forward, aimDirection, Time.deltaTime * 20f);
-            aimRigWeight = 1f;
-        }
-        else
-        {
-            // DON'T AIM
             m_aimVirtualCamera.gameObject.SetActive(false);
             m_thirdPersonController.SetSensitivity(normalSensitivity);
             m_thirdPersonController.SetRotateOnMove(true);
             m_animator.SetLayerWeight(1, Mathf.Lerp(m_animator.GetLayerWeight(1), 0f, Time.deltaTime * 10f));
             aimRigWeight = 0f;
+            m_crosshairController.HideAllCrosshair();
         }
 
-        // SHOOT
-        if (m_starterAssetsInputs.shoot)
-        {
-            if (IsShootingTarget(hitTransform))
-            {
-                m_crosshairController.ShowHitmarker();
-            }
-            m_starterAssetsInputs.shoot = false;
-        }
-
+        
         aimRig.weight = Mathf.Lerp(aimRig.weight, aimRigWeight, Time.deltaTime * 20f);
     }
 
@@ -111,5 +127,13 @@ public class ThirdPersonShooterController : MonoBehaviour
     {
         hasGun = !hasGun;
         m_animator.SetBool("HasGun", hasGun);
+        if (hasGun)
+        {
+            gunTransform.gameObject.SetActive(true);
+        }
+        else
+        {
+            gunTransform.gameObject.SetActive(false);
+        }
     }
 }

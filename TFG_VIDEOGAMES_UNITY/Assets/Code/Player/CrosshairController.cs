@@ -59,4 +59,9 @@ public class CrosshairController : MonoBehaviour
         crosshair.alpha = 1f;
         crosshairHit.alpha = 0f;
     }
+    public void HideAllCrosshair()
+    {
+        crosshair.alpha = 0f;
+        crosshairHit.alpha = 0f;
+    }
 }
