@@ -30,14 +30,6 @@ public class ThirdPersonShooterController : MonoBehaviour
     }
     void Update()
     {
-        if (m_starterAssetsInputs.equipGun)
-        {
-            Debug.Log("EQUIP GUN");
-            hasGun = !hasGun;
-            m_animator.SetBool("HasGun", hasGun);
-        }
-        
-
         Vector3 mouseWorldPosition = Vector3.zero;
         Vector2 screenCenterPoint = new Vector2(Screen.width * .5f, Screen.height * .5f);
         Ray ray = Camera.main.ScreenPointToRay(screenCenterPoint);
@@ -90,7 +82,7 @@ public class ThirdPersonShooterController : MonoBehaviour
         }
 
         // SHOOT
-        if(m_starterAssetsInputs.shoot)
+        if (m_starterAssetsInputs.shoot)
         {
             if (IsShootingTarget(hitTransform))
             {
@@ -104,10 +96,20 @@ public class ThirdPersonShooterController : MonoBehaviour
 
     private bool IsShootingTarget(Transform hitTransform)
     {
-        if (hitTransform != null && hitTransform.GetComponent<ShootingTarget>() != null) 
+        if (hitTransform != null && hitTransform.GetComponent<ShootingTarget>() != null)
         {
             return true;
         }
         return false;
+    }
+
+    public void OnEnterCarEvent(bool newValue)
+    {
+
+    }
+    public void OnEquipGunEvent(bool newValue)
+    {
+        hasGun = !hasGun;
+        m_animator.SetBool("HasGun", hasGun);
     }
 }

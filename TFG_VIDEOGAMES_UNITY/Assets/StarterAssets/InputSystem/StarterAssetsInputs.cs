@@ -7,6 +7,8 @@ namespace StarterAssets
 {
 	public class StarterAssetsInputs : MonoBehaviour
 	{
+		private ThirdPersonShooterController thirdPersonShooterController;
+
 		[Header("Character Input Values")]
 		public Vector2 move;
 		public Vector2 look;
@@ -14,8 +16,6 @@ namespace StarterAssets
 		public bool sprint;
 		public bool aim;
 		public bool shoot;
-		public bool equipGun;
-		public bool enterCar;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -24,8 +24,12 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
+        private void Awake()
+        {
+            thirdPersonShooterController = GetComponent<ThirdPersonShooterController>();
+        }
 #if ENABLE_INPUT_SYSTEM
-		public void OnMove(InputValue value)
+        public void OnMove(InputValue value)
 		{
 			MoveInput(value.Get<Vector2>());
 		}
@@ -95,11 +99,11 @@ namespace StarterAssets
         }
         public void EquipGunInput(bool newEquipGunState)
         {
-            equipGun = newEquipGunState;
+			thirdPersonShooterController.OnEquipGunEvent(newEquipGunState);
         }
         public void EnterCarInput(bool newEnterCarState)
         {
-            enterCar = newEnterCarState;
+            thirdPersonShooterController.OnEnterCarEvent(newEnterCarState);
         }
         private void OnApplicationFocus(bool hasFocus)
 		{
